@@ -1,6 +1,4 @@
 **/**
-!GoogleAppsScript/**
-!GoogleAppsScript/*.gs
-!GoogleAppsScript/appsscript.json
-node_modules/**
-.git/**
+!*.gs
+!*.js
+!appsscript.json
