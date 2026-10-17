@@ -102,10 +102,10 @@
       z-index: 40;
     }
     .safe-sticky-bar {
-      bottom: calc(115px + env(safe-area-inset-bottom, 0px));
+      bottom: calc(85px + env(safe-area-inset-bottom, 0px));
     }
     .mobile-scroll-container {
-      padding-bottom: calc(135px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -442,21 +442,15 @@
     </div>
 
     <!-- Mobile Bottom Dock (Thumb Zone: Cumulative Math + WhatsApp All + Strict Brand Ribbon) -->
-    <div id="mb-bottom-dock" class="ios-docked-nav flex flex-col justify-between px-3.5 pt-2 space-y-2">
-      <!-- Row 1: Cumulative Calculation + WhatsApp All Action -->
+    <div id="mb-bottom-dock" class="ios-docked-nav flex flex-col justify-between px-3 pt-2 space-y-1.5">
+      <!-- Actions Row: Select & WhatsApp All Action -->
       <div class="flex items-center justify-between px-1">
-        <div>
-          <span id="mb-dock-calc" class="text-xs font-bold text-white tracking-tight"></span>
-          <p class="text-[10px] text-neutral-400">Tap below to switch brand</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button id="mb-select-toggle" onclick="toggleSelectMode()" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-neutral-300 bg-white/10 hover:bg-white/20">
-            Select
-          </button>
-          <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-md flex items-center gap-1 active:scale-95 transition-transform">
-            <span>WhatsApp All</span>
-          </button>
-        </div>
+        <button id="mb-select-toggle" onclick="toggleSelectMode()" class="px-3 py-1 rounded-xl text-xs font-semibold text-neutral-300 bg-white/10 hover:bg-white/20">
+          Select
+        </button>
+        <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-sm flex items-center gap-1 active:scale-95 transition-transform">
+          <span>WhatsApp All</span>
+        </button>
       </div>
 
       <!-- Row 2: Thumb-Reachable Brand Ribbon in Strict User Order -->
@@ -929,9 +923,6 @@
 
       const mbHeaderCalc = document.getElementById('mb-header-calc');
       if (mbHeaderCalc) mbHeaderCalc.innerHTML = headerInfo.calc;
-
-      const mbDockCalc = document.getElementById('mb-dock-calc');
-      if (mbDockCalc) mbDockCalc.innerHTML = headerInfo.calc;
 
       // Four Fountains 30-Day Alert Banner
       const ffAlert = document.getElementById('mb-ff-alert');

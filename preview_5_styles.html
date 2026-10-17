@@ -667,14 +667,11 @@
         </div>
 
         <!-- DOCKED THUMB ZONE (Flush at Bottom) -->
-        <div class="absolute bottom-0 left-0 right-0 p-3 space-y-2 border-t border-white/10 z-30" style="background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(35px);">
-          <!-- Row 1: Cumulative Denomination & Batch WhatsApp Button -->
+        <div class="absolute bottom-0 left-0 right-0 p-2.5 space-y-1.5 border-t border-white/10 z-30" style="background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(35px);">
+          <!-- Row 1: Actions (Select & WhatsApp All) -->
           <div class="flex items-center justify-between px-1">
-            <div>
-              <span class="text-xs font-bold text-white">${headerInfo.calc}</span>
-              <p class="text-[10px] text-neutral-400">Tap below to switch brands</p>
-            </div>
-            <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-md flex items-center gap-1 active:scale-95 transition-transform">
+            <span class="text-[11px] font-semibold text-neutral-400">Brand Quick Access</span>
+            <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-sm flex items-center gap-1 active:scale-95 transition-transform">
               <span>WhatsApp All</span>
             </button>
           </div>
