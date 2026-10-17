@@ -330,7 +330,7 @@
           <div class="flex items-center gap-3">
             <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
             <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              <option value="RecentlyAdded">⚡ Recently Added (All Brands)</option>
+              <option value="ActivityLog">⚡ Activity Log (All Brands)</option>
               <option value="Lakme" selected>1. Lakmé Salon (₹1,500)</option>
               <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
               <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
@@ -355,6 +355,25 @@
               Select Multiple
             </button>
           </div>
+        </div>
+
+        <!-- Desktop 10-Second Undo Banner -->
+        <div id="dt-undo-banner" class="hidden px-8 py-2.5 bg-emerald-950/90 border-b border-emerald-500/40 flex items-center justify-between text-xs text-white">
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-400 font-bold">✓</span>
+            <span id="dt-undo-banner-text" class="text-emerald-200">Voucher marked as Redeemed and moved to Sheet</span>
+          </div>
+          <button id="dt-undo-banner-btn" onclick="triggerUndoLast()" class="px-3 py-1 rounded-lg bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 active:scale-95 transition-all">
+            ↶ Undo (10s)
+          </button>
+        </div>
+
+        <!-- Desktop Activity Log Sub-Filters (Visible when Activity Log is active) -->
+        <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center gap-2">
+          <button onclick="setActivityFilter('all')" id="dt-btn-filter-all" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black">All Activity</button>
+          <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">⚡ Ingested</button>
+          <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📤 Shared</button>
+          <button onclick="setActivityFilter('redeemed')" id="dt-btn-filter-redeemed" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📜 Redeemed</button>
         </div>
 
         <!-- Floating Batch Action Bar -->
@@ -474,6 +493,17 @@
       </div>
     </header>
 
+    <!-- 10-Second Undo Banner -->
+    <div id="mb-undo-banner" class="hidden mx-3 mt-2 p-2.5 rounded-xl bg-emerald-950/90 border border-emerald-500/40 shadow-2xl flex items-center justify-between text-xs text-white backdrop-blur-md transition-all z-30">
+      <div class="flex items-center gap-2 truncate">
+        <span class="text-sm text-emerald-400">✓</span>
+        <span id="mb-undo-banner-text" class="truncate text-[11px] font-medium text-emerald-200">Voucher marked as Redeemed & moved to Sheet</span>
+      </div>
+      <button id="mb-undo-banner-btn" onclick="triggerUndoLast()" class="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500 text-black font-bold text-[11px] hover:bg-emerald-400 active:scale-95 transition-all shadow">
+        ↶ Undo (10s)
+      </button>
+    </div>
+
     <!-- Top Deck Selector (Card-Style Horizontal Brand Pass Deck) -->
     <div id="mb-deck-selector" class="p-2.5 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800 z-20">
       <!-- Populated dynamically via JS in strict brand order -->
@@ -483,6 +513,14 @@
     <div class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
       <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
       <span id="mb-header-calc" class="font-bold text-amber-400 font-mono-apple pl-2 tracking-tight">Loading...</span>
+    </div>
+
+    <!-- Activity Log Sub-Filters (Visible ONLY when Activity Log tab is selected) -->
+    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar">
+      <button onclick="setActivityFilter('all')" id="mb-btn-filter-all" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all">All Activity</button>
+      <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">⚡ Ingested</button>
+      <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📤 Shared</button>
+      <button onclick="setActivityFilter('redeemed')" id="mb-btn-filter-redeemed" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📜 Redeemed</button>
     </div>
 
     <!-- Scrollable Pass Cards Deck Content -->
@@ -1071,7 +1109,7 @@
 
     // STRICT USER ORDER & CONFIGURATION
     const BRAND_CONFIG = [
-      { key: 'RecentlyAdded', name: '⚡ Recently Added', denom: 0, hasPin: false, tag: 'All Brands', isSpecial: true },
+      { key: 'ActivityLog', name: '⚡ Activity Log', denom: 0, hasPin: false, tag: 'All Brands', isSpecial: true },
       { key: 'Lakme', name: 'Lakmé Salon', denom: 1500, hasPin: true, tag: 'Wellness' },
       { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: 'Strict 30D Expiry' },
       { key: 'Kalyan', name: 'Kalyan Jewellers', denom: 2000, hasPin: true, tag: 'Jewellery' },
@@ -1091,7 +1129,7 @@
     function normalizeBrandKey(brand) {
       if (!brand) return 'Other';
       const b = brand.toLowerCase().replace(/[\s\.\-_]/g, '');
-      if (b.includes('recent') || b.includes('newly') || b === 'recentlyadded') return 'RecentlyAdded';
+      if (b.includes('activity') || b.includes('recent') || b.includes('newly') || b === 'activitylog' || b === 'recentlyadded') return 'ActivityLog';
       if (b.includes('lakme')) return 'Lakme';
       if (b.includes('fourfountain') || b.includes('four')) return 'FourFountains';
       if (b.includes('kalyan')) return 'Kalyan';
@@ -1134,27 +1172,226 @@
       return 0;
     }
 
+    /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
+    let activityFilter = 'all';
+    let sharedActivity = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
+    if (!sharedActivity.length) {
+      sharedActivity = [
+        { code: 'RD-TECH-1002931', brand: 'Reliance Digital', amount: 500, pin: '', sharedAt: '18-Oct-2026, 02:40 AM IST', timestampMs: Date.now() - 300000 }
+      ];
+    }
+    let redeemedList = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
+    let undoState = { timer: null, secondsLeft: 10, code: null, brand: null };
+
+    function saveSharedActivity() {
+      try {
+        localStorage.setItem('rupay_shared_activity', JSON.stringify(sharedActivity));
+      } catch(e) {}
+    }
+
+    function saveRedeemedList() {
+      try {
+        localStorage.setItem('rupay_redeemed_list', JSON.stringify(redeemedList));
+      } catch(e) {}
+    }
+
+    function logSharedActivity(code, brand, amount, pin) {
+      if (!code) return;
+      const now = new Date();
+      const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+      const existingIdx = sharedActivity.findIndex(s => s.code === code);
+      const entry = {
+        code: code,
+        brand: brand || 'Voucher',
+        amount: Number(amount) || 0,
+        pin: pin || '',
+        sharedAt: timeStr,
+        timestampMs: Date.now()
+      };
+      if (existingIdx >= 0) {
+        sharedActivity[existingIdx] = entry;
+      } else {
+        sharedActivity.unshift(entry);
+      }
+      saveSharedActivity();
+      renderDeckSelector();
+      renderVault();
+    }
+
+    function dismissSharedActivity(code) {
+      sharedActivity = sharedActivity.filter(s => s.code !== code);
+      saveSharedActivity();
+      showToast('Removed from Activity Log');
+      renderDeckSelector();
+      renderVault();
+    }
+
+    async function markVoucherAsRedeemed(code, brand) {
+      sharedActivity = sharedActivity.filter(s => s.code !== code);
+      saveSharedActivity();
+
+      let foundAmount = 0;
+      let foundPin = '';
+
+      const v = state.vouchers.find(x => x.code === code);
+      if (v) {
+        v.status = 'USED';
+        foundAmount = v.amount || foundAmount;
+        foundPin = v.pin || foundPin;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+
+      redeemedList.unshift({
+        code: code,
+        brand: brand,
+        amount: foundAmount,
+        pin: foundPin,
+        redeemedTimestampIST: timeStr,
+        originalTab: brand
+      });
+      saveRedeemedList();
+
+      showUndoToast(code, brand);
+      renderDeckSelector();
+      renderVault();
+
+      try {
+        await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            auth: VAULT_AUTH_KEY,
+            action: 'MOVE_TO_REDEEMED',
+            brand: brand,
+            code: code
+          })
+        });
+      } catch(e) {
+        console.warn('Backend move error:', e);
+      }
+    }
+
+    async function undoRedemption(code, brand) {
+      redeemedList = redeemedList.filter(r => r.code !== code);
+      saveRedeemedList();
+
+      const v = state.vouchers.find(x => x.code === code);
+      if (v) {
+        v.status = 'ACTIVE';
+      }
+
+      hideUndoToast();
+      showToast('Voucher restored to active vault');
+      renderDeckSelector();
+      renderVault();
+
+      try {
+        await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            auth: VAULT_AUTH_KEY,
+            action: 'UNDO_REDEEM',
+            code: code
+          })
+        });
+      } catch(e) {
+        console.warn('Backend undo error:', e);
+      }
+    }
+
+    function showUndoToast(code, brand) {
+      if (undoState.timer) clearInterval(undoState.timer);
+      undoState.code = code;
+      undoState.brand = brand;
+      undoState.secondsLeft = 10;
+
+      const dtBanner = document.getElementById('dt-undo-banner');
+      const mbBanner = document.getElementById('mb-undo-banner');
+      const dtBtn = document.getElementById('dt-undo-banner-btn');
+      const mbBtn = document.getElementById('mb-undo-banner-btn');
+      const dtText = document.getElementById('dt-undo-banner-text');
+      const mbText = document.getElementById('mb-undo-banner-text');
+
+      const msg = `Marked ${brand} as Redeemed`;
+      const btnTxt = `↶ Undo (${undoState.secondsLeft}s)`;
+      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.textContent = btnTxt; }
+      if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.textContent = btnTxt; }
+
+      undoState.timer = setInterval(() => {
+        undoState.secondsLeft--;
+        if (undoState.secondsLeft <= 0) {
+          clearInterval(undoState.timer);
+          undoState.timer = null;
+          if (dtBanner) dtBanner.classList.add('hidden');
+          if (mbBanner) mbBanner.classList.add('hidden');
+        } else {
+          const t = `↶ Undo (${undoState.secondsLeft}s)`;
+          if (dtBtn) dtBtn.textContent = t;
+          if (mbBtn) mbBtn.textContent = t;
+        }
+      }, 1000);
+    }
+
+    function hideUndoToast() {
+      if (undoState.timer) clearInterval(undoState.timer);
+      undoState.timer = null;
+      const dtBanner = document.getElementById('dt-undo-banner');
+      const mbBanner = document.getElementById('mb-undo-banner');
+      if (dtBanner) dtBanner.classList.add('hidden');
+      if (mbBanner) mbBanner.classList.add('hidden');
+    }
+
+    function triggerUndoLast() {
+      if (undoState.code && undoState.brand) {
+        undoRedemption(undoState.code, undoState.brand);
+      }
+    }
+
+    function setActivityFilter(filter) {
+      activityFilter = filter;
+      ['all', 'added', 'shared', 'redeemed'].forEach(f => {
+        const dtBtn = document.getElementById(`dt-btn-filter-${f}`);
+        const mbBtn = document.getElementById(`mb-btn-filter-${f}`);
+        [dtBtn, mbBtn].forEach(btn => {
+          if (btn) {
+            if (f === filter) {
+              btn.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all';
+            } else {
+              btn.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all';
+            }
+          }
+        });
+      });
+      renderVault();
+    }
+
     function getCumulativeHeader(brandKey) {
       const normKey = normalizeBrandKey(brandKey);
 
-      if (normKey === 'RecentlyAdded') {
-        const recentVs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
-        const count = recentVs.length;
-        const distinctBrands = new Set(recentVs.map(v => normalizeBrandKey(v.brand))).size;
-        const totalVal = recentVs.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+      if (normKey === 'ActivityLog') {
+        const dtFilterBar = document.getElementById('dt-activity-filters-bar');
+        const mbFilterBar = document.getElementById('mb-activity-filters-bar');
+        if (dtFilterBar) dtFilterBar.classList.remove('hidden');
+        if (mbFilterBar) mbFilterBar.classList.remove('hidden');
 
-        if (count === 0) {
-          return {
-            title: '⚡ Recently Added',
-            calc: '0 newly synced vouchers · Ready for incoming emails',
-            sub: 'Forwarded or auto-synced vouchers with timestamps appear here'
-          };
-        }
+        const ingestedCount = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '').length;
+        const sharedCount = sharedActivity.length;
+        const redeemedCount = redeemedList.length;
+        const totalEvents = ingestedCount + sharedCount + redeemedCount;
+
         return {
-          title: '⚡ Recently Added',
-          calc: `${count} newly synced voucher${count === 1 ? '' : 's'} across ${distinctBrands} brand${distinctBrands === 1 ? '' : 's'} · Total Value: ₹${totalVal.toLocaleString()}`,
-          sub: 'Sorted strictly by newest arrival timestamp'
+          title: '⚡ Activity Log',
+          calc: `${totalEvents} events (${ingestedCount} ingested · ${sharedCount} shared · ${redeemedCount} redeemed)`,
+          sub: 'Reverse-chronological activity across newly synced, shared, and redeemed'
         };
+      } else {
+        const dtFilterBar = document.getElementById('dt-activity-filters-bar');
+        const mbFilterBar = document.getElementById('mb-activity-filters-bar');
+        if (dtFilterBar) dtFilterBar.classList.add('hidden');
+        if (mbFilterBar) mbFilterBar.classList.add('hidden');
       }
 
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
@@ -1343,6 +1580,20 @@
           if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
         }
 
+        if (data.redeemed && Array.isArray(data.redeemed)) {
+          redeemedList = data.redeemed.map(r => ({
+            code: r.code,
+            brand: r.brand || r.originalTab || 'Voucher',
+            amount: Number(r.amount) || 0,
+            pin: r.pin || '',
+            redeemedTimestampIST: r.redeemedTimestampIST || '',
+            originalTab: r.originalTab || r.brand || ''
+          }));
+          sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
+          saveSharedActivity();
+          saveRedeemedList();
+        }
+
         if (data.cooldowns && data.cooldowns.length) {
           state.accounts = data.cooldowns.map(c => ({
             id: c.account,
@@ -1479,25 +1730,7 @@
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
     function renderVault() {
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
-      const isRecentTab = normActiveBrand === 'RecentlyAdded';
-
-      let vs = [];
-      if (isRecentTab) {
-        vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
-        vs.sort((a, b) => parseTimestamp(b.timestampIST) - parseTimestamp(a.timestampIST));
-      } else {
-        vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
-      }
-
-      // Search Query Filter (Desktop)
-      if (state.searchQuery) {
-        const q = state.searchQuery.toLowerCase();
-        vs = vs.filter(v => 
-          v.brand.toLowerCase().includes(q) ||
-          v.code.toLowerCase().includes(q) ||
-          (v.pin && v.pin.toLowerCase().includes(q))
-        );
-      }
+      const isActivityTab = normActiveBrand === 'ActivityLog';
 
       const headerInfo = getCumulativeHeader(normActiveBrand);
       const bConfig = BRAND_CONFIG.find(x => x.key === normActiveBrand) || { name: state.activeFilterBrand, tag: 'Voucher' };
@@ -1519,6 +1752,243 @@
         }
       }
 
+      if (isActivityTab) {
+        // Collect unified activity events:
+        let allActivities = [];
+
+        // 1. Ingested from Gmail
+        state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '').forEach(v => {
+          allActivities.push({
+            type: 'INGESTED',
+            id: v.id,
+            code: v.code,
+            brand: v.brand,
+            amount: v.amount,
+            pin: v.pin,
+            timestampStr: v.timestampIST,
+            timestampMs: parseTimestamp(v.timestampIST),
+            status: v.status || 'ACTIVE',
+            expiry: v.expiry
+          });
+        });
+
+        // 2. Shared Activity
+        sharedActivity.forEach(s => {
+          if (!redeemedList.some(r => r.code === s.code)) {
+            allActivities.push({
+              type: 'SHARED',
+              id: 'shared-' + s.code,
+              code: s.code,
+              brand: s.brand,
+              amount: s.amount,
+              pin: s.pin,
+              timestampStr: s.sharedAt,
+              timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
+              status: 'SHARED'
+            });
+          }
+        });
+
+        // 3. Redeemed Activity
+        redeemedList.forEach(r => {
+          allActivities.push({
+            type: 'REDEEMED',
+            id: 'redeemed-' + r.code,
+            code: r.code,
+            brand: r.brand,
+            amount: r.amount,
+            pin: r.pin,
+            timestampStr: r.redeemedTimestampIST,
+            timestampMs: parseTimestamp(r.redeemedTimestampIST),
+            status: 'REDEEMED',
+            originalTab: r.originalTab
+          });
+        });
+
+        // Sub-filter
+        if (activityFilter === 'added') {
+          allActivities = allActivities.filter(a => a.type === 'INGESTED');
+        } else if (activityFilter === 'shared') {
+          allActivities = allActivities.filter(a => a.type === 'SHARED');
+        } else if (activityFilter === 'redeemed') {
+          allActivities = allActivities.filter(a => a.type === 'REDEEMED');
+        }
+
+        // Search Filter (Desktop)
+        if (state.searchQuery) {
+          const q = state.searchQuery.toLowerCase();
+          allActivities = allActivities.filter(a =>
+            a.brand.toLowerCase().includes(q) ||
+            a.code.toLowerCase().includes(q) ||
+            (a.pin && a.pin.toLowerCase().includes(q))
+          );
+        }
+
+        // Sort latest at the top
+        allActivities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
+
+        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+        if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = allActivities.length;
+
+        // Desktop Table Body for Activity Log
+        document.getElementById('dt-vault-tbody').innerHTML = allActivities.length ? allActivities.map((act, i) => {
+          const vBrandName = getBrandDisplayName(act.brand);
+          const isRedeemed = act.type === 'REDEEMED';
+          const isShared = act.type === 'SHARED';
+          const isIngested = act.type === 'INGESTED';
+
+          let typeBadge = '';
+          if (isShared) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">📤 SHARED</span>`;
+          else if (isIngested) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">⚡ INGESTED</span>`;
+          else if (isRedeemed) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ REDEEMED</span>`;
+
+          return `
+            <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${isRedeemed ? 'opacity-50' : ''}">
+              <td class="p-3 text-center">
+                <input type="checkbox" ${state.selectedIds.has(act.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-blue-500">
+              </td>
+              <td class="p-3">
+                <div class="font-bold text-sm">${vBrandName}</div>
+                <div class="text-xs font-semibold text-emerald-500">${act.amount > 0 ? `₹${act.amount.toLocaleString()}` : 'Benefit'}</div>
+              </td>
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono-apple font-bold ${isRedeemed ? 'line-through text-neutral-400' : 'text-blue-400'}">${act.code}</span>
+                  <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700" title="Copy code">Copy</button>
+                </div>
+                ${act.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${act.pin}</div>` : ''}
+              </td>
+              <td class="p-3 text-xs" style="color: var(--label-secondary);">
+                <span class="px-2 py-0.5 rounded-full bg-black/60 border border-neutral-800 text-neutral-300 text-[11px] font-mono-apple inline-block">
+                  ⏱ ${isShared ? 'Shared' : (isRedeemed ? 'Redeemed' : 'Ingested')}: ${act.timestampStr || 'Recent'}
+                </span>
+              </td>
+              <td class="p-3">
+                ${typeBadge}
+              </td>
+              <td class="p-3 text-right">
+                ${isShared ? `
+                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">Mark Redeemed</button>
+                  <button onclick="dismissSharedActivity('${act.code}')" class="text-xs font-medium text-neutral-400 hover:text-white">Dismiss</button>
+                ` : (isIngested ? `
+                  <button onclick="shareSingle('${act.code}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">WhatsApp</button>
+                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-medium text-neutral-300 hover:text-white">Redeem</button>
+                ` : `
+                  <button onclick="undoRedemption('${act.code}', '${act.brand || act.originalTab}')" class="text-xs font-bold text-amber-400 hover:underline">Restore to Sheet</button>
+                `)}
+              </td>
+            </tr>
+          `;
+        }).join('') : `
+          <tr>
+            <td colspan="6" class="p-12 text-center text-sm text-neutral-400">
+              No activity matching the current filter.
+            </td>
+          </tr>
+        `;
+
+        // Mobile VIP Wallet Cards for Activity Log
+        document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
+          const isRedeemed = act.type === 'REDEEMED';
+          const isShared = act.type === 'SHARED';
+          const isIngested = act.type === 'INGESTED';
+          const brandDisplay = getBrandDisplayName(act.brand);
+
+          let typeBadgeHtml = '';
+          if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold">📤 SHARED</span>`;
+          else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[10px] font-bold">⚡ INGESTED</span>`;
+          else if (isRedeemed) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">✓ REDEEMED</span>`;
+
+          return `
+            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isRedeemed ? 'opacity-80' : ''}">
+              <!-- Header Row -->
+              <div class="flex items-center justify-between text-xs">
+                <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                  ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
+                </span>
+                ${typeBadgeHtml}
+              </div>
+
+              <!-- Timestamp Row -->
+              <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80">
+                <span class="truncate">⏱ ${isShared ? 'Shared' : (isRedeemed ? 'Redeemed' : 'Ingested')}: ${act.timestampStr || 'Recent'}</span>
+                ${isRedeemed && act.originalTab ? `<span class="text-neutral-500 text-[9px]">Tab: ${act.originalTab}</span>` : ''}
+              </div>
+
+              <!-- Embossed Code Box -->
+              <div onclick="copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                    <span class="font-mono-apple text-base font-bold ${isRedeemed ? 'line-through text-neutral-400' : 'text-white'} tracking-wider">${act.code}</span>
+                  </div>
+                  ${act.pin ? `
+                    <div class="flex items-center gap-2 pt-0.5">
+                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
+                      <span class="font-mono-apple text-sm font-bold text-amber-300">${act.pin}</span>
+                    </div>
+                  ` : ''}
+                </div>
+                <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+                  Copy
+                </button>
+              </div>
+
+              <!-- Action Buttons Row -->
+              <div class="flex items-center gap-2 pt-0.5">
+                ${isShared ? `
+                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <span>✓</span> Mark as Redeemed
+                  </button>
+                  <button onclick="dismissSharedActivity('${act.code}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1" title="Remove from activity log">
+                    <span>✕</span> Dismiss
+                  </button>
+                ` : ''}
+
+                ${isIngested ? `
+                  <button onclick="shareSingle('${act.code}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <span>↗</span> Share via WhatsApp
+                  </button>
+                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1">
+                    <span>✓</span> Redeem
+                  </button>
+                ` : ''}
+
+                ${isRedeemed ? `
+                  <button onclick="undoRedemption('${act.code}', '${act.brand || act.originalTab}')" class="flex-1 py-1.5 px-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs hover:bg-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <span>↶</span> Restore to Sheet (${act.originalTab || act.brand})
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('') : `
+          <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
+            <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
+              ⚡
+            </div>
+            <h4 class="font-bold text-sm text-neutral-200">No activity recorded yet</h4>
+            <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+              Synced vouchers from Gmail and vouchers you share to merchants will appear here.
+            </p>
+          </div>
+        `;
+
+        renderDeckSelector();
+        return;
+      }
+
+      // Normal Brand Tab Feed
+      let vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        vs = vs.filter(v => 
+          v.brand.toLowerCase().includes(q) ||
+          v.code.toLowerCase().includes(q) ||
+          (v.pin && v.pin.toLowerCase().includes(q))
+        );
+      }
+
       if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
       if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = vs.length;
 
@@ -1533,20 +2003,6 @@
         document.getElementById('dt-sel-sum').textContent = `Total: ₹${selSum.toLocaleString()}`;
       } else {
         dtBar.classList.add('hidden');
-      }
-
-      // Mobile Sticky Batch Bar (if present)
-      const mbBar = document.getElementById('mb-sticky-bar');
-      if (mbBar) {
-        if (state.isSelectMode && sel.length) {
-          mbBar.classList.remove('hidden');
-          const mbSelCount = document.getElementById('mb-sel-count');
-          if (mbSelCount) mbSelCount.textContent = `${sel.length} Selected`;
-          const mbSelSum = document.getElementById('mb-sel-sum');
-          if (mbSelSum) mbSelSum.textContent = `₹${selSum.toLocaleString()} Total`;
-        } else {
-          mbBar.classList.add('hidden');
-        }
       }
 
       // Desktop Table Body
@@ -1569,11 +2025,7 @@
             ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
           </td>
           <td class="p-3 text-xs" style="color: var(--label-secondary);">
-            ${isRecentTab && v.timestampIST ? `
-              <span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[11px] font-mono-apple inline-block">
-                ⏱ Ingested: ${v.timestampIST}
-              </span>
-            ` : (v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active'))}
+            ${v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
           <td class="p-3">
             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-emerald-400 bg-emerald-950/60'}">
@@ -1582,23 +2034,13 @@
           </td>
           <td class="p-3 text-right">
             <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
-            <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Used'}</button>
+            <button onclick="markVoucherAsRedeemed('${v.code}', '${vBrandName}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
           </td>
         </tr>
       `;
-      }).join('') : (isRecentTab ? `
-        <tr>
-          <td colspan="6" class="p-12 text-center">
-            <div class="max-w-md mx-auto space-y-2">
-              <div class="text-2xl text-amber-400 mb-1">⚡</div>
-              <div class="font-bold text-sm text-neutral-200">No newly synced vouchers yet</div>
-              <p class="text-xs text-neutral-400 leading-relaxed">Forwarded or auto-synced vouchers will automatically appear here with their arrival timestamp.</p>
-            </div>
-          </td>
-        </tr>
-      ` : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`);
+      }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
 
-      // Mobile VIP Wallet Cards (Luxury Pass Aesthetic, High Tactile Feedback)
+      // Mobile VIP Wallet Cards
       document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
         const isFF = normalizeBrandKey(v.brand) === 'FourFountains';
@@ -1607,35 +2049,19 @@
 
         return `
           <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''} ${v.status === 'USED' ? 'opacity-40' : ''}">
-            <!-- Top Row: Checkbox, PASS # or Brand Badge, Status -->
+            <!-- Top Row: Checkbox, PASS #, Status -->
             <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">` : ''}
-                ${isRecentTab ? `
-                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
-                    ${vBrandName}${v.amount > 0 ? ` · ₹${v.amount.toLocaleString()}` : ''}
-                  </span>
-                ` : `
-                  <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
-                `}
+                <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
               <div class="flex items-center gap-1.5">
-                ${!isRecentTab ? (
-                  isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)
-                ) : ''}
+                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'}">
                   ${v.status}
                 </span>
               </div>
             </div>
-
-            <!-- Ingested Timestamp Badge (ONLY for Recently Added Tab) -->
-            ${isRecentTab && v.timestampIST ? `
-              <div class="flex items-center justify-between text-[10px] font-mono-apple text-amber-300/90 bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                <span>⏱ Ingested: ${v.timestampIST}</span>
-                <span class="text-neutral-400 font-sans">${v.redeemedOn ? `Redeemed: ${v.redeemedOn}` : (v.expiry || 'Active')}</span>
-              </div>
-            ` : ''}
 
             <!-- Embossed Monospace Code Box (Tap anywhere to copy) -->
             <div onclick="copyToClipboard('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
@@ -1655,25 +2081,19 @@
                 Copy
               </button>
             </div>
+
+            <!-- Card Action Bar: Share & Mark Redeemed -->
+            <div class="flex items-center gap-2 pt-0.5">
+              <button onclick="shareSingle('${v.id}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/25 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                <span>↗</span> Share via WhatsApp
+              </button>
+              <button onclick="markVoucherAsRedeemed('${v.code}', '${vBrandName}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1">
+                <span>✓</span> Mark Redeemed
+              </button>
+            </div>
           </div>
         `;
-      }).join('') : (isRecentTab ? `
-        <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
-          <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
-            ⚡
-          </div>
-          <h4 class="font-bold text-sm text-neutral-200">No newly synced vouchers yet</h4>
-          <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
-            Forwarded or auto-synced vouchers will automatically appear here with their arrival timestamp.
-          </p>
-          <div class="pt-2">
-            <button onclick="syncWithGoogleSheets()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 inline-flex items-center gap-1.5 active:scale-95 transition-all">
-              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              Check Gmail & Sync Now
-            </button>
-          </div>
-        </div>
-      ` : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`);
+      }).join('') : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
 
       // Update badge on floating WhatsApp FAB
       const fabBadge = document.getElementById('mb-hover-badge');
@@ -1720,15 +2140,15 @@
 
       // Live counts by normalized brand key
       const counts = {};
-      let recentCount = 0;
+      let ingestedCount = 0;
       state.vouchers.forEach(v => {
         const k = normalizeBrandKey(v.brand);
         counts[k] = (counts[k] || 0) + 1;
         if (v.timestampIST && String(v.timestampIST).trim() !== '') {
-          recentCount++;
+          ingestedCount++;
         }
       });
-      counts['RecentlyAdded'] = recentCount;
+      counts['ActivityLog'] = ingestedCount + sharedActivity.length;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
@@ -1738,7 +2158,7 @@
           <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : (isSpecial ? 'bg-neutral-900 text-amber-300 border border-amber-500/40 hover:border-amber-400' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700')}">
             <div class="truncate max-w-[125px]">${item.name}</div>
             <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : (isSpecial ? 'text-amber-400/90 font-medium' : 'text-neutral-400')} font-normal mt-0.5">
-              ${isSpecial ? `${count} new` : `${count} vouchers`}
+              ${isSpecial ? `${count} active` : `${count} vouchers`}
             </div>
           </button>
         `;
@@ -1749,7 +2169,7 @@
     function copyCurrentBrandBatch() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let vs;
-      if (normKey === 'RecentlyAdded') {
+      if (normKey === 'ActivityLog') {
         vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
         if (!vs.length) vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
       } else {
@@ -1969,7 +2389,7 @@
     function shareSelectedWithShareSheet() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let brandVouchers;
-      if (normKey === 'RecentlyAdded') {
+      if (normKey === 'ActivityLog') {
         brandVouchers = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
         const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
         const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
@@ -1978,13 +2398,17 @@
           showToast("No vouchers to share");
           return;
         }
+        targets.forEach(v => {
+          logSharedActivity(v.code, v.brand, v.amount, v.pin);
+        });
         const text = fmtWhatsApp(targets);
         if (navigator.share) {
           navigator.share({
-            title: 'Recently Added RuPay Vouchers',
+            title: 'Shared RuPay Vouchers',
             text: text
           }).then(() => {
-            showToast('Shared successfully');
+            showToast('Shared & logged to Activity Log');
+            renderDeckSelector();
           }).catch(err => {
             if (err && err.name !== 'AbortError') {
               openWhatsAppDirect(text);
@@ -2006,6 +2430,10 @@
         return;
       }
 
+      targets.forEach(v => {
+        logSharedActivity(v.code, v.brand, v.amount, v.pin);
+      });
+
       const text = fmtWhatsApp(targets);
 
       if (navigator.share) {
@@ -2013,7 +2441,8 @@
           title: `${getBrandDisplayName(normKey)} Vouchers`,
           text: text
         }).then(() => {
-          showToast('Shared successfully');
+          showToast('Shared & logged to Activity Log');
+          renderDeckSelector();
         }).catch(err => {
           if (err && err.name !== 'AbortError') {
             openWhatsAppDirect(text);
@@ -2053,7 +2482,8 @@
 
     function getBrandDisplayName(brand) {
       const map = {
-        'recentlyadded': '⚡ Recently Added',
+        'activitylog': '⚡ Activity Log',
+        'recentlyadded': '⚡ Activity Log',
         'lakme': 'Lakmé Salon',
         'fourfountains': 'Four Fountains',
         'kalyan': 'Kalyan Jewellers',
@@ -2087,9 +2517,9 @@
       }
 
       const distinctBrands = new Set(vs.map(v => normalizeBrandKey(v.brand)));
-      const isMultiBrand = distinctBrands.size > 1 || normalizeBrandKey(state.activeFilterBrand) === 'RecentlyAdded';
-      const brandName = isMultiBrand ? 'Recently Added Vouchers' : getBrandDisplayName(vs[0].brand);
-      const title = isMultiBrand ? '⚡ Recently Added RuPay Vouchers' : (vs.length === 1 ? `${brandName} Voucher` : `${brandName} Vouchers`);
+      const isMultiBrand = distinctBrands.size > 1 || normalizeBrandKey(state.activeFilterBrand) === 'ActivityLog';
+      const brandName = isMultiBrand ? 'Shared RuPay Vouchers' : getBrandDisplayName(vs[0].brand);
+      const title = isMultiBrand ? '⚡ Shared RuPay Vouchers' : (vs.length === 1 ? `${brandName} Voucher` : `${brandName} Vouchers`);
       
       let lines = [title, ''];
       vs.forEach((v, i) => {
@@ -2162,10 +2592,34 @@
     }
 
     function shareSingle(id) {
-      const v = state.vouchers.find(x => x.id === id);
+      let v = state.vouchers.find(x => x.id === id);
+      if (!v) {
+        v = state.vouchers.find(x => x.code === id);
+      }
+      if (!v) {
+        const s = sharedActivity.find(x => x.code === id);
+        if (s) v = s;
+      }
       if (!v) return;
-      document.getElementById('share-preview-text').value = fmtWhatsApp([v]);
-      document.getElementById('modal-share').classList.remove('hidden');
+
+      logSharedActivity(v.code, v.brand, v.amount, v.pin);
+
+      const text = fmtWhatsApp([v]);
+      if (navigator.share) {
+        navigator.share({
+          title: `${getBrandDisplayName(v.brand)} Voucher`,
+          text: text
+        }).then(() => {
+          showToast('Shared & logged to Activity Log');
+          renderDeckSelector();
+        }).catch(() => {
+          document.getElementById('share-preview-text').value = text;
+          document.getElementById('modal-share').classList.remove('hidden');
+        });
+      } else {
+        document.getElementById('share-preview-text').value = text;
+        document.getElementById('modal-share').classList.remove('hidden');
+      }
     }
 
     function copyBatchPlaintext() {

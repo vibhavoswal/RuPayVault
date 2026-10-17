@@ -8,10 +8,14 @@ const SENDER_EMAIL = "rupay@truztee.com";
 const IST_TIMEZONE = "Asia/Kolkata";
 const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
 
-// Brands that require a PIN column vs Brands that do not
-const BRANDS_WITH_PIN = new Set([
-  "Lakme", "FourFountains", "Kalyan", "Myntra", "Apollo", "BigBasket"
-]);
+// Standard Unified Column Schemas
+const UNIFIED_BRAND_HEADERS = [
+  "#", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"
+];
+
+const UNIFIED_REDEEMED_HEADERS = [
+  "#", "Brand", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Redeemed Timestamp (IST)", "Original Tab"
+];
 
 /**
  * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
@@ -185,20 +189,16 @@ function queueUnassignedRedemption(ss, data) {
 }
 
 /**
- * 3. BRAND TAB FULFILLMENT (With IST Timestamp)
+ * 3. BRAND TAB FULFILLMENT (Standard 10 Columns)
  */
 function fulfillVoucherCode(ss, data) {
   const brand = data.brand;
-  const hasPin = BRANDS_WITH_PIN.has(brand);
   let sheet = ss.getSheetByName(brand);
 
   if (!sheet) {
     sheet = ss.insertSheet(brand);
-    const headers = hasPin 
-      ? ["#", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"]
-      : ["#", "Booking ID", "Code", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"];
-    sheet.appendRow(headers);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#F3F4F6");
+    sheet.appendRow(UNIFIED_BRAND_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
     sheet.setFrozenRows(1);
   }
 
@@ -206,25 +206,33 @@ function fulfillVoucherCode(ss, data) {
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][1] === data.bookingId) {
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
-      if (hasPin && data.pin) {
+      if (data.pin) {
         sheet.getRange(i + 1, 4).setValue(`'${data.pin}`);
       }
-      const statusCol = hasPin ? 9 : 8;
-      sheet.getRange(i + 1, statusCol).setValue("ACTIVE");
-      sheet.getRange(i + 1, statusCol + 1).setValue(formatISTTimestamp(new Date()));
+      sheet.getRange(i + 1, 9).setValue("ACTIVE");
+      sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
       return;
     }
   }
 
   const nextNum = rows.length;
-  const rowData = hasPin 
-    ? [nextNum, data.bookingId, `'${data.code}`, data.pin ? `'${data.pin}` : "", data.amount || 500, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())]
-    : [nextNum, data.bookingId, `'${data.code}`, data.amount || 100, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())];
+  const rowData = [
+    nextNum,
+    data.bookingId,
+    `'${data.code}`,
+    data.pin ? `'${data.pin}` : "",
+    data.amount || 500,
+    data.dateOfIssue,
+    data.account,
+    "Unassigned",
+    "ACTIVE",
+    formatISTTimestamp(new Date())
+  ];
   sheet.appendRow(rowData);
 }
 
 /**
- * 4. ASSIGN CARD IN BULK (Called by Swift App)
+ * 4. ASSIGN CARD IN BULK (Called by App)
  */
 function assignCardToRedemptions(ss, assignments) {
   const unassignedSheet = ss.getSheetByName("⚡ Unassigned");
@@ -242,23 +250,28 @@ function assignCardToRedemptions(ss, assignments) {
         const dateOfIssue = uRows[i][4];
         const cardName = assign.card;
 
-        const hasPin = BRANDS_WITH_PIN.has(brand);
         let bSheet = ss.getSheetByName(brand);
         if (!bSheet) {
           bSheet = ss.insertSheet(brand);
-          const headers = hasPin 
-            ? ["#", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"]
-            : ["#", "Booking ID", "Code", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"];
-          bSheet.appendRow(headers);
-          bSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+          bSheet.appendRow(UNIFIED_BRAND_HEADERS);
+          bSheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
           bSheet.setFrozenRows(1);
         }
 
         const bRows = bSheet.getDataRange().getValues();
         const nextNum = bRows.length;
-        const rowData = hasPin
-          ? [nextNum, assign.bookingId, "PENDING_DELIVERY", "", amount, dateOfIssue, account, cardName, "PENDING", formatISTTimestamp(new Date())]
-          : [nextNum, assign.bookingId, "PENDING_DELIVERY", amount, dateOfIssue, account, cardName, "PENDING", formatISTTimestamp(new Date())];
+        const rowData = [
+          nextNum,
+          assign.bookingId,
+          "PENDING_DELIVERY",
+          "",
+          amount,
+          dateOfIssue,
+          account,
+          cardName,
+          "PENDING",
+          formatISTTimestamp(new Date())
+        ];
         bSheet.appendRow(rowData);
 
         toDelete.push(i + 1);
@@ -296,7 +309,66 @@ function updateCooldownTab(ss, account) {
 }
 
 /**
- * 6. REST API FOR SWIFT APP (GET / POST)
+ * 6. MIGRATION TO UNIFIED 10-COLUMN SCHEMA ACROSS ALL TABS
+ */
+function migrateSheetsToUnifiedSchema(ss) {
+  const sheets = ss.getSheets();
+  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns"]);
+  
+  // 1. Ensure master "Redeemed" tab exists with 12 columns
+  let redeemedSheet = ss.getSheetByName("Redeemed");
+  if (!redeemedSheet) {
+    redeemedSheet = ss.insertSheet("Redeemed");
+    redeemedSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
+    redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+    redeemedSheet.setFrozenRows(1);
+  }
+
+  const report = [];
+  let totalMigratedVouchers = 0;
+
+  for (const sheet of sheets) {
+    const name = sheet.getName();
+    if (systemSheets.has(name) || name === "Redeemed") continue;
+
+    const lastCol = sheet.getLastColumn();
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 1) continue;
+
+    const rawHeaders = sheet.getRange(1, 1, 1, Math.max(lastCol, 1)).getValues()[0];
+    const headers = rawHeaders.map(h => String(h).trim().toLowerCase());
+    
+    // Check if "PIN" column exists
+    const pinColIndex = headers.findIndex(h => h === "pin" || h === "coupon pin" || h === "voucher pin");
+
+    if (pinColIndex === -1) {
+      // 9-column sheet missing PIN: Col 1=#, Col 2=Booking ID, Col 3=Code, Col 4=Value...
+      // Safely insert PIN column before column 4 (Column D)
+      sheet.insertColumnBefore(4);
+      sheet.getRange(1, 4).setValue("PIN").setFontWeight("bold").setBackground("#F3F4F6");
+      report.push({ brand: name, status: "INSERTED_PIN_COLUMN", rows: lastRow - 1 });
+    } else {
+      report.push({ brand: name, status: "ALREADY_HAD_PIN_COLUMN", rows: lastRow - 1 });
+    }
+
+    totalMigratedVouchers += Math.max(0, lastRow - 1);
+
+    // Standardize row 1 headers to UNIFIED_BRAND_HEADERS
+    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setValues([UNIFIED_BRAND_HEADERS]);
+    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+    sheet.setFrozenRows(1);
+  }
+
+  return {
+    success: true,
+    totalVouchersInSheet: totalMigratedVouchers,
+    report: report,
+    migratedAt: formatISTTimestamp(new Date())
+  };
+}
+
+/**
+ * 7. REST API (GET / POST)
  */
 function doGet(e) {
   // SECURITY CHECK: Enforce Vault Auth Token
@@ -306,14 +378,24 @@ function doGet(e) {
       error: "Unauthorized: Invalid or missing vault authentication token.",
       vouchers: [],
       cooldowns: [],
-      unassigned: []
+      unassigned: [],
+      redeemed: []
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // ON-DEMAND REAL-TIME EMAIL INGESTION:
-  // Runs immediately on sync call to ingest any new direct or forwarded emails (< 2s latency)
+  // One-off migration trigger via GET if requested
+  if (e && e.parameter && e.parameter.migrate === "true") {
+    try {
+      const migRes = migrateSheetsToUnifiedSchema(ss);
+      return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Migration error: " + err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // ON-DEMAND REAL-TIME EMAIL INGESTION
   if (!e || !e.parameter || e.parameter.ingest !== "false") {
     try {
       processRupayEmails();
@@ -327,7 +409,8 @@ function doGet(e) {
     sheetUrl: ss.getUrl(),
     unassigned: [],
     cooldowns: [],
-    vouchers: []
+    vouchers: [],
+    redeemed: []
   };
 
   for (const sheet of sheets) {
@@ -352,20 +435,39 @@ function doGet(e) {
           lastRedeemed: rows[i][1]
         });
       }
-    } else {
-      const hasPin = BRANDS_WITH_PIN.has(name);
+    } else if (name === "Redeemed") {
+      // 12-Column Unified Redeemed Archive
       for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][3] || String(rows[i][3]).trim() === "") continue;
+        result.redeemed.push({
+          brand: String(rows[i][1] || ''),
+          bookingId: String(rows[i][2] || ''),
+          code: String(rows[i][3] || ''),
+          pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
+          amount: Number(rows[i][5]) || 0,
+          dateOfIssue: rows[i][6] ? String(rows[i][6]) : '',
+          account: rows[i][7] ? String(rows[i][7]) : '',
+          card: rows[i][8] ? String(rows[i][8]) : '',
+          status: "REDEEMED",
+          redeemedTimestampIST: rows[i][10] ? String(rows[i][10]) : '',
+          originalTab: String(rows[i][11] || rows[i][1] || '')
+        });
+      }
+    } else {
+      // Uniform 10-Column Brand Tabs
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][2] || String(rows[i][2]).trim() === "") continue;
         result.vouchers.push({
           brand: name,
-          bookingId: String(rows[i][1]),
-          code: String(rows[i][2]),
-          pin: hasPin ? String(rows[i][3]) : null,
-          amount: hasPin ? rows[i][4] : rows[i][3],
-          dateOfIssue: hasPin ? rows[i][5] : rows[i][4],
-          account: hasPin ? rows[i][6] : rows[i][5],
-          card: hasPin ? rows[i][7] : rows[i][6],
-          status: hasPin ? rows[i][8] : rows[i][7],
-          timestampIST: hasPin ? rows[i][9] : rows[i][8]
+          bookingId: String(rows[i][1] || ''),
+          code: String(rows[i][2] || ''),
+          pin: rows[i][3] && String(rows[i][3]).trim() !== '' && String(rows[i][3]).trim() !== 'null' ? String(rows[i][3]).trim() : null,
+          amount: Number(rows[i][4]) || 0,
+          dateOfIssue: rows[i][5] ? String(rows[i][5]) : '',
+          account: rows[i][6] ? String(rows[i][6]) : '',
+          card: rows[i][7] ? String(rows[i][7]) : '',
+          status: rows[i][8] ? String(rows[i][8]) : 'ACTIVE',
+          timestampIST: rows[i][9] ? String(rows[i][9]) : null
         });
       }
     }
@@ -375,7 +477,6 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  // SECURITY CHECK: Enforce Vault Auth Token
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
     const data = JSON.parse(e.postData.contents);
@@ -386,26 +487,119 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 1. Run Migration on Demand
+    if (data.action === "MIGRATE_UNIFIED_SCHEMA") {
+      const migRes = migrateSheetsToUnifiedSchema(ss);
+      return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 2. Assign Cards to Redemptions
     if (data.action === "ASSIGN_CARDS") {
       const res = assignCardToRedemptions(ss, data.assignments);
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
-    if (data.action === "MARK_REDEEMED") {
-      let bSheet = ss.getSheetByName(data.brand);
-      if (bSheet) {
-        const rows = bSheet.getDataRange().getValues();
-        const hasPin = BRANDS_WITH_PIN.has(data.brand);
-        const statusCol = hasPin ? 9 : 8;
-        for (let i = 1; i < rows.length; i++) {
-          if (rows[i][1] === data.bookingId || rows[i][2] === data.code) {
-            bSheet.getRange(i + 1, statusCol).setValue("USED");
-            bSheet.getRange(i + 1, statusCol + 1).setValue(formatISTTimestamp(new Date()));
-            break;
-          }
+
+    // 3. Move Voucher to "Redeemed" Tab (Approach A - Cut & Paste)
+    if (data.action === "MOVE_TO_REDEEMED") {
+      const bSheet = ss.getSheetByName(data.brand);
+      if (!bSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Brand tab not found: " + data.brand
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      let rSheet = ss.getSheetByName("Redeemed");
+      if (!rSheet) {
+        rSheet = ss.insertSheet("Redeemed");
+        rSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
+        rSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+        rSheet.setFrozenRows(1);
+      }
+
+      const rows = bSheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][2] === data.code || rows[i][1] === data.bookingId) {
+          const row = rows[i];
+          const redeemedRow = [
+            rSheet.getLastRow(),                    // A: #
+            data.brand,                             // B: Brand
+            row[1],                                 // C: Booking ID
+            `'${row[2]}`,                           // D: Code
+            row[3] ? `'${row[3]}` : "",             // E: PIN
+            row[4],                                 // F: Value
+            row[5],                                 // G: Date of Issue
+            row[6],                                 // H: Account
+            row[7],                                 // I: Card
+            "REDEEMED",                             // J: Status
+            formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
+            data.brand                              // L: Original Tab
+          ];
+          rSheet.appendRow(redeemedRow);
+          bSheet.deleteRow(i + 1); // Delete from active brand tab
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            action: "MOVE_TO_REDEEMED",
+            code: data.code,
+            brand: data.brand
+          })).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput(JSON.stringify({ success: true })).setMimeType(ContentService.MimeType.JSON);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        error: "Voucher not found in " + data.brand
+      })).setMimeType(ContentService.MimeType.JSON);
     }
+
+    // 4. Undo Redemption (Restore to Brand Tab)
+    if (data.action === "UNDO_REDEEM") {
+      const rSheet = ss.getSheetByName("Redeemed");
+      if (!rSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Redeemed sheet not found"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const rRows = rSheet.getDataRange().getValues();
+      for (let i = 1; i < rRows.length; i++) {
+        if (rRows[i][3] === data.code || rRows[i][2] === data.bookingId) {
+          const origBrand = String(rRows[i][11] || rRows[i][1]);
+          let bSheet = ss.getSheetByName(origBrand);
+          if (!bSheet) {
+            bSheet = ss.insertSheet(origBrand);
+            bSheet.appendRow(UNIFIED_BRAND_HEADERS);
+            bSheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+            bSheet.setFrozenRows(1);
+          }
+
+          const restoredRow = [
+            bSheet.getLastRow(),                    // A: #
+            rRows[i][2],                            // B: Booking ID
+            `'${rRows[i][3]}`,                      // C: Code
+            rRows[i][4] ? `'${rRows[i][4]}` : "",   // D: PIN
+            rRows[i][5],                            // E: Value
+            rRows[i][6],                            // F: Date of Issue
+            rRows[i][7],                            // G: Account
+            rRows[i][8],                            // H: Card
+            "ACTIVE",                               // I: Status
+            formatISTTimestamp(new Date())          // J: Appended Timestamp (IST)
+          ];
+
+          bSheet.appendRow(restoredRow);
+          rSheet.deleteRow(i + 1); // Remove from Redeemed sheet
+          return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            action: "UNDO_REDEEM",
+            code: data.code,
+            brand: origBrand
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        error: "Voucher not found in Redeemed sheet"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
   }
