@@ -6,6 +6,7 @@
 
 const SENDER_EMAIL = "rupay@truztee.com";
 const IST_TIMEZONE = "Asia/Kolkata";
+const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
 
 // Brands that require a PIN column vs Brands that do not
 const BRANDS_WITH_PIN = new Set([
@@ -298,6 +299,17 @@ function updateCooldownTab(ss, account) {
  * 6. REST API FOR SWIFT APP (GET / POST)
  */
 function doGet(e) {
+  // SECURITY CHECK: Enforce Vault Auth Token
+  const providedAuth = (e && e.parameter) ? (e.parameter.auth || e.parameter.key || e.parameter.token || "") : "";
+  if (providedAuth !== VAULT_AUTH_KEY) {
+    return ContentService.createTextOutput(JSON.stringify({
+      error: "Unauthorized: Invalid or missing vault authentication token.",
+      vouchers: [],
+      cooldowns: [],
+      unassigned: []
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   // ON-DEMAND REAL-TIME EMAIL INGESTION:
@@ -363,9 +375,17 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  // SECURITY CHECK: Enforce Vault Auth Token
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
     const data = JSON.parse(e.postData.contents);
+    const providedAuth = data.auth || data.token || (e.parameter ? (e.parameter.auth || e.parameter.key) : "") || "";
+    if (providedAuth !== VAULT_AUTH_KEY) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: "Unauthorized: Invalid or missing vault authentication token."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (data.action === "ASSIGN_CARDS") {
       const res = assignCardToRedemptions(ss, data.assignments);
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);

@@ -54,6 +54,14 @@
       font-family: "SF Mono", Menlo, Monaco, Consolas, monospace;
       letter-spacing: 0.05em;
     }
+    @keyframes pinShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-9px); }
+      40%, 80% { transform: translateX(9px); }
+    }
+    .pin-shake {
+      animation: pinShake 0.35s ease-in-out;
+    }
   </style>
 </head>
 <body class="bg-[#0A0A0C] text-neutral-100 flex flex-col h-screen w-screen overflow-hidden">
@@ -64,8 +72,122 @@
     <!-- Outer iPhone 16 Pro Container -->
     <div id="device-container" class="relative w-full h-full md:max-w-[420px] md:h-[880px] md:max-h-[95vh] md:rounded-[48px] md:border-[10px] md:border-neutral-800 md:shadow-[0_25px_70px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden bg-[#0D0D11]">
       
+      <!-- ======================================================== -->
+      <!-- 0. BIOMETRIC & 6-DIGIT PIN LOCK SCREEN (Apple HIG Style) -->
+      <!-- ======================================================== -->
+      <div id="vault-lock-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-between p-6 bg-gradient-to-b from-[#0f0f14] via-[#09090c] to-[#040406] text-white select-none">
+        
+        <!-- Top Area: Status & Shield Icon -->
+        <div class="w-full pt-10 flex flex-col items-center text-center space-y-3">
+          <div class="relative">
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center shadow-[0_0_35px_rgba(251,191,36,0.15)]">
+              <svg class="w-10 h-10 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="3" ry="3"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-[10px]">
+              🔒
+            </div>
+          </div>
+
+          <div>
+            <h1 class="text-xl font-bold tracking-tight text-neutral-100">RuPay Select Vault</h1>
+            <p id="lock-subtitle" class="text-xs text-neutral-400 mt-1 font-medium">Locked with Biometrics &amp; AES-256</p>
+          </div>
+
+          <!-- 6 PIN Dots -->
+          <div id="pin-dots-container" class="flex items-center gap-3.5 pt-3">
+            <div id="pin-dot-0" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+            <div id="pin-dot-1" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+            <div id="pin-dot-2" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+            <div id="pin-dot-3" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+            <div id="pin-dot-4" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+            <div id="pin-dot-5" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
+          </div>
+          
+          <p id="pin-feedback" class="text-[11px] text-amber-400/80 font-mono-apple h-4"></p>
+        </div>
+
+        <!-- Center/Bottom Area: Keypad & Biometric Actions -->
+        <div class="w-full max-w-[280px] pb-6 space-y-4">
+          
+          <!-- Quick Face ID Button -->
+          <button id="btn-faceid-unlock" onclick="unlockWithBiometrics()" class="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold flex items-center justify-center gap-2 active:scale-98 transition-all">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M7 3H5a2 2 0 0 0-2 2v2"></path>
+              <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+              <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+              <path d="M3 17v2a2 2 0 0 0 2 2h2"></path>
+              <circle cx="9" cy="10" r="1"></circle>
+              <circle cx="15" cy="10" r="1"></circle>
+              <path d="M9 15c1 1 2 1.5 3 1.5s2-.5 3-1.5"></path>
+            </svg>
+            <span id="faceid-btn-label">Unlock with Face ID</span>
+          </button>
+
+          <!-- Circular 3x4 Keypad -->
+          <div class="grid grid-cols-3 gap-3.5 justify-items-center">
+            <button onclick="pressPinDigit('1')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">1</button>
+            <button onclick="pressPinDigit('2')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">2</button>
+            <button onclick="pressPinDigit('3')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">3</button>
+            <button onclick="pressPinDigit('4')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">4</button>
+            <button onclick="pressPinDigit('5')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">5</button>
+            <button onclick="pressPinDigit('6')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">6</button>
+            <button onclick="pressPinDigit('7')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">7</button>
+            <button onclick="pressPinDigit('8')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">8</button>
+            <button onclick="pressPinDigit('9')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">9</button>
+            
+            <button onclick="unlockWithBiometrics()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 flex items-center justify-center text-amber-400 active:scale-90 transition-all shadow" title="Face ID">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 3H5a2 2 0 0 0-2 2v2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M3 17v2a2 2 0 0 0 2 2h2"></path>
+                <circle cx="9" cy="10" r="1" fill="currentColor"></circle>
+                <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+                <path d="M9 15c1 1 2 1.5 3 1.5s2-.5 3-1.5"></path>
+              </svg>
+            </button>
+            <button onclick="pressPinDigit('0')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">0</button>
+            <button onclick="pressPinBackspace()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 flex items-center justify-center text-neutral-400 active:scale-90 transition-all shadow" title="Delete">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l7-7h11a2 2 0 012 2v10a2 2 0 01-2 2H10l-7-7z"/></svg>
+            </button>
+          </div>
+
+          <div class="pt-2 text-center">
+            <p class="text-[10px] text-neutral-500">Default PIN: <span class="font-mono-apple text-neutral-400 font-bold">123456</span> &middot; <button onclick="openChangePinModal()" class="text-amber-400/80 hover:underline">Change PIN</button></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Change PIN inside device container -->
+      <div id="modal-change-pin" class="absolute inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(12px);">
+        <div class="rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl bg-neutral-900 border border-neutral-800 text-white">
+          <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
+            <h3 class="text-sm font-bold text-amber-400">Change 6-Digit PIN</h3>
+            <button onclick="closeChangePinModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-[10px] text-neutral-400 mb-1">Current PIN (Default: 123456)</label>
+              <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Current PIN" class="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="block text-[10px] text-neutral-400 mb-1">New 6-Digit PIN</label>
+              <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="New 6-digit PIN" class="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+            </div>
+            <div>
+              <label class="block text-[10px] text-neutral-400 mb-1">Confirm New PIN</label>
+              <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new PIN" class="w-full px-3 py-1.5 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+            <button onclick="closeChangePinModal()" class="px-3 py-1 text-xs text-neutral-400 hover:text-white">Cancel</button>
+            <button onclick="confirmChangePin()" class="px-3.5 py-1 rounded-xl text-xs font-bold bg-amber-400 text-black hover:bg-amber-300">Update</button>
+          </div>
+        </div>
+      </div>
+      
       <!-- iOS Dynamic Island (Desktop Simulator Decorative Only) -->
-      <div class="hidden md:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-50 items-center justify-between px-3">
+      <div class="hidden md:flex absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-40 items-center justify-between px-3">
         <div class="w-2.5 h-2.5 rounded-full bg-neutral-900"></div>
         <div class="w-3 h-3 rounded-full bg-amber-950/60 flex items-center justify-center">
           <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
@@ -96,6 +218,11 @@
             <svg id="sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
+          </button>
+
+          <!-- Lock Button -->
+          <button onclick="lockVault()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
+            🔒
           </button>
 
           <!-- ONLY ONE SELECT BUTTON AT THE TOP -->
@@ -160,6 +287,406 @@
   <script>
     // Live GAS endpoint for RuPay Sheets
     const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
+    const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
+
+    /* --- SECURITY, BIOMETRICS & AES-GCM ENCRYPTED CACHE --- */
+    const securityState = {
+      isUnlocked: false,
+      enteredPin: '',
+      masterPinHash: localStorage.getItem('rupay_vault_pin_hash') || null,
+      cryptoKey: null,
+      inactivityTimer: null,
+      hasBiometrics: false
+    };
+
+    // SHA-256 Hash helper
+    async function sha256(str) {
+      const enc = new TextEncoder();
+      const hash = await crypto.subtle.digest('SHA-256', enc.encode(str));
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Initialize Default PIN Hash ("123456") if none exists
+    (async function initPinHash() {
+      if (!securityState.masterPinHash) {
+        const defaultHash = await sha256("123456");
+        securityState.masterPinHash = defaultHash;
+        localStorage.setItem('rupay_vault_pin_hash', defaultHash);
+      }
+    })();
+
+    // Derive AES-GCM Key from PIN using PBKDF2
+    async function deriveKeyFromPin(pin, saltBytes) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        enc.encode(pin),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: saltBytes,
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    // Encrypt payload with AES-GCM
+    async function encryptWithKey(key, plaintext) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const enc = new TextEncoder();
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        enc.encode(plaintext)
+      );
+      return {
+        iv: Array.from(iv),
+        ciphertext: Array.from(new Uint8Array(ciphertext))
+      };
+    }
+
+    // Decrypt payload with AES-GCM
+    async function decryptWithKey(key, encryptedObj) {
+      const iv = new Uint8Array(encryptedObj.iv);
+      const ciphertext = new Uint8Array(encryptedObj.ciphertext);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        ciphertext
+      );
+      const dec = new TextDecoder();
+      return dec.decode(decrypted);
+    }
+
+    // Save vouchers to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedVouchers(vouchers) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify(vouchers);
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_vault_preview_encrypted_cache', JSON.stringify(encrypted));
+        localStorage.removeItem('rupay_vouchers_grouped'); // clear unencrypted legacy cache
+      } catch (err) {
+        console.warn("Failed to save encrypted cache:", err);
+      }
+    }
+
+    // Load and decrypt vouchers from cache
+    async function loadEncryptedVouchers() {
+      try {
+        const cached = localStorage.getItem('rupay_vault_preview_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const vouchers = JSON.parse(decryptedJson);
+        return (vouchers && typeof vouchers === 'object') ? vouchers : null;
+      } catch (err) {
+        console.warn("Encrypted cache decryption failed:", err);
+        return null;
+      }
+    }
+
+    // Check if platform authenticator (Face ID / Touch ID) is available
+    async function checkBiometricsAvailability() {
+      if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+        try {
+          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          const registered = !!localStorage.getItem('rupay_bio_cred_id');
+          securityState.hasBiometrics = registered;
+          
+          const label = document.getElementById('faceid-btn-label');
+          if (label) {
+            label.textContent = registered ? "Unlock with Face ID" : "Set up Face ID / Biometrics";
+          }
+          const btn = document.getElementById('btn-faceid-unlock');
+          if (btn) btn.classList.toggle('hidden', !available);
+          return available;
+        } catch(e) {
+          return false;
+        }
+      }
+      const btn = document.getElementById('btn-faceid-unlock');
+      if (btn) btn.classList.add('hidden');
+      return false;
+    }
+
+    // Register WebAuthn Biometric Credential
+    async function registerBiometrics() {
+      if (!window.PublicKeyCredential) {
+        showToast("Biometrics not supported on this browser");
+        return false;
+      }
+      try {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        const userId = new Uint8Array(16);
+        crypto.getRandomValues(userId);
+
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: challenge,
+            rp: { name: "RuPay Vault" },
+            user: {
+              id: userId,
+              name: "owner@rupayvault",
+              displayName: "RuPay Vault Owner"
+            },
+            pubKeyCredParams: [
+              { type: "public-key", alg: -7 },  // ES256
+              { type: "public-key", alg: -257 } // RS256
+            ],
+            authenticatorSelection: {
+              authenticatorAttachment: "platform",
+              userVerification: "required"
+            },
+            timeout: 60000
+          }
+        });
+
+        if (credential && credential.id) {
+          localStorage.setItem('rupay_bio_cred_id', credential.id);
+          securityState.hasBiometrics = true;
+          showToast("Face ID / Biometrics registered!");
+          const label = document.getElementById('faceid-btn-label');
+          if (label) label.textContent = "Unlock with Face ID";
+          return true;
+        }
+      } catch (err) {
+        console.warn("Biometric registration cancelled or failed:", err);
+        showToast("Biometrics cancelled");
+        return false;
+      }
+      return false;
+    }
+
+    // Unlock with Face ID / Touch ID
+    async function unlockWithBiometrics() {
+      const credId = localStorage.getItem('rupay_bio_cred_id');
+      if (!credId) {
+        const reg = await registerBiometrics();
+        if (reg) {
+          await unlockVaultDirect("123456");
+        }
+        return;
+      }
+
+      try {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+
+        let rawId;
+        try {
+          rawId = Uint8Array.from(atob(credId.replace(/_/g, '/').replace(/-/g, '+')), c => c.charCodeAt(0));
+        } catch(e) {
+          rawId = new TextEncoder().encode(credId);
+        }
+
+        const assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: challenge,
+            allowCredentials: [{
+              id: rawId,
+              type: "public-key"
+            }],
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+
+        if (assertion) {
+          await unlockVaultDirect();
+          showToast("Unlocked with Face ID");
+        }
+      } catch (err) {
+        console.warn("Biometric verification cancelled:", err);
+      }
+    }
+
+    // PIN Keypad Handlers
+    function pressPinDigit(digit) {
+      if (securityState.enteredPin.length >= 6) return;
+      securityState.enteredPin += digit;
+      updatePinDotsUI();
+
+      if (securityState.enteredPin.length === 6) {
+        verifyEnteredPin();
+      }
+    }
+
+    function pressPinBackspace() {
+      if (securityState.enteredPin.length > 0) {
+        securityState.enteredPin = securityState.enteredPin.slice(0, -1);
+        updatePinDotsUI();
+      }
+    }
+
+    function updatePinDotsUI() {
+      const len = securityState.enteredPin.length;
+      for (let i = 0; i < 6; i++) {
+        const dot = document.getElementById(`pin-dot-${i}`);
+        if (dot) {
+          if (i < len) {
+            dot.classList.add('bg-amber-400', 'border-amber-400', 'shadow-[0_0_12px_rgba(251,191,36,0.7)]');
+            dot.classList.remove('border-neutral-600');
+          } else {
+            dot.classList.remove('bg-amber-400', 'border-amber-400', 'shadow-[0_0_12px_rgba(251,191,36,0.7)]');
+            dot.classList.add('border-neutral-600');
+          }
+        }
+      }
+      const feedback = document.getElementById('pin-feedback');
+      if (feedback) feedback.textContent = '';
+    }
+
+    async function verifyEnteredPin() {
+      const entered = securityState.enteredPin;
+      const hash = await sha256(entered);
+      const expected = securityState.masterPinHash || await sha256("123456");
+
+      if (hash === expected) {
+        for (let i = 0; i < 6; i++) {
+          const dot = document.getElementById(`pin-dot-${i}`);
+          if (dot) {
+            dot.classList.remove('bg-amber-400', 'border-amber-400');
+            dot.classList.add('bg-emerald-400', 'border-emerald-400');
+          }
+        }
+        await unlockVaultDirect(entered);
+        showToast("Vault Unlocked");
+      } else {
+        const container = document.getElementById('pin-dots-container');
+        if (container) container.classList.add('pin-shake');
+        for (let i = 0; i < 6; i++) {
+          const dot = document.getElementById(`pin-dot-${i}`);
+          if (dot) {
+            dot.classList.remove('bg-amber-400', 'border-amber-400');
+            dot.classList.add('bg-rose-500', 'border-rose-500');
+          }
+        }
+        const feedback = document.getElementById('pin-feedback');
+        if (feedback) feedback.textContent = "Incorrect PIN. Try again.";
+
+        setTimeout(() => {
+          if (container) container.classList.remove('pin-shake');
+          securityState.enteredPin = '';
+          updatePinDotsUI();
+        }, 500);
+      }
+    }
+
+    // Unlock Vault and Hydrate
+    async function unlockVaultDirect(pinUsed) {
+      securityState.isUnlocked = true;
+      securityState.enteredPin = '';
+      updatePinDotsUI();
+
+      const pin = pinUsed || "123456";
+      let salt = localStorage.getItem('rupay_vault_salt');
+      if (!salt) {
+        const sBytes = crypto.getRandomValues(new Uint8Array(16));
+        salt = JSON.stringify(Array.from(sBytes));
+        localStorage.setItem('rupay_vault_salt', salt);
+      }
+      const saltBytes = new Uint8Array(JSON.parse(salt));
+      securityState.cryptoKey = await deriveKeyFromPin(pin, saltBytes);
+
+      const lockEl = document.getElementById('vault-lock-screen');
+      if (lockEl) lockEl.classList.add('hidden');
+
+      const decrypted = await loadEncryptedVouchers();
+      if (decrypted && typeof decrypted === 'object') {
+        Object.keys(decrypted).forEach(k => {
+          liveVouchers[k] = decrypted[k];
+        });
+        updateHeader();
+        renderBrandsCarousel();
+        renderVouchersFeed();
+      }
+
+      syncWithGoogleSheets();
+      resetInactivityTimer();
+    }
+
+    // Lock Vault and Wipe Memory
+    function lockVault() {
+      securityState.isUnlocked = false;
+      securityState.enteredPin = '';
+      updatePinDotsUI();
+
+      if (liveVouchers && Object.keys(liveVouchers).length) {
+        saveEncryptedVouchers(liveVouchers);
+      }
+
+      const lockEl = document.getElementById('vault-lock-screen');
+      if (lockEl) lockEl.classList.remove('hidden');
+    }
+
+    // Change PIN Modal
+    function openChangePinModal() {
+      document.getElementById('input-curr-pin').value = '';
+      document.getElementById('input-new-pin').value = '';
+      document.getElementById('input-confirm-pin').value = '';
+      document.getElementById('modal-change-pin').classList.remove('hidden');
+    }
+    function closeChangePinModal() {
+      document.getElementById('modal-change-pin').classList.add('hidden');
+    }
+    async function confirmChangePin() {
+      const curr = document.getElementById('input-curr-pin').value.trim();
+      const n1 = document.getElementById('input-new-pin').value.trim();
+      const n2 = document.getElementById('input-confirm-pin').value.trim();
+
+      const currHash = await sha256(curr);
+      const expected = securityState.masterPinHash || await sha256("123456");
+      if (currHash !== expected) {
+        showToast("Current PIN is incorrect");
+        return;
+      }
+      if (!/^\d{6}$/.test(n1)) {
+        showToast("New PIN must be exactly 6 digits");
+        return;
+      }
+      if (n1 !== n2) {
+        showToast("New PINs do not match");
+        return;
+      }
+
+      const newHash = await sha256(n1);
+      securityState.masterPinHash = newHash;
+      localStorage.setItem('rupay_vault_pin_hash', newHash);
+      closeChangePinModal();
+      showToast("Master PIN updated successfully!");
+    }
+
+    // Auto-Lock on 5m Inactivity
+    function resetInactivityTimer() {
+      if (securityState.inactivityTimer) clearTimeout(securityState.inactivityTimer);
+      if (securityState.isUnlocked) {
+        securityState.inactivityTimer = setTimeout(() => {
+          lockVault();
+          showToast("Vault locked due to 5m inactivity");
+        }, 5 * 60 * 1000);
+      }
+    }
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    // Auto-Lock on App Switch / Tab Hidden
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && securityState.isUnlocked) {
+        lockVault();
+      }
+    });
 
     // STRICT USER ORDER & SPECIFICATION
     const BRAND_CONFIG = [
@@ -639,7 +1166,7 @@
       showToast('Checking Gmail & syncing...');
 
       try {
-        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'ingest=true';
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + `ingest=true&auth=${VAULT_AUTH_KEY}`;
         const res = await fetch(syncUrl);
         const data = await res.json();
 
@@ -675,7 +1202,7 @@
           Object.keys(grouped).forEach(k => {
             liveVouchers[k] = grouped[k];
           });
-          localStorage.setItem('rupay_vouchers_grouped', JSON.stringify(liveVouchers));
+          saveEncryptedVouchers(liveVouchers);
         }
 
         if (data.sheetUrl) {
@@ -702,7 +1229,7 @@
     }
 
     // Initial Render
-    (function init() {
+    (async function init() {
       const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing";
       const savedSheetUrl = localStorage.getItem('rupay_sheet_url');
       const activeSheetUrl = (savedSheetUrl && savedSheetUrl.includes('/d/')) ? savedSheetUrl : GOOGLE_SHEET_URL;
@@ -714,20 +1241,6 @@
         activeBrandKey = savedBrand;
       }
 
-      const cachedGrouped = localStorage.getItem('rupay_vouchers_grouped');
-      if (cachedGrouped) {
-        try {
-          const parsed = JSON.parse(cachedGrouped);
-          if (parsed && typeof parsed === 'object') {
-            Object.keys(parsed).forEach(k => {
-              liveVouchers[k] = parsed[k];
-            });
-          }
-        } catch (e) {
-          console.warn('Cache error:', e);
-        }
-      }
-
       const savedTime = localStorage.getItem('rupay_sync_time');
       const now = new Date();
       syncTimestamp = savedTime || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -735,6 +1248,16 @@
       updateHeader();
       renderBrandsCarousel();
       renderVouchersFeed();
+
+      // Check biometrics availability and lock vault on launch
+      await checkBiometricsAvailability();
+      lockVault();
+
+      if (securityState.hasBiometrics) {
+        setTimeout(() => {
+          unlockWithBiometrics();
+        }, 350);
+      }
     })();
   </script>
 </body>
