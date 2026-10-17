@@ -773,6 +773,7 @@
     let isSelectMode = false;
     let selectedCodes = new Set();
     let syncTimestamp = "12:25 AM";
+    let isSyncing = false;
     let liveVouchers = JSON.parse(JSON.stringify(MOCK_DATA));
 
     function normalizeBrandKey(brand) {
@@ -849,7 +850,10 @@
         }
       }
 
-      document.getElementById('sync-time-label').textContent = `Synced at ${syncTimestamp}`;
+      if (!isSyncing) {
+        const syncLabel = document.getElementById('sync-time-label');
+        if (syncLabel) syncLabel.textContent = `Synced at ${syncTimestamp}`;
+      }
     }
 
     // Render Deck Selector at the TOP
@@ -1161,9 +1165,18 @@
 
     // Live Sync with Google Sheets
     async function syncWithGoogleSheets() {
+      if (isSyncing) return;
+      isSyncing = true;
+
       const spinner = document.getElementById('sync-spinner');
-      spinner.classList.add('animate-spin');
-      showToast('Checking Gmail & syncing...');
+      if (spinner) spinner.classList.add('animate-spin');
+
+      const syncLabel = document.getElementById('sync-time-label');
+      if (syncLabel) {
+        syncLabel.textContent = 'Syncing now...';
+        syncLabel.classList.add('text-amber-400');
+        syncLabel.classList.remove('text-neutral-400');
+      }
 
       try {
         const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + `ingest=true&auth=${VAULT_AUTH_KEY}`;
@@ -1214,14 +1227,18 @@
         const now = new Date();
         syncTimestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         localStorage.setItem('rupay_sync_time', syncTimestamp);
-        showToast('Sheets synced successfully');
       } catch (err) {
         console.warn('Sync failed, using cached data:', err);
         const now = new Date();
-        syncTimestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        showToast(`Synced at ${syncTimestamp} (cached)`);
+        syncTimestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' (cached)';
       } finally {
-        spinner.classList.remove('animate-spin');
+        isSyncing = false;
+        if (spinner) spinner.classList.remove('animate-spin');
+        if (syncLabel) {
+          syncLabel.textContent = `Synced at ${syncTimestamp}`;
+          syncLabel.classList.remove('text-amber-400');
+          syncLabel.classList.add('text-neutral-400');
+        }
         updateHeader();
         renderBrandsCarousel();
         renderVouchersFeed();

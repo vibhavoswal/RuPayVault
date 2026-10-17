@@ -1285,11 +1285,20 @@
       renderAll();
     }
 
+    let isSyncing = false;
+
     /* --- LIVE GOOGLE SHEETS FETCH (WITH REAL-TIME ON-DEMAND INGESTION) --- */
     async function syncWithGoogleSheets() {
-      showToast("Checking Gmail & syncing with Google Sheets...");
-      if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing...';
-      if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = 'Syncing...';
+      if (isSyncing) return;
+      isSyncing = true;
+
+      const mbSyncTime = document.getElementById('mb-sync-time');
+      if (mbSyncTime) {
+        mbSyncTime.textContent = 'Syncing now...';
+        mbSyncTime.classList.add('text-amber-400');
+        mbSyncTime.classList.remove('text-neutral-400');
+      }
+      if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing now...';
       const spinner = document.getElementById('mb-sync-spinner');
       if (spinner) spinner.classList.add('animate-spin');
       
@@ -1330,10 +1339,7 @@
           // AES-GCM Encrypted cache persistence (never plaintext)
           await saveEncryptedVouchers(state.vouchers);
 
-          const countMsg = `Synced ${state.vouchers.length} vouchers from Sheet`;
-          showToast(countMsg);
           if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
-          if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = `${state.vouchers.length} synced`;
           if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
         }
 
@@ -1354,21 +1360,26 @@
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         localStorage.setItem('rupay_sync_time', timeStr);
-        const mbSyncTime = document.getElementById('mb-sync-time');
-        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${timeStr}`;
+        if (mbSyncTime) {
+          mbSyncTime.textContent = `Synced at ${timeStr}`;
+          mbSyncTime.classList.remove('text-amber-400');
+          mbSyncTime.classList.add('text-neutral-400');
+        }
 
         renderAll();
       } catch (err) {
         console.error("Sync error:", err);
-        showToast("Offline mode: " + err.message);
-        if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Offline';
-        if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = 'Offline mode';
+        if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Offline (cached)';
         if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-orange)';
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const mbSyncTime = document.getElementById('mb-sync-time');
-        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${timeStr} (cached)`;
+        if (mbSyncTime) {
+          mbSyncTime.textContent = `Synced at ${timeStr} (cached)`;
+          mbSyncTime.classList.remove('text-amber-400');
+          mbSyncTime.classList.add('text-neutral-400');
+        }
       } finally {
+        isSyncing = false;
         if (spinner) spinner.classList.remove('animate-spin');
       }
     }
@@ -2255,6 +2266,13 @@
         state.activeFilterBrand = savedBrand;
         const dtSel = document.getElementById('dt-brand-filter');
         if (dtSel) dtSel.value = savedBrand;
+      }
+
+      // 3. Restore last synced time to header
+      const savedTime = localStorage.getItem('rupay_sync_time');
+      if (savedTime) {
+        const mbSyncTime = document.getElementById('mb-sync-time');
+        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${savedTime}`;
       }
 
       setTab('vault');
