@@ -1062,6 +1062,29 @@
       const isRecentTab = activeBrandKey === 'RecentlyAdded';
       const count = targets.length;
 
+      // Special custom format for Amazon Prime vouchers
+      if (targets.every(v => normalizeBrandKey(v.brand) === 'AmazonPrime')) {
+        let text = targets.length === 1
+          ? `Here's the code: ${targets[0].code}\n\nRedeem it on amazon.in/vouchers\n\nRs. 1499 will get added to your prime balance. You can use that balance to checkout Prime Membership.`
+          : `Here's the code:\n${targets.map((v, i) => `${i + 1}. ${v.code}`).join('\n')}\n\nRedeem it on amazon.in/vouchers\n\nRs. 1499 will get added to your prime balance. You can use that balance to checkout Prime Membership.`;
+
+        if (navigator.share) {
+          navigator.share({
+            title: `Amazon Prime Voucher`,
+            text: text
+          }).then(() => {
+            showToast('Shared successfully');
+          }).catch(err => {
+            if (err && err.name !== 'AbortError') {
+              openDirectWhatsApp(text);
+            }
+          });
+        } else {
+          openDirectWhatsApp(text);
+        }
+        return;
+      }
+
       let text = isRecentTab ? `⚡ Recently Added RuPay Vouchers\n\n` : `${b ? b.name : activeBrandKey} Vouchers\n\n`;
       let total = 0;
       targets.forEach((v, i) => {
@@ -1103,11 +1126,16 @@
       const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
       const denom = b ? b.denom : 0;
 
-      let text = `${b ? b.name : activeBrandKey} Voucher\n\n`;
-      text += `1. Code: ${v.code}\n`;
-      if (v.pin) text += `PIN: ${v.pin}\n\n`;
-      text += `Total 1 voucher\n`;
-      if (denom > 0) text += `Value: ₹${denom}`;
+      let text;
+      if (activeBrandKey === 'AmazonPrime' || normalizeBrandKey(v.brand) === 'AmazonPrime') {
+        text = `Here's the code: ${v.code}\n\nRedeem it on amazon.in/vouchers\n\nRs. 1499 will get added to your prime balance. You can use that balance to checkout Prime Membership.`;
+      } else {
+        text = `${b ? b.name : activeBrandKey} Voucher\n\n`;
+        text += `1. Code: ${v.code}\n`;
+        if (v.pin) text += `PIN: ${v.pin}\n\n`;
+        text += `Total 1 voucher\n`;
+        if (denom > 0) text += `Value: ₹${denom}`;
+      }
 
       if (navigator.share) {
         navigator.share({

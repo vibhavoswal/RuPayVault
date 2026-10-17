@@ -2075,6 +2075,17 @@
 
     function fmtWhatsApp(vs) {
       if (!vs.length) return '';
+
+      // Custom share format for Amazon Prime vouchers
+      if (vs.every(v => normalizeBrandKey(v.brand) === 'AmazonPrime')) {
+        if (vs.length === 1) {
+          return `Here's the code: ${vs[0].code}\n\nRedeem it on amazon.in/vouchers\n\nRs. 1499 will get added to your prime balance. You can use that balance to checkout Prime Membership.`;
+        } else {
+          const codesList = vs.map((v, i) => `${i + 1}. ${v.code}`).join('\n');
+          return `Here's the code:\n${codesList}\n\nRedeem it on amazon.in/vouchers\n\nRs. 1499 will get added to your prime balance. You can use that balance to checkout Prime Membership.`;
+        }
+      }
+
       const distinctBrands = new Set(vs.map(v => normalizeBrandKey(v.brand)));
       const isMultiBrand = distinctBrands.size > 1 || normalizeBrandKey(state.activeFilterBrand) === 'RecentlyAdded';
       const brandName = isMultiBrand ? 'Recently Added Vouchers' : getBrandDisplayName(vs[0].brand);
