@@ -14,7 +14,19 @@ const UNIFIED_BRAND_HEADERS = [
 ];
 
 const UNIFIED_REDEEMED_HEADERS = [
-  "#", "Brand", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Redeemed Timestamp (IST)", "Original Tab"
+  "#", "Brand", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Redeemed Timestamp (IST)", "Original Tab", "Appended Timestamp (IST)"
+];
+
+const UNIFIED_CARD_HEADERS = [
+  "Card ID", "Bank", "Card Type", "BIN", "Last 4", "Nickname", "Status", "Claimed Quota", "Total Quota", "Blocked Date", "Notes", "Last Updated (IST)"
+];
+
+const UNIFIED_SHARED_HEADERS = [
+  "#", "Code", "Brand", "Amount", "PIN", "Shared Timestamp (IST)", "Status", "Platform"
+];
+
+const UNIFIED_COOLDOWN_HEADERS = [
+  "Account ID", "Last Redemption Time (IST)", "Status", "Last Updated (IST)"
 ];
 
 /**
@@ -285,20 +297,33 @@ function assignCardToRedemptions(ss, assignments) {
 }
 
 /**
- * 5. 24-HOUR COOLDOWN UPDATE (With IST Timestamp)
+ * 5. PERSISTENT SYSTEM SHEETS INITIALIZATION & COOLDOWN ENGINE
  */
-function updateCooldownTab(ss, account) {
+function getOrInitCooldownsSheet(ss) {
   let sheet = ss.getSheetByName("⏱ Cooldowns");
   if (!sheet) {
     sheet = ss.insertSheet("⏱ Cooldowns", 0);
-    sheet.appendRow(["Account ID", "Last Redemption Time (IST)", "Status", "Last Updated (IST)"]);
-    sheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#ECFDF5");
+    sheet.appendRow(UNIFIED_COOLDOWN_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_COOLDOWN_HEADERS.length).setFontWeight("bold").setBackground("#ECFDF5");
     sheet.setFrozenRows(1);
   }
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) {
+    const defaultAccounts = [
+      "vibhavoswal9", "karthikrathod2067", "vibhavoswal2", "nikhildsouza369", "arunaoswal3", "madhuribhalekar369"
+    ];
+    defaultAccounts.forEach(acc => {
+      sheet.appendRow([acc, formatISTTimestamp(new Date(Date.now() - 25 * 3600 * 1000)), "READY", formatISTTimestamp(new Date())]);
+    });
+  }
+  return sheet;
+}
 
+function updateCooldownTab(ss, account) {
+  const sheet = getOrInitCooldownsSheet(ss);
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === account) {
+    if (String(data[i][0]).trim() === account) {
       sheet.getRange(i + 1, 2).setValue(formatISTTimestamp(new Date()));
       sheet.getRange(i + 1, 3).setValue("RUNNING");
       sheet.getRange(i + 1, 4).setValue(formatISTTimestamp(new Date()));
@@ -308,12 +333,48 @@ function updateCooldownTab(ss, account) {
   sheet.appendRow([account, formatISTTimestamp(new Date()), "RUNNING", formatISTTimestamp(new Date())]);
 }
 
+function getOrInitCardsSheet(ss) {
+  let sheet = ss.getSheetByName("Cards");
+  if (!sheet) {
+    sheet = ss.insertSheet("Cards");
+    sheet.appendRow(UNIFIED_CARD_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_CARD_HEADERS.length).setFontWeight("bold").setBackground("#DBEAFE");
+    sheet.setFrozenRows(1);
+  }
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) {
+    const defaultCards = [
+      ["c1", "PNB", "PNB Imperial RSDC", "'65249710", "'9102", "PNB Imperial Primary", "active", 3, 6, "", "", formatISTTimestamp(new Date())],
+      ["c2", "Bank of Baroda", "BoB Bhoomi RSDC", "'652505", "'3314", "Vibhav BoB DC", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
+      ["c3", "Canara Bank", "Canara RSDC", "'652550", "'7828", "Canara DC 7828", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
+      ["c4", "Jana SFB", "Jana SFB RSDC", "'652520", "'7891", "Jana SFB DC", "active", 3, 5, "", "", formatISTTimestamp(new Date())],
+      ["c5", "Canara Bank", "Canara Select CC", "'653020", "'1109", "Canara CC Primary", "active", 1, 2, "", "", formatISTTimestamp(new Date())],
+      ["cx1", "PNB", "PNB Imperial RSDC", "'65249710", "'4821", "PNB Imperial (Old)", "blocked", 0, 0, "2026-10-14", "Q3 quotas exhausted", formatISTTimestamp(new Date())],
+      ["cx2", "Canara Bank", "Canara RSDC", "'652550", "'1120", "Canara DC 1 (Old)", "blocked", 0, 0, "2026-09-28", "Blocked via mobile app", formatISTTimestamp(new Date())],
+      ["cx3", "Bank of Baroda", "BoB Bhoomi RSDC", "'652505", "'2091", "Smiti BoB DC", "blocked", 0, 0, "2026-08-15", "Reissued new card number", formatISTTimestamp(new Date())]
+    ];
+    defaultCards.forEach(c => sheet.appendRow(c));
+  }
+  return sheet;
+}
+
+function getOrInitSharedActivitySheet(ss) {
+  let sheet = ss.getSheetByName("Shared_Activity");
+  if (!sheet) {
+    sheet = ss.insertSheet("Shared_Activity");
+    sheet.appendRow(UNIFIED_SHARED_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_SHARED_HEADERS.length).setFontWeight("bold").setBackground("#D1FAE5");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
 /**
  * 6. MIGRATION TO UNIFIED 10-COLUMN SCHEMA ACROSS ALL TABS
  */
 function migrateSheetsToUnifiedSchema(ss) {
   const sheets = ss.getSheets();
-  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns"]);
+  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity"]);
   
   // 1. Ensure master "Redeemed" tab exists with 12 columns
   let redeemedSheet = ss.getSheetByName("Redeemed");
@@ -429,7 +490,9 @@ function doGet(e) {
     unassigned: [],
     cooldowns: [],
     vouchers: [],
-    redeemed: []
+    redeemed: [],
+    cards: [],
+    shared: []
   };
 
   for (const sheet of sheets) {
@@ -449,9 +512,45 @@ function doGet(e) {
       }
     } else if (name === "⏱ Cooldowns") {
       for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
         result.cooldowns.push({
-          account: rows[i][0],
-          lastRedeemed: rows[i][1]
+          account: String(rows[i][0] || ''),
+          lastRedeemed: rows[i][1] ? String(rows[i][1]) : '',
+          status: rows[i][2] ? String(rows[i][2]) : 'READY',
+          lastUpdated: rows[i][3] ? String(rows[i][3]) : ''
+        });
+      }
+    } else if (name === "Cards") {
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+        result.cards.push({
+          id: String(rows[i][0] || ''),
+          bank: String(rows[i][1] || ''),
+          type: String(rows[i][2] || ''),
+          bin: String(rows[i][3] || ''),
+          last4: String(rows[i][4] || ''),
+          nick: String(rows[i][5] || ''),
+          status: String(rows[i][6] || 'active').toLowerCase(),
+          claimed: Number(rows[i][7]) || 0,
+          total: Number(rows[i][8]) || 5,
+          blockedDate: rows[i][9] ? String(rows[i][9]) : '',
+          notes: rows[i][10] ? String(rows[i][10]) : '',
+          lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
+        });
+      }
+    } else if (name === "Shared_Activity") {
+      for (let i = 1; i < rows.length; i++) {
+        if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
+        const status = String(rows[i][6] || 'SHARED').trim().toUpperCase();
+        if (status === "DISMISSED") continue;
+        result.shared.push({
+          code: String(rows[i][1] || ''),
+          brand: String(rows[i][2] || ''),
+          amount: Number(rows[i][3]) || 0,
+          pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
+          sharedAt: String(rows[i][5] || ''),
+          status: status,
+          platform: String(rows[i][7] || 'WhatsApp')
         });
       }
     } else if (name === "Redeemed") {
@@ -490,6 +589,47 @@ function doGet(e) {
         });
       }
     }
+  }
+
+  // Ensure persistent tabs exist and are populated if missing
+  if (!result.cards.length) {
+    const cSheet = getOrInitCardsSheet(ss);
+    const cRows = cSheet.getDataRange().getValues();
+    for (let i = 1; i < cRows.length; i++) {
+      if (!cRows[i][0] || String(cRows[i][0]).trim() === "") continue;
+      result.cards.push({
+        id: String(cRows[i][0] || ''),
+        bank: String(cRows[i][1] || ''),
+        type: String(cRows[i][2] || ''),
+        bin: String(cRows[i][3] || ''),
+        last4: String(cRows[i][4] || ''),
+        nick: String(cRows[i][5] || ''),
+        status: String(cRows[i][6] || 'active').toLowerCase(),
+        claimed: Number(cRows[i][7]) || 0,
+        total: Number(cRows[i][8]) || 5,
+        blockedDate: cRows[i][9] ? String(cRows[i][9]) : '',
+        notes: cRows[i][10] ? String(cRows[i][10]) : '',
+        lastUpdated: cRows[i][11] ? String(cRows[i][11]) : ''
+      });
+    }
+  }
+
+  if (!result.cooldowns.length) {
+    const cdSheet = getOrInitCooldownsSheet(ss);
+    const cdRows = cdSheet.getDataRange().getValues();
+    for (let i = 1; i < cdRows.length; i++) {
+      if (!cdRows[i][0] || String(cdRows[i][0]).trim() === "") continue;
+      result.cooldowns.push({
+        account: String(cdRows[i][0] || ''),
+        lastRedeemed: cdRows[i][1] ? String(cdRows[i][1]) : '',
+        status: cdRows[i][2] ? String(cdRows[i][2]) : 'READY',
+        lastUpdated: cdRows[i][3] ? String(cdRows[i][3]) : ''
+      });
+    }
+  }
+
+  if (!ss.getSheetByName("Shared_Activity")) {
+    getOrInitSharedActivitySheet(ss);
   }
 
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
@@ -557,12 +697,13 @@ function doPost(e) {
           }
         }
 
-        // 2. If not found in provided brand, scan ALL brand sheets (excluding Redeemed, Cards, Accounts)
+        // 2. If not found in provided brand, scan ALL brand sheets (excluding system tabs)
         if (!targetSheet) {
+          const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
           const allSheets = ss.getSheets();
           for (const s of allSheets) {
             const sName = s.getName();
-            if (sName === "Redeemed" || sName === "Cards" || sName === "Accounts") continue;
+            if (systemTabs.has(sName)) continue;
             const vals = s.getDataRange().getValues();
             for (let i = 1; i < vals.length; i++) {
               if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
@@ -598,6 +739,18 @@ function doPost(e) {
           moved.push({ code: codeVal, brand: origBrand });
         }
       });
+
+      // Also update Shared_Activity status to REDEEMED for these codes if present
+      const sSheet = ss.getSheetByName("Shared_Activity");
+      if (sSheet && moved.length > 0) {
+        const movedCodesSet = new Set(moved.map(m => m.code));
+        const sRows = sSheet.getDataRange().getValues();
+        for (let i = 1; i < sRows.length; i++) {
+          if (movedCodesSet.has(String(sRows[i][1]).trim())) {
+            sSheet.getRange(i + 1, 7).setValue("REDEEMED");
+          }
+        }
+      }
 
       if (moved.length > 0) {
         return ContentService.createTextOutput(JSON.stringify({
@@ -677,6 +830,207 @@ function doPost(e) {
 
       return ContentService.createTextOutput(JSON.stringify({
         error: "Voucher(s) not found in Redeemed sheet: " + codes.join(", ")
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 5. Save Card (Add or Update in "Cards" tab)
+    if (data.action === "SAVE_CARD") {
+      const cSheet = getOrInitCardsSheet(ss);
+      const card = data.card || data;
+      const cardId = String(card.id || ('c-' + Date.now())).trim();
+      const rows = cSheet.getDataRange().getValues();
+      let found = false;
+
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]).trim() === cardId) {
+          cSheet.getRange(i + 1, 2).setValue(card.bank || rows[i][1]);
+          cSheet.getRange(i + 1, 3).setValue(card.type || rows[i][2]);
+          cSheet.getRange(i + 1, 4).setValue(card.bin ? `'${card.bin}` : rows[i][3]);
+          cSheet.getRange(i + 1, 5).setValue(card.last4 ? `'${card.last4}` : rows[i][4]);
+          cSheet.getRange(i + 1, 6).setValue(card.nick || rows[i][5]);
+          cSheet.getRange(i + 1, 7).setValue(card.status || rows[i][6]);
+          cSheet.getRange(i + 1, 8).setValue(card.claimed !== undefined ? Number(card.claimed) : rows[i][7]);
+          cSheet.getRange(i + 1, 9).setValue(card.total !== undefined ? Number(card.total) : rows[i][8]);
+          cSheet.getRange(i + 1, 10).setValue(card.blockedDate || rows[i][9]);
+          cSheet.getRange(i + 1, 11).setValue(card.notes || rows[i][10]);
+          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        cSheet.appendRow([
+          cardId,
+          card.bank || 'RuPay Card',
+          card.type || 'RuPay Select',
+          card.bin ? `'${card.bin}` : '',
+          card.last4 ? `'${card.last4}` : '',
+          card.nick || 'New Card',
+          card.status || 'active',
+          card.claimed !== undefined ? Number(card.claimed) : 0,
+          card.total !== undefined ? Number(card.total) : 5,
+          card.blockedDate || '',
+          card.notes || '',
+          formatISTTimestamp(new Date())
+        ]);
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "SAVE_CARD",
+        id: cardId
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6. Block Card
+    if (data.action === "BLOCK_CARD") {
+      const cSheet = getOrInitCardsSheet(ss);
+      const cardId = String(data.id || '').trim();
+      const blockedDate = data.blockedDate || formatISTDate(new Date());
+      const notes = data.notes || 'Blocked via App';
+      const rows = cSheet.getDataRange().getValues();
+      let found = false;
+
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]).trim() === cardId) {
+          cSheet.getRange(i + 1, 7).setValue('blocked');
+          cSheet.getRange(i + 1, 10).setValue(blockedDate);
+          cSheet.getRange(i + 1, 11).setValue(notes);
+          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
+          found = true;
+          break;
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: found,
+        action: "BLOCK_CARD",
+        id: cardId
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 7. Update Card Quota (Quick Claim)
+    if (data.action === "UPDATE_CARD_QUOTA") {
+      const cSheet = getOrInitCardsSheet(ss);
+      const cardId = String(data.id || '').trim();
+      const rows = cSheet.getDataRange().getValues();
+      let newClaimed = 0;
+      let found = false;
+
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0]).trim() === cardId) {
+          if (data.claimed !== undefined) {
+            newClaimed = Number(data.claimed);
+          } else {
+            newClaimed = (Number(rows[i][7]) || 0) + 1;
+          }
+          cSheet.getRange(i + 1, 8).setValue(newClaimed);
+          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
+          found = true;
+          break;
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: found,
+        action: "UPDATE_CARD_QUOTA",
+        id: cardId,
+        claimed: newClaimed
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 8. Log Shared Activity
+    if (data.action === "LOG_SHARED") {
+      const sSheet = getOrInitSharedActivitySheet(ss);
+      const items = Array.isArray(data.items) ? data.items : [{
+        code: data.code,
+        brand: data.brand,
+        amount: data.amount,
+        pin: data.pin,
+        platform: data.platform
+      }];
+      const sRows = sSheet.getDataRange().getValues();
+      const logged = [];
+
+      items.forEach(item => {
+        if (!item.code) return;
+        const cStr = String(item.code).trim();
+        let foundIndex = -1;
+        for (let i = 1; i < sRows.length; i++) {
+          if (String(sRows[i][1]).trim() === cStr) {
+            foundIndex = i + 1;
+            break;
+          }
+        }
+
+        const timeStr = formatISTTimestamp(new Date());
+        if (foundIndex > 0) {
+          sSheet.getRange(foundIndex, 6).setValue(timeStr);
+          sSheet.getRange(foundIndex, 7).setValue("SHARED");
+          if (item.platform) sSheet.getRange(foundIndex, 8).setValue(item.platform);
+        } else {
+          const nextNum = sSheet.getLastRow();
+          sSheet.appendRow([
+            nextNum,
+            `'${cStr}`,
+            item.brand || 'Voucher',
+            item.amount || 0,
+            item.pin ? `'${item.pin}` : '',
+            timeStr,
+            "SHARED",
+            item.platform || "WhatsApp"
+          ]);
+        }
+        logged.push(cStr);
+      });
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "LOG_SHARED",
+        count: logged.length,
+        codes: logged
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 9. Dismiss Shared Activity
+    if (data.action === "DISMISS_SHARED") {
+      const sSheet = getOrInitSharedActivitySheet(ss);
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      const sRows = sSheet.getDataRange().getValues();
+      const dismissed = [];
+
+      for (let i = 1; i < sRows.length; i++) {
+        const rowCode = String(sRows[i][1]).trim();
+        if (codes.includes(rowCode)) {
+          sSheet.getRange(i + 1, 7).setValue("DISMISSED");
+          dismissed.push(rowCode);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "DISMISS_SHARED",
+        dismissed: dismissed
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 10. Reset 24-Hour Account Cooldown
+    if (data.action === "RESET_COOLDOWN") {
+      const cdSheet = getOrInitCooldownsSheet(ss);
+      const account = String(data.account || data.accountId || '').trim();
+      if (!account) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Missing account ID"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      updateCooldownTab(ss, account);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RESET_COOLDOWN",
+        account: account,
+        timestamp: formatISTTimestamp(new Date())
       })).setMimeType(ContentService.MimeType.JSON);
     }
 

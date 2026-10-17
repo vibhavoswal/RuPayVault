@@ -820,7 +820,7 @@
       } catch(e) {}
     }
 
-    function logSharedActivity(code, brand, amount, pin) {
+    function logSharedActivity(code, brand, amount, pin, platform = 'WhatsApp') {
       if (!code) return;
       const now = new Date();
       const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
@@ -841,6 +841,20 @@
       }
       saveSharedActivity();
       updateHeader();
+
+      // Cloud Persistence: Shared_Activity tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'LOG_SHARED',
+          code: code,
+          brand: entry.brand,
+          amount: entry.amount,
+          pin: entry.pin,
+          platform: platform
+        })
+      }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
     }
 
     function dismissSharedActivity(code) {
@@ -849,6 +863,16 @@
       showToast('Removed from Activity Log');
       updateHeader();
       renderVouchersFeed();
+
+      // Cloud Persistence: Shared_Activity tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'DISMISS_SHARED',
+          code: code
+        })
+      }).catch(err => console.warn('Background sync error (DISMISS_SHARED):', err));
     }
 
     async function markVoucherAsRedeemed(code, brand) {
@@ -1081,8 +1105,6 @@
     function parseTimestamp(ts) {
       if (!ts) return 0;
       const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
-      const parsed = Date.parse(clean);
-      if (!isNaN(parsed)) return parsed;
 
       const m = clean.match(/(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
       if (m) {
@@ -1097,8 +1119,11 @@
         const meridiem = m[7] ? m[7].toUpperCase() : null;
         if (meridiem === 'PM' && hour < 12) hour += 12;
         if (meridiem === 'AM' && hour === 12) hour = 0;
-        return new Date(year, month, day, hour, min, sec).getTime();
+        return Date.UTC(year, month, day, hour - 5, min - 30, sec);
       }
+
+      const parsed = Date.parse(clean);
+      if (!isNaN(parsed)) return parsed;
       return 0;
     }
 
@@ -1798,6 +1823,19 @@
           sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
           saveSharedActivity();
           saveRedeemedList();
+        }
+
+        if (data.shared && Array.isArray(data.shared)) {
+          sharedActivity = data.shared.map(s => ({
+            code: s.code,
+            brand: s.brand || 'Voucher',
+            amount: Number(s.amount) || 0,
+            pin: s.pin || '',
+            sharedAt: s.sharedAt || '',
+            timestampMs: parseTimestamp(s.sharedAt) || Date.now()
+          }));
+          sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
+          saveSharedActivity();
         }
 
         if (data.sheetUrl) {

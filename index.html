@@ -1163,10 +1163,8 @@
     function parseTimestamp(ts) {
       if (!ts) return 0;
       const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
-      const parsed = Date.parse(clean);
-      if (!isNaN(parsed)) return parsed;
 
-      // Handle "dd-MMM-yyyy hh:mm:ss a" or "dd-MMM-yyyy, hh:mm a"
+      // Handle "dd-MMM-yyyy hh:mm:ss a" or "dd-MMM-yyyy, hh:mm a" strictly in IST (UTC+5:30)
       const m = clean.match(/(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
       if (m) {
         const day = parseInt(m[1], 10);
@@ -1180,8 +1178,11 @@
         const meridiem = m[7] ? m[7].toUpperCase() : null;
         if (meridiem === 'PM' && hour < 12) hour += 12;
         if (meridiem === 'AM' && hour === 12) hour = 0;
-        return new Date(year, month, day, hour, min, sec).getTime();
+        return Date.UTC(year, month, day, hour - 5, min - 30, sec);
       }
+
+      const parsed = Date.parse(clean);
+      if (!isNaN(parsed)) return parsed;
       return 0;
     }
 
@@ -1205,7 +1206,7 @@
       } catch(e) {}
     }
 
-    function logSharedActivity(code, brand, amount, pin) {
+    function logSharedActivity(code, brand, amount, pin, platform = 'WhatsApp') {
       if (!code) return;
       const now = new Date();
       const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
@@ -1227,6 +1228,20 @@
       saveSharedActivity();
       renderDeckSelector();
       renderVault();
+
+      // Cloud Persistence: Shared_Activity tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'LOG_SHARED',
+          code: code,
+          brand: entry.brand,
+          amount: entry.amount,
+          pin: entry.pin,
+          platform: platform
+        })
+      }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
     }
 
     function dismissSharedActivity(code) {
@@ -1235,6 +1250,16 @@
       showToast('Removed from Activity Log');
       renderDeckSelector();
       renderVault();
+
+      // Cloud Persistence: Shared_Activity tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'DISMISS_SHARED',
+          code: code
+        })
+      }).catch(err => console.warn('Background sync error (DISMISS_SHARED):', err));
     }
 
     async function markVoucherAsRedeemed(code, brand) {
@@ -1620,11 +1645,43 @@
           saveRedeemedList();
         }
 
-        if (data.cooldowns && data.cooldowns.length) {
-          state.accounts = data.cooldowns.map(c => ({
-            id: c.account,
-            lastRedeemed: new Date(c.lastRedeemed || Date.now())
+        if (data.cards && Array.isArray(data.cards) && data.cards.length) {
+          state.cards = data.cards.map(c => ({
+            id: c.id,
+            bank: c.bank || 'RuPay Card',
+            type: c.type || 'RuPay Select',
+            bin: c.bin || '',
+            last4: c.last4 || '',
+            nick: c.nick || 'Card',
+            status: (c.status || 'active').toLowerCase(),
+            claimed: Number(c.claimed) || 0,
+            total: Number(c.total) || 5,
+            blockedDate: c.blockedDate || '',
+            notes: c.notes || ''
           }));
+        }
+
+        if (data.shared && Array.isArray(data.shared)) {
+          sharedActivity = data.shared.map(s => ({
+            code: s.code,
+            brand: s.brand || 'Voucher',
+            amount: Number(s.amount) || 0,
+            pin: s.pin || '',
+            sharedAt: s.sharedAt || '',
+            timestampMs: parseTimestamp(s.sharedAt) || Date.now()
+          }));
+          sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
+          saveSharedActivity();
+        }
+
+        if (data.cooldowns && data.cooldowns.length) {
+          state.accounts = data.cooldowns.map(c => {
+            const parsedMs = parseTimestamp(c.lastRedeemed);
+            return {
+              id: c.account,
+              lastRedeemed: parsedMs ? new Date(parsedMs) : new Date(c.lastRedeemed || Date.now())
+            };
+          });
         }
 
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
@@ -2429,7 +2486,7 @@
       const total = parseInt(document.getElementById('add-card-total').value) || 5;
       const type = document.getElementById('add-card-type').value;
 
-      state.cards.push({
+      const newCard = {
         id: 'c-' + Date.now(),
         bank: bank,
         type: type,
@@ -2439,11 +2496,22 @@
         status: 'active',
         claimed: 0,
         total: total
-      });
+      };
 
+      state.cards.push(newCard);
       closeAddCardModal();
       showToast('Card added: ' + nick);
       renderCards();
+
+      // Cloud Persistence: Cards tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'SAVE_CARD',
+          card: newCard
+        })
+      }).catch(err => console.warn('Background sync error (SAVE_CARD):', err));
     }
 
     /* --- ACTIONS: QUICK CLAIM --- */
@@ -2457,6 +2525,17 @@
       card.claimed += 1;
       showToast(`Logged claim for ${card.nick} (${card.claimed}/${card.total})`);
       renderCards();
+
+      // Cloud Persistence: Cards tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'UPDATE_CARD_QUOTA',
+          id: cardId,
+          claimed: card.claimed
+        })
+      }).catch(err => console.warn('Background sync error (UPDATE_CARD_QUOTA):', err));
     }
 
     /* --- ACTIONS: BLOCK CARD --- */
@@ -2478,6 +2557,7 @@
 
     function confirmBlockCard() {
       if (!state.targetCardToBlock) return;
+      const targetId = state.targetCardToBlock.id;
       const d = document.getElementById('block-date-input').value || new Date().toISOString().split('T')[0];
       const n = document.getElementById('block-notes-input').value || 'Reissued';
       state.targetCardToBlock.status = 'blocked';
@@ -2486,6 +2566,18 @@
       closeBlockModal();
       showToast('Card moved to Blocked archive');
       renderAll();
+
+      // Cloud Persistence: Cards tab in Google Sheets
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify({
+          auth: VAULT_AUTH_KEY,
+          action: 'BLOCK_CARD',
+          id: targetId,
+          blockedDate: d,
+          notes: n
+        })
+      }).catch(err => console.warn('Background sync error (BLOCK_CARD):', err));
     }
 
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
@@ -2836,6 +2928,16 @@
         a.lastRedeemed = new Date();
         showToast('24h timer restarted for ' + accId);
         renderCooldowns();
+
+        // Cloud Persistence: ⏱ Cooldowns tab in Google Sheets
+        fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            auth: VAULT_AUTH_KEY,
+            action: 'RESET_COOLDOWN',
+            account: accId
+          })
+        }).catch(err => console.warn('Background sync error (RESET_COOLDOWN):', err));
       }
     }
 
