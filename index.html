@@ -345,6 +345,7 @@
               <option value="TaxSpanner">12. TaxSpanner (₹2,950)</option>
               <option value="Thyrocare">13. Thyrocare</option>
               <option value="Uber">14. Uber Rides (₹100)</option>
+              <option value="Redeemed">📜 Redeemed Archive</option>
             </select>
             <a id="dt-sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
               <svg class="w-4 h-4 shrink-0 text-[#0F9D58] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
@@ -544,15 +545,25 @@
       <div id="mb-view-matrix" class="hidden"></div>
     </main>
 
-    <!-- Hovering WhatsApp FAB: Visible ONLY when Select mode is active -->
-    <button id="mb-hover-whatsapp" onclick="shareSelectedWithShareSheet()" class="hidden fixed right-5 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_rgba(37,211,102,0.5)] items-center justify-center hover:scale-105 active:scale-90 transition-all border border-white/25" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));" title="Share Selected via WhatsApp">
-      <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
-        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
-      </svg>
-      <span id="mb-hover-badge" class="hidden absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center text-[11px] font-black text-black bg-amber-400 rounded-full border-2 border-black shadow">
-        0
-      </span>
-    </button>
+    <!-- Hovering Action Dock: Visible ONLY when Select mode is active -->
+    <div id="mb-hover-actions" class="hidden fixed right-4 z-40 items-center gap-2.5" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
+      <!-- Mark Redeemed FAB -->
+      <button id="mb-hover-redeem" onclick="batchMarkAsRedeemed()" class="relative h-13 px-4 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_8px_25px_rgba(16,185,129,0.45)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all border border-emerald-400/30 font-bold text-xs" title="Mark Selected as Redeemed">
+        <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Redeem</span>
+        <span id="mb-hover-redeem-badge" class="hidden min-w-[20px] h-[20px] px-1.5 flex items-center justify-center text-[10.5px] font-black text-black bg-white rounded-full shadow">0</span>
+      </button>
+
+      <!-- WhatsApp FAB -->
+      <button id="mb-hover-whatsapp" onclick="shareSelectedWithShareSheet()" class="relative w-13 h-13 rounded-full bg-[#25D366] text-white shadow-[0_8px_25px_rgba(37,211,102,0.45)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-white/25" title="Share Selected via WhatsApp">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+        </svg>
+        <span id="mb-hover-badge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-amber-400 rounded-full border border-black shadow">0</span>
+      </button>
+    </div>
   </div>
 
 
@@ -1123,7 +1134,8 @@
       { key: 'TattvaSpa', name: 'Tattva Spa', denom: 1500, hasPin: true, tag: 'Wellness' },
       { key: 'TaxSpanner', name: 'TaxSpanner', denom: 2950, hasPin: false, tag: 'Tax Filing' },
       { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
-      { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' }
+      { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' },
+      { key: 'Redeemed', name: '📜 Redeemed', denom: 0, hasPin: false, tag: 'Archive', isSpecial: true }
     ];
 
     function normalizeBrandKey(brand) {
@@ -1144,6 +1156,7 @@
       if (b.includes('taxspanner') || b.includes('tax')) return 'TaxSpanner';
       if (b.includes('thyrocare')) return 'Thyrocare';
       if (b.includes('uber')) return 'Uber';
+      if (b.includes('redeem')) return 'Redeemed';
       return brand;
     }
 
@@ -1174,12 +1187,9 @@
 
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
     let activityFilter = 'all';
-    let sharedActivity = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
-    if (!sharedActivity.length) {
-      sharedActivity = [
-        { code: 'RD-TECH-1002931', brand: 'Reliance Digital', amount: 500, pin: '', sharedAt: '18-Oct-2026, 02:40 AM IST', timestampMs: Date.now() - 300000 }
-      ];
-    }
+    let sharedActivity = (JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]'))
+      .filter(s => s.code !== 'RD-TECH-1002931');
+    saveSharedActivity();
     let redeemedList = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
     let undoState = { timer: null, secondsLeft: 10, code: null, brand: null };
 
@@ -1233,12 +1243,14 @@
 
       let foundAmount = 0;
       let foundPin = '';
+      let sheetBrand = brand || '';
 
       const v = state.vouchers.find(x => x.code === code);
       if (v) {
         v.status = 'USED';
         foundAmount = v.amount || foundAmount;
         foundPin = v.pin || foundPin;
+        if (v.brand) sheetBrand = v.brand;
       }
 
       const now = new Date();
@@ -1247,15 +1259,15 @@
 
       redeemedList.unshift({
         code: code,
-        brand: brand,
+        brand: sheetBrand,
         amount: foundAmount,
         pin: foundPin,
         redeemedTimestampIST: timeStr,
-        originalTab: brand
+        originalTab: sheetBrand
       });
       saveRedeemedList();
 
-      showUndoToast(code, brand);
+      showUndoToast(code, getBrandDisplayName(sheetBrand));
       renderDeckSelector();
       renderVault();
 
@@ -1265,8 +1277,9 @@
           body: JSON.stringify({
             auth: VAULT_AUTH_KEY,
             action: 'MOVE_TO_REDEEMED',
-            brand: brand,
-            code: code
+            brand: sheetBrand,
+            code: code,
+            codes: [code]
           })
         });
       } catch(e) {
@@ -1275,13 +1288,15 @@
     }
 
     async function undoRedemption(code, brand) {
-      redeemedList = redeemedList.filter(r => r.code !== code);
+      const targetCodes = (code || '').split(',').map(c => c.trim()).filter(Boolean);
+      targetCodes.forEach(c => {
+        redeemedList = redeemedList.filter(r => r.code !== c);
+        const v = state.vouchers.find(x => x.code === c);
+        if (v) {
+          v.status = 'ACTIVE';
+        }
+      });
       saveRedeemedList();
-
-      const v = state.vouchers.find(x => x.code === code);
-      if (v) {
-        v.status = 'ACTIVE';
-      }
 
       hideUndoToast();
       showToast('Voucher restored to active vault');
@@ -1294,7 +1309,8 @@
           body: JSON.stringify({
             auth: VAULT_AUTH_KEY,
             action: 'UNDO_REDEEM',
-            code: code
+            code: targetCodes[0],
+            codes: targetCodes
           })
         });
       } catch(e) {
@@ -1392,6 +1408,16 @@
         const mbFilterBar = document.getElementById('mb-activity-filters-bar');
         if (dtFilterBar) dtFilterBar.classList.add('hidden');
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
+      }
+
+      if (normKey === 'Redeemed') {
+        const redeemedCount = redeemedList.length;
+        const totalValue = redeemedList.reduce((acc, r) => acc + (r.amount || 0), 0);
+        return {
+          title: '📜 Redeemed Archive',
+          calc: `${redeemedCount} Vouchers (${totalValue > 0 ? `₹${totalValue.toLocaleString()} Value · ` : ''}Archived in Google Sheet)`,
+          sub: 'Cumulative list of all vouchers marked redeemed and stored in Google Sheets'
+        };
       }
 
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
@@ -1978,6 +2004,115 @@
         return;
       }
 
+      if (isRedeemedTab) {
+        let rList = [...redeemedList];
+        if (state.searchQuery) {
+          const q = state.searchQuery.toLowerCase();
+          rList = rList.filter(r =>
+            (r.brand && r.brand.toLowerCase().includes(q)) ||
+            (r.code && r.code.toLowerCase().includes(q)) ||
+            (r.pin && String(r.pin).toLowerCase().includes(q))
+          );
+        }
+
+        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+        if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = rList.length;
+
+        // Desktop Table Body for Redeemed Tab
+        document.getElementById('dt-vault-tbody').innerHTML = rList.length ? rList.map((r, i) => {
+          const vBrandName = getBrandDisplayName(r.brand);
+          return `
+            <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 opacity-75">
+              <td class="p-3 text-center text-xs font-mono-apple text-neutral-400">#${i + 1}</td>
+              <td class="p-3">
+                <div class="font-bold text-sm text-neutral-300">${vBrandName}</div>
+                ${r.amount > 0 ? `<div class="text-xs font-semibold text-emerald-400">₹${r.amount.toLocaleString()}</div>` : ''}
+              </td>
+              <td class="p-3">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono-apple font-bold line-through text-neutral-400">${r.code}</span>
+                  <button onclick="copyToClipboard('${r.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300">Copy</button>
+                </div>
+                ${r.pin ? `<div class="font-mono-apple text-xs text-neutral-400 mt-0.5">PIN: ${r.pin}</div>` : ''}
+              </td>
+              <td class="p-3 text-xs text-neutral-400">
+                <div>⏱ ${r.redeemedTimestampIST || 'Recent'}</div>
+                ${r.originalTab ? `<div class="text-[10px] text-neutral-500">Tab: ${r.originalTab}</div>` : ''}
+              </td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ REDEEMED</span>
+              </td>
+              <td class="p-3 text-right">
+                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="text-xs font-semibold text-amber-300 hover:underline">↶ Restore</button>
+              </td>
+            </tr>
+          `;
+        }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No redeemed vouchers yet.</td></tr>`;
+
+        // Mobile VIP Wallet Cards for Redeemed Tab
+        document.getElementById('mb-vouchers-list').innerHTML = rList.length ? rList.map((r, i) => {
+          const vBrandName = getBrandDisplayName(r.brand);
+          const hasPin = r.pin && String(r.pin).trim() && String(r.pin).trim() !== 'null' && String(r.pin).trim() !== '-';
+          return `
+            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85">
+              <!-- Top Row: Brand, Value, Status -->
+              <div class="flex items-center justify-between text-xs">
+                <div>
+                  <span class="font-bold text-sm text-white">${vBrandName}</span>
+                  ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">✓ REDEEMED</span>
+                </div>
+              </div>
+
+              <!-- Embossed Monospace Code Box -->
+              <div onclick="copyToClipboard('${r.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-neutral-700 active:scale-[0.99] transition-all">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                    <span class="font-mono-apple text-base font-bold line-through text-neutral-400 tracking-wider">${r.code}</span>
+                  </div>
+                  ${hasPin ? `
+                    <div class="flex items-center gap-2 pt-0.5">
+                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
+                      <span class="font-mono-apple text-sm font-bold text-neutral-400">${r.pin}</span>
+                    </div>
+                  ` : ''}
+                </div>
+                <button onclick="event.stopPropagation(); copyToClipboard('${r.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-neutral-800 text-neutral-300 hover:text-white active:scale-95 shadow transition-all">
+                  Copy
+                </button>
+              </div>
+
+              <!-- Bottom Row: Timestamp & Restore Button -->
+              <div class="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-xs">
+                <div class="flex items-center gap-1.5 text-[11px] text-neutral-400">
+                  <span>⏱ ${r.redeemedTimestampIST || 'Recent'}</span>
+                  ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${r.originalTab}</span>` : ''}
+                </div>
+                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-amber-200 hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
+                  <span>↶</span> Restore to Vault
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('') : `
+          <div class="rounded-2xl p-8 bg-neutral-900/60 border border-neutral-800 text-center space-y-3">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl font-bold">
+              📜
+            </div>
+            <h4 class="font-bold text-sm text-neutral-200">No redeemed vouchers yet</h4>
+            <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+              When you select vouchers and tap "Redeem", they will be archived here and synced directly into your Google Sheet's "Redeemed" tab.
+            </p>
+          </div>
+        `;
+
+        renderDeckSelector();
+        return;
+      }
+
       // Normal Brand Tab Feed
       let vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
       if (state.searchQuery) {
@@ -2034,7 +2169,7 @@
           </td>
           <td class="p-3 text-right">
             <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
-            <button onclick="markVoucherAsRedeemed('${v.code}', '${vBrandName}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
+            <button onclick="markVoucherAsRedeemed('${v.code}', '${v.brand}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
           </td>
         </tr>
       `;
@@ -2081,29 +2216,25 @@
                 Copy
               </button>
             </div>
-
-            <!-- Card Action Bar: Share & Mark Redeemed -->
-            <div class="flex items-center gap-2 pt-0.5">
-              <button onclick="shareSingle('${v.id}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/25 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                <span>↗</span> Share via WhatsApp
-              </button>
-              <button onclick="markVoucherAsRedeemed('${v.code}', '${vBrandName}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1">
-                <span>✓</span> Mark Redeemed
-              </button>
-            </div>
           </div>
         `;
       }).join('') : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
 
-      // Update badge on floating WhatsApp FAB
+      // Update badge on floating action dock (WhatsApp FAB & Redeem FAB)
       const fabBadge = document.getElementById('mb-hover-badge');
-      if (fabBadge) {
-        if (state.selectedIds.size > 0) {
+      const redeemBadge = document.getElementById('mb-hover-redeem-badge');
+      if (state.selectedIds.size > 0) {
+        if (fabBadge) {
           fabBadge.textContent = state.selectedIds.size;
           fabBadge.classList.remove('hidden');
-        } else {
-          fabBadge.classList.add('hidden');
         }
+        if (redeemBadge) {
+          redeemBadge.textContent = state.selectedIds.size;
+          redeemBadge.classList.remove('hidden');
+        }
+      } else {
+        if (fabBadge) fabBadge.classList.add('hidden');
+        if (redeemBadge) redeemBadge.classList.add('hidden');
       }
 
       renderDeckSelector();
@@ -2149,16 +2280,21 @@
         }
       });
       counts['ActivityLog'] = ingestedCount + sharedActivity.length;
+      counts['Redeemed'] = redeemedList.length;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
         const isSel = (normActive === item.key);
         const isSpecial = item.isSpecial;
+        let countLabel = `${count} vouchers`;
+        if (item.key === 'ActivityLog') countLabel = `${count} active`;
+        else if (item.key === 'Redeemed') countLabel = `${count} redeemed`;
+
         return `
           <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : (isSpecial ? 'bg-neutral-900 text-amber-300 border border-amber-500/40 hover:border-amber-400' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700')}">
             <div class="truncate max-w-[125px]">${item.name}</div>
             <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : (isSpecial ? 'text-amber-400/90 font-medium' : 'text-neutral-400')} font-normal mt-0.5">
-              ${isSpecial ? `${count} active` : `${count} vouchers`}
+              ${countLabel}
             </div>
           </button>
         `;
@@ -2357,7 +2493,7 @@
       state.isSelectMode = !state.isSelectMode;
       const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
       const dtBtn = document.getElementById('dt-select-btn');
-      const fab = document.getElementById('mb-hover-whatsapp');
+      const actionsDock = document.getElementById('mb-hover-actions') || document.getElementById('mb-hover-whatsapp');
 
       if (state.isSelectMode) {
         if (dtBtn) dtBtn.textContent = 'Done';
@@ -2366,9 +2502,9 @@
           mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
           mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
         }
-        if (fab) {
-          fab.classList.remove('hidden');
-          fab.classList.add('flex');
+        if (actionsDock) {
+          actionsDock.classList.remove('hidden');
+          actionsDock.classList.add('flex');
         }
       } else {
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
@@ -2377,9 +2513,9 @@
           mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
           mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
         }
-        if (fab) {
-          fab.classList.add('hidden');
-          fab.classList.remove('flex');
+        if (actionsDock) {
+          actionsDock.classList.add('hidden');
+          actionsDock.classList.remove('flex');
         }
         state.selectedIds.clear();
       }
@@ -2393,6 +2529,10 @@
         brandVouchers = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
         const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
         const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+        if (state.isSelectMode && !sel.length) {
+          showToast("Please select at least 1 voucher to share");
+          return;
+        }
         const targets = sel.length > 0 ? sel : allBrandVouchers;
         if (!targets.length) {
           showToast("No vouchers to share");
@@ -2423,6 +2563,10 @@
       brandVouchers = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
       const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
       const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+      if (state.isSelectMode && !sel.length) {
+        showToast("Please select at least 1 voucher to share");
+        return;
+      }
       const targets = sel.length > 0 ? sel : allBrandVouchers;
 
       if (!targets.length) {
@@ -2497,7 +2641,8 @@
         'timesprime': 'Times Prime',
         'cultfit': 'Cult.fit Elite',
         'amazonprime': 'Amazon Prime',
-        'tattvaspa': 'Tattva Spa'
+        'tattvaspa': 'Tattva Spa',
+        'redeemed': '📜 Redeemed'
       };
       const clean = (brand || '').toLowerCase().replace(/[\s\.\-_]/g, '');
       return map[clean] || brand || 'Voucher';
@@ -2633,29 +2778,56 @@
 
     async function batchMarkAsRedeemed() {
       const toRedeem = Array.from(state.selectedIds);
-      if (!toRedeem.length) return;
+      if (!toRedeem.length) {
+        showToast("Please select at least 1 voucher to redeem");
+        return;
+      }
 
-      toRedeem.forEach(id => {
-        const v = state.vouchers.find(x => x.id === id);
-        if (v) {
-          v.status = 'USED';
-          // Try background sync to Sheet
-          fetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify({
-              auth: VAULT_AUTH_KEY,
-              action: 'MARK_REDEEMED',
-              brand: v.brand,
-              bookingId: v.bookingId,
-              code: v.code
-            })
-          }).catch(e => console.warn('Sync post error', e));
-        }
+      const targetVouchers = toRedeem.map(id => state.vouchers.find(x => x.id === id)).filter(Boolean);
+      if (!targetVouchers.length) {
+        showToast("Selected voucher(s) not found in vault");
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
+                      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+
+      const movedCodes = [];
+      targetVouchers.forEach(v => {
+        v.status = 'USED';
+        sharedActivity = sharedActivity.filter(s => s.code !== v.code);
+        redeemedList.unshift({
+          code: v.code,
+          brand: v.brand,
+          amount: v.amount || 0,
+          pin: v.pin || '',
+          redeemedTimestampIST: timeStr,
+          originalTab: v.brand
+        });
+        movedCodes.push(v.code);
       });
 
-      showToast(`Marked ${toRedeem.length} vouchers as Used`);
+      saveSharedActivity();
+      saveRedeemedList();
+
       state.selectedIds.clear();
+      showUndoToast(movedCodes.join(', '), targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`);
+      renderDeckSelector();
       renderVault();
+
+      try {
+        await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            auth: VAULT_AUTH_KEY,
+            action: 'MOVE_TO_REDEEMED',
+            codes: movedCodes
+          })
+        });
+      } catch(e) {
+        console.warn('Backend batch move error:', e);
+      }
     }
 
     function resetAccountTimer(accId) {

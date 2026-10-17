@@ -395,6 +395,25 @@ function doGet(e) {
     }
   }
 
+  // Clear test timestamps on historical vouchers (e.g. from undo testing)
+  if (e && e.parameter && e.parameter.clean_test_timestamps === "true") {
+    const brandsToClean = ["CultFit", "TattvaSpa"];
+    const cleaned = [];
+    brandsToClean.forEach(bName => {
+      const sh = ss.getSheetByName(bName);
+      if (sh) {
+        const data = sh.getDataRange().getValues();
+        for (let i = 1; i < data.length; i++) {
+          if (data[i][9]) { // Column J
+            sh.getRange(i + 1, 10).setValue(""); // clear cell
+            cleaned.push({ brand: bName, code: data[i][2], clearedTimestamp: data[i][9] });
+          }
+        }
+      }
+    });
+    return ContentService.createTextOutput(JSON.stringify({ success: true, cleaned: cleaned })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // ON-DEMAND REAL-TIME EMAIL INGESTION
   if (!e || !e.parameter || e.parameter.ingest !== "false") {
     try {
@@ -500,14 +519,7 @@ function doPost(e) {
     }
 
     // 3. Move Voucher to "Redeemed" Tab (Approach A - Cut & Paste)
-    if (data.action === "MOVE_TO_REDEEMED") {
-      const bSheet = ss.getSheetByName(data.brand);
-      if (!bSheet) {
-        return ContentService.createTextOutput(JSON.stringify({
-          error: "Brand tab not found: " + data.brand
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
+    if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
       let rSheet = ss.getSheetByName("Redeemed");
       if (!rSheet) {
         rSheet = ss.insertSheet("Redeemed");
@@ -516,37 +528,88 @@ function doPost(e) {
         rSheet.setFrozenRows(1);
       }
 
-      const rows = bSheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i][2] === data.code || rows[i][1] === data.bookingId) {
-          const row = rows[i];
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      if (!codes.length && data.bookingId) {
+        codes.push(String(data.bookingId).trim());
+      }
+
+      const moved = [];
+
+      codes.forEach(codeVal => {
+        let targetSheet = null;
+        let targetRowIndex = -1;
+        let rowData = null;
+
+        // 1. Try provided brand if present
+        if (data.brand) {
+          const directSheet = ss.getSheetByName(data.brand);
+          if (directSheet && directSheet.getName() !== "Redeemed") {
+            const vals = directSheet.getDataRange().getValues();
+            for (let i = 1; i < vals.length; i++) {
+              if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
+                targetSheet = directSheet;
+                targetRowIndex = i + 1;
+                rowData = vals[i];
+                break;
+              }
+            }
+          }
+        }
+
+        // 2. If not found in provided brand, scan ALL brand sheets (excluding Redeemed, Cards, Accounts)
+        if (!targetSheet) {
+          const allSheets = ss.getSheets();
+          for (const s of allSheets) {
+            const sName = s.getName();
+            if (sName === "Redeemed" || sName === "Cards" || sName === "Accounts") continue;
+            const vals = s.getDataRange().getValues();
+            for (let i = 1; i < vals.length; i++) {
+              if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
+                targetSheet = s;
+                targetRowIndex = i + 1;
+                rowData = vals[i];
+                break;
+              }
+            }
+            if (targetSheet) break;
+          }
+        }
+
+        if (targetSheet && rowData) {
+          const origBrand = targetSheet.getName();
           const redeemedRow = [
             rSheet.getLastRow(),                    // A: #
-            data.brand,                             // B: Brand
-            row[1],                                 // C: Booking ID
-            `'${row[2]}`,                           // D: Code
-            row[3] ? `'${row[3]}` : "",             // E: PIN
-            row[4],                                 // F: Value
-            row[5],                                 // G: Date of Issue
-            row[6],                                 // H: Account
-            row[7],                                 // I: Card
+            origBrand,                              // B: Brand
+            rowData[1],                             // C: Booking ID
+            `'${rowData[2]}`,                       // D: Code
+            rowData[3] ? `'${rowData[3]}` : "",     // E: PIN
+            rowData[4],                             // F: Value
+            rowData[5],                             // G: Date of Issue
+            rowData[6],                             // H: Account
+            rowData[7],                             // I: Card
             "REDEEMED",                             // J: Status
             formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
-            data.brand                              // L: Original Tab
+            origBrand,                              // L: Original Tab
+            rowData[9] ? String(rowData[9]) : ""    // M: Original Ingested Timestamp (if any)
           ];
           rSheet.appendRow(redeemedRow);
-          bSheet.deleteRow(i + 1); // Delete from active brand tab
-          return ContentService.createTextOutput(JSON.stringify({
-            success: true,
-            action: "MOVE_TO_REDEEMED",
-            code: data.code,
-            brand: data.brand
-          })).setMimeType(ContentService.MimeType.JSON);
+          targetSheet.deleteRow(targetRowIndex);
+          moved.push({ code: codeVal, brand: origBrand });
         }
+      });
+
+      if (moved.length > 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          action: "MOVE_TO_REDEEMED",
+          movedCount: moved.length,
+          moved: moved
+        })).setMimeType(ContentService.MimeType.JSON);
       }
 
       return ContentService.createTextOutput(JSON.stringify({
-        error: "Voucher not found in " + data.brand
+        error: "Voucher(s) not found in any brand tab: " + codes.join(", ")
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -559,9 +622,21 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      if (!codes.length && data.bookingId) {
+        codes.push(String(data.bookingId).trim());
+      }
+
+      const restored = [];
       const rRows = rSheet.getDataRange().getValues();
-      for (let i = 1; i < rRows.length; i++) {
-        if (rRows[i][3] === data.code || rRows[i][2] === data.bookingId) {
+
+      // Search backwards so deleting rows does not alter row index of earlier rows
+      for (let i = rRows.length - 1; i >= 1; i--) {
+        const rowCode = String(rRows[i][3]).trim();
+        const rowBooking = String(rRows[i][2]).trim();
+
+        if (codes.includes(rowCode) || codes.includes(rowBooking)) {
           const origBrand = String(rRows[i][11] || rRows[i][1]);
           let bSheet = ss.getSheetByName(origBrand);
           if (!bSheet) {
@@ -571,6 +646,7 @@ function doPost(e) {
             bSheet.setFrozenRows(1);
           }
 
+          const originalTimestamp = (rRows[i].length > 12 && rRows[i][12]) ? String(rRows[i][12]) : "";
           const restoredRow = [
             bSheet.getLastRow(),                    // A: #
             rRows[i][2],                            // B: Booking ID
@@ -581,22 +657,26 @@ function doPost(e) {
             rRows[i][7],                            // G: Account
             rRows[i][8],                            // H: Card
             "ACTIVE",                               // I: Status
-            formatISTTimestamp(new Date())          // J: Appended Timestamp (IST)
+            originalTimestamp                       // J: Appended Timestamp (IST) - only restore if originally existed!
           ];
 
           bSheet.appendRow(restoredRow);
           rSheet.deleteRow(i + 1); // Remove from Redeemed sheet
-          return ContentService.createTextOutput(JSON.stringify({
-            success: true,
-            action: "UNDO_REDEEM",
-            code: data.code,
-            brand: origBrand
-          })).setMimeType(ContentService.MimeType.JSON);
+          restored.push({ code: rowCode, brand: origBrand });
         }
       }
 
+      if (restored.length > 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          action: "UNDO_REDEEM",
+          restoredCount: restored.length,
+          restored: restored
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       return ContentService.createTextOutput(JSON.stringify({
-        error: "Voucher not found in Redeemed sheet"
+        error: "Voucher(s) not found in Redeemed sheet: " + codes.join(", ")
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
