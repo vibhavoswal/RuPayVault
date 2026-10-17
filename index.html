@@ -345,119 +345,70 @@
   <!-- ======================================================== -->
   <!-- 2. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
   <!-- ======================================================== -->
-  <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col justify-between">
+  <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
     
     <!-- Top Bar with Safe Area Top Padding -->
-    <header class="px-4 py-2 shrink-0 safe-top-nav flex items-center justify-between border-b border-white/10" style="background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
+    <header class="px-3.5 py-2.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30">
+      <!-- Left: Link to Google Sheet (Icon Only) -->
+      <a id="sheet-link-btn" href="https://docs.google.com/spreadsheets" target="_blank" rel="noopener noreferrer" class="p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
+        <svg class="w-4 h-4 shrink-0 text-[#0F9D58] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/>
+        </svg>
+      </a>
+      
       <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span class="text-xs font-bold text-white tracking-tight" id="mb-brand-title">Lakmé Salon</span>
-        <span class="text-[10px] text-neutral-400 font-mono-apple" id="mb-sync-status">Live</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- Cumulative Value Pill in header -->
-        <span id="mb-header-calc" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-300 bg-amber-400/15 border border-amber-400/25">
-          Loading...
-        </span>
-        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-blue-400 hover:text-white" title="Sync Sheets">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
+        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-amber-400 hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
+          <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
-        <button onclick="toggleTheme()" class="px-1.5 py-0.5 rounded-full text-xs" style="background: var(--fill-quaternary);">
-          <span class="theme-label">☀️</span>
+        <!-- ONLY ONE SELECT BUTTON AT THE TOP -->
+        <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-amber-300 border border-amber-400/30 hover:bg-neutral-700 active:scale-95 transition-all">
+          Select
         </button>
       </div>
     </header>
 
-    <!-- Scrollable Screen Content -->
-    <main class="flex-1 overflow-y-auto px-3.5 py-3 mobile-scroll-container space-y-4">
+    <!-- Top Deck Selector (Card-Style Horizontal Brand Pass Deck) -->
+    <div id="mb-deck-selector" class="p-2.5 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800 z-20">
+      <!-- Populated dynamically via JS in strict brand order -->
+    </div>
+
+    <!-- Denomination Breakdown Banner (Single Line Compact) -->
+    <div class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
+      <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
+      <span id="mb-header-calc" class="font-bold text-amber-400 font-mono-apple pl-2 tracking-tight">Loading...</span>
+    </div>
+
+    <!-- Scrollable Pass Cards Deck Content -->
+    <main class="flex-1 overflow-y-auto px-3.5 py-2 mobile-scroll-container space-y-3 pb-24">
       
-      <!-- MOBILE TAB 1: CARDS (Hidden from UI, state preserved) -->
-      <div id="mb-view-cards" class="hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold tracking-tight">Cards &amp; Quotas</h2>
-          <button onclick="openAddCardModal()" class="w-7 h-7 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-sm" style="background: var(--system-blue);">
-            +
-          </button>
+      <!-- Four Fountains 30-Day Alert Banner -->
+      <div id="mb-ff-alert" class="hidden p-3 rounded-2xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-start gap-2">
+        <span class="text-base shrink-0 mt-0.5">⚠️</span>
+        <div>
+          <strong class="font-semibold text-amber-100">Strict 30-Day Expiry:</strong>
+          <p class="text-[11px] text-amber-300/90 mt-0.5">Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.</p>
         </div>
-        <div id="mb-cards-list" class="space-y-3"></div>
       </div>
 
-      <!-- MOBILE TAB 2: VAULT (Primary Active View) -->
-      <div id="mb-view-vault" class="space-y-3">
-        <!-- Four Fountains 30-Day Alert Banner -->
-        <div id="mb-ff-alert" class="hidden p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-center gap-2">
-          <span class="text-base">⚠️</span>
-          <span><strong>Strict 30-Day Expiry:</strong> Four Fountains vouchers expire exactly 30 days from redemption.</span>
-        </div>
+      <!-- Vouchers List -->
+      <div id="mb-vouchers-list" class="space-y-3"></div>
 
-        <div id="mb-vouchers-list" class="space-y-3"></div>
-      </div>
-
-      <!-- MOBILE TAB 3: COOLDOWNS -->
-      <div id="mb-view-cooldowns" class="hidden space-y-3 pb-24">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold tracking-tight">24h Cooldowns</h2>
-          <button onclick="setTab('vault')" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white">Back to Vault</button>
-        </div>
-        <p class="text-xs" style="color: var(--label-secondary);">1 redemption per account per 24 hours.</p>
-        <div id="mb-cooldowns-list" class="space-y-2"></div>
-      </div>
-
-      <!-- MOBILE TAB 4: RULES -->
-      <div id="mb-view-matrix" class="hidden space-y-3 pb-24">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xl font-bold tracking-tight">Benefit Rules</h2>
-          <button onclick="setTab('vault')" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white">Back to Vault</button>
-        </div>
-        <select id="mb-matrix-select" onchange="renderMobileMatrixCard(this.value)" class="w-full rounded-xl p-3 text-xs font-semibold" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-          <option value="pnb_imp">PNB Imperial RSDC (65249710)</option>
-          <option value="union">Union Bank Emperio (652411)</option>
-          <option value="bob">BoB Bhoomi RSDC (652505)</option>
-          <option value="canara_dc">Canara RSDC (652550)</option>
-          <option value="pnb_cc">PNB Select CC (652870)</option>
-          <option value="canara_cc">Canara CC (653020)</option>
-        </select>
-        <div id="mb-matrix-card-content" class="space-y-1.5 mt-2"></div>
-      </div>
-
+      <!-- Hidden internal views (preserved for data integrity) -->
+      <div id="mb-view-cards" class="hidden"></div>
+      <div id="mb-view-cooldowns" class="hidden"></div>
+      <div id="mb-view-matrix" class="hidden"></div>
     </main>
 
-    <!-- Mobile Sticky Multi-Select Action Bar (Thumb Zone) -->
-    <div id="mb-sticky-bar" class="hidden fixed left-0 right-0 px-4 py-2.5 safe-sticky-bar flex items-center justify-between z-30" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
-      <div>
-        <span id="mb-sel-count" class="text-xs font-bold" style="color: var(--system-blue);">0 Selected</span>
-        <p id="mb-sel-sum" class="text-[10px]" style="color: var(--label-tertiary);">₹0 Total</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="copyBatchPlaintext()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium" style="background: var(--fill-quaternary);">
-          Plain
-        </button>
-        <button onclick="openWhatsAppModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-1 shadow-sm" style="background: #25D366;">
-          WhatsApp
-        </button>
-        <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium" style="background: var(--fill-secondary); color: var(--system-orange);">
-          Used
-        </button>
-      </div>
-    </div>
-
-    <!-- Mobile Bottom Dock (Thumb Zone: Cumulative Math + WhatsApp All + Strict Brand Ribbon) -->
-    <div id="mb-bottom-dock" class="ios-docked-nav flex flex-col justify-between px-3 pt-2 space-y-1.5">
-      <!-- Actions Row: Select & WhatsApp All Action -->
-      <div class="flex items-center justify-between px-1">
-        <button id="mb-select-toggle" onclick="toggleSelectMode()" class="px-3 py-1 rounded-xl text-xs font-semibold text-neutral-300 bg-white/10 hover:bg-white/20">
-          Select
-        </button>
-        <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-sm flex items-center gap-1 active:scale-95 transition-transform">
-          <span>WhatsApp All</span>
-        </button>
-      </div>
-
-      <!-- Row 2: Thumb-Reachable Brand Ribbon in Strict User Order -->
-      <div id="mb-thumb-ribbon" class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-        <!-- Populated dynamically via JS in strict brand order -->
-      </div>
-    </div>
+    <!-- Hovering WhatsApp FAB: Visible ONLY when Select mode is active -->
+    <button id="mb-hover-whatsapp" onclick="shareSelectedWithShareSheet()" class="hidden fixed right-5 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_rgba(37,211,102,0.5)] items-center justify-center hover:scale-105 active:scale-90 transition-all border border-white/25" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));" title="Share Selected via WhatsApp">
+      <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+      </svg>
+      <span id="mb-hover-badge" class="hidden absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center text-[11px] font-black text-black bg-amber-400 rounded-full border-2 border-black shadow">
+        0
+      </span>
+    </button>
   </div>
 
 
@@ -629,7 +580,7 @@
       if (normKey === 'FourFountains') {
         return {
           title: b.name,
-          calc: `${count} Vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()} Total`,
+          calc: `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
           sub: `⚠️ Strict 30-day validity from redemption date. Use immediately.`
         };
       }
@@ -637,7 +588,7 @@
       if (denom > 0) {
         return {
           title: b.name,
-          calc: `${count} Vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()} Total`,
+          calc: `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
           sub: `${count} vouchers ready to redeem`
         };
       } else {
@@ -751,8 +702,10 @@
     /* --- LIVE GOOGLE SHEETS FETCH --- */
     async function syncWithGoogleSheets() {
       showToast("Connecting to Google Sheets...");
-      document.getElementById('dt-sync-status').textContent = 'Syncing...';
-      document.getElementById('mb-sync-status').textContent = 'Syncing...';
+      if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing...';
+      if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = 'Syncing...';
+      const spinner = document.getElementById('mb-sync-spinner');
+      if (spinner) spinner.classList.add('animate-spin');
       
       try {
         const res = await fetch(API_ENDPOINT);
@@ -788,9 +741,9 @@
 
           const countMsg = `Synced ${state.vouchers.length} vouchers from Sheet`;
           showToast(countMsg);
-          document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
-          document.getElementById('mb-sync-status').textContent = `${state.vouchers.length} vouchers synced`;
-          document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
+          if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
+          if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = `${state.vouchers.length} synced`;
+          if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
         }
 
         if (data.cooldowns && data.cooldowns.length) {
@@ -800,13 +753,30 @@
           }));
         }
 
+        if (data.sheetUrl) {
+          const sheetLink = document.getElementById('sheet-link-btn');
+          if (sheetLink) sheetLink.href = data.sheetUrl;
+          localStorage.setItem('rupay_sheet_url', data.sheetUrl);
+        }
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const mbSyncTime = document.getElementById('mb-sync-time');
+        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${timeStr}`;
+
         renderAll();
       } catch (err) {
         console.error("Sync error:", err);
         showToast("Offline mode: " + err.message);
-        document.getElementById('dt-sync-status').textContent = 'Offline';
-        document.getElementById('mb-sync-status').textContent = 'Offline mode';
-        document.getElementById('dt-sync-dot').style.background = 'var(--system-orange)';
+        if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Offline';
+        if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = 'Offline mode';
+        if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-orange)';
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const mbSyncTime = document.getElementById('mb-sync-time');
+        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${timeStr} (cached)`;
+      } finally {
+        if (spinner) spinner.classList.remove('animate-spin');
       }
     }
 
@@ -992,32 +962,33 @@
         </tr>
       `).join('') || `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
 
-      // Mobile Glass Cards (Touch-Optimized, Tap-to-Copy, Zero Account/Source Clutter)
+      // Mobile VIP Wallet Cards (Luxury Pass Aesthetic, High Tactile Feedback)
       document.getElementById('mb-vouchers-list').innerHTML = vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
         const isFF = normActiveBrand === 'FourFountains';
+        const isChecked = state.selectedIds.has(v.id);
         return `
-          <div class="rounded-2xl p-4 space-y-3 border border-white/10 shadow-xl relative overflow-hidden ${v.status === 'USED' ? 'opacity-40' : ''}" style="background: rgba(28, 28, 32, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
-            <!-- Top Row: Voucher Index, Expiry / Redeemed Date, Status -->
+          <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''} ${v.status === 'USED' ? 'opacity-40' : ''}">
+            <!-- Top Row: Checkbox, PASS #, Date/Expiry, Status -->
             <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                ${state.isSelectMode ? `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-blue-500">` : ''}
-                <span class="font-mono-apple font-bold text-neutral-400 text-[11px]">#${i + 1}</span>
+              <div class="flex items-center gap-2.5">
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">` : ''}
+                <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
               <div class="flex items-center gap-1.5">
-                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-white/10 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.expiry && v.expiry !== '31 Dec 2026' ? `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry}</span>` : '')}
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'}">
+                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed on: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'}">
                   ${v.status}
                 </span>
               </div>
             </div>
 
-            <!-- High-Contrast Monospace Code Box (Tap anywhere to copy) -->
-            <div onclick="copyToClipboard('${v.code}')" class="rounded-xl p-3 bg-black/60 border border-white/10 flex items-center justify-between cursor-pointer hover:border-blue-500/40 active:scale-[0.99] transition-all">
+            <!-- Embossed Monospace Code Box (Tap anywhere to copy) -->
+            <div onclick="copyToClipboard('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span class="font-mono-apple text-base font-bold text-blue-400 tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
+                  <span class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
@@ -1026,26 +997,26 @@
                   </div>
                 ` : ''}
               </div>
-              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/15 hover:bg-white/25 active:scale-95 transition-transform">
+              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
                 Copy
-              </button>
-            </div>
-
-            <!-- Action Row: WhatsApp Share & Status Toggle -->
-            <div class="flex items-center justify-between text-xs pt-0.5">
-              <button onclick="shareSingle('${v.id}')" class="font-bold text-emerald-400 flex items-center gap-1.5 hover:underline">
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
-                <span>WhatsApp</span>
-              </button>
-              <button onclick="toggleSingleStatus('${v.id}')" class="font-medium text-neutral-400 hover:text-white">
-                ${v.status === 'USED' ? 'Mark Active' : 'Mark as Used'}
               </button>
             </div>
           </div>
         `;
       }).join('') || `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
 
-      renderFilterPills();
+      // Update badge on floating WhatsApp FAB
+      const fabBadge = document.getElementById('mb-hover-badge');
+      if (fabBadge) {
+        if (state.selectedIds.size > 0) {
+          fabBadge.textContent = state.selectedIds.size;
+          fabBadge.classList.remove('hidden');
+        } else {
+          fabBadge.classList.add('hidden');
+        }
+      }
+
+      renderDeckSelector();
     }
 
     /* --- TOGGLE SINGLE VOUCHER STATUS --- */
@@ -1069,9 +1040,9 @@
       }
     }
 
-    /* --- RENDER THUMB ZONE BRAND RIBBON (STRICT USER ORDER WITH LIVE COUNTS) --- */
-    function renderFilterPills() {
-      const container = document.getElementById('mb-thumb-ribbon');
+    /* --- RENDER CARD-STYLE HORIZONTAL PASS DECK SELECTOR (VIP WALLET CAROUSEL) --- */
+    function renderDeckSelector() {
+      const container = document.getElementById('mb-deck-selector');
       if (!container) return;
 
       const normActive = normalizeBrandKey(state.activeFilterBrand);
@@ -1087,8 +1058,9 @@
         const count = counts[item.key] || 0;
         const isSel = (normActive === item.key);
         return `
-          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${isSel ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-white/10 text-neutral-300 hover:text-white'}">
-            ${item.name} (${count})
+          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
+            <div class="truncate max-w-[125px]">${item.name}</div>
+            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">${count} vouchers</div>
           </button>
         `;
       }).join('');
@@ -1269,25 +1241,73 @@
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
     function toggleSelectMode() {
       state.isSelectMode = !state.isSelectMode;
-      const mbBtn = document.getElementById('mb-select-toggle') || document.getElementById('mb-select-btn');
+      const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
       const dtBtn = document.getElementById('dt-select-btn');
+      const fab = document.getElementById('mb-hover-whatsapp');
+
       if (state.isSelectMode) {
         if (dtBtn) dtBtn.textContent = 'Done';
         if (mbBtn) {
           mbBtn.textContent = 'Done';
-          mbBtn.classList.add('bg-blue-600', 'text-white');
-          mbBtn.classList.remove('bg-white/10', 'text-neutral-300');
+          mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
+          mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
+        }
+        if (fab) {
+          fab.classList.remove('hidden');
+          fab.classList.add('flex');
         }
       } else {
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
           mbBtn.textContent = 'Select';
-          mbBtn.classList.remove('bg-blue-600', 'text-white');
-          mbBtn.classList.add('bg-white/10', 'text-neutral-300');
+          mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
+          mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
+        }
+        if (fab) {
+          fab.classList.add('hidden');
+          fab.classList.remove('flex');
         }
         state.selectedIds.clear();
       }
       renderVault();
+    }
+
+    function shareSelectedWithShareSheet() {
+      const normKey = normalizeBrandKey(state.activeFilterBrand);
+      const brandVouchers = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
+      const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
+      const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+      const targets = sel.length > 0 ? sel : allBrandVouchers;
+
+      if (!targets.length) {
+        showToast("No vouchers to share");
+        return;
+      }
+
+      const text = fmtWhatsApp(targets);
+
+      if (navigator.share) {
+        navigator.share({
+          title: `${getBrandDisplayName(normKey)} Vouchers`,
+          text: text
+        }).then(() => {
+          showToast('Shared successfully');
+        }).catch(err => {
+          if (err && err.name !== 'AbortError') {
+            openWhatsAppDirect(text);
+          }
+        });
+      } else {
+        openWhatsAppDirect(text);
+      }
+    }
+
+    function openWhatsAppDirect(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard! Opening WhatsApp...');
+      }).catch(() => {});
+      const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
+      window.location.href = url;
     }
 
     function toggleSelectVoucher(id) {
@@ -1500,6 +1520,11 @@
     setInterval(renderCooldowns, 15000);
 
     document.addEventListener('DOMContentLoaded', () => {
+      const savedSheetUrl = localStorage.getItem('rupay_sheet_url');
+      if (savedSheetUrl) {
+        const sheetLink = document.getElementById('sheet-link-btn');
+        if (sheetLink) sheetLink.href = savedSheetUrl;
+      }
       setTab('vault');
       renderAll();
       syncWithGoogleSheets();

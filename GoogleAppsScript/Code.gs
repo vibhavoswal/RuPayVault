@@ -269,6 +269,7 @@ function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheets = ss.getSheets();
   const result = {
+    sheetUrl: ss.getUrl(),
     unassigned: [],
     cooldowns: [],
     vouchers: []

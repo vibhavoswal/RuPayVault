@@ -269,6 +269,9 @@
 
     let activeStyle = 'glass';
     let activeBrandKey = 'Lakme';
+    let isHybridSelectMode = false;
+    let selectedCodes = new Set();
+    let hybridSyncTime = "12:25 AM";
 
     /* ========================================================
        RENDER ENGINE FOR 5 APPROACHES
@@ -283,7 +286,7 @@
       if (brandKey === 'FourFountains') {
         return {
           title: `${b.name}`,
-          calc: `${count} Vouchers &times; ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
+          calc: `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
           sub: `⚠️ Strict 30-day validity from redemption date. Use immediately.`
         };
       }
@@ -291,7 +294,7 @@
       if (denom > 0) {
         return {
           title: `${b.name}`,
-          calc: `${count} Vouchers &times; ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
+          calc: `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
           sub: `${count} vouchers ready to redeem`
         };
       } else {
@@ -498,52 +501,92 @@
 
       return `
         <!-- Luxury Pass Header -->
-        <header class="px-4 py-3 shrink-0 flex items-center justify-between border-b border-neutral-800 bg-neutral-950">
-          <div>
-            <span class="text-[10px] font-bold uppercase tracking-widest text-amber-400">RUPAY SELECT PASS</span>
-            <h2 class="text-base font-bold text-white tracking-tight">${b.name}</h2>
+        <header class="px-3.5 py-2.5 shrink-0 flex items-center justify-between border-b border-neutral-800 bg-neutral-950">
+          <!-- Left: Link to Google Sheet (Icon Only) -->
+          <a id="sheet-link-btn" href="https://docs.google.com/spreadsheets" target="_blank" rel="noopener noreferrer" class="p-2 rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
+            <svg class="w-4 h-4 shrink-0 text-[#0F9D58] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/>
+            </svg>
+          </a>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-neutral-400 font-mono-apple">Synced at ${hybridSyncTime}</span>
+            <button onclick="simulateSyncTimestamp()" class="p-1 rounded-full text-amber-400 hover:text-white" title="Sync">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+            <button onclick="toggleHybridSelect()" class="px-3 py-1 rounded-lg text-xs font-bold ${isHybridSelectMode ? 'bg-amber-400 text-black shadow-md' : 'bg-neutral-800 text-amber-300 border border-amber-400/30'} transition-all">
+              ${isHybridSelectMode ? 'Done' : 'Select'}
+            </button>
           </div>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-            ${headerInfo.calc.split('&times;')[0]}
-          </span>
         </header>
 
-        <!-- Horizontal Pass Selector Deck -->
-        <div class="p-3 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800">
+        <!-- Horizontal Pass Selector Deck at the TOP -->
+        <div class="p-2.5 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800">
           ${BRAND_CONFIG.map(item => `
-            <button onclick="setBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${item.key === activeBrandKey ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg' : 'bg-neutral-900 text-neutral-400 border border-neutral-800'}">
-              <div>${item.name}</div>
-              <div class="text-[10px] opacity-75 font-normal">${LIVE_COUNTS[item.key] || 0} vouchers</div>
+            <button onclick="setBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${item.key === activeBrandKey ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800'}">
+              <div class="truncate max-w-[125px]">${item.name}</div>
+              <div class="text-[10px] ${item.key === activeBrandKey ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">${LIVE_COUNTS[item.key] || 0} vouchers</div>
             </button>
           `).join('')}
         </div>
 
-        <!-- Cumulative Summary -->
-        <div class="mx-3 mt-2 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 flex justify-between items-center text-xs">
-          <span class="text-neutral-400">Cumulative Denomination:</span>
-          <span class="font-bold text-amber-400">${headerInfo.calc}</span>
+        <!-- Cumulative Summary Banner (Single Line Compact) -->
+        <div class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
+          <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
+          <span class="font-bold text-amber-400 font-mono-apple pl-2 tracking-tight">${headerInfo.calc}</span>
         </div>
 
         <!-- Cards Deck List -->
-        <div class="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar pb-16">
-          ${vs.map((v, i) => `
-            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-2.5 shadow-xl">
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-mono-apple text-[11px] text-neutral-400">PASS #${i + 1}</span>
-                <span class="text-[10px] text-amber-300/80">${v.redeemedOn ? 'Redeemed: ' + v.redeemedOn : v.expiry}</span>
-              </div>
-              <div class="p-2.5 rounded-xl bg-black/60 border border-neutral-800 flex items-center justify-between">
-                <div>
-                  <div class="font-mono-apple text-base font-bold text-white">${v.code}</div>
-                  ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300">PIN: ${v.pin}</div>` : ''}
-                </div>
-                <button onclick="simulateCopy('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-black">
-                  Copy
-                </button>
+        <div class="flex-1 overflow-y-auto px-3.5 py-2 space-y-3 no-scrollbar pb-24">
+          ${activeBrandKey === 'FourFountains' ? `
+            <div class="p-3 rounded-2xl border border-amber-500/30 bg-amber-950/25 text-xs text-amber-200 flex items-start gap-2.5">
+              <span class="text-base shrink-0 mt-0.5">⚠️</span>
+              <div>
+                <strong class="font-semibold text-amber-100">Strict 30-Day Expiry:</strong>
+                <p class="text-[11px] text-amber-300/90 mt-0.5">Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.</p>
               </div>
             </div>
-          `).join('')}
+          ` : ''}
+
+          ${vs.map((v, i) => {
+            const isChecked = selectedCodes.has(v.code);
+            return `
+              <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''}">
+                <div class="flex justify-between items-center text-xs">
+                  <div class="flex items-center gap-2.5">
+                    ${isHybridSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectCode('${v.code}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">` : ''}
+                    <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                  </div>
+                  <span class="text-[10px] text-amber-300/80">${v.redeemedOn ? 'Redeemed on: ' + v.redeemedOn : (v.expiry || '31 Dec 2026')}</span>
+                </div>
+                <div onclick="simulateCopy('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
+                  <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                      <span class="font-mono-apple text-base font-bold text-white tracking-wider">${v.code}</span>
+                    </div>
+                    ${v.pin ? `<div class="flex items-center gap-2 pt-0.5"><span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span><span class="font-mono-apple text-sm font-bold text-amber-300">${v.pin}</span></div>` : ''}
+                  </div>
+                  <button onclick="event.stopPropagation(); simulateCopy('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+                    Copy
+                  </button>
+                </div>
+
+              </div>
+            `;
+          }).join('')}
         </div>
+
+        <!-- Hovering WhatsApp FAB: Visible ONLY when Select mode is active -->
+        ${isHybridSelectMode ? `
+          <button onclick="shareHybridSelected()" class="absolute right-5 bottom-6 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_rgba(37,211,102,0.5)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border border-white/25" title="Share Selected via WhatsApp">
+            <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+            ${selectedCodes.size > 0 ? `
+              <span class="absolute -top-1 -right-1 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center text-[11px] font-black text-black bg-amber-400 rounded-full border-2 border-black shadow">
+                ${selectedCodes.size}
+              </span>
+            ` : ''}
+          </button>
+        ` : ''}
       `;
     }
 
@@ -606,20 +649,27 @@
       const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
 
       return `
-        <!-- Minimal Frosted Header with Cumulative Breakdown Pill -->
-        <header class="px-4 py-2 shrink-0 flex items-center justify-between border-b border-white/10" style="background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(30px);">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="text-xs font-bold text-white tracking-tight">${b.name}</span>
-          </div>
-          <!-- Cumulative Breakdown Pill -->
-          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-300 bg-amber-400/15 border border-amber-400/25">
+        <!-- Minimal Frosted Header -->
+        <header class="px-3.5 py-2 shrink-0 flex items-center justify-between border-b border-white/10" style="background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(30px);">
+          <!-- Cumulative Breakdown Pill (Strictly NO brand name) -->
+          <span class="px-2.5 py-1 rounded-full text-xs font-bold text-amber-300 bg-amber-400/15 border border-amber-400/25">
             ${headerInfo.calc}
           </span>
+
+          <!-- Right Header Controls: Synced at 12:25 AM + Sync Icon + Select Button -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-neutral-400 font-mono-apple" id="hybrid-sync-text">Synced at ${hybridSyncTime}</span>
+            <button onclick="simulateSyncTimestamp()" class="p-1 rounded-full text-blue-400 hover:text-white transition-colors" title="Sync">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+            <button onclick="toggleHybridSelect()" class="px-2.5 py-1 rounded-lg text-xs font-semibold ${isHybridSelectMode ? 'bg-blue-600 text-white shadow-sm' : 'bg-white/10 text-neutral-200 hover:bg-white/20'} transition-all">
+              ${isHybridSelectMode ? 'Done' : 'Select'}
+            </button>
+          </div>
         </header>
 
         <!-- Full-bleed Vouchers Feed -->
-        <div class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 no-scrollbar pb-32">
+        <div class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 no-scrollbar pb-24">
           ${b.key === 'FourFountains' ? `
             <div class="p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-center gap-2">
               <span class="text-base">⚠️</span>
@@ -629,9 +679,12 @@
 
           ${vs.map((v, i) => `
             <div class="rounded-2xl p-4 space-y-3 border border-white/10 shadow-xl relative overflow-hidden" style="background: rgba(28, 28, 32, 0.7); backdrop-filter: blur(25px);">
-              <!-- Top Row: Voucher Index, Expiry/Redeemed Date -->
+              <!-- Top Row: Checkbox (in Select Mode), Voucher Index, Expiry/Redeemed Date -->
               <div class="flex items-center justify-between text-xs">
-                <span class="font-mono-apple font-bold text-neutral-400 text-[11px]">#${i + 1}</span>
+                <div class="flex items-center gap-2">
+                  ${isHybridSelectMode ? `<input type="checkbox" ${selectedCodes.has(v.code) ? 'checked' : ''} onchange="toggleSelectCode('${v.code}')" class="w-4 h-4 rounded accent-blue-500">` : ''}
+                  <span class="font-mono-apple font-bold text-neutral-400 text-[11px]">#${i + 1}</span>
+                </div>
                 ${v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry}</span>`}
               </div>
 
@@ -666,20 +719,23 @@
           `).join('')}
         </div>
 
-        <!-- DOCKED THUMB ZONE (Flush at Bottom) -->
-        <div class="absolute bottom-0 left-0 right-0 p-2.5 space-y-1.5 border-t border-white/10 z-30" style="background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(35px);">
-          <!-- Row 1: Actions (Select & WhatsApp All) -->
-          <div class="flex items-center justify-between px-1">
-            <span class="text-[11px] font-semibold text-neutral-400">Brand Quick Access</span>
-            <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-sm flex items-center gap-1 active:scale-95 transition-transform">
-              <span>WhatsApp All</span>
-            </button>
-          </div>
+        <!-- Floating WhatsApp FAB: Appears ONLY in Select mode, positioned above brand carousel, not overlapping -->
+        ${isHybridSelectMode ? `
+          <button onclick="shareHybridSelected()" class="absolute right-4 bottom-14 z-40 w-12 h-12 rounded-full bg-[#25D366] text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-90 transition-all border border-white/20" title="Share Selected via WhatsApp">
+            <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+            ${selectedCodes.size > 0 ? `
+              <span class="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-[10px] font-extrabold text-black bg-amber-400 rounded-full border-2 border-black shadow">
+                ${selectedCodes.size}
+              </span>
+            ` : ''}
+          </button>
+        ` : ''}
 
-          <!-- Row 2: Thumb-Reachable Brand Ribbon in Strict Order -->
+        <!-- DOCKED THUMB ZONE: STRICTLY CAROUSEL OF BRANDS ONLY -->
+        <div class="absolute bottom-0 left-0 right-0 px-2.5 py-2 border-t border-white/10 z-30" style="background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(35px);">
           <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
             ${BRAND_CONFIG.map(item => `
-              <button onclick="setBrand('${item.key}')" class="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-white/10 text-neutral-300 hover:text-white'}">
+              <button onclick="setBrand('${item.key}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-white/10 text-neutral-300 hover:text-white'}">
                 ${item.name} (${LIVE_COUNTS[item.key] || 0})
               </button>
             `).join('')}
@@ -696,11 +752,11 @@
         title: "Approach 6: 💎 Glass + Thumb Zone (Recommended Hybrid)",
         tag: "Translucent Beauty + Ergonomic Reach",
         specs: [
-          "<strong>Natural Thumb Reachability:</strong> The brand selector ribbon sits in the bottom dock, allowing effortless one-handed brand switching on the 6.3\" iPhone 16 Pro display.",
-          "<strong>Ultra-compact Header:</strong> Shrinks the top header to a 38px frosted pill displaying the live cumulative total: <em>19 Vouchers &times; ₹500 = ₹9,500 Total</em>.",
-          "<strong>High-Contrast Translucent Cards:</strong> Frosted glass tiles with 16px SF Mono codes in bright cyan and amber PIN chips with dedicated copy actions.",
-          "<strong>Four Fountains 30-Day Alert:</strong> Clear banner and individual voucher tag warning of strict 30-day expiration.",
-          "<strong>Docked Action Dock:</strong> Includes an instant <em>WhatsApp All</em> button right above the thumb ribbon."
+          "<strong>Natural Thumb Reachability:</strong> The brand selector ribbon sits strictly alone in the bottom dock, allowing effortless one-handed brand switching.",
+          "<strong>Ultra-compact Header:</strong> Top header displays cumulative total: <em>23 vouchers &times; ₹1,500 = ₹34,500 total</em>, live sync time (<em>Synced at 12:25 AM</em>), sync icon, and <em>Select</em>.",
+          "<strong>Zero Brand Redundancy:</strong> Brand name is not duplicated in the top bar.",
+          "<strong>Floating WhatsApp FAB:</strong> Clicking <em>Select</em> reveals checkboxes and a green floating WhatsApp button in the bottom right, neatly docked above the brand carousel without overlapping.",
+          "<strong>Four Fountains 30-Day Alert:</strong> Clear banner and individual voucher tag warning of strict 30-day expiration."
         ]
       },
       glass: {
@@ -832,8 +888,69 @@
       });
     }
 
-    // Initialize with Recommended Hybrid (Tab 6)
-    switchStyle('hybrid');
+    function toggleHybridSelect() {
+      isHybridSelectMode = !isHybridSelectMode;
+      if (!isHybridSelectMode) {
+        selectedCodes.clear();
+      }
+      renderScreen();
+    }
+
+    function toggleSelectCode(code) {
+      if (selectedCodes.has(code)) {
+        selectedCodes.delete(code);
+      } else {
+        selectedCodes.add(code);
+      }
+      renderScreen();
+    }
+
+    function simulateSyncTimestamp() {
+      const now = new Date();
+      hybridSyncTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      renderScreen();
+    }
+
+    function shareHybridSelected() {
+      const allVs = VOUCHER_DATA[activeBrandKey] || [];
+      const vs = allVs.filter(v => selectedCodes.has(v.code));
+      const targets = vs.length > 0 ? vs : allVs;
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+      const count = targets.length;
+      const denom = b.denom || 0;
+      const total = count * denom;
+
+      let text = `${b.name} Vouchers\n\n`;
+      targets.forEach((v, i) => {
+        text += `${i + 1}. Code: ${v.code}\n`;
+        if (v.pin) text += `PIN: ${v.pin}\n`;
+        text += `\n`;
+      });
+      text += `Total ${count} vouchers\n`;
+      if (denom > 0) text += `₹${denom} x ${count} = ₹${total}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`Sharing ${count} vouchers on WhatsApp:\n\n${text}`);
+      }).catch(() => {
+        alert(`WhatsApp format:\n\n${text}`);
+      });
+    }
+
+    function shareSingleCodeWhatsApp(code) {
+      const allVs = VOUCHER_DATA[activeBrandKey] || [];
+      const v = allVs.find(x => x.code === code) || { code: code };
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+      let text = `${b ? b.name : activeBrandKey} Voucher\n\n1. Code: ${v.code}\n`;
+      if (v.pin) text += `PIN: ${v.pin}\n`;
+      text += `\nTotal 1 voucher\n`;
+      if (b && b.denom > 0) text += `Value: ₹${b.denom}`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert(`WhatsApp Share:\n\n${text}`);
+      });
+    }
+
+    // Initialize with VIP Wallet Carousel (Approach 4)
+    switchStyle('wallet');
   </script>
 </body>
 </html>
