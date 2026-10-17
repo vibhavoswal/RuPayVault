@@ -705,16 +705,17 @@
       renderAll();
     }
 
-    /* --- LIVE GOOGLE SHEETS FETCH --- */
+    /* --- LIVE GOOGLE SHEETS FETCH (WITH REAL-TIME ON-DEMAND INGESTION) --- */
     async function syncWithGoogleSheets() {
-      showToast("Connecting to Google Sheets...");
+      showToast("Checking Gmail & syncing with Google Sheets...");
       if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing...';
       if (document.getElementById('mb-sync-status')) document.getElementById('mb-sync-status').textContent = 'Syncing...';
       const spinner = document.getElementById('mb-sync-spinner');
       if (spinner) spinner.classList.add('animate-spin');
       
       try {
-        const res = await fetch(API_ENDPOINT);
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'ingest=true';
+        const res = await fetch(syncUrl);
         const data = await res.json();
         
         if (data.vouchers && data.vouchers.length) {
@@ -741,6 +742,7 @@
               card: v.card || 'RuPay Select',
               expiry: v.dateOfIssue || '31 Dec 2026',
               redeemedOn: redeemedOn,
+              timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
               status: (v.status || 'ACTIVE').toUpperCase()
             };
           });

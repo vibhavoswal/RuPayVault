@@ -13,11 +13,12 @@ const BRANDS_WITH_PIN = new Set([
 ]);
 
 /**
- * 1. AUTOMATIC EMAIL INGESTION (Triggered every 1 min)
+ * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
  */
 function processRupayEmails() {
-  const query = `is:unread from:${SENDER_EMAIL}`;
-  const threads = GmailApp.search(query);
+  // Query handles both direct RuPay emails and emails forwarded from any personal address
+  const query = 'is:unread (from:rupay@truztee.com OR subject:"Fwd:" OR subject:"Fw:" OR "rupay@truztee.com" OR "Booking ID:")';
+  const threads = GmailApp.search(query, 0, 25);
   if (!threads.length) return;
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -27,17 +28,43 @@ function processRupayEmails() {
     for (const msg of messages) {
       if (!msg.isUnread()) continue;
 
-      const subject = msg.getSubject();
-      const body = msg.getPlainBody();
-      const toHeader = msg.getTo();
+      const subject = msg.getSubject() || "";
+      const body = msg.getPlainBody() || "";
+      const toHeader = msg.getTo() || "";
+      const fromHeader = msg.getFrom() || "";
 
+      // 1. Detect if this is a forwarded email
+      const isForwarded = /^(?:Fwd|Fw):/i.test(subject) || 
+                          body.includes("---------- Forwarded message ---------") ||
+                          /Forwarded message/i.test(body) ||
+                          /Begin forwarded message/i.test(body);
+
+      // 2. Extract original recipient account
+      let account = "";
+      if (isForwarded) {
+        // Look for nested "To: <email>" inside the forwarded headers block
+        const fwdToMatch = body.match(/To:\s*<?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>?/i);
+        if (fwdToMatch && !fwdToMatch[1].toLowerCase().includes("rupayvouchers@gmail.com")) {
+          account = extractAccountName(fwdToMatch[1], "");
+        } else {
+          // If forwarded from personal email, fallback to forwarder's address
+          account = extractAccountName(fromHeader, "");
+        }
+      } else {
+        account = extractAccountName(toHeader, body);
+      }
+      if (!account) account = "vibhavoswal9";
+
+      // 3. Extract Booking ID, Brand, Amount, Date
       const bookingIdMatch = subject.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i) || body.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i);
       const bookingId = bookingIdMatch ? bookingIdMatch[1].trim() : "";
-      const account = extractAccountName(toHeader, body);
       const brand = extractBrand(subject, body);
       const amount = extractAmount(body);
       const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
-      const couponCode = extractField(body, "Coupon Code");
+
+      // 4. Extract Coupon Code and PIN
+      const couponCode = extractField(body, "Coupon Code") || extractField(body, "Voucher Code") || extractField(body, "Code");
+      const pin = extractField(body, "Coupon Pin") || extractField(body, "PIN") || extractField(body, "Voucher Pin") || extractField(body, "Card Pin") || "";
 
       const isPending = !couponCode || 
                         /will be sent/i.test(couponCode) || 
@@ -64,6 +91,8 @@ function processRupayEmails() {
           bookingId: bookingId,
           brand: brand,
           code: couponCode,
+          pin: pin,
+          amount: amount,
           dateOfIssue: dateOfIssue,
           account: account
         });
@@ -176,6 +205,9 @@ function fulfillVoucherCode(ss, data) {
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][1] === data.bookingId) {
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
+      if (hasPin && data.pin) {
+        sheet.getRange(i + 1, 4).setValue(`'${data.pin}`);
+      }
       const statusCol = hasPin ? 9 : 8;
       sheet.getRange(i + 1, statusCol).setValue("ACTIVE");
       sheet.getRange(i + 1, statusCol + 1).setValue(formatISTTimestamp(new Date()));
@@ -185,8 +217,8 @@ function fulfillVoucherCode(ss, data) {
 
   const nextNum = rows.length;
   const rowData = hasPin 
-    ? [nextNum, data.bookingId, `'${data.code}`, "", 500, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())]
-    : [nextNum, data.bookingId, `'${data.code}`, 100, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())];
+    ? [nextNum, data.bookingId, `'${data.code}`, data.pin ? `'${data.pin}` : "", data.amount || 500, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())]
+    : [nextNum, data.bookingId, `'${data.code}`, data.amount || 100, data.dateOfIssue, data.account, "Unassigned", "ACTIVE", formatISTTimestamp(new Date())];
   sheet.appendRow(rowData);
 }
 
@@ -267,6 +299,17 @@ function updateCooldownTab(ss, account) {
  */
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // ON-DEMAND REAL-TIME EMAIL INGESTION:
+  // Runs immediately on sync call to ingest any new direct or forwarded emails (< 2s latency)
+  if (!e || !e.parameter || e.parameter.ingest !== "false") {
+    try {
+      processRupayEmails();
+    } catch (err) {
+      console.warn("On-demand email ingestion error:", err.message);
+    }
+  }
+
   const sheets = ss.getSheets();
   const result = {
     sheetUrl: ss.getUrl(),

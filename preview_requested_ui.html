@@ -542,10 +542,11 @@
     async function syncWithGoogleSheets() {
       const spinner = document.getElementById('sync-spinner');
       spinner.classList.add('animate-spin');
-      showToast('Connecting to Google Sheets...');
+      showToast('Checking Gmail & syncing...');
 
       try {
-        const res = await fetch(API_ENDPOINT);
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'ingest=true';
+        const res = await fetch(syncUrl);
         const data = await res.json();
 
         if (data.vouchers && data.vouchers.length) {
@@ -565,6 +566,7 @@
               pin: v.pin || '',
               expiry: v.dateOfIssue || '31 Dec 2026',
               redeemedOn: redeemedOn,
+              timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
               status: (v.status || 'ACTIVE').toUpperCase()
             });
           });

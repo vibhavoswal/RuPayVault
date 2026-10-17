@@ -1,0 +1,15 @@
+{
+  "name": "rupayvault",
+  "version": "1.0.0",
+  "description": "RuPay Select Voucher Vault Engine & PWA",
+  "scripts": {
+    "gas:login": "clasp login",
+    "gas:status": "clasp status",
+    "gas:pull": "clasp pull",
+    "gas:push": "clasp push",
+    "gas:deploy": "clasp deploy"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.1"
+  }
+}

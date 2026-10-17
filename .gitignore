@@ -1,0 +1,13 @@
+# Node dependencies
+node_modules/
+package-lock.json
+
+# Clasp local auth tokens
+.clasprc.json
+
+# Swift build artifacts
+.build/
+.swiftpm/
+
+# OS metadata
+.DS_Store
