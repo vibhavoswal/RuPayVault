@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPay Vault — 5 UI Overhaul Approaches</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #141416;
+      --accent-blue: #0a84ff;
+      --accent-green: #30d158;
+      --accent-amber: #ff9f0a;
+      --accent-rose: #ff375f;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .font-mono-apple {
+      font-family: "SF Mono", Menlo, Consolas, Monaco, monospace;
+    }
+
+    /* Style Switcher Pills */
+    .style-pill.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(10, 132, 255, 0.35);
+    }
+
+    /* Scrollbars */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Perforated ticket styling for Swiss approach */
+    .ticket-edge {
+      background-image: radial-gradient(circle at 0 50%, transparent 8px, #18181b 8.5px),
+                        radial-gradient(circle at 100% 50%, transparent 8px, #18181b 8.5px);
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- ======================================================== -->
+  <!-- TOP BANNER & STYLE SELECTOR                              -->
+  <!-- ======================================================== -->
+  <header class="mb-6 border-b border-neutral-800 pb-5">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-400">iPhone 16 Pro Design Lab</span>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 font-medium">154 Live Vouchers</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight mt-1">6 Vault UI Overhaul Prototypes</h1>
+        <p class="text-neutral-400 text-xs md:text-sm mt-1">
+          No search bar &middot; No "All" filter &middot; Strict brand priority &middot; Cumulative value header &middot; Compact bars.
+        </p>
+      </div>
+
+      <!-- Quick Reset / Link -->
+      <a href="https://vibhavoswal.github.io/RuPayVault/" target="_blank" class="self-start md:self-auto px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors">
+        Live Deployment &rarr;
+      </a>
+    </div>
+
+    <!-- 6 Style Selector Pills -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 mt-5 p-1 bg-neutral-900/90 rounded-2xl border border-neutral-800 text-xs font-medium">
+      <button onclick="switchStyle('glass')" id="tab-glass" class="style-pill py-2.5 px-2 rounded-xl text-center text-neutral-400 hover:text-white transition-all">
+        1.  Apple Glass
+      </button>
+      <button onclick="switchStyle('material')" id="tab-material" class="style-pill py-2.5 px-2 rounded-xl text-center text-neutral-400 hover:text-white transition-all">
+        2. 🤖 Material 3
+      </button>
+      <button onclick="switchStyle('swiss')" id="tab-swiss" class="style-pill py-2.5 px-2 rounded-xl text-center text-neutral-400 hover:text-white transition-all">
+        3. ⚡ Swiss Ticket
+      </button>
+      <button onclick="switchStyle('wallet')" id="tab-wallet" class="style-pill py-2.5 px-2 rounded-xl text-center text-neutral-400 hover:text-white transition-all">
+        4. 💳 VIP Carousel
+      </button>
+      <button onclick="switchStyle('thumb')" id="tab-thumb" class="style-pill py-2.5 px-2 rounded-xl text-center text-neutral-400 hover:text-white transition-all">
+        5. 📱 Thumb-Zone
+      </button>
+      <button onclick="switchStyle('hybrid')" id="tab-hybrid" class="style-pill active py-2.5 px-2 rounded-xl text-center text-amber-300 font-semibold border border-amber-400/40 bg-amber-950/40 transition-all">
+        6. 💎 Glass + Thumb (Rec.)
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ======================================================== -->
+  <!-- MAIN WORKSPACE: PHONE SIMULATOR & EXPLANATION            -->
+  <!-- ======================================================== -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- Phone Simulator (Scaled to iPhone 16 Pro dimensions) -->
+    <div class="lg:col-span-5 flex justify-center">
+      <div id="phone-chassis" class="w-[380px] max-w-full rounded-[48px] border-[6px] border-neutral-800 bg-black overflow-hidden shadow-2xl relative flex flex-col transition-all duration-300" style="height: 780px;">
+        
+        <!-- Compact Status Bar -->
+        <div class="px-7 pt-3 pb-1 flex justify-between items-center text-xs text-neutral-300 shrink-0 z-30">
+          <span class="font-bold">11:55</span>
+          <div class="w-24 h-4 bg-neutral-900 rounded-full flex items-center justify-center">
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-800 inline-block mr-1"></span>
+          </div>
+          <div class="flex items-center gap-1 font-mono-apple text-[11px]">
+            <span>5G</span>
+            <span class="font-bold">88%</span>
+          </div>
+        </div>
+
+        <!-- Simulator Screen Container -->
+        <div id="simulator-content" class="flex-1 flex flex-col overflow-hidden relative">
+          <!-- Rendered dynamically by JavaScript -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Column: Design Philosophy & Detailed Feature Analysis -->
+    <div class="lg:col-span-7 space-y-6">
+      
+      <!-- Live Style Specs Card -->
+      <div id="style-specs-card" class="p-6 rounded-2xl bg-neutral-900/70 border border-neutral-800 space-y-4">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Feature Compliance Checklist -->
+      <div class="p-5 rounded-2xl bg-neutral-900/40 border border-neutral-800 space-y-3">
+        <h3 class="font-bold text-sm text-neutral-200">How Each Approach Meets Your Requirements</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
+            <div class="font-bold text-emerald-400">✓ Strict Brand Priority</div>
+            <p class="text-neutral-400">Lakmé &rarr; Four Fountains &rarr; Kalyan &rarr; Myntra &rarr; BigBasket &rarr; Reliance &rarr; Apollo &rarr; Amazon &rarr; Cult &rarr; Times &rarr; Tattva &rarr; TaxSpanner.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
+            <div class="font-bold text-emerald-400">✓ Cumulative Value Header</div>
+            <p class="text-neutral-400">Displays e.g. <strong class="text-white">19 Vouchers &times; ₹500 = ₹9,500 Total</strong> immediately when Reliance Digital is selected.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
+            <div class="font-bold text-emerald-400">✓ Zero Search &amp; No "All" Tab</div>
+            <p class="text-neutral-400">Direct single-brand focus without distractions. Default lands on #1 Lakmé Salon.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1">
+            <div class="font-bold text-emerald-400">✓ Shortened Top &amp; Bottom Bars</div>
+            <p class="text-neutral-400">Reclaims up to 65% of screen height for voucher cards, codes, and PINs.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800 space-y-1 sm:col-span-2">
+            <div class="font-bold text-emerald-400">✓ Four Fountains 30-Day Expiry Tagging</div>
+            <p class="text-neutral-400">Special alert for Four Fountains showing "Redeemed on [Date] &middot; Strict 30-day validity" (clean date only, no timestamp clutter).</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: DATA ENGINE & 5 PROTOTYPE RENDERERS          -->
+  <!-- ======================================================== -->
+  <script>
+    // REAL VOUCHER DATA GROUPED BY BRAND (IN STRICT USER ORDER)
+    const BRAND_CONFIG = [
+      { key: 'Lakme', name: 'Lakmé Salon', denom: 1500, hasPin: true, tag: 'Wellness' },
+      { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: 'Strict 30D Expiry' },
+      { key: 'Kalyan', name: 'Kalyan Jewellers', denom: 2000, hasPin: true, tag: 'Jewellery' },
+      { key: 'Myntra', name: 'Myntra', denom: 500, hasPin: true, tag: 'Fashion' },
+      { key: 'BigBasket', name: 'BigBasket', denom: 250, hasPin: true, tag: 'Grocery' },
+      { key: 'Reliance', name: 'Reliance Digital', denom: 500, hasPin: false, tag: 'Electronics' },
+      { key: 'Apollo', name: 'Apollo Pharmacy', denom: 250, hasPin: true, tag: 'Health' },
+      { key: 'AmazonPrime', name: 'Amazon Prime', denom: 0, hasPin: false, tag: 'OTT Subscription' },
+      { key: 'CultFit', name: 'Cult.fit Elite', denom: 0, hasPin: false, tag: 'Fitness' },
+      { key: 'TimesPrime', name: 'Times Prime', denom: 0, hasPin: false, tag: 'Ace Membership' },
+      { key: 'TattvaSpa', name: 'Tattva Spa', denom: 1500, hasPin: true, tag: 'Wellness' },
+      { key: 'TaxSpanner', name: 'TaxSpanner', denom: 2950, hasPin: false, tag: 'Tax Filing' },
+      { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
+      { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' }
+    ];
+
+    // Sample representative vouchers directly from sheet
+    const VOUCHER_DATA = {
+      Lakme: [
+        { code: '6001221117496880', pin: '212116', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '6001221117382731', pin: '237454', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '6001221117954484', pin: '147501', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '6001221119459148', pin: '183445', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '6001221118896550', pin: '197127', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      FourFountains: [
+        { code: 'FF1500-99831', pin: '4512', redeemedOn: '14 Oct 2026', expiry: '13 Nov 2026 (30d)', status: 'ACTIVE' },
+        { code: 'FF1500-88204', pin: '7821', redeemedOn: '16 Oct 2026', expiry: '15 Nov 2026 (30d)', status: 'ACTIVE' }
+      ],
+      Kalyan: [
+        { code: 'KJ2000-8874129', pin: '9841', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'KJ2000-5541203', pin: '6325', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'KJ2000-7741290', pin: '1148', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      Myntra: [
+        { code: '6001221117496880', pin: '212116', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '6001221117382731', pin: '237454', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      BigBasket: [
+        { code: '1004300169649684', pin: '111163', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: '1004300178491022', pin: '334912', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      Reliance: [
+        { code: 'RD500-994812401', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'RD500-773829104', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'RD500-664910294', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'RD500-552910482', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      Apollo: [
+        { code: 'AP250-9948102', pin: '4512', expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'AP250-8829104', pin: '9921', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      AmazonPrime: [
+        { code: 'APRM-99482-XK91', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      CultFit: [
+        { code: 'CLTHME3MGRES3JN26P9UO5V', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      TimesPrime: [
+        { code: 'TPACEIIVES503E5', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      TattvaSpa: [
+        { code: 'TAT1500-883921', pin: '4412', expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      TaxSpanner: [
+        { code: 'ZAGTBRFAGELTOM', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'ZAGTBRXJPJBBEEPI', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      Thyrocare: [
+        { code: 'THYRO-8849102-A', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ],
+      Uber: [
+        { code: 'QQ8VWAW5V7XCH', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' },
+        { code: 'Q5YXMY83YABC2', pin: null, expiry: '31 Dec 2026', status: 'ACTIVE' }
+      ]
+    };
+
+    // Live counts across sheet
+    const LIVE_COUNTS = {
+      Lakme: 23,
+      FourFountains: 2,
+      Kalyan: 15,
+      Myntra: 10,
+      BigBasket: 12,
+      Reliance: 19,
+      Apollo: 12,
+      AmazonPrime: 3,
+      CultFit: 1,
+      TimesPrime: 7,
+      TattvaSpa: 1,
+      TaxSpanner: 12,
+      Thyrocare: 26,
+      Uber: 11
+    };
+
+    let activeStyle = 'glass';
+    let activeBrandKey = 'Lakme';
+
+    /* ========================================================
+       RENDER ENGINE FOR 5 APPROACHES
+       ======================================================== */
+
+    function getCumulativeHeader(brandKey) {
+      const b = BRAND_CONFIG.find(x => x.key === brandKey) || BRAND_CONFIG[0];
+      const count = LIVE_COUNTS[brandKey] || (VOUCHER_DATA[brandKey] || []).length;
+      const denom = b.denom;
+      const total = count * denom;
+
+      if (brandKey === 'FourFountains') {
+        return {
+          title: `${b.name}`,
+          calc: `${count} Vouchers &times; ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
+          sub: `⚠️ Strict 30-day validity from redemption date. Use immediately.`
+        };
+      }
+
+      if (denom > 0) {
+        return {
+          title: `${b.name}`,
+          calc: `${count} Vouchers &times; ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
+          sub: `${count} vouchers ready to redeem`
+        };
+      } else {
+        return {
+          title: `${b.name}`,
+          calc: `${count} Vouchers (${b.tag})`,
+          sub: `Subscription code benefit`
+        };
+      }
+    }
+
+    // 1. APPLE GLASS (VisionOS / iOS 18 Frosted)
+    function renderAppleGlass() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Ultra-Compact Frosted Header -->
+        <header class="px-4 py-2 shrink-0 flex items-center justify-between border-b border-white/10" style="background: rgba(22, 22, 24, 0.75); backdrop-filter: blur(25px);">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+            <span class="text-sm font-bold tracking-tight text-white">Vault</span>
+          </div>
+          <button onclick="copyCurrentBrandBatch()" class="px-3 py-1 rounded-full text-[11px] font-semibold text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 flex items-center gap-1">
+            <span>WhatsApp Batch</span>
+          </button>
+        </header>
+
+        <!-- Brand Ribbon (Strict Order) -->
+        <div class="px-3 py-2 shrink-0 flex gap-1.5 overflow-x-auto no-scrollbar border-b border-white/5" style="background: rgba(15, 15, 17, 0.9);">
+          ${BRAND_CONFIG.map(item => `
+            <button onclick="setBrand('${item.key}')" class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white/5 text-neutral-400 hover:text-white'}">
+              ${item.name} (${LIVE_COUNTS[item.key] || 0})
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Cumulative Value Banner -->
+        <div class="mx-3.5 mt-2.5 p-2.5 rounded-2xl border border-white/10 flex items-center justify-between text-xs" style="background: rgba(255,255,255,0.04); backdrop-filter: blur(20px);">
+          <div>
+            <div class="font-bold text-white text-sm">${headerInfo.calc}</div>
+            <div class="text-[10px] text-neutral-400 mt-0.5">${headerInfo.sub}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            ${b.tag}
+          </span>
+        </div>
+
+        <!-- Vouchers Scroll Area -->
+        <div class="flex-1 overflow-y-auto px-3.5 py-2.5 space-y-2.5 no-scrollbar pb-16">
+          ${vs.map((v, i) => `
+            <div class="rounded-2xl p-3.5 space-y-2 border border-white/10 shadow-lg relative overflow-hidden" style="background: rgba(28, 28, 32, 0.65); backdrop-filter: blur(30px);">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono-apple font-bold text-neutral-400">#${i + 1}</span>
+                ${v.redeemedOn ? `<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry}</span>`}
+              </div>
+
+              <!-- Monospace Code / PIN Box -->
+              <div class="rounded-xl p-2.5 bg-black/40 border border-white/5 flex items-center justify-between">
+                <div>
+                  <div class="font-mono-apple text-base font-bold text-blue-400 tracking-wider">${v.code}</div>
+                  ${v.pin ? `<div class="font-mono-apple text-xs font-semibold text-amber-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
+                </div>
+                <button onclick="simulateCopy('${v.code}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 transition-transform">
+                  Copy
+                </button>
+              </div>
+
+              <div class="flex items-center justify-between text-xs pt-0.5">
+                <button onclick="simulateShare('${v.code}')" class="font-semibold text-emerald-400 flex items-center gap-1 hover:underline">
+                  Share WhatsApp
+                </button>
+                <span class="text-[10px] text-neutral-500">Tap copy to clipboard</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Slim Floating Bottom Pill Dock (Flush, zero gap) -->
+        <div class="absolute bottom-2 left-4 right-4 h-11 rounded-full bg-neutral-900/90 border border-white/15 backdrop-blur-2xl flex items-center justify-between px-4 z-20 shadow-2xl">
+          <span class="text-xs font-bold text-white">${headerInfo.calc.split('&times;')[0]}</span>
+          <button onclick="copyCurrentBrandBatch()" class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-black">
+            Share All
+          </button>
+        </div>
+      `;
+    }
+
+    // 2. GOOGLE MATERIAL 3 (Tonal Containers & M3 Expressive)
+    function renderMaterial3() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Compact M3 App Bar -->
+        <header class="px-4 py-2.5 shrink-0 flex items-center justify-between bg-neutral-900 border-b border-neutral-800">
+          <div>
+            <h2 class="text-base font-bold text-neutral-100">${b.name}</h2>
+            <p class="text-[11px] text-neutral-400">${headerInfo.calc}</p>
+          </div>
+          <button onclick="copyCurrentBrandBatch()" class="w-8 h-8 rounded-full bg-emerald-400 text-black flex items-center justify-center font-bold text-sm shadow">
+            ↑
+          </button>
+        </header>
+
+        <!-- M3 Filter Chips (Horizontal Slider) -->
+        <div class="px-3 py-2 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-neutral-950 border-b border-neutral-800">
+          ${BRAND_CONFIG.map(item => `
+            <button onclick="setBrand('${item.key}')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-amber-400 text-black font-bold' : 'bg-neutral-800 text-neutral-300'}">
+              ${item.name}
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- M3 Tonal Surface Vouchers -->
+        <div class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 no-scrollbar pb-16">
+          ${vs.map((v, i) => `
+            <div class="rounded-2xl p-4 bg-neutral-900 border border-neutral-800 space-y-2.5">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold text-neutral-400">VOUCHER #${i + 1}</span>
+                ${v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/20 text-amber-300">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">${v.expiry}</span>`}
+              </div>
+
+              <div class="p-3 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+                <div>
+                  <div class="font-mono-apple text-base font-bold text-amber-300">${v.code}</div>
+                  ${v.pin ? `<div class="font-mono-apple text-xs text-neutral-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
+                </div>
+                <button onclick="simulateCopy('${v.code}')" class="px-4 py-2 rounded-xl text-xs font-bold text-black bg-amber-400">
+                  Copy
+                </button>
+              </div>
+
+              <div class="flex justify-between items-center text-xs pt-1">
+                <button onclick="simulateShare('${v.code}')" class="font-bold text-emerald-400">
+                  WhatsApp Share
+                </button>
+                <span class="text-[10px] text-neutral-500">M3 Surface</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Slim M3 Bottom Bar -->
+        <div class="h-10 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between px-4 text-xs shrink-0">
+          <span class="text-neutral-400">${headerInfo.calc}</span>
+          <span class="text-amber-400 font-bold">1-Tap Ready</span>
+        </div>
+      `;
+    }
+
+    // 3. SWISS MONOSPACE / TICKET PERFORATION (Ultra-Dense, Perforated)
+    function renderSwissTicket() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Minimal Ticker Header -->
+        <header class="px-3 py-2 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between text-xs font-mono-apple shrink-0">
+          <span class="font-bold text-white uppercase">${b.name}</span>
+          <span class="text-emerald-400 font-bold">${headerInfo.calc.replace(/&times;/g, 'x')}</span>
+        </header>
+
+        <!-- Compact Code Tab Scroller -->
+        <div class="px-2 py-1.5 flex gap-1 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800 text-[11px] font-mono-apple shrink-0">
+          ${BRAND_CONFIG.map(item => `
+            <button onclick="setBrand('${item.key}')" class="px-2.5 py-1 shrink-0 ${item.key === activeBrandKey ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'}">
+              [${item.name.slice(0, 7)}]
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Perforated Ticket Feed -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-2 font-mono-apple no-scrollbar pb-10">
+          ${vs.map((v, i) => `
+            <div class="rounded-lg p-3 bg-neutral-900 border border-neutral-700/80 ticket-edge space-y-1.5 relative">
+              <div class="flex justify-between text-[11px] text-neutral-400 border-b border-dashed border-neutral-700 pb-1">
+                <span>TICKET #${String(i + 1).padStart(2, '0')}</span>
+                <span>${v.redeemedOn ? 'REDEEMED: ' + v.redeemedOn : v.expiry}</span>
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <div>
+                  <div class="text-sm font-bold text-white tracking-widest">${v.code}</div>
+                  ${v.pin ? `<div class="text-xs text-amber-400 font-bold">PIN: ${v.pin}</div>` : ''}
+                </div>
+                <button onclick="simulateCopy('${v.code}')" class="px-3 py-1 bg-white text-black text-xs font-bold hover:bg-neutral-200">
+                  COPY
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // 4. VIP WALLET CAROUSEL (Membership Card Deck)
+    function renderWalletCarousel() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Luxury Pass Header -->
+        <header class="px-4 py-3 shrink-0 flex items-center justify-between border-b border-neutral-800 bg-neutral-950">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-amber-400">RUPAY SELECT PASS</span>
+            <h2 class="text-base font-bold text-white tracking-tight">${b.name}</h2>
+          </div>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+            ${headerInfo.calc.split('&times;')[0]}
+          </span>
+        </header>
+
+        <!-- Horizontal Pass Selector Deck -->
+        <div class="p-3 shrink-0 flex gap-2 overflow-x-auto no-scrollbar bg-black border-b border-neutral-800">
+          ${BRAND_CONFIG.map(item => `
+            <button onclick="setBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${item.key === activeBrandKey ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg' : 'bg-neutral-900 text-neutral-400 border border-neutral-800'}">
+              <div>${item.name}</div>
+              <div class="text-[10px] opacity-75 font-normal">${LIVE_COUNTS[item.key] || 0} vouchers</div>
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- Cumulative Summary -->
+        <div class="mx-3 mt-2 px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 flex justify-between items-center text-xs">
+          <span class="text-neutral-400">Cumulative Denomination:</span>
+          <span class="font-bold text-amber-400">${headerInfo.calc}</span>
+        </div>
+
+        <!-- Cards Deck List -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar pb-16">
+          ${vs.map((v, i) => `
+            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-2.5 shadow-xl">
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-mono-apple text-[11px] text-neutral-400">PASS #${i + 1}</span>
+                <span class="text-[10px] text-amber-300/80">${v.redeemedOn ? 'Redeemed: ' + v.redeemedOn : v.expiry}</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-black/60 border border-neutral-800 flex items-center justify-between">
+                <div>
+                  <div class="font-mono-apple text-base font-bold text-white">${v.code}</div>
+                  ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300">PIN: ${v.pin}</div>` : ''}
+                </div>
+                <button onclick="simulateCopy('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-black">
+                  Copy
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // 5. THUMB-ZONE ERGONOMIC (Bottom-First Reachability)
+    function renderThumbZone() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Minimal Zero-Height Header (Content at the top) -->
+        <div class="px-4 py-2 shrink-0 flex items-center justify-between border-b border-neutral-800/80 bg-black text-xs">
+          <span class="font-bold text-white">${b.name}</span>
+          <span class="text-neutral-400">${headerInfo.calc}</span>
+        </div>
+
+        <!-- Vouchers Area (Fills entire screen) -->
+        <div class="flex-1 overflow-y-auto px-3.5 py-2 space-y-2.5 no-scrollbar pb-28">
+          ${vs.map((v, i) => `
+            <div class="rounded-xl p-3 bg-neutral-900 border border-neutral-800 space-y-2">
+              <div class="flex justify-between text-xs text-neutral-400">
+                <span>#${i + 1}</span>
+                <span>${v.redeemedOn ? 'Redeemed: ' + v.redeemedOn : v.expiry}</span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-black flex items-center justify-between">
+                <div>
+                  <div class="font-mono-apple text-sm font-bold text-blue-400">${v.code}</div>
+                  ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300">PIN: ${v.pin}</div>` : ''}
+                </div>
+                <button onclick="simulateCopy('${v.code}')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white">
+                  Copy
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- BOTTOM THUMB BAR: Brand Switcher in Natural Thumb Reach -->
+        <div class="absolute bottom-0 left-0 right-0 bg-neutral-950/95 border-t border-neutral-800 p-2.5 space-y-2 backdrop-blur-xl z-30">
+          <div class="flex justify-between items-center text-xs px-1">
+            <span class="font-bold text-white text-xs">${headerInfo.calc}</span>
+            <button onclick="copyCurrentBrandBatch()" class="font-bold text-emerald-400 text-xs">Share Batch &rarr;</button>
+          </div>
+          <!-- Thumb Slider -->
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            ${BRAND_CONFIG.map(item => `
+              <button onclick="setBrand('${item.key}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-blue-600 text-white' : 'bg-neutral-800 text-neutral-400'}">
+                ${item.name}
+              </button>
+            `).join('')}
+    // 6. RECOMMENDED HYBRID: APPLE GLASS + THUMB ZONE
+    function renderHybrid() {
+      const headerInfo = getCumulativeHeader(activeBrandKey);
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+
+      return `
+        <!-- Minimal Frosted Header with Cumulative Breakdown Pill -->
+        <header class="px-4 py-2 shrink-0 flex items-center justify-between border-b border-white/10" style="background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(30px);">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-xs font-bold text-white tracking-tight">${b.name}</span>
+          </div>
+          <!-- Cumulative Breakdown Pill -->
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-300 bg-amber-400/15 border border-amber-400/25">
+            ${headerInfo.calc}
+          </span>
+        </header>
+
+        <!-- Full-bleed Vouchers Feed -->
+        <div class="flex-1 overflow-y-auto px-3.5 py-3 space-y-3 no-scrollbar pb-32">
+          ${b.key === 'FourFountains' ? `
+            <div class="p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-center gap-2">
+              <span class="text-base">⚠️</span>
+              <span><strong>Strict 30-Day Expiry:</strong> Four Fountains vouchers expire exactly 30 days from redemption.</span>
+            </div>
+          ` : ''}
+
+          ${vs.map((v, i) => `
+            <div class="rounded-2xl p-4 space-y-3 border border-white/10 shadow-xl relative overflow-hidden" style="background: rgba(28, 28, 32, 0.7); backdrop-filter: blur(25px);">
+              <!-- Top Row: Voucher Index, Expiry/Redeemed Date -->
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono-apple font-bold text-neutral-400 text-[11px]">#${i + 1}</span>
+                ${v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry}</span>`}
+              </div>
+
+              <!-- High-Contrast Monospace Code Box (Tap anywhere to copy) -->
+              <div onclick="simulateCopy('${v.code}')" class="rounded-xl p-3 bg-black/60 border border-white/10 flex items-center justify-between cursor-pointer hover:border-blue-500/40 active:scale-[0.99] transition-all">
+                <div class="space-y-0.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                    <span class="font-mono-apple text-base font-bold text-blue-400 tracking-wider">${v.code}</span>
+                  </div>
+                  ${v.pin ? `
+                    <div class="flex items-center gap-2 pt-0.5">
+                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
+                      <span class="font-mono-apple text-sm font-bold text-amber-300">${v.pin}</span>
+                    </div>
+                  ` : ''}
+                </div>
+                <button onclick="event.stopPropagation(); simulateCopy('${v.code}')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/15 hover:bg-white/25 active:scale-95 transition-transform">
+                  Copy
+                </button>
+              </div>
+
+              <!-- Action Row: WhatsApp share & Status -->
+              <div class="flex items-center justify-between text-xs pt-0.5">
+                <button onclick="simulateShare('${v.code}')" class="font-bold text-emerald-400 flex items-center gap-1.5 hover:underline">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+                  <span>Share on WhatsApp</span>
+                </button>
+                <span class="text-[10px] text-neutral-400 font-mono-apple">1-Tap Ready</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- DOCKED THUMB ZONE (Flush at Bottom) -->
+        <div class="absolute bottom-0 left-0 right-0 p-3 space-y-2 border-t border-white/10 z-30" style="background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(35px);">
+          <!-- Row 1: Cumulative Denomination & Batch WhatsApp Button -->
+          <div class="flex items-center justify-between px-1">
+            <div>
+              <span class="text-xs font-bold text-white">${headerInfo.calc}</span>
+              <p class="text-[10px] text-neutral-400">Tap below to switch brands</p>
+            </div>
+            <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-md flex items-center gap-1 active:scale-95 transition-transform">
+              <span>WhatsApp All</span>
+            </button>
+          </div>
+
+          <!-- Row 2: Thumb-Reachable Brand Ribbon in Strict Order -->
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            ${BRAND_CONFIG.map(item => `
+              <button onclick="setBrand('${item.key}')" class="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${item.key === activeBrandKey ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-white/10 text-neutral-300 hover:text-white'}">
+                ${item.name} (${LIVE_COUNTS[item.key] || 0})
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    /* ========================================================
+       STYLE DETAILS & SPECS
+       ======================================================== */
+    const STYLE_SPECS = {
+      hybrid: {
+        title: "Approach 6: 💎 Glass + Thumb Zone (Recommended Hybrid)",
+        tag: "Translucent Beauty + Ergonomic Reach",
+        specs: [
+          "<strong>Natural Thumb Reachability:</strong> The brand selector ribbon sits in the bottom dock, allowing effortless one-handed brand switching on the 6.3\" iPhone 16 Pro display.",
+          "<strong>Ultra-compact Header:</strong> Shrinks the top header to a 38px frosted pill displaying the live cumulative total: <em>19 Vouchers &times; ₹500 = ₹9,500 Total</em>.",
+          "<strong>High-Contrast Translucent Cards:</strong> Frosted glass tiles with 16px SF Mono codes in bright cyan and amber PIN chips with dedicated copy actions.",
+          "<strong>Four Fountains 30-Day Alert:</strong> Clear banner and individual voucher tag warning of strict 30-day expiration.",
+          "<strong>Docked Action Dock:</strong> Includes an instant <em>WhatsApp All</em> button right above the thumb ribbon."
+        ]
+      },
+      glass: {
+        title: "Approach 1: Apple Liquid Glass (VisionOS / iOS 18)",
+        tag: "Translucent Frost & Modern Apple Depth",
+        specs: [
+          "<strong>Ultra-compact Header:</strong> Reclaims vertical height with a slim 36px header and floating pill action dock.",
+          "<strong>Brand Ribbon:</strong> Horizontal scrollable pills with live counts (e.g. <em>Lakmé Salon (23)</em>, <em>Reliance Digital (19)</em>).",
+          "<strong>Cumulative Value Pill:</strong> Automatically calculates and highlights e.g. <em>19 Vouchers &times; ₹500 = ₹9,500 Total</em>.",
+          "<strong>Card Legibility:</strong> 15px SF Mono codes in bright cyan-blue, high-contrast PINs in warm amber, no source clutter."
+        ]
+      },
+      material: {
+        title: "Approach 2: Google Material 3 Expressive",
+        tag: "Tonal Surfaces & 48dp Touch Targets",
+        specs: [
+          "<strong>Tonal Surface Elevation:</strong> Uses M3 dark surface container styling with rounded pill chips.",
+          "<strong>Clear Touch Targets:</strong> Large, comfortable 44-48dp tap zones for 'Copy' and 'Share'.",
+          "<strong>Prominent Brand Header:</strong> High contrast title and denomination breakdown at top of feed.",
+          "<strong>Quick Action Floating Button:</strong> Immediate WhatsApp batch generation."
+        ]
+      },
+      swiss: {
+        title: "Approach 3: Swiss Monospace & Perforated Ticket",
+        tag: "Zero-Clutter Maximum Density & Rapid Scanning",
+        specs: [
+          "<strong>Maximum Content Density:</strong> Shows 4 to 5 vouchers on screen at once without scrolling.",
+          "<strong>Perforated Coupon Design:</strong> Radial ticket edges giving a physical voucher feel.",
+          "<strong>Pure SF Mono:</strong> Code, PIN, and date aligned on monospace grid for split-second readability at salon/store counters.",
+          "<strong>Zero Wasted Pixels:</strong> Eliminates all decorative headers and borders."
+        ]
+      },
+      wallet: {
+        title: "Approach 4: VIP Wallet Carousel (Branded Pass Deck)",
+        tag: "Luxury Membership Pass Aesthetic",
+        specs: [
+          "<strong>Deck Selector:</strong> Card-style horizontal selector showing brand name + voucher inventory.",
+          "<strong>Gold / Platinum Theme:</strong> Luxury RuPay Select styling with amber badges.",
+          "<strong>Denomination Breakdown:</strong> Clear cumulative banner showing available balance.",
+          "<strong>High tactile satisfaction:</strong> Embossed codes with tactile rounded action buttons."
+        ]
+      },
+      thumb: {
+        title: "Approach 5: Thumb-Zone Reachable UX (One-Handed Ergonomics)",
+        tag: "Bottom-First Reachability for iPhone 16 Pro",
+        specs: [
+          "<strong>Zero Reaching to Top:</strong> The brand switcher is docked at the <em>bottom</em> directly where your thumb naturally rests.",
+          "<strong>Maximum Scroll Area:</strong> Full-screen voucher feed from top to bottom.",
+          "<strong>Thumb-Action Bar:</strong> Cumulative calculation and WhatsApp share trigger anchored to the bottom dock.",
+          "<strong>Ideal for Store Sprints:</strong> Switch between Lakmé and Kalyan with one swipe of your thumb while at the cashier."
+        ]
+      }
+    };
+
+    function renderScreen() {
+      const container = document.getElementById('simulator-content');
+      if (activeStyle === 'glass') container.innerHTML = renderAppleGlass();
+      else if (activeStyle === 'material') container.innerHTML = renderMaterial3();
+      else if (activeStyle === 'swiss') container.innerHTML = renderSwissTicket();
+      else if (activeStyle === 'wallet') container.innerHTML = renderWalletCarousel();
+      else if (activeStyle === 'thumb') container.innerHTML = renderThumbZone();
+      else if (activeStyle === 'hybrid') container.innerHTML = renderHybrid();
+
+      // Render Specs
+      const spec = STYLE_SPECS[activeStyle];
+      document.getElementById('style-specs-card').innerHTML = `
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Design Specification</span>
+            <h2 class="text-xl font-bold text-white mt-0.5">${spec.title}</h2>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-blue-950 text-blue-300 font-semibold border border-blue-800/40">
+            ${spec.tag}
+          </span>
+        </div>
+        <ul class="space-y-2 text-xs md:text-sm text-neutral-300 pt-2 border-t border-neutral-800">
+          ${spec.specs.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      `;
+    }
+
+    function switchStyle(styleKey) {
+      activeStyle = styleKey;
+      document.querySelectorAll('.style-pill').forEach(btn => {
+        btn.classList.remove('active');
+        btn.classList.add('text-neutral-400');
+      });
+      const activeBtn = document.getElementById('tab-' + styleKey);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.classList.remove('text-neutral-400');
+      }
+      renderScreen();
+    }
+
+    function setBrand(brandKey) {
+      activeBrandKey = brandKey;
+      renderScreen();
+    }
+
+    function simulateCopy(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        alert('Copied code: ' + code);
+      }).catch(() => {
+        alert('Code: ' + code);
+      });
+    }
+
+    function simulateShare(code) {
+      alert(`WhatsApp Share for voucher: ${code}`);
+    }
+
+    function copyCurrentBrandBatch() {
+      const vs = VOUCHER_DATA[activeBrandKey] || [];
+      const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+      const total = vs.length * (b.denom || 0);
+
+      let text = `${b.name} Vouchers\n\n`;
+      vs.forEach((v, i) => {
+        text += `${i + 1}. Code: ${v.code}\n`;
+        if (v.pin) text += `PIN: ${v.pin}\n`;
+        text += `\n`;
+      });
+      text += `Total ${vs.length} vouchers\n`;
+      if (b.denom > 0) text += `₹${b.denom} x ${vs.length} = ₹${total}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied formatted WhatsApp text:\n\n' + text);
+      });
+    }
+
+    // Initialize with Recommended Hybrid (Tab 6)
+    switchStyle('hybrid');
+  </script>
+</body>
+</html>

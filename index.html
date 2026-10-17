@@ -86,28 +86,29 @@
 
     /* iPhone Safe Area & Docked Navigation */
     .safe-top-nav {
-      padding-top: max(12px, env(safe-area-inset-top));
+      padding-top: max(8px, env(safe-area-inset-top));
     }
     .ios-docked-nav {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 52px;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
       box-sizing: content-box;
-      background: var(--toolbar-bg);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border-top: 0.5px solid var(--separator);
+      background: rgba(18, 18, 22, 0.94);
+      backdrop-filter: blur(35px);
+      -webkit-backdrop-filter: blur(35px);
+      border-top: 0.5px solid rgba(255, 255, 255, 0.12);
       z-index: 40;
     }
     .safe-sticky-bar {
-      bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+      bottom: calc(115px + env(safe-area-inset-bottom, 0px));
     }
     .mobile-scroll-container {
-      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(135px + env(safe-area-inset-bottom, 0px));
     }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* Auto Responsive Breakpoint */
     @media (min-width: 840px) {
@@ -232,20 +233,20 @@
           <div class="flex items-center gap-3">
             <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
             <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              <option value="ALL">All Brands</option>
-              <option value="Lakme">Lakme (₹1,500)</option>
-              <option value="FourFountains">Four Fountains Spa</option>
-              <option value="Kalyan">Kalyan (₹2,000)</option>
-              <option value="Reliance">Reliance Digital (₹500)</option>
-              <option value="Myntra">Myntra (₹500)</option>
-              <option value="Uber">Uber (₹100)</option>
-              <option value="Apollo">Apollo (₹250)</option>
-              <option value="BigBasket">BigBasket (₹250)</option>
-              <option value="Thyrocare">Thyrocare</option>
-              <option value="TaxSpanner">TaxSpanner</option>
-              <option value="TimesPrime">Times Prime</option>
-              <option value="AmazonPrime">Amazon Prime</option>
-              <option value="CultFit">Cult.fit</option>
+              <option value="Lakme" selected>1. Lakmé Salon (₹1,500)</option>
+              <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
+              <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
+              <option value="Myntra">4. Myntra (₹500)</option>
+              <option value="BigBasket">5. BigBasket (₹250)</option>
+              <option value="Reliance">6. Reliance Digital (₹500)</option>
+              <option value="Apollo">7. Apollo Pharmacy (₹250)</option>
+              <option value="AmazonPrime">8. Amazon Prime</option>
+              <option value="CultFit">9. Cult.fit Elite</option>
+              <option value="TimesPrime">10. Times Prime</option>
+              <option value="TattvaSpa">11. Tattva Spa (₹1,500)</option>
+              <option value="TaxSpanner">12. TaxSpanner (₹2,950)</option>
+              <option value="Thyrocare">13. Thyrocare</option>
+              <option value="Uber">14. Uber Rides (₹100)</option>
             </select>
             <button id="dt-select-btn" onclick="toggleSelectMode()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
               Select Multiple
@@ -347,25 +348,30 @@
   <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col justify-between">
     
     <!-- Top Bar with Safe Area Top Padding -->
-    <header class="px-4 pb-2.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
-      <div>
-        <h1 class="text-base font-bold tracking-tight">RuPay Vault</h1>
-        <p class="text-[10px]" style="color: var(--label-tertiary);" id="mb-sync-status">Sheet synced</p>
+    <header class="px-4 py-2 shrink-0 safe-top-nav flex items-center justify-between border-b border-white/10" style="background: rgba(18, 18, 20, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-xs font-bold text-white tracking-tight" id="mb-brand-title">Lakmé Salon</span>
+        <span class="text-[10px] text-neutral-400 font-mono-apple" id="mb-sync-status">Live</span>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="syncWithGoogleSheets()" class="p-1.5 rounded-full" style="background: var(--fill-quaternary); color: var(--system-blue);">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <!-- Cumulative Value Pill in header -->
+        <span id="mb-header-calc" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold text-amber-300 bg-amber-400/15 border border-amber-400/25">
+          Loading...
+        </span>
+        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-blue-400 hover:text-white" title="Sync Sheets">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
-        <button onclick="toggleTheme()" class="px-2 py-1 rounded-full text-xs font-semibold" style="background: var(--fill-quaternary);">
+        <button onclick="toggleTheme()" class="px-1.5 py-0.5 rounded-full text-xs" style="background: var(--fill-quaternary);">
           <span class="theme-label">☀️</span>
         </button>
       </div>
     </header>
 
     <!-- Scrollable Screen Content -->
-    <main class="flex-1 overflow-y-auto px-4 py-3 mobile-scroll-container space-y-4">
+    <main class="flex-1 overflow-y-auto px-3.5 py-3 mobile-scroll-container space-y-4">
       
-      <!-- MOBILE TAB 1: CARDS (Hidden for now) -->
+      <!-- MOBILE TAB 1: CARDS (Hidden from UI, state preserved) -->
       <div id="mb-view-cards" class="hidden space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-bold tracking-tight">Cards &amp; Quotas</h2>
@@ -374,53 +380,35 @@
           </button>
         </div>
         <div id="mb-cards-list" class="space-y-3"></div>
-        
-        <!-- Blocked Collapsible -->
-        <div class="rounded-xl p-3.5" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-          <div class="flex items-center justify-between cursor-pointer" onclick="toggleBlockedAccordion()">
-            <span class="text-xs font-semibold text-rose-500">Blocked Cards (<span id="mb-blocked-count">3</span>)</span>
-            <span class="text-xs" style="color: var(--label-tertiary);">Newest First ▾</span>
-          </div>
-          <div id="mb-blocked-inline-list" class="hidden mt-2.5 pt-2.5 border-t border-neutral-800/40 space-y-1.5"></div>
-        </div>
       </div>
 
       <!-- MOBILE TAB 2: VAULT (Primary Active View) -->
-      <div id="mb-view-vault" class="space-y-3.5">
-        <div class="flex items-center justify-between pt-1">
-          <div>
-            <h2 class="text-2xl font-bold tracking-tight text-white">Vouchers</h2>
-            <p class="text-xs text-neutral-400"><span id="mb-vault-count">0</span> available &middot; Tap to copy or share</p>
-          </div>
-          <button id="mb-select-btn" onclick="toggleSelectMode()" class="text-xs font-semibold px-3.5 py-1.5 rounded-full text-blue-400 bg-neutral-800 border border-neutral-700">
-            Select
-          </button>
-        </div>
-
-        <!-- Search Bar with Instant Clear -->
-        <div class="relative">
-          <input type="text" id="mb-search-input" placeholder="Search brand, code, PIN, card..." oninput="syncSearchAndRender(this.value)" class="w-full rounded-xl pl-9 pr-8 py-2.5 text-sm focus:outline-none bg-neutral-900 border border-neutral-800 text-white placeholder-neutral-500">
-          <svg class="w-4 h-4 absolute left-3 top-3 text-neutral-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        </div>
-        
-        <!-- Filter Pills (Scrollable with brand counts) -->
-        <div id="mb-pills-container" class="flex gap-2 overflow-x-auto py-1 no-scrollbar">
-          <!-- Populated dynamically via JS -->
+      <div id="mb-view-vault" class="space-y-3">
+        <!-- Four Fountains 30-Day Alert Banner -->
+        <div id="mb-ff-alert" class="hidden p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-center gap-2">
+          <span class="text-base">⚠️</span>
+          <span><strong>Strict 30-Day Expiry:</strong> Four Fountains vouchers expire exactly 30 days from redemption.</span>
         </div>
 
         <div id="mb-vouchers-list" class="space-y-3"></div>
       </div>
 
       <!-- MOBILE TAB 3: COOLDOWNS -->
-      <div id="mb-view-cooldowns" class="hidden space-y-3">
-        <h2 class="text-xl font-bold tracking-tight">24h Cooldowns</h2>
+      <div id="mb-view-cooldowns" class="hidden space-y-3 pb-24">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold tracking-tight">24h Cooldowns</h2>
+          <button onclick="setTab('vault')" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white">Back to Vault</button>
+        </div>
         <p class="text-xs" style="color: var(--label-secondary);">1 redemption per account per 24 hours.</p>
         <div id="mb-cooldowns-list" class="space-y-2"></div>
       </div>
 
       <!-- MOBILE TAB 4: RULES -->
-      <div id="mb-view-matrix" class="hidden space-y-3">
-        <h2 class="text-xl font-bold tracking-tight">Benefit Rules</h2>
+      <div id="mb-view-matrix" class="hidden space-y-3 pb-24">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold tracking-tight">Benefit Rules</h2>
+          <button onclick="setTab('vault')" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white">Back to Vault</button>
+        </div>
         <select id="mb-matrix-select" onchange="renderMobileMatrixCard(this.value)" class="w-full rounded-xl p-3 text-xs font-semibold" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
           <option value="pnb_imp">PNB Imperial RSDC (65249710)</option>
           <option value="union">Union Bank Emperio (652411)</option>
@@ -453,25 +441,29 @@
       </div>
     </div>
 
-    <!-- Mobile Bottom Tab Bar (Docked Flush at Screen Bottom) -->
-    <nav class="ios-docked-nav flex items-center justify-around px-2">
-      <button onclick="setTab('cards')" id="mb-btn-cards" class="hidden flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-        <span class="text-[10px] font-semibold">Cards</span>
-      </button>
-      <button onclick="setTab('vault')" id="mb-btn-vault" class="flex flex-col items-center gap-0.5" style="color: var(--system-blue);">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
-        <span class="text-[10px] font-semibold">Vault</span>
-      </button>
-      <button onclick="setTab('cooldowns')" id="mb-btn-cooldowns" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="text-[10px] font-semibold">Cooldowns</span>
-      </button>
-      <button onclick="setTab('matrix')" id="mb-btn-matrix" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        <span class="text-[10px] font-semibold">Rules</span>
-      </button>
-    </nav>
+    <!-- Mobile Bottom Dock (Thumb Zone: Cumulative Math + WhatsApp All + Strict Brand Ribbon) -->
+    <div id="mb-bottom-dock" class="ios-docked-nav flex flex-col justify-between px-3.5 pt-2 space-y-2">
+      <!-- Row 1: Cumulative Calculation + WhatsApp All Action -->
+      <div class="flex items-center justify-between px-1">
+        <div>
+          <span id="mb-dock-calc" class="text-xs font-bold text-white tracking-tight"></span>
+          <p class="text-[10px] text-neutral-400">Tap below to switch brand</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="mb-select-toggle" onclick="toggleSelectMode()" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-neutral-300 bg-white/10 hover:bg-white/20">
+            Select
+          </button>
+          <button onclick="copyCurrentBrandBatch()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-400 shadow-md flex items-center gap-1 active:scale-95 transition-transform">
+            <span>WhatsApp All</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Row 2: Thumb-Reachable Brand Ribbon in Strict User Order -->
+      <div id="mb-thumb-ribbon" class="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <!-- Populated dynamically via JS in strict brand order -->
+      </div>
+    </div>
   </div>
 
 
@@ -594,13 +586,82 @@
   <script>
     const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
 
+    // STRICT USER ORDER & CONFIGURATION
+    const BRAND_CONFIG = [
+      { key: 'Lakme', name: 'Lakmé Salon', denom: 1500, hasPin: true, tag: 'Wellness' },
+      { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: 'Strict 30D Expiry' },
+      { key: 'Kalyan', name: 'Kalyan Jewellers', denom: 2000, hasPin: true, tag: 'Jewellery' },
+      { key: 'Myntra', name: 'Myntra', denom: 500, hasPin: true, tag: 'Fashion' },
+      { key: 'BigBasket', name: 'BigBasket', denom: 250, hasPin: true, tag: 'Grocery' },
+      { key: 'Reliance', name: 'Reliance Digital', denom: 500, hasPin: false, tag: 'Electronics' },
+      { key: 'Apollo', name: 'Apollo Pharmacy', denom: 250, hasPin: true, tag: 'Health' },
+      { key: 'AmazonPrime', name: 'Amazon Prime', denom: 0, hasPin: false, tag: 'OTT Subscription' },
+      { key: 'CultFit', name: 'Cult.fit Elite', denom: 0, hasPin: false, tag: 'Fitness' },
+      { key: 'TimesPrime', name: 'Times Prime', denom: 0, hasPin: false, tag: 'Ace Membership' },
+      { key: 'TattvaSpa', name: 'Tattva Spa', denom: 1500, hasPin: true, tag: 'Wellness' },
+      { key: 'TaxSpanner', name: 'TaxSpanner', denom: 2950, hasPin: false, tag: 'Tax Filing' },
+      { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
+      { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' }
+    ];
+
+    function normalizeBrandKey(brand) {
+      if (!brand) return 'Other';
+      const b = brand.toLowerCase().replace(/[\s\.\-_]/g, '');
+      if (b.includes('lakme')) return 'Lakme';
+      if (b.includes('fourfountain') || b.includes('four')) return 'FourFountains';
+      if (b.includes('kalyan')) return 'Kalyan';
+      if (b.includes('myntra')) return 'Myntra';
+      if (b.includes('bigbasket')) return 'BigBasket';
+      if (b.includes('reliance')) return 'Reliance';
+      if (b.includes('apollo')) return 'Apollo';
+      if (b.includes('amazon')) return 'AmazonPrime';
+      if (b.includes('cult')) return 'CultFit';
+      if (b.includes('timesprime')) return 'TimesPrime';
+      if (b.includes('tattvaspa') || b.includes('tattva')) return 'TattvaSpa';
+      if (b.includes('taxspanner') || b.includes('tax')) return 'TaxSpanner';
+      if (b.includes('thyrocare')) return 'Thyrocare';
+      if (b.includes('uber')) return 'Uber';
+      return brand;
+    }
+
+    function getCumulativeHeader(brandKey) {
+      const normKey = normalizeBrandKey(brandKey);
+      const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
+      const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
+      const count = vs.length;
+      const denom = b.denom || (vs.length ? vs[0].amount : 0);
+      const total = count * denom;
+
+      if (normKey === 'FourFountains') {
+        return {
+          title: b.name,
+          calc: `${count} Vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()} Total`,
+          sub: `⚠️ Strict 30-day validity from redemption date. Use immediately.`
+        };
+      }
+
+      if (denom > 0) {
+        return {
+          title: b.name,
+          calc: `${count} Vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()} Total`,
+          sub: `${count} vouchers ready to redeem`
+        };
+      } else {
+        return {
+          title: b.name,
+          calc: `${count} Vouchers (${b.tag || 'Membership'})`,
+          sub: `Direct redemption benefit`
+        };
+      }
+    }
+
     const state = {
       isDark: true,
       activeTab: 'vault',
       isSelectMode: false,
       selectedIds: new Set(),
       searchQuery: '',
-      activeFilterBrand: 'ALL',
+      activeFilterBrand: 'Lakme',
       targetCardToBlock: null,
 
       accounts: [
@@ -685,6 +746,11 @@
         }
       });
 
+      const mbDock = document.getElementById('mb-bottom-dock');
+      if (mbDock) {
+        mbDock.classList.toggle('hidden', tab !== 'vault');
+      }
+
       renderAll();
     }
 
@@ -699,19 +765,32 @@
         const data = await res.json();
         
         if (data.vouchers && data.vouchers.length) {
-          state.vouchers = data.vouchers.map((v, i) => ({
-            id: 'v-' + i,
-            bookingId: v.bookingId || ('#' + (i + 1)),
-            brand: v.brand || 'Other',
-            title: (v.brand || 'Voucher') + ' Voucher',
-            amount: Number(v.amount) || 0,
-            code: v.code || '-',
-            pin: v.pin || null,
-            account: v.account || '-',
-            card: v.card || 'RuPay Select',
-            expiry: v.dateOfIssue || '31 Dec 2026',
-            status: (v.status || 'ACTIVE').toUpperCase()
-          }));
+          state.vouchers = data.vouchers.map((v, i) => {
+            const rawBrand = v.brand || 'Other';
+            const normKey = normalizeBrandKey(rawBrand);
+            const bConfig = BRAND_CONFIG.find(x => x.key === normKey);
+            const amount = Number(v.amount) || (bConfig ? bConfig.denom : 0);
+            
+            let redeemedOn = null;
+            if (v.dateOfIssue && String(v.dateOfIssue).trim() && String(v.dateOfIssue).trim() !== '31 Dec 2026') {
+              redeemedOn = String(v.dateOfIssue).trim();
+            }
+
+            return {
+              id: 'v-' + i,
+              bookingId: v.bookingId || ('#' + (i + 1)),
+              brand: rawBrand,
+              title: (rawBrand || 'Voucher') + ' Voucher',
+              amount: amount,
+              code: v.code || '-',
+              pin: v.pin || null,
+              account: v.account || '-',
+              card: v.card || 'RuPay Select',
+              expiry: v.dateOfIssue || '31 Dec 2026',
+              redeemedOn: redeemedOn,
+              status: (v.status || 'ACTIVE').toUpperCase()
+            };
+          });
 
           const countMsg = `Synced ${state.vouchers.length} vouchers from Sheet`;
           showToast(countMsg);
@@ -826,25 +905,42 @@
       document.getElementById('mb-blocked-inline-list').innerHTML = bHtml;
     }
 
-    /* --- RENDER VAULT --- */
+    /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
     function renderVault() {
-      let vs = state.vouchers;
+      const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
+      let vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
 
-      // Brand Filter
-      if (state.activeFilterBrand !== 'ALL') {
-        vs = vs.filter(v => v.brand.toLowerCase() === state.activeFilterBrand.toLowerCase());
-      }
-
-      // Search Query Filter
+      // Search Query Filter (Desktop)
       if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         vs = vs.filter(v => 
           v.brand.toLowerCase().includes(q) ||
           v.code.toLowerCase().includes(q) ||
-          (v.pin && v.pin.toLowerCase().includes(q)) ||
-          v.account.toLowerCase().includes(q) ||
-          v.card.toLowerCase().includes(q)
+          (v.pin && v.pin.toLowerCase().includes(q))
         );
+      }
+
+      const headerInfo = getCumulativeHeader(normActiveBrand);
+      const bConfig = BRAND_CONFIG.find(x => x.key === normActiveBrand) || { name: state.activeFilterBrand, tag: 'Voucher' };
+
+      // Update Header & Dock Cumulative Math
+      const mbBrandTitle = document.getElementById('mb-brand-title');
+      if (mbBrandTitle) mbBrandTitle.textContent = bConfig.name;
+
+      const mbHeaderCalc = document.getElementById('mb-header-calc');
+      if (mbHeaderCalc) mbHeaderCalc.innerHTML = headerInfo.calc;
+
+      const mbDockCalc = document.getElementById('mb-dock-calc');
+      if (mbDockCalc) mbDockCalc.innerHTML = headerInfo.calc;
+
+      // Four Fountains 30-Day Alert Banner
+      const ffAlert = document.getElementById('mb-ff-alert');
+      if (ffAlert) {
+        if (normActiveBrand === 'FourFountains') {
+          ffAlert.classList.remove('hidden');
+        } else {
+          ffAlert.classList.add('hidden');
+        }
       }
 
       document.getElementById('dt-vault-count').textContent = state.vouchers.length;
@@ -852,12 +948,6 @@
 
       const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
       const selSum = sel.reduce((a, v) => a + (v.amount || 0), 0);
-
-      // Header Checkbox Sync
-      const cbAll = document.getElementById('dt-th-cb');
-      if (cbAll) {
-        cbAll.checked = vs.length > 0 && vs.every(v => state.selectedIds.has(v.id));
-      }
 
       // Desktop Batch Action Bar
       const dtBar = document.getElementById('dt-batch-bar');
@@ -879,8 +969,8 @@
         mbBar.classList.add('hidden');
       }
 
-      // Desktop Table Body (Account hidden)
-      document.getElementById('dt-vault-tbody').innerHTML = vs.map(v => `
+      // Desktop Table Body (Zero account, zero source clutter)
+      document.getElementById('dt-vault-tbody').innerHTML = vs.map((v, i) => `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
           <td class="p-3 text-center">
             <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-blue-500">
@@ -896,10 +986,9 @@
             </div>
             ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
           </td>
-          <td class="p-3">
-            <div class="text-xs font-medium text-neutral-300">${v.card || 'RuPay Select'}</div>
+          <td class="p-3 text-xs" style="color: var(--label-secondary);">
+            ${v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
-          <td class="p-3 text-xs" style="color: var(--label-secondary);">${v.expiry}</td>
           <td class="p-3">
             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-emerald-400 bg-emerald-950/60'}">
               ${v.status}
@@ -910,54 +999,51 @@
             <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Used'}</button>
           </td>
         </tr>
-      `).join('') || `<tr><td colspan="7" class="p-8 text-center text-sm text-neutral-400">No vouchers found for "${state.searchQuery || state.activeFilterBrand}".</td></tr>`;
+      `).join('') || `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
 
-      // Mobile Cards List (High-Legibility, Touch-Optimized, Account Hidden)
-      document.getElementById('mb-vouchers-list').innerHTML = vs.map(v => {
+      // Mobile Glass Cards (Touch-Optimized, Tap-to-Copy, Zero Account/Source Clutter)
+      document.getElementById('mb-vouchers-list').innerHTML = vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
+        const isFF = normActiveBrand === 'FourFountains';
         return `
-          <div class="rounded-2xl p-4 space-y-3.5 ${v.status === 'USED' ? 'opacity-40' : ''}" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <!-- Header: Brand, Amount, Status -->
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                ${state.isSelectMode ? `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-5 h-5 rounded accent-blue-500">` : ''}
-                <div>
-                  <h3 class="font-bold text-base tracking-tight text-white">${v.brand}</h3>
-                  <p class="text-xs text-neutral-400 mt-0.5">${v.card || 'RuPay Select'} &middot; ${v.expiry || 'Valid'}</p>
-                </div>
-              </div>
+          <div class="rounded-2xl p-4 space-y-3 border border-white/10 shadow-xl relative overflow-hidden ${v.status === 'USED' ? 'opacity-40' : ''}" style="background: rgba(28, 28, 32, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);">
+            <!-- Top Row: Voucher Index, Expiry / Redeemed Date, Status -->
+            <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-2">
-                <span class="text-sm font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
-                  ₹${(v.amount || 0).toLocaleString()}
-                </span>
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-950 text-emerald-400'}">
+                ${state.isSelectMode ? `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-blue-500">` : ''}
+                <span class="font-mono-apple font-bold text-neutral-400 text-[11px]">#${i + 1}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-white/10 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.expiry && v.expiry !== '31 Dec 2026' ? `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry}</span>` : '')}
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'}">
                   ${v.status}
                 </span>
               </div>
             </div>
 
-            <!-- Code & PIN Box -->
-            <div class="rounded-xl p-3 flex items-center justify-between" style="background: var(--fill-quaternary);">
+            <!-- High-Contrast Monospace Code Box (Tap anywhere to copy) -->
+            <div onclick="copyToClipboard('${v.code}')" class="rounded-xl p-3 bg-black/60 border border-white/10 flex items-center justify-between cursor-pointer hover:border-blue-500/40 active:scale-[0.99] transition-all">
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span class="font-mono-apple text-sm font-bold ${v.status === 'USED' ? 'line-through text-neutral-400' : 'text-blue-400'}">${v.code}</span>
+                  <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                  <span class="font-mono-apple text-base font-bold text-blue-400 tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
-                    <span class="text-[10px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
+                    <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
                     <span class="font-mono-apple text-sm font-bold text-amber-300">${v.pin}</span>
                   </div>
                 ` : ''}
               </div>
-              <button onclick="copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-neutral-800 hover:bg-neutral-700 shadow-sm active:scale-95 transition-transform">
+              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/15 hover:bg-white/25 active:scale-95 transition-transform">
                 Copy
               </button>
             </div>
 
-            <!-- Action Bar -->
-            <div class="flex items-center justify-between pt-1 border-t border-neutral-800/40 text-xs">
-              <button onclick="shareSingle('${v.id}')" class="font-bold text-emerald-400 flex items-center gap-1 hover:underline">
+            <!-- Action Row: WhatsApp Share & Status Toggle -->
+            <div class="flex items-center justify-between text-xs pt-0.5">
+              <button onclick="shareSingle('${v.id}')" class="font-bold text-emerald-400 flex items-center gap-1.5 hover:underline">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
                 <span>WhatsApp</span>
               </button>
               <button onclick="toggleSingleStatus('${v.id}')" class="font-medium text-neutral-400 hover:text-white">
@@ -966,7 +1052,7 @@
             </div>
           </div>
         `;
-      }).join('') || `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found for "${state.searchQuery || state.activeFilterBrand}".</div>`;
+      }).join('') || `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
 
       renderFilterPills();
     }
@@ -992,38 +1078,50 @@
       }
     }
 
-    /* --- RENDER MOBILE FILTER PILLS (DYNAMIC WITH REAL COUNTS) --- */
+    /* --- RENDER THUMB ZONE BRAND RIBBON (STRICT USER ORDER WITH LIVE COUNTS) --- */
     function renderFilterPills() {
-      const counts = {};
-      state.vouchers.forEach(v => {
-        const b = v.brand || 'Other';
-        counts[b] = (counts[b] || 0) + 1;
-      });
-
-      const sortedBrands = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-      const allBrands = ['ALL', ...sortedBrands];
-      const container = document.getElementById('mb-pills-container');
+      const container = document.getElementById('mb-thumb-ribbon');
       if (!container) return;
 
-      container.innerHTML = allBrands.map(b => {
-        const isSel = (state.activeFilterBrand.toLowerCase() === b.toLowerCase());
-        const count = b === 'ALL' ? state.vouchers.length : (counts[b] || 0);
-        const label = b === 'ALL' ? `All (${count})` : `${b} (${count})`;
+      const normActive = normalizeBrandKey(state.activeFilterBrand);
+
+      // Live counts by normalized brand key
+      const counts = {};
+      state.vouchers.forEach(v => {
+        const k = normalizeBrandKey(v.brand);
+        counts[k] = (counts[k] || 0) + 1;
+      });
+
+      container.innerHTML = BRAND_CONFIG.map(item => {
+        const count = counts[item.key] || 0;
+        const isSel = (normActive === item.key);
         return `
-          <button onclick="filterVaultBrand('${b}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${isSel ? 'bg-blue-600 text-white shadow-md' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}">
-            ${label}
+          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all ${isSel ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30' : 'bg-white/10 text-neutral-300 hover:text-white'}">
+            ${item.name} (${count})
           </button>
         `;
       }).join('');
     }
 
-    /* --- SYNC SEARCH AND FILTER --- */
+    /* --- BATCH WHATSAPP GENERATION FOR ACTIVE BRAND --- */
+    function copyCurrentBrandBatch() {
+      const normKey = normalizeBrandKey(state.activeFilterBrand);
+      const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
+      const allVs = vs.length ? vs : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
+      if (!allVs.length) {
+        showToast("No vouchers in this category");
+        return;
+      }
+      const text = fmtWhatsApp(allVs);
+      document.getElementById('share-preview-text').value = text;
+      document.getElementById('modal-share').classList.remove('hidden');
+    }
+
+    /* --- SYNC SEARCH AND BRAND FILTER --- */
     function syncSearchAndRender(val) {
       state.searchQuery = val;
       const dtInput = document.getElementById('dt-search-input');
-      const mbInput = document.getElementById('mb-search-input');
       if (dtInput && dtInput.value !== val) dtInput.value = val;
-      if (mbInput && mbInput.value !== val) mbInput.value = val;
       renderVault();
     }
 
