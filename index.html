@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuPay Vault</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      /* Dark Mode — Apple System Colors */
+      --bg-primary: #000000;
+      --bg-secondary: #1c1c1e;
+      --bg-tertiary: #2c2c2e;
+      --bg-grouped: #000000;
+      --bg-grouped-secondary: #1c1c1e;
+      --separator: rgba(84, 84, 88, 0.65);
+      --separator-opaque: #38383a;
+      --label-primary: #ffffff;
+      --label-secondary: rgba(235, 235, 245, 0.6);
+      --label-tertiary: rgba(235, 235, 245, 0.3);
+      --label-quaternary: rgba(235, 235, 245, 0.18);
+      --fill: rgba(120, 120, 128, 0.36);
+      --fill-secondary: rgba(120, 120, 128, 0.32);
+      --fill-tertiary: rgba(120, 120, 128, 0.24);
+      --fill-quaternary: rgba(120, 120, 128, 0.18);
+      --system-blue: #0a84ff;
+      --system-green: #30d158;
+      --system-orange: #ff9f0a;
+      --system-red: #ff453a;
+      --system-gray: #8e8e93;
+      --system-gray2: #636366;
+      --system-gray3: #48484a;
+      --system-gray4: #3a3a3c;
+      --system-gray5: #2c2c2e;
+      --system-gray6: #1c1c1e;
+      --sidebar-bg: rgba(30, 30, 30, 0.92);
+      --toolbar-bg: rgba(28, 28, 30, 0.85);
+      --material-thick: rgba(30, 30, 30, 0.85);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f2f2f7;
+      --bg-tertiary: #ffffff;
+      --bg-grouped: #f2f2f7;
+      --bg-grouped-secondary: #ffffff;
+      --separator: rgba(60, 60, 67, 0.29);
+      --separator-opaque: #c6c6c8;
+      --label-primary: #000000;
+      --label-secondary: rgba(60, 60, 67, 0.6);
+      --label-tertiary: rgba(60, 60, 67, 0.3);
+      --label-quaternary: rgba(60, 60, 67, 0.18);
+      --fill: rgba(120, 120, 128, 0.2);
+      --fill-secondary: rgba(120, 120, 128, 0.16);
+      --fill-tertiary: rgba(120, 120, 128, 0.12);
+      --fill-quaternary: rgba(120, 120, 128, 0.08);
+      --system-blue: #007aff;
+      --system-green: #34c759;
+      --system-orange: #ff9500;
+      --system-red: #ff3b30;
+      --system-gray: #8e8e93;
+      --system-gray2: #aeaeb2;
+      --system-gray3: #c7c7cc;
+      --system-gray4: #d1d1d6;
+      --system-gray5: #e5e5ea;
+      --system-gray6: #f2f2f7;
+      --sidebar-bg: rgba(246, 246, 246, 0.92);
+      --toolbar-bg: rgba(246, 246, 246, 0.85);
+      --material-thick: rgba(242, 242, 247, 0.9);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+
+    .font-mono-apple { font-family: "SF Mono", "Menlo", "Monaco", monospace; }
+
+    /* Native scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--fill-tertiary); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--fill-secondary); }
+
+    /* Transitions */
+    .transition-theme { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+
+    /* SF Symbol placeholders via SVG */
+    .sf-icon { display: inline-flex; align-items: center; justify-content: center; }
+
+    /* iPhone bezel */
+    .iphone-bezel {
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.08),
+        0 40px 100px -20px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+
+<body style="background: var(--bg-grouped); color: var(--label-primary);" class="transition-theme min-h-screen p-6 flex flex-col items-center">
+
+  <!-- ===== TOP CONTROL BAR ===== -->
+  <header class="w-full max-w-6xl mb-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: var(--system-blue);">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+      </div>
+      <div>
+        <h1 style="font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--label-primary);">RuPay Vault</h1>
+        <p style="font-size: 12px; color: var(--label-tertiary); margin-top: 1px;">Voucher Tracker &amp; Card Manager</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Viewport Switcher -->
+      <div class="flex items-center p-0.5 rounded-lg" style="background: var(--fill-quaternary);">
+        <button id="btn-mac" onclick="setViewMode('macos')" class="px-3 py-1 rounded-md text-xs font-medium" style="background: var(--bg-tertiary); color: var(--label-primary); font-size: 12px; font-weight: 500;">
+          macOS
+        </button>
+        <button id="btn-ios" onclick="setViewMode('iphone')" class="px-3 py-1 rounded-md text-xs font-medium" style="background: transparent; color: var(--label-secondary); font-size: 12px; font-weight: 500;">
+          iPhone
+        </button>
+      </div>
+
+      <!-- Appearance Toggle -->
+      <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style="background: var(--fill-quaternary); color: var(--label-secondary); font-size: 12px; font-weight: 500;">
+        <svg id="theme-icon-sun" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg id="theme-icon-moon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="theme-label">Light</span>
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ===== macOS VIEW ===== -->
+  <main id="macos-view" class="w-full max-w-6xl">
+    <div class="rounded-xl overflow-hidden flex h-[720px] transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+
+      <!-- Sidebar -->
+      <aside class="w-56 flex flex-col shrink-0 transition-theme" style="background: var(--sidebar-bg); border-right: 0.5px solid var(--separator); backdrop-filter: blur(20px);">
+        <!-- Traffic Lights -->
+        <div class="px-4 pt-3 pb-2 flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full inline-block" style="background: #ff5f57;"></span>
+          <span class="w-3 h-3 rounded-full inline-block" style="background: #febc2e;"></span>
+          <span class="w-3 h-3 rounded-full inline-block" style="background: #28c840;"></span>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-2 pt-1 pb-3" style="font-size: 13px;">
+          <!-- Section Label -->
+          <div class="px-2 pt-3 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
+            Monitor
+          </div>
+
+          <button onclick="setMacTab('cards')" id="sidebar-cards" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="background: var(--system-blue); color: #fff; font-weight: 500;">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+            <span class="flex-1">Cards</span>
+            <span id="sidebar-cards-badge" style="font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 10px;">5</span>
+          </button>
+
+          <button onclick="setMacTab('vault')" id="sidebar-vault" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
+            <span class="flex-1">Vault</span>
+            <span id="sidebar-vault-badge" style="font-size: 11px; color: var(--label-tertiary);">12</span>
+          </button>
+
+          <button onclick="setMacTab('cooldowns')" id="sidebar-cooldowns" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span class="flex-1">Cooldowns</span>
+            <span style="font-size: 11px; color: var(--system-green); font-weight: 500;">3 Ready</span>
+          </button>
+
+          <button onclick="setMacTab('matrix')" id="sidebar-matrix" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span class="flex-1">Rules</span>
+          </button>
+
+          <div class="px-2 pt-5 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
+            Archive
+          </div>
+
+          <button onclick="setMacTab('blocked')" id="sidebar-blocked" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
+            <svg class="w-4 h-4 shrink-0" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+            <span class="flex-1" style="color: var(--system-red);">Blocked</span>
+            <span id="sidebar-blocked-badge" style="font-size: 11px; color: var(--system-red); font-weight: 500;">3</span>
+          </button>
+        </nav>
+
+        <!-- Footer -->
+        <div class="px-3 py-2.5" style="border-top: 0.5px solid var(--separator); font-size: 11px; color: var(--label-tertiary);">
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full inline-block" style="background: var(--system-green);"></span>
+              Sheets synced
+            </span>
+            <span class="font-mono-apple" style="font-size: 10px;">Just now</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content Area -->
+      <section class="flex-1 flex flex-col overflow-hidden transition-theme" style="background: var(--bg-grouped);">
+
+        <!-- === TAB: CARDS === -->
+        <div id="mac-tab-cards" class="flex-1 overflow-y-auto">
+          <!-- Toolbar -->
+          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
+            <div>
+              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Active Cards</h2>
+              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Q4 2026 benefit quotas per card number</p>
+            </div>
+            <button onclick="openAddCardModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 500;">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              Add Card
+            </button>
+          </div>
+
+          <div class="p-6 space-y-5">
+            <div id="mac-cards-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+
+            <!-- Blocked Section Disclosure -->
+            <div class="rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+              <button class="w-full flex items-center justify-between px-4 py-3 text-left" onclick="toggleMacBlockedAccordion()">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+                  <span style="font-size: 13px; font-weight: 500;">Blocked Cards</span>
+                  <span style="font-size: 12px; color: var(--label-tertiary);" id="mac-blocked-inline-count">3</span>
+                </div>
+                <svg id="mac-blocked-chevron" class="w-3.5 h-3.5 transition-transform" style="color: var(--label-tertiary);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div id="mac-blocked-inline-list" class="hidden px-4 pb-3 space-y-1.5" style="border-top: 0.5px solid var(--separator);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- === TAB: VAULT === -->
+        <div id="mac-tab-vault" class="hidden flex-1 flex flex-col overflow-hidden">
+          <!-- Toolbar -->
+          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
+            <div>
+              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Voucher Vault</h2>
+              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Select, copy, and share vouchers</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <select id="mac-brand-filter" onchange="renderVault()" class="rounded-lg px-2.5 py-1.5 transition-theme" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 12px; outline: none;">
+                <option value="ALL">All Brands</option>
+                <option value="Lakme">Lakme Salon</option>
+                <option value="Kalyan">Kalyan Jewellers</option>
+                <option value="Reliance">Reliance Digital</option>
+                <option value="Myntra">Myntra</option>
+                <option value="Apollo">Apollo Pharmacy</option>
+              </select>
+              <button id="mac-select-btn" onclick="toggleSelectMode()" class="px-3 py-1.5 rounded-lg transition-theme" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 500; border: 0.5px solid var(--separator);">
+                Select
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Action Bar -->
+          <div id="mac-batch-bar" class="hidden px-6 py-2.5 flex items-center justify-between" style="background: rgba(10, 132, 255, 0.08); border-bottom: 0.5px solid rgba(10, 132, 255, 0.2);">
+            <div class="flex items-center gap-2.5">
+              <span id="mac-sel-count" class="px-2 py-0.5 rounded-md text-white" style="background: var(--system-blue); font-size: 11px; font-weight: 600;">0</span>
+              <span id="mac-sel-total" style="font-size: 12px; color: var(--system-blue); font-weight: 500;"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="selectAllVouchers()" style="font-size: 12px; color: var(--system-blue); font-weight: 400;">Select All</button>
+              <button onclick="copyBatchPlaintext()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style="background: var(--fill-quaternary); font-size: 12px; font-weight: 500; color: var(--label-primary); border: 0.5px solid var(--separator);">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Plaintext
+              </button>
+              <button onclick="openWhatsAppModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style="background: #25D366; color: #fff; font-size: 12px; font-weight: 600;">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+                Share
+              </button>
+              <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-1 rounded-lg" style="background: var(--fill-tertiary); font-size: 12px; font-weight: 500; color: var(--system-orange);">
+                Mark Used
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="flex-1 overflow-y-auto">
+            <table class="w-full text-left" style="font-size: 12px;">
+              <thead class="sticky top-0 transition-theme" style="background: var(--bg-grouped-secondary); border-bottom: 0.5px solid var(--separator);">
+                <tr style="font-size: 11px; font-weight: 500; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
+                  <th class="px-4 py-2.5 w-10 text-center"><input type="checkbox" id="mac-th-cb" onchange="toggleSelectAllRows(this.checked)"></th>
+                  <th class="px-3 py-2.5">Brand</th>
+                  <th class="px-3 py-2.5">Code / PIN</th>
+                  <th class="px-3 py-2.5">Account</th>
+                  <th class="px-3 py-2.5">Validity</th>
+                  <th class="px-3 py-2.5">Status</th>
+                  <th class="px-3 py-2.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mac-vault-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- === TAB: COOLDOWNS === -->
+        <div id="mac-tab-cooldowns" class="hidden flex-1 overflow-y-auto">
+          <div class="sticky top-0 z-10 px-6 py-3 transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
+            <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">24-Hour Cooldowns</h2>
+            <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">One redemption per account per 24 hours</p>
+          </div>
+          <div class="p-6">
+            <div id="mac-cooldowns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+          </div>
+        </div>
+
+        <!-- === TAB: MATRIX === -->
+        <div id="mac-tab-matrix" class="hidden flex-1 overflow-y-auto">
+          <div class="sticky top-0 z-10 px-6 py-3 transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
+            <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Benefit Rules</h2>
+            <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Quarterly, half-yearly, and annual entitlements per card type</p>
+          </div>
+          <div class="p-6 overflow-x-auto">
+            <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator);">
+              <table class="w-full text-left" style="font-size: 12px;">
+                <thead style="background: var(--fill-quaternary);">
+                  <tr style="font-size: 11px; font-weight: 500; color: var(--label-secondary); border-bottom: 0.5px solid var(--separator);">
+                    <th class="px-3 py-2.5" style="border-right: 0.5px solid var(--separator);">Benefit</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">PNB Imperial</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Union Emperio</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Jana SFB</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">BoB Bhoomi</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Canara RSDC</th>
+                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">PNB Select CC</th>
+                    <th class="px-3 py-2.5 text-center">Canara CC</th>
+                  </tr>
+                </thead>
+                <tbody id="mac-matrix-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- === TAB: BLOCKED === -->
+        <div id="mac-tab-blocked" class="hidden flex-1 overflow-y-auto">
+          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
+            <div>
+              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--system-red);">Blocked Cards</h2>
+              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Sorted newest block date first</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-2" id="mac-blocked-full-list"></div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+
+  <!-- ===== iPHONE VIEW ===== -->
+  <main id="iphone-view" class="hidden flex-col items-center py-2">
+    <div class="iphone-bezel relative rounded-[48px] overflow-hidden flex flex-col transition-theme" style="width: 393px; height: 820px; background: #000; border: 4px solid #222;">
+
+      <!-- Status Bar -->
+      <div class="w-full h-11 shrink-0 flex items-center justify-between px-7 pt-1" style="background: #000;">
+        <span class="text-white" style="font-size: 13px; font-weight: 600;">9:41</span>
+        <div onclick="showToast('vibhavoswal1 cooldown complete')" class="cursor-pointer flex items-center gap-1.5 px-3 h-7 rounded-full" style="background: #000; border: 1px solid #333; font-size: 11px; color: #fff; font-weight: 500;">
+          <span class="w-1.5 h-1.5 rounded-full inline-block" style="background: var(--system-green);"></span>
+          vibhavoswal1
+        </div>
+        <div class="flex items-center gap-1.5 text-white">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+          <div class="flex items-center" style="width: 22px; height: 11px; border: 1px solid #fff; border-radius: 3px; padding: 1px;"><div style="width: 75%; height: 100%; background: #fff; border-radius: 1px;"></div></div>
+        </div>
+      </div>
+
+      <!-- Screen -->
+      <div class="flex-1 overflow-y-auto flex flex-col transition-theme" style="background: var(--bg-grouped);">
+
+        <!-- iOS Tab: Cards -->
+        <div id="ios-tab-cards" class="px-4 pt-2 pb-20 space-y-4">
+          <div class="flex items-center justify-between pt-1">
+            <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Cards</h2>
+            <button onclick="openAddCardModal()" class="w-7 h-7 rounded-full flex items-center justify-center" style="background: var(--system-blue);">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+          </div>
+          <div id="ios-cards-list" class="space-y-3"></div>
+          <!-- Blocked Disclosure -->
+          <div class="rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <button class="w-full flex items-center justify-between px-4 py-3" onclick="toggleIosBlockedAccordion()">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+                <span style="font-size: 13px; font-weight: 500;">Blocked</span>
+                <span style="font-size: 12px; color: var(--label-tertiary);" id="ios-blocked-count">3</span>
+              </div>
+              <svg id="ios-blocked-chevron" class="w-3.5 h-3.5 transition-transform" style="color: var(--label-tertiary);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div id="ios-blocked-list" class="hidden px-4 pb-3 space-y-1.5" style="border-top: 0.5px solid var(--separator);"></div>
+          </div>
+        </div>
+
+        <!-- iOS Tab: Vault -->
+        <div id="ios-tab-vault" class="hidden px-4 pt-2 pb-24 space-y-3">
+          <div class="flex items-center justify-between pt-1">
+            <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Vault</h2>
+            <button id="ios-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-full" style="font-size: 13px; font-weight: 400; color: var(--system-blue);">
+              Select
+            </button>
+          </div>
+          <div class="flex gap-2 overflow-x-auto pb-1">
+            <button onclick="filterVaultBrand('ALL')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 500;">All</button>
+            <button onclick="filterVaultBrand('Lakme')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Lakme</button>
+            <button onclick="filterVaultBrand('Kalyan')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Kalyan</button>
+            <button onclick="filterVaultBrand('Reliance')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Reliance</button>
+          </div>
+          <div id="ios-vouchers-list" class="space-y-2"></div>
+        </div>
+
+        <!-- iOS Tab: Cooldowns -->
+        <div id="ios-tab-cooldowns" class="hidden px-4 pt-2 pb-20 space-y-3">
+          <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Cooldowns</h2>
+          <div id="ios-cooldowns-list" class="space-y-2"></div>
+        </div>
+
+        <!-- iOS Tab: Rules -->
+        <div id="ios-tab-matrix" class="hidden px-4 pt-2 pb-20 space-y-3">
+          <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Rules</h2>
+          <select id="ios-matrix-select" onchange="renderIosMatrixCard(this.value)" class="w-full rounded-xl px-3 py-2.5" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; font-weight: 500;">
+            <option value="pnb_imp">PNB Imperial RSDC</option>
+            <option value="union">Union Emperio RSDC</option>
+            <option value="bob">BoB Bhoomi RSDC</option>
+            <option value="canara_dc">Canara RSDC</option>
+            <option value="canara_cc">Canara Select CC</option>
+          </select>
+          <div id="ios-matrix-content" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <!-- iOS Sticky Batch Bar -->
+      <div id="ios-batch-bar" class="hidden absolute bottom-14 left-0 right-0 px-4 py-2.5 flex items-center justify-between z-20" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
+        <div>
+          <span id="ios-sel-count" style="font-size: 13px; font-weight: 600; color: var(--system-blue);">2 Selected</span>
+          <p id="ios-sel-total" style="font-size: 11px; color: var(--label-tertiary); margin-top: 1px;"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="copyBatchPlaintext()" class="p-2 rounded-xl" style="background: var(--fill-quaternary);">
+            <svg class="w-4 h-4" style="color: var(--label-primary);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          </button>
+          <button onclick="openWhatsAppModal()" class="px-3.5 py-2 rounded-xl flex items-center gap-1.5" style="background: #25D366; color: #fff; font-size: 12px; font-weight: 600;">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+            Share
+          </button>
+          <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-2 rounded-xl" style="background: var(--fill-tertiary); font-size: 12px; font-weight: 500; color: var(--system-orange);">
+            Used
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Bar -->
+      <nav class="h-14 shrink-0 flex items-center justify-around px-4 z-10 transition-theme" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
+        <button onclick="setIosTab('cards')" id="ios-btn-cards" class="flex flex-col items-center gap-0.5" style="color: var(--system-blue);">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+          <span style="font-size: 10px; font-weight: 500;">Cards</span>
+        </button>
+        <button onclick="setIosTab('vault')" id="ios-btn-vault" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
+          <span style="font-size: 10px; font-weight: 500;">Vault</span>
+        </button>
+        <button onclick="setIosTab('cooldowns')" id="ios-btn-cooldowns" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span style="font-size: 10px; font-weight: 500;">Cooldowns</span>
+        </button>
+        <button onclick="setIosTab('matrix')" id="ios-btn-matrix" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span style="font-size: 10px; font-weight: 500;">Rules</span>
+        </button>
+      </nav>
+
+      <!-- Home Indicator -->
+      <div class="h-3 flex justify-center items-center shrink-0" style="background: #000;">
+        <div class="rounded-full" style="width: 134px; height: 5px; background: #555;"></div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- ===== MODAL: BLOCK CARD ===== -->
+  <div id="modal-block" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);">
+    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+      <div class="flex items-center justify-between pb-3" style="border-bottom: 0.5px solid var(--separator);">
+        <h3 style="font-size: 15px; font-weight: 600;">Block Card</h3>
+        <button onclick="closeBlockModal()" style="color: var(--label-tertiary); font-size: 16px;">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="rounded-xl px-3 py-2.5" style="background: var(--fill-quaternary);">
+        <div class="flex justify-between" style="font-size: 13px; font-weight: 500;">
+          <span id="modal-block-title">PNB Imperial RSDC</span>
+          <span id="modal-block-last4" class="font-mono-apple" style="color: var(--label-secondary);">---- 4821</span>
+        </div>
+        <div id="modal-block-account" style="font-size: 12px; color: var(--label-tertiary); margin-top: 2px;"></div>
+      </div>
+      <div class="space-y-1.5">
+        <label style="font-size: 12px; font-weight: 500; display: block;">Date of Block</label>
+        <input type="date" id="block-date-input" class="w-full rounded-lg px-3 py-2" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; outline: none;">
+      </div>
+      <div class="space-y-1.5">
+        <label style="font-size: 12px; font-weight: 500; display: block;">Note (optional)</label>
+        <input type="text" id="block-notes-input" placeholder="Reason for blocking" class="w-full rounded-lg px-3 py-2" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; outline: none;">
+      </div>
+      <label class="flex items-center gap-2 cursor-pointer" style="font-size: 12px;">
+        <input type="checkbox" id="block-auto-replace" checked> Add replacement card immediately
+      </label>
+      <div class="flex justify-end gap-2 pt-2" style="border-top: 0.5px solid var(--separator);">
+        <button onclick="closeBlockModal()" class="px-4 py-2 rounded-lg" style="font-size: 13px; font-weight: 400; color: var(--system-blue);">Cancel</button>
+        <button onclick="confirmBlockCard()" class="px-4 py-2 rounded-lg" style="background: var(--system-red); color: #fff; font-size: 13px; font-weight: 500;">Block</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODAL: SHARE PREVIEW ===== -->
+  <div id="modal-share" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);">
+    <div class="rounded-2xl max-w-md w-full p-5 space-y-4 transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+      <div class="flex items-center justify-between pb-3" style="border-bottom: 0.5px solid var(--separator);">
+        <h3 style="font-size: 15px; font-weight: 600;">Share Preview</h3>
+        <button onclick="closeShareModal()" style="color: var(--label-tertiary);">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <textarea id="share-preview-text" rows="8" readonly class="w-full rounded-xl p-3 font-mono-apple resize-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 11px; line-height: 1.6; outline: none;"></textarea>
+      <div class="flex justify-between pt-2" style="border-top: 0.5px solid var(--separator);">
+        <button onclick="copyShareText()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg" style="background: var(--fill-quaternary); font-size: 12px; font-weight: 500; color: var(--label-primary);">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
+        <button onclick="triggerNativeShare()" class="flex items-center gap-1.5 px-4 py-2 rounded-lg" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 600;">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-tertiary); border: 0.5px solid var(--separator); font-size: 12px; font-weight: 500; color: var(--label-primary);">
+    <span id="toast-msg"></span>
+  </div>
+
+
+  <!-- ===== JS ENGINE ===== -->
+  <script>
+    const S = {
+      isDark: true, viewMode: 'macos', macTab: 'cards', iosTab: 'cards',
+      isSelectMode: false, selectedIds: new Set(), blockTarget: null,
+
+      accounts: [
+        { id: 'vibhavoswal1', lastRedeemed: new Date(Date.now() - 25*36e5), total: 15 },
+        { id: 'karthikrathod2067', lastRedeemed: new Date(Date.now() - 19.5*36e5), total: 8 },
+        { id: 'arunaoswal3', lastRedeemed: new Date(Date.now() - 8*36e5), total: 12 },
+        { id: 'nikhildsouza369', lastRedeemed: new Date(Date.now() - 26*36e5), total: 7 },
+        { id: 'madhuribhalekar369', lastRedeemed: new Date(Date.now() - 24.5*36e5), total: 6 },
+        { id: 'ayaanshekhawat369', lastRedeemed: new Date(Date.now() - 4*36e5), total: 4 }
+      ],
+
+      cards: [
+        { id:'c1', bank:'PNB', type:'PNB Imperial RSDC', bin:'65249710', last4:'9102', nick:'PNB Imperial', acct:'vibhavoswal1', status:'active', quota:{claimed:3,total:6} },
+        { id:'c2', bank:'Bank of Baroda', type:'BoB Bhoomi RSDC', bin:'652505', last4:'3314', nick:'BoB Bhoomi', acct:'vibhavoswal1', status:'active', quota:{claimed:2,total:5} },
+        { id:'c3', bank:'Canara Bank', type:'Canara RSDC', bin:'652550', last4:'5521', nick:'Canara RSDC', acct:'karthikrathod2067', status:'active', quota:{claimed:2,total:5} },
+        { id:'c4', bank:'Jana SFB', type:'Jana SFB RSDC', bin:'652520', last4:'7891', nick:'Jana SFB', acct:'nikhildsouza369', status:'active', quota:{claimed:3,total:5} },
+        { id:'c5', bank:'Canara Bank', type:'Canara Select CC', bin:'653020', last4:'1109', nick:'Canara CC', acct:'arunaoswal3', status:'active', quota:{claimed:1,total:2} },
+        { id:'cx1', bank:'PNB', type:'PNB Imperial RSDC', bin:'65249710', last4:'4821', nick:'PNB Imperial (Old)', acct:'vibhavoswal1', status:'blocked', blockedDate:'2026-10-14', notes:'Q3 quotas exhausted' },
+        { id:'cx2', bank:'Canara Bank', type:'Canara RSDC', bin:'652550', last4:'1120', nick:'Canara RSDC (Old)', acct:'karthikrathod2067', status:'blocked', blockedDate:'2026-09-28', notes:'Blocked via mobile banking' },
+        { id:'cx3', bank:'Bank of Baroda', type:'BoB Bhoomi RSDC', bin:'652505', last4:'2091', nick:'BoB Bhoomi (Old)', acct:'arunaoswal3', status:'blocked', blockedDate:'2026-08-15', notes:'Reissued new number' }
+      ],
+
+      vouchers: [
+        { id:'v1', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460114752185', pin:'112972', cardId:'c1', acct:'karthikrathod2067', exp:'31 Dec 2026', used:false },
+        { id:'v2', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460112216149', pin:'115119', cardId:'c1', acct:'karthikrathod2067', exp:'31 Dec 2026', used:false },
+        { id:'v3', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460114391468', pin:'122241', cardId:'c3', acct:'nikhildsouza369', exp:'31 Dec 2026', used:false },
+        { id:'v4', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460119117144', pin:'218084', cardId:'c4', acct:'nikhildsouza369', exp:'31 Dec 2026', used:false },
+        { id:'v5', brand:'Kalyan', title:'Kalyan Jewellers', amt:2000, code:'1004681040330454', pin:'108190', cardId:'c1', acct:'devendixit369', exp:'30 Nov 2026', used:false },
+        { id:'v6', brand:'Kalyan', title:'Kalyan Jewellers', amt:2000, code:'1004681040953387', pin:'147977', cardId:'c1', acct:'chinmayjoshi2067', exp:'30 Nov 2026', used:false },
+        { id:'v7', brand:'Reliance', title:'Reliance Digital', amt:500, code:'GYFRR24673597621', pin:null, cardId:'c1', acct:'devendixit369', exp:'15 Dec 2026', used:false },
+        { id:'v8', brand:'Reliance', title:'Reliance Digital', amt:500, code:'GYFRR21133446771', pin:null, cardId:'c1', acct:'chinmayjoshi2067', exp:'15 Dec 2026', used:false },
+        { id:'v9', brand:'Myntra', title:'Myntra', amt:500, code:'6001221117496880', pin:'212116', cardId:'c1', acct:'ayaanshekhawat369', exp:'31 Jan 2027', used:false },
+        { id:'v10', brand:'Apollo', title:'Apollo Pharmacy', amt:250, code:'9802004492588540', pin:'426176', cardId:'c1', acct:'madhuribhalekar369', exp:'28 Feb 2027', used:false },
+        { id:'v11', brand:'BigBasket', title:'BigBasket', amt:250, code:'59437226918', pin:'148767', cardId:'c1', acct:'madhuribhalekar369', exp:'31 Dec 2026', used:true },
+        { id:'v12', brand:'Thyrocare', title:'Health Check-up', amt:1200, code:'035A87CDA0FB4986', pin:null, cardId:'c2', acct:'vibhavoswal2', exp:'15 Nov 2026', used:true }
+      ]
+    };
+
+    const RULES = [
+      { name:'Cult.fit Live 90 Days', pnb_imp:'Quarterly', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:null },
+      { name:'Cult.fit Elite 1 Month', pnb_imp:null, union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:null },
+      { name:'Lakme Salon / Four Fountains', pnb_imp:'Half-yearly', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:'Annually' },
+      { name:'Thyrocare Health Check-up', pnb_imp:'Annually', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:'Annually' },
+      { name:'Amazon Prime', pnb_imp:'Annually', union:'Annually', jana:'Annually', bob:'Annually', canara_dc:'Annually', pnb_cc:null, canara_cc:null },
+      { name:'TaxSpanner (2,950)', pnb_imp:'Annually', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Kalyan Jewellers (2,000)', pnb_imp:'Half-yearly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Myntra (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Decathlon (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Reliance Digital (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'BigBasket (250)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Apollo Pharmacy (250)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
+      { name:'Uber (100)', pnb_imp:null, union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Quarterly', canara_cc:null }
+    ];
+
+    /* ---- Theme ---- */
+    function toggleTheme() {
+      S.isDark = !S.isDark;
+      document.documentElement.dataset.theme = S.isDark ? 'dark' : 'light';
+      document.getElementById('theme-icon-sun').classList.toggle('hidden', S.isDark);
+      document.getElementById('theme-icon-moon').classList.toggle('hidden', !S.isDark);
+      document.getElementById('theme-label').textContent = S.isDark ? 'Light' : 'Dark';
+    }
+
+    /* ---- Viewport ---- */
+    function setViewMode(m) {
+      S.viewMode = m;
+      document.getElementById('macos-view').classList.toggle('hidden', m !== 'macos');
+      document.getElementById('iphone-view').classList.toggle('hidden', m !== 'iphone');
+      document.getElementById('iphone-view').classList.toggle('flex', m === 'iphone');
+      const bm = document.getElementById('btn-mac'), bi = document.getElementById('btn-ios');
+      bm.style.background = m === 'macos' ? 'var(--bg-tertiary)' : 'transparent';
+      bm.style.color = m === 'macos' ? 'var(--label-primary)' : 'var(--label-secondary)';
+      bi.style.background = m === 'iphone' ? 'var(--bg-tertiary)' : 'transparent';
+      bi.style.color = m === 'iphone' ? 'var(--label-primary)' : 'var(--label-secondary)';
+      renderAll();
+    }
+
+    /* ---- Mac Tabs ---- */
+    function setMacTab(t) {
+      S.macTab = t;
+      ['cards','vault','cooldowns','matrix','blocked'].forEach(x => {
+        document.getElementById('mac-tab-'+x).classList.toggle('hidden', x !== t);
+        const sb = document.getElementById('sidebar-'+x);
+        if (sb) {
+          if (x === t) { sb.style.background = 'var(--system-blue)'; sb.style.color = '#fff'; sb.style.fontWeight = '500'; }
+          else { sb.style.background = 'transparent'; sb.style.color = 'var(--label-primary)'; sb.style.fontWeight = '400'; }
+        }
+      });
+      renderAll();
+    }
+
+    /* ---- iOS Tabs ---- */
+    function setIosTab(t) {
+      S.iosTab = t;
+      ['cards','vault','cooldowns','matrix'].forEach(x => {
+        document.getElementById('ios-tab-'+x).classList.toggle('hidden', x !== t);
+        const b = document.getElementById('ios-btn-'+x);
+        if (b) b.style.color = x === t ? 'var(--system-blue)' : 'var(--label-tertiary)';
+      });
+      renderAll();
+    }
+
+    /* ---- Cooldown Util ---- */
+    function cooldown(last) {
+      const r = 864e5 - (Date.now() - new Date(last).getTime());
+      if (r <= 0) return { ready: true, text: 'Available', color: 'var(--system-green)' };
+      const h = Math.floor(r / 36e5), m = Math.floor((r % 36e5) / 6e4);
+      return { ready: false, text: h + 'h ' + m + 'm', color: 'var(--system-orange)' };
+    }
+
+    /* ---- Render Cards ---- */
+    function renderCards() {
+      const active = S.cards.filter(c => c.status === 'active');
+      document.getElementById('sidebar-cards-badge').textContent = active.length;
+
+      document.getElementById('mac-cards-grid').innerHTML = active.map(c => {
+        const pct = Math.round((c.quota.claimed / c.quota.total) * 100);
+        return `
+        <div class="rounded-xl p-4 space-y-3 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+          <div class="flex items-start justify-between">
+            <div>
+              <p style="font-size: 11px; font-weight: 600; color: var(--system-blue); letter-spacing: 0.03em; text-transform: uppercase;">${c.bank}</p>
+              <h3 style="font-size: 14px; font-weight: 600; margin-top: 2px;">${c.nick}</h3>
+              <p class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary); margin-top: 1px;">${c.bin} &middot; ${c.last4}</p>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--system-green); background: rgba(48,209,88,0.12); padding: 2px 8px; border-radius: 6px;">Active</span>
+          </div>
+          <div style="border-top: 0.5px solid var(--separator); padding-top: 10px;">
+            <div class="flex items-center justify-between" style="font-size: 11px; color: var(--label-secondary); margin-bottom: 6px;">
+              <span>Q4 Quota: ${c.quota.claimed}/${c.quota.total}</span>
+              <span class="font-mono-apple">${c.acct}</span>
+            </div>
+            <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
+              <div class="h-full rounded-full" style="width: ${pct}%; background: var(--system-blue); transition: width 0.3s ease;"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px;">
+            <button onclick="quickClaimVoucher('${c.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-blue);">Log Claim</button>
+            <button onclick="promptBlockCard('${c.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-red);">Block Card</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('ios-cards-list').innerHTML = active.map(c => {
+        const pct = Math.round((c.quota.claimed / c.quota.total) * 100);
+        return `
+        <div class="rounded-xl p-4 space-y-2.5 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+          <div class="flex items-start justify-between">
+            <div>
+              <p style="font-size: 11px; font-weight: 600; color: var(--system-blue); text-transform: uppercase;">${c.bank}</p>
+              <h3 style="font-size: 15px; font-weight: 600; margin-top: 1px;">${c.nick}</h3>
+              <p class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary);">${c.last4} &middot; ${c.acct}</p>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: var(--system-green); background: rgba(48,209,88,0.12); padding: 2px 8px; border-radius: 6px;">Active</span>
+          </div>
+          <div>
+            <div class="flex items-center justify-between" style="font-size: 11px; color: var(--label-secondary); margin-bottom: 4px;">
+              <span>Q4: ${c.quota.claimed} of ${c.quota.total}</span><span>${pct}%</span>
+            </div>
+            <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
+              <div class="h-full rounded-full" style="width: ${pct}%; background: var(--system-blue);"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px; font-size: 13px;">
+            <button onclick="quickClaimVoucher('${c.id}')" style="color: var(--system-blue); font-weight: 400;">Log Claim</button>
+            <button onclick="promptBlockCard('${c.id}')" style="color: var(--system-red); font-weight: 400;">Block</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ---- Render Blocked (Reverse by Date) ---- */
+    function renderBlocked() {
+      const blocked = S.cards.filter(c => c.status === 'blocked').sort((a,b) => new Date(b.blockedDate) - new Date(a.blockedDate));
+      document.getElementById('sidebar-blocked-badge').textContent = blocked.length;
+      document.getElementById('mac-blocked-inline-count').textContent = blocked.length;
+      document.getElementById('ios-blocked-count').textContent = blocked.length;
+
+      const html = blocked.map(c => `
+        <div class="flex items-center justify-between px-3 py-2.5 rounded-lg" style="background: var(--fill-quaternary);">
+          <div>
+            <span style="font-size: 13px; font-weight: 500; text-decoration: line-through; color: var(--system-red);">${c.nick}</span>
+            <span class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary); margin-left: 6px;">${c.last4}</span>
+            <p style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">${fmtDate(c.blockedDate)} &middot; ${c.notes || 'No note'}</p>
+          </div>
+          <span style="font-size: 10px; font-weight: 500; color: var(--system-red); background: rgba(255,69,58,0.12); padding: 2px 8px; border-radius: 6px;">Blocked</span>
+        </div>`).join('');
+
+      document.getElementById('mac-blocked-inline-list').innerHTML = html;
+      document.getElementById('mac-blocked-full-list').innerHTML = html;
+      document.getElementById('ios-blocked-list').innerHTML = html;
+    }
+
+    /* ---- Render Vault ---- */
+    function renderVault() {
+      const f = document.getElementById('mac-brand-filter')?.value || 'ALL';
+      let vs = f === 'ALL' ? S.vouchers : S.vouchers.filter(v => v.brand === f);
+      document.getElementById('sidebar-vault-badge').textContent = S.vouchers.length;
+
+      const sel = S.vouchers.filter(v => S.selectedIds.has(v.id));
+      const selTotal = sel.reduce((a,v) => a + v.amt, 0);
+
+      // Mac batch bar
+      const mb = document.getElementById('mac-batch-bar');
+      if (S.isSelectMode && sel.length) { mb.classList.remove('hidden'); document.getElementById('mac-sel-count').textContent = sel.length; document.getElementById('mac-sel-total').textContent = 'Total: Rs. ' + selTotal.toLocaleString(); }
+      else mb.classList.add('hidden');
+
+      // iOS batch bar
+      const ib = document.getElementById('ios-batch-bar');
+      if (S.isSelectMode && sel.length) { ib.classList.remove('hidden'); document.getElementById('ios-sel-count').textContent = sel.length + ' Selected'; document.getElementById('ios-sel-total').textContent = 'Rs. ' + selTotal.toLocaleString(); }
+      else ib.classList.add('hidden');
+
+      // Mac table
+      document.getElementById('mac-vault-tbody').innerHTML = vs.map(v => `
+        <tr style="border-bottom: 0.5px solid var(--separator); ${v.used ? 'opacity: 0.45;' : ''}">
+          <td class="px-4 py-2.5 text-center"><input type="checkbox" ${S.selectedIds.has(v.id)?'checked':''} onchange="toggleSel('${v.id}')"></td>
+          <td class="px-3 py-2.5"><div style="font-weight: 500;">${v.title}</div><div style="font-size: 11px; color: var(--system-green); font-weight: 500;">Rs. ${v.amt.toLocaleString()}</div></td>
+          <td class="px-3 py-2.5"><div class="flex items-center gap-1.5"><span class="font-mono-apple" style="color: ${v.used?'var(--label-tertiary)':'var(--system-blue)'}; ${v.used?'text-decoration:line-through;':''}">${v.code}</span><button onclick="copy('${v.code}','Code')" style="color: var(--label-tertiary); padding: 2px;" title="Copy"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button></div>${v.pin?`<div style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">PIN: <span class="font-mono-apple" style="color: var(--label-primary);">${v.pin}</span></div>`:''}</td>
+          <td class="px-3 py-2.5"><div class="font-mono-apple" style="font-size: 12px;">${v.acct}</div><div style="font-size: 11px; color: var(--label-tertiary); margin-top: 1px;">${cardNick(v.cardId)}</div></td>
+          <td class="px-3 py-2.5" style="color: var(--label-secondary);">${v.exp}</td>
+          <td class="px-3 py-2.5"><span style="font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; ${v.used ? 'color: var(--label-tertiary); background: var(--fill-quaternary);' : 'color: var(--system-green); background: rgba(48,209,88,0.12);'}">${v.used?'Used':'Active'}</span></td>
+          <td class="px-3 py-2.5 text-right"><div class="flex items-center justify-end gap-1.5"><button onclick="toggleUsed('${v.id}')" style="font-size: 12px; color: var(--system-blue);">${v.used?'Restore':'Mark Used'}</button><button onclick="shareSingle('${v.id}')" style="padding: 4px; color: var(--label-tertiary);" title="Share"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></button></div></td>
+        </tr>`).join('');
+
+      // iOS list
+      document.getElementById('ios-vouchers-list').innerHTML = vs.map(v => `
+        <div class="rounded-xl p-3.5 space-y-2 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); ${v.used?'opacity:0.45;':''}">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2.5">
+              ${S.isSelectMode ? `<input type="checkbox" ${S.selectedIds.has(v.id)?'checked':''} onchange="toggleSel('${v.id}')" style="width:18px; height:18px;">` : ''}
+              <div>
+                <h3 style="font-size: 14px; font-weight: 500;">${v.title}</h3>
+                <span style="font-size: 12px; font-weight: 500; color: var(--system-green);">Rs. ${v.amt.toLocaleString()}</span>
+              </div>
+            </div>
+            <span style="font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 6px; ${v.used ? 'color: var(--label-tertiary); background: var(--fill-quaternary);' : 'color: var(--system-green); background: rgba(48,209,88,0.12);'}">${v.used?'Used':'Active'}</span>
+          </div>
+          <div class="rounded-lg px-3 py-2 flex items-center justify-between" style="background: var(--fill-quaternary);">
+            <div>
+              <div class="font-mono-apple" style="font-size: 13px; color: ${v.used?'var(--label-tertiary)':'var(--system-blue)'}; ${v.used?'text-decoration:line-through;':''}">${v.code}</div>
+              ${v.pin ? `<div class="font-mono-apple" style="font-size: 11px; color: var(--label-tertiary);">PIN: ${v.pin}</div>` : ''}
+            </div>
+            <button onclick="copy('${v.code}','Code')" class="px-2.5 py-1 rounded-md" style="background: var(--fill-tertiary); font-size: 11px; font-weight: 500; color: var(--label-primary);">Copy</button>
+          </div>
+          <div class="flex items-center justify-between" style="font-size: 13px;">
+            <span style="font-size: 11px; color: var(--label-tertiary);">Exp: ${v.exp}</span>
+            <div class="flex gap-3">
+              <button onclick="toggleUsed('${v.id}')" style="color: var(--system-blue); font-weight: 400;">${v.used?'Restore':'Mark Used'}</button>
+              <button onclick="shareSingle('${v.id}')" style="color: var(--system-blue); font-weight: 400;">Share</button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ---- Render Cooldowns ---- */
+    function renderCooldowns() {
+      const html = S.accounts.map(a => {
+        const c = cooldown(a.lastRedeemed);
+        return `
+        <div class="rounded-xl p-4 space-y-3 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="font-mono-apple" style="font-size: 13px; font-weight: 500;">${a.id}</span>
+              <p style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">Total redeemed: ${a.total}</p>
+            </div>
+            <span style="font-size: 11px; font-weight: 500; color: ${c.color}; background: ${c.ready ? 'rgba(48,209,88,0.12)' : 'rgba(255,159,10,0.12)'}; padding: 2px 8px; border-radius: 6px;">${c.text}</span>
+          </div>
+          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px;">
+            <span style="font-size: 11px; color: var(--label-tertiary);">1 per 24h limit</span>
+            <button onclick="resetTimer('${a.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-blue);">Log Redemption</button>
+          </div>
+        </div>`;
+      }).join('');
+      document.getElementById('mac-cooldowns-grid').innerHTML = html;
+      document.getElementById('ios-cooldowns-list').innerHTML = html;
+    }
+
+    /* ---- Render Matrix ---- */
+    function renderMatrix() {
+      document.getElementById('mac-matrix-tbody').innerHTML = RULES.map(r => `
+        <tr style="border-bottom: 0.5px solid var(--separator);">
+          <td class="px-3 py-2.5" style="font-weight: 500; border-right: 0.5px solid var(--separator);">${r.name}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.pnb_imp)}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.union)}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.jana)}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.bob)}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.canara_dc)}</td>
+          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.pnb_cc)}</td>
+          <td class="px-3 py-2.5 text-center">${badge(r.canara_cc)}</td>
+        </tr>`).join('');
+      renderIosMatrixCard('pnb_imp');
+    }
+
+    function badge(v) {
+      if (!v) return `<span style="color: var(--label-quaternary);">—</span>`;
+      const colors = { Quarterly: 'var(--system-green)', 'Half-yearly': 'var(--system-orange)', Annually: 'var(--system-blue)' };
+      const bgs = { Quarterly: 'rgba(48,209,88,0.12)', 'Half-yearly': 'rgba(255,159,10,0.12)', Annually: 'rgba(10,132,255,0.12)' };
+      return `<span style="font-size: 10px; font-weight: 500; color: ${colors[v]}; background: ${bgs[v]}; padding: 2px 8px; border-radius: 6px;">${v}</span>`;
+    }
+
+    function renderIosMatrixCard(k) {
+      document.getElementById('ios-matrix-content').innerHTML = RULES.map(r => {
+        const v = r[k]; if (!v) return '';
+        return `<div class="flex items-center justify-between px-4 py-3 rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);"><span style="font-size: 13px; font-weight: 400;">${r.name}</span>${badge(v)}</div>`;
+      }).join('');
+    }
+
+    /* ---- Actions ---- */
+    function promptBlockCard(id) {
+      const c = S.cards.find(x => x.id === id); if (!c) return;
+      S.blockTarget = c;
+      document.getElementById('modal-block-title').textContent = c.nick;
+      document.getElementById('modal-block-last4').textContent = c.last4;
+      document.getElementById('modal-block-account').textContent = c.acct;
+      document.getElementById('block-date-input').value = new Date().toISOString().split('T')[0];
+      document.getElementById('block-notes-input').value = '';
+      document.getElementById('modal-block').classList.remove('hidden');
+    }
+    function closeBlockModal() { document.getElementById('modal-block').classList.add('hidden'); S.blockTarget = null; }
+    function confirmBlockCard() {
+      if (!S.blockTarget) return;
+      S.blockTarget.status = 'blocked';
+      S.blockTarget.blockedDate = document.getElementById('block-date-input').value || new Date().toISOString().split('T')[0];
+      S.blockTarget.notes = document.getElementById('block-notes-input').value || '';
+      const old = S.blockTarget;
+      closeBlockModal();
+      showToast('Card ' + old.last4 + ' blocked');
+      if (document.getElementById('block-auto-replace').checked) {
+        setTimeout(() => {
+          const n4 = prompt('Last 4 digits for replacement ' + old.bank + ' card:', '');
+          if (n4) { S.cards.push({ id:'c'+Date.now(), bank:old.bank, type:old.type, bin:old.bin, last4:n4, nick:old.bank+' RSDC', acct:old.acct, status:'active', quota:{claimed:0,total:6} }); showToast('Replacement ' + n4 + ' added'); renderAll(); }
+        }, 200);
+      }
+      renderAll();
+    }
+
+    function toggleSelectMode() {
+      S.isSelectMode = !S.isSelectMode;
+      const mb = document.getElementById('mac-select-btn'), ib = document.getElementById('ios-select-btn');
+      if (S.isSelectMode) {
+        if (mb) { mb.style.background = 'var(--system-blue)'; mb.style.color = '#fff'; mb.textContent = 'Done'; }
+        if (ib) { ib.style.color = 'var(--system-blue)'; ib.style.fontWeight = '600'; ib.textContent = 'Done'; }
+        S.selectedIds = new Set(['v1','v2','v3']);
+      } else {
+        if (mb) { mb.style.background = 'var(--fill-quaternary)'; mb.style.color = 'var(--label-primary)'; mb.textContent = 'Select'; }
+        if (ib) { ib.style.fontWeight = '400'; ib.textContent = 'Select'; }
+        S.selectedIds.clear();
+      }
+      renderVault();
+    }
+
+    function toggleSel(id) { S.selectedIds.has(id) ? S.selectedIds.delete(id) : S.selectedIds.add(id); renderVault(); }
+    function toggleSelectAllRows(c) { if (c) S.selectedIds = new Set(S.vouchers.map(v=>v.id)); else S.selectedIds.clear(); renderVault(); }
+    function selectAllVouchers() { S.selectedIds = new Set(S.vouchers.map(v=>v.id)); renderVault(); }
+
+    function fmtWhatsApp(vs) {
+      if (!vs.length) return '';
+      const brand = vs[0].title, total = vs.reduce((a,v) => a+v.amt, 0);
+      let t = `*${brand} Vouchers (${vs.length} Total — Rs. ${total.toLocaleString()})*\n`;
+      vs.forEach((v,i) => { t += `\n${i+1}. Code: ${v.code}`; if (v.pin) t += ` | PIN: ${v.pin}`; t += `\n   Valid: ${v.exp}\n`; });
+      t += `\nTotal: Rs. ${total.toLocaleString()}`;
+      return t;
+    }
+
+    function fmtPlain(vs) {
+      if (!vs.length) return '';
+      const brand = vs[0].title, total = vs.reduce((a,v) => a+v.amt, 0);
+      let t = `${brand} Vouchers (${vs.length} Total - Rs. ${total.toLocaleString()})\n${'—'.repeat(40)}\n`;
+      vs.forEach((v,i) => { t += `${i+1}. Code: ${v.code}`; if (v.pin) t += ` | PIN: ${v.pin}`; t += ` (${v.exp})\n`; });
+      t += `${'—'.repeat(40)}\nTotal: Rs. ${total.toLocaleString()}`;
+      return t;
+    }
+
+    function openWhatsAppModal() {
+      const sel = S.vouchers.filter(v => S.selectedIds.has(v.id));
+      if (!sel.length) { showToast('Select at least one voucher'); return; }
+      document.getElementById('share-preview-text').value = fmtWhatsApp(sel);
+      document.getElementById('modal-share').classList.remove('hidden');
+    }
+    function closeShareModal() { document.getElementById('modal-share').classList.add('hidden'); }
+    function copyShareText() { navigator.clipboard.writeText(document.getElementById('share-preview-text').value).then(() => showToast('Copied to clipboard')); }
+    function triggerNativeShare() { const t = document.getElementById('share-preview-text').value; if (navigator.share) navigator.share({title:'Vouchers',text:t}).catch(()=>{}); else copyShareText(); }
+    function shareSingle(id) { const v = S.vouchers.find(x => x.id === id); if (!v) return; document.getElementById('share-preview-text').value = fmtWhatsApp([v]); document.getElementById('modal-share').classList.remove('hidden'); }
+    function copyBatchPlaintext() { const sel = S.vouchers.filter(v => S.selectedIds.has(v.id)); if (!sel.length) return; navigator.clipboard.writeText(fmtPlain(sel)).then(() => showToast(sel.length + ' vouchers copied')); }
+    function batchMarkAsRedeemed() { S.selectedIds.forEach(id => { const v = S.vouchers.find(x => x.id === id); if (v) v.used = true; }); showToast(S.selectedIds.size + ' marked as used'); S.selectedIds.clear(); renderVault(); }
+    function toggleUsed(id) { const v = S.vouchers.find(x => x.id === id); if (v) { v.used = !v.used; showToast(v.used ? 'Marked as used' : 'Restored'); renderVault(); } }
+    function resetTimer(id) { const a = S.accounts.find(x => x.id === id); if (a) { a.lastRedeemed = new Date(); a.total++; showToast('24h timer started for ' + a.id); renderCooldowns(); } }
+
+    function openAddCardModal() {
+      const b = prompt('Bank name:','PNB'); if (!b) return;
+      const l = prompt('Last 4 digits:',''); if (!l) return;
+      S.cards.push({ id:'c'+Date.now(), bank:b, type:b+' RSDC', bin:'6524', last4:l, nick:b+' RSDC', acct:'vibhavoswal1', status:'active', quota:{claimed:0,total:6} });
+      showToast('Card added'); renderAll();
+    }
+    function quickClaimVoucher(cid) {
+      const b = prompt('Brand:','Lakme'); if (!b) return;
+      const code = prompt('Voucher code:',''); if (!code) return;
+      const pin = prompt('PIN (optional):','');
+      S.vouchers.unshift({ id:'v'+Date.now(), brand:b, title:b, amt:b.toLowerCase().includes('lakme')?1500:500, code, pin:pin||null, cardId:cid, acct:'vibhavoswal1', exp:'31 Dec 2026', used:false });
+      showToast(b + ' voucher logged'); renderAll();
+    }
+
+    function toggleMacBlockedAccordion() { document.getElementById('mac-blocked-inline-list').classList.toggle('hidden'); document.getElementById('mac-blocked-chevron').classList.toggle('rotate-180'); }
+    function toggleIosBlockedAccordion() { document.getElementById('ios-blocked-list').classList.toggle('hidden'); document.getElementById('ios-blocked-chevron').classList.toggle('rotate-180'); }
+
+    function copy(t,l) { navigator.clipboard.writeText(t).then(() => showToast(l + ' copied')); }
+    function cardNick(id) { const c = S.cards.find(x => x.id === id); return c ? c.nick : ''; }
+    function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : ''; }
+    function filterVaultBrand(b) { const s = document.getElementById('mac-brand-filter'); if (s) s.value = b; renderVault(); }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      t.style.opacity = '1'; t.style.pointerEvents = 'auto';
+      setTimeout(() => { t.style.opacity = '0'; t.style.pointerEvents = 'none'; }, 2000);
+    }
+
+    function renderAll() { renderCards(); renderBlocked(); renderVault(); renderCooldowns(); renderMatrix(); }
+
+    
+    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
+
+    async function syncWithGoogleSheets() {
+      showToast("Syncing with Google Sheets...");
+      try {
+        const res = await fetch(API_ENDPOINT);
+        const data = await res.json();
+        if (data.vouchers && data.vouchers.length) {
+          appState.vouchers = data.vouchers.map((v, i) => ({
+            id: "v-" + i,
+            brand: v.brand,
+            title: v.brand + " Voucher",
+            amount: v.amount || 500,
+            code: v.code,
+            pin: v.pin || null,
+            cardId: "card-1",
+            account: v.account || "vibhavoswal9",
+            expiry: v.dateOfIssue || "31 Dec 2026",
+            isRedeemed: v.status === "USED"
+          }));
+          showToast("Loaded " + data.vouchers.length + " live vouchers from Sheet!");
+          renderAll();
+        }
+      } catch (err) {
+        showToast("Error syncing with Sheet: " + err.message);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { renderAll(); syncWithGoogleSheets(); });
+  </script>
+</body>
+</html>
