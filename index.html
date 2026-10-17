@@ -547,13 +547,18 @@
         <button onclick="closeShareModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
       </div>
       <textarea id="share-preview-text" rows="9" readonly class="w-full rounded-xl p-3 font-mono-apple text-xs focus:outline-none resize-none leading-relaxed" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);"></textarea>
-      <div class="flex justify-between items-center pt-2 border-t border-neutral-800/40">
+      <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-neutral-800/40">
         <button onclick="copyShareText()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary);">
-          Copy Formatted
+          Copy Text
         </button>
-        <button onclick="triggerNativeShare()" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 shadow-sm" style="background: #25D366;">
-          Open Native Share Sheet
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="openInWhatsApp()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1 shadow-sm" style="background: #25D366;">
+            Open WhatsApp
+          </button>
+          <button onclick="triggerNativeShare()" class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-secondary); color: var(--label-primary);">
+            Share...
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1128,32 +1133,61 @@
       return state.vouchers.filter(v => state.selectedIds.has(v.id));
     }
 
+    function getBrandDisplayName(brand) {
+      const map = {
+        'lakme': 'Lakme',
+        'fourfountains': 'Four Fountains',
+        'kalyan': 'Kalyan Jewellers',
+        'reliance': 'Reliance Digital',
+        'myntra': 'Myntra',
+        'uber': 'Uber',
+        'apollo': 'Apollo Pharmacy',
+        'bigbasket': 'BigBasket',
+        'thyrocare': 'Thyrocare',
+        'taxspanner': 'TaxSpanner',
+        'timesprime': 'Times Prime',
+        'cultfit': 'Cult.fit',
+        'amazonprime': 'Amazon Prime',
+        'tattvaspa': 'Tattva Spa'
+      };
+      return map[(brand || '').toLowerCase()] || brand || 'Voucher';
+    }
+
     function fmtWhatsApp(vs) {
       if (!vs.length) return '';
-      const brand = vs[0].brand;
-      const sum = vs.reduce((a, v) => a + (v.amount || 0), 0);
-      let t = `*${brand} Vouchers (${vs.length} Total — Rs. ${sum.toLocaleString()})*\n----------------------------------------\n`;
+      const brandName = getBrandDisplayName(vs[0].brand);
+      const title = vs.length === 1 ? `${brandName} Voucher` : `${brandName} Vouchers`;
+      
+      let lines = [title, ''];
       vs.forEach((v, i) => {
-        t += `\n${i+1}. *Code:* \`${v.code}\``;
-        if (v.pin) t += `\n   *PIN:* \`${v.pin}\``;
-        t += `\n   *Valid:* ${v.expiry}\n`;
+        lines.push(`${i + 1}. Code: ${v.code}`);
+        if (v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-') {
+          lines.push(`PIN: ${v.pin}`);
+        }
+        lines.push('');
       });
-      t += `----------------------------------------\n*Total:* Rs. ${sum.toLocaleString()}`;
-      return t;
+
+      const count = vs.length;
+      const sum = vs.reduce((a, v) => a + (v.amount || 0), 0);
+      const allSameAmount = vs.every(v => v.amount === vs[0].amount);
+
+      if (count === 1) {
+        lines.push('Total 1 voucher');
+        if (sum > 0) lines.push(`₹${sum}`);
+      } else {
+        lines.push(`Total ${count} vouchers`);
+        if (allSameAmount && vs[0].amount > 0) {
+          lines.push(`₹${vs[0].amount} x ${count} = ₹${sum}`);
+        } else if (sum > 0) {
+          lines.push(`Total: ₹${sum}`);
+        }
+      }
+
+      return lines.join('\n').trim();
     }
 
     function fmtPlain(vs) {
-      if (!vs.length) return '';
-      const brand = vs[0].brand;
-      const sum = vs.reduce((a, v) => a + (v.amount || 0), 0);
-      let t = `${brand} Vouchers (${vs.length} Total - Rs. ${sum.toLocaleString()})\n----------------------------------------\n`;
-      vs.forEach((v, i) => {
-        t += `${i+1}. Code: ${v.code}`;
-        if (v.pin) t += ` | PIN: ${v.pin}`;
-        t += ` (${v.expiry})\n`;
-      });
-      t += `----------------------------------------\nTotal: Rs. ${sum.toLocaleString()}`;
-      return t;
+      return fmtWhatsApp(vs);
     }
 
     function openWhatsAppModal() {
@@ -1181,6 +1215,12 @@
       } else {
         copyShareText();
       }
+    }
+
+    function openInWhatsApp() {
+      const text = document.getElementById('share-preview-text').value;
+      const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+      window.open(url, '_blank');
     }
 
     function shareSingle(id) {
