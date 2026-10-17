@@ -2,1005 +2,1268 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>RuPay Vault</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RuPay Vault">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/vibhavoswal/RuPayVault/main/.build/icon.png">
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     :root {
-      /* Dark Mode — Apple System Colors */
       --bg-primary: #000000;
       --bg-secondary: #1c1c1e;
       --bg-tertiary: #2c2c2e;
       --bg-grouped: #000000;
       --bg-grouped-secondary: #1c1c1e;
       --separator: rgba(84, 84, 88, 0.65);
-      --separator-opaque: #38383a;
       --label-primary: #ffffff;
       --label-secondary: rgba(235, 235, 245, 0.6);
-      --label-tertiary: rgba(235, 235, 245, 0.3);
-      --label-quaternary: rgba(235, 235, 245, 0.18);
+      --label-tertiary: rgba(235, 235, 245, 0.35);
       --fill: rgba(120, 120, 128, 0.36);
       --fill-secondary: rgba(120, 120, 128, 0.32);
-      --fill-tertiary: rgba(120, 120, 128, 0.24);
       --fill-quaternary: rgba(120, 120, 128, 0.18);
       --system-blue: #0a84ff;
       --system-green: #30d158;
       --system-orange: #ff9f0a;
       --system-red: #ff453a;
-      --system-gray: #8e8e93;
-      --system-gray2: #636366;
-      --system-gray3: #48484a;
-      --system-gray4: #3a3a3c;
-      --system-gray5: #2c2c2e;
-      --system-gray6: #1c1c1e;
-      --sidebar-bg: rgba(30, 30, 30, 0.92);
-      --toolbar-bg: rgba(28, 28, 30, 0.85);
-      --material-thick: rgba(30, 30, 30, 0.85);
+      --sidebar-bg: rgba(24, 24, 26, 0.95);
+      --toolbar-bg: rgba(28, 28, 30, 0.92);
+      --material-thick: rgba(28, 28, 30, 0.92);
     }
 
     [data-theme="light"] {
       --bg-primary: #ffffff;
       --bg-secondary: #f2f2f7;
-      --bg-tertiary: #ffffff;
+      --bg-tertiary: #e5e5ea;
       --bg-grouped: #f2f2f7;
       --bg-grouped-secondary: #ffffff;
       --separator: rgba(60, 60, 67, 0.29);
-      --separator-opaque: #c6c6c8;
       --label-primary: #000000;
       --label-secondary: rgba(60, 60, 67, 0.6);
-      --label-tertiary: rgba(60, 60, 67, 0.3);
-      --label-quaternary: rgba(60, 60, 67, 0.18);
+      --label-tertiary: rgba(60, 60, 67, 0.35);
       --fill: rgba(120, 120, 128, 0.2);
       --fill-secondary: rgba(120, 120, 128, 0.16);
-      --fill-tertiary: rgba(120, 120, 128, 0.12);
       --fill-quaternary: rgba(120, 120, 128, 0.08);
       --system-blue: #007aff;
       --system-green: #34c759;
       --system-orange: #ff9500;
       --system-red: #ff3b30;
-      --system-gray: #8e8e93;
-      --system-gray2: #aeaeb2;
-      --system-gray3: #c7c7cc;
-      --system-gray4: #d1d1d6;
-      --system-gray5: #e5e5ea;
-      --system-gray6: #f2f2f7;
-      --sidebar-bg: rgba(246, 246, 246, 0.92);
-      --toolbar-bg: rgba(246, 246, 246, 0.85);
-      --material-thick: rgba(242, 242, 247, 0.9);
+      --sidebar-bg: rgba(246, 246, 248, 0.95);
+      --toolbar-bg: rgba(246, 246, 248, 0.92);
+      --material-thick: rgba(246, 246, 248, 0.92);
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: var(--bg-grouped);
+      color: var(--label-primary);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       letter-spacing: -0.01em;
-      margin: 0;
     }
 
-    .font-mono-apple { font-family: "SF Mono", "Menlo", "Monaco", monospace; }
+    .font-mono-apple {
+      font-family: "SF Mono", Menlo, Consolas, Monaco, monospace;
+    }
 
-    /* Native scrollbar */
-    ::-webkit-scrollbar { width: 6px; }
+    /* Native-feeling subtle scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--fill-tertiary); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--fill-quaternary); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--fill-secondary); }
 
-    /* Transitions */
-    .transition-theme { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+    /* iPhone Safe Area Utilities */
+    .safe-top-nav {
+      padding-top: max(12px, env(safe-area-inset-top));
+    }
+    .safe-bottom-nav {
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      height: calc(56px + env(safe-area-inset-bottom));
+    }
+    .safe-sticky-bar {
+      bottom: calc(56px + env(safe-area-inset-bottom));
+    }
 
-    /* SF Symbol placeholders via SVG */
-    .sf-icon { display: inline-flex; align-items: center; justify-content: center; }
-
-    /* iPhone bezel */
-    .iphone-bezel {
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.08),
-        0 40px 100px -20px rgba(0,0,0,0.7);
+    /* Auto Responsive Breakpoint */
+    @media (min-width: 840px) {
+      .mobile-view { display: none !important; }
+      .desktop-view { display: flex !important; }
+    }
+    @media (max-width: 839px) {
+      .mobile-view { display: flex !important; }
+      .desktop-view { display: none !important; }
     }
   </style>
 </head>
+<body class="flex flex-col h-full w-full select-none">
 
-<body style="background: var(--bg-grouped); color: var(--label-primary);" class="transition-theme min-h-screen p-6 flex flex-col items-center">
-
-  <!-- ===== TOP CONTROL BAR ===== -->
-  <header class="w-full max-w-6xl mb-5 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background: var(--system-blue);">
-        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-      </div>
-      <div>
-        <h1 style="font-size: 15px; font-weight: 600; letter-spacing: -0.02em; color: var(--label-primary);">RuPay Vault</h1>
-        <p style="font-size: 12px; color: var(--label-tertiary); margin-top: 1px;">Voucher Tracker &amp; Card Manager</p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <!-- Viewport Switcher -->
-      <div class="flex items-center p-0.5 rounded-lg" style="background: var(--fill-quaternary);">
-        <button id="btn-mac" onclick="setViewMode('macos')" class="px-3 py-1 rounded-md text-xs font-medium" style="background: var(--bg-tertiary); color: var(--label-primary); font-size: 12px; font-weight: 500;">
-          macOS
-        </button>
-        <button id="btn-ios" onclick="setViewMode('iphone')" class="px-3 py-1 rounded-md text-xs font-medium" style="background: transparent; color: var(--label-secondary); font-size: 12px; font-weight: 500;">
-          iPhone
-        </button>
-      </div>
-
-      <!-- Appearance Toggle -->
-      <button onclick="toggleTheme()" id="theme-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs" style="background: var(--fill-quaternary); color: var(--label-secondary); font-size: 12px; font-weight: 500;">
-        <svg id="theme-icon-sun" class="w-3.5 h-3.5 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        <svg id="theme-icon-moon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <span id="theme-label">Light</span>
-      </button>
-    </div>
-  </header>
-
-
-  <!-- ===== macOS VIEW ===== -->
-  <main id="macos-view" class="w-full max-w-6xl">
-    <div class="rounded-xl overflow-hidden flex h-[720px] transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
-
-      <!-- Sidebar -->
-      <aside class="w-56 flex flex-col shrink-0 transition-theme" style="background: var(--sidebar-bg); border-right: 0.5px solid var(--separator); backdrop-filter: blur(20px);">
-        <!-- Traffic Lights -->
-        <div class="px-4 pt-3 pb-2 flex items-center gap-2">
+  <!-- ======================================================== -->
+  <!-- 1. DESKTOP VIEW (macOS Fullscreen Layout: >= 840px)       -->
+  <!-- ======================================================== -->
+  <div class="desktop-view flex-1 h-full w-full overflow-hidden flex flex-row">
+    
+    <!-- macOS Translucent Sidebar -->
+    <aside class="w-64 h-full flex flex-col shrink-0" style="background: var(--sidebar-bg); border-right: 0.5px solid var(--separator); backdrop-filter: blur(30px);">
+      <!-- Window Controls & Branding -->
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-neutral-800/40">
+        <div class="flex items-center gap-2">
           <span class="w-3 h-3 rounded-full inline-block" style="background: #ff5f57;"></span>
           <span class="w-3 h-3 rounded-full inline-block" style="background: #febc2e;"></span>
           <span class="w-3 h-3 rounded-full inline-block" style="background: #28c840;"></span>
+          <span class="ml-2 font-bold text-xs tracking-tight">RuPay Vault</span>
         </div>
-
-        <nav class="flex-1 overflow-y-auto px-2 pt-1 pb-3" style="font-size: 13px;">
-          <!-- Section Label -->
-          <div class="px-2 pt-3 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
-            Monitor
-          </div>
-
-          <button onclick="setMacTab('cards')" id="sidebar-cards" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="background: var(--system-blue); color: #fff; font-weight: 500;">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-            <span class="flex-1">Cards</span>
-            <span id="sidebar-cards-badge" style="font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 10px;">5</span>
-          </button>
-
-          <button onclick="setMacTab('vault')" id="sidebar-vault" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
-            <span class="flex-1">Vault</span>
-            <span id="sidebar-vault-badge" style="font-size: 11px; color: var(--label-tertiary);">12</span>
-          </button>
-
-          <button onclick="setMacTab('cooldowns')" id="sidebar-cooldowns" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            <span class="flex-1">Cooldowns</span>
-            <span style="font-size: 11px; color: var(--system-green); font-weight: 500;">3 Ready</span>
-          </button>
-
-          <button onclick="setMacTab('matrix')" id="sidebar-matrix" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
-            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            <span class="flex-1">Rules</span>
-          </button>
-
-          <div class="px-2 pt-5 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
-            Archive
-          </div>
-
-          <button onclick="setMacTab('blocked')" id="sidebar-blocked" class="sidebar-item w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-left" style="color: var(--label-primary); font-weight: 400;">
-            <svg class="w-4 h-4 shrink-0" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-            <span class="flex-1" style="color: var(--system-red);">Blocked</span>
-            <span id="sidebar-blocked-badge" style="font-size: 11px; color: var(--system-red); font-weight: 500;">3</span>
-          </button>
-        </nav>
-
-        <!-- Footer -->
-        <div class="px-3 py-2.5" style="border-top: 0.5px solid var(--separator); font-size: 11px; color: var(--label-tertiary);">
-          <div class="flex items-center justify-between">
-            <span class="flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full inline-block" style="background: var(--system-green);"></span>
-              Sheets synced
-            </span>
-            <span class="font-mono-apple" style="font-size: 10px;">Just now</span>
-          </div>
-        </div>
-      </aside>
-
-      <!-- Content Area -->
-      <section class="flex-1 flex flex-col overflow-hidden transition-theme" style="background: var(--bg-grouped);">
-
-        <!-- === TAB: CARDS === -->
-        <div id="mac-tab-cards" class="flex-1 overflow-y-auto">
-          <!-- Toolbar -->
-          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
-            <div>
-              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Active Cards</h2>
-              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Q4 2026 benefit quotas per card number</p>
-            </div>
-            <button onclick="openAddCardModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 500;">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-              Add Card
-            </button>
-          </div>
-
-          <div class="p-6 space-y-5">
-            <div id="mac-cards-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
-
-            <!-- Blocked Section Disclosure -->
-            <div class="rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-              <button class="w-full flex items-center justify-between px-4 py-3 text-left" onclick="toggleMacBlockedAccordion()">
-                <div class="flex items-center gap-2">
-                  <svg class="w-4 h-4" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-                  <span style="font-size: 13px; font-weight: 500;">Blocked Cards</span>
-                  <span style="font-size: 12px; color: var(--label-tertiary);" id="mac-blocked-inline-count">3</span>
-                </div>
-                <svg id="mac-blocked-chevron" class="w-3.5 h-3.5 transition-transform" style="color: var(--label-tertiary);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              <div id="mac-blocked-inline-list" class="hidden px-4 pb-3 space-y-1.5" style="border-top: 0.5px solid var(--separator);"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- === TAB: VAULT === -->
-        <div id="mac-tab-vault" class="hidden flex-1 flex flex-col overflow-hidden">
-          <!-- Toolbar -->
-          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
-            <div>
-              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Voucher Vault</h2>
-              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Select, copy, and share vouchers</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <select id="mac-brand-filter" onchange="renderVault()" class="rounded-lg px-2.5 py-1.5 transition-theme" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 12px; outline: none;">
-                <option value="ALL">All Brands</option>
-                <option value="Lakme">Lakme Salon</option>
-                <option value="Kalyan">Kalyan Jewellers</option>
-                <option value="Reliance">Reliance Digital</option>
-                <option value="Myntra">Myntra</option>
-                <option value="Apollo">Apollo Pharmacy</option>
-              </select>
-              <button id="mac-select-btn" onclick="toggleSelectMode()" class="px-3 py-1.5 rounded-lg transition-theme" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 500; border: 0.5px solid var(--separator);">
-                Select
-              </button>
-            </div>
-          </div>
-
-          <!-- Batch Action Bar -->
-          <div id="mac-batch-bar" class="hidden px-6 py-2.5 flex items-center justify-between" style="background: rgba(10, 132, 255, 0.08); border-bottom: 0.5px solid rgba(10, 132, 255, 0.2);">
-            <div class="flex items-center gap-2.5">
-              <span id="mac-sel-count" class="px-2 py-0.5 rounded-md text-white" style="background: var(--system-blue); font-size: 11px; font-weight: 600;">0</span>
-              <span id="mac-sel-total" style="font-size: 12px; color: var(--system-blue); font-weight: 500;"></span>
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="selectAllVouchers()" style="font-size: 12px; color: var(--system-blue); font-weight: 400;">Select All</button>
-              <button onclick="copyBatchPlaintext()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style="background: var(--fill-quaternary); font-size: 12px; font-weight: 500; color: var(--label-primary); border: 0.5px solid var(--separator);">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                Plaintext
-              </button>
-              <button onclick="openWhatsAppModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style="background: #25D366; color: #fff; font-size: 12px; font-weight: 600;">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-                Share
-              </button>
-              <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-1 rounded-lg" style="background: var(--fill-tertiary); font-size: 12px; font-weight: 500; color: var(--system-orange);">
-                Mark Used
-              </button>
-            </div>
-          </div>
-
-          <!-- Table -->
-          <div class="flex-1 overflow-y-auto">
-            <table class="w-full text-left" style="font-size: 12px;">
-              <thead class="sticky top-0 transition-theme" style="background: var(--bg-grouped-secondary); border-bottom: 0.5px solid var(--separator);">
-                <tr style="font-size: 11px; font-weight: 500; color: var(--label-tertiary); letter-spacing: 0.02em; text-transform: uppercase;">
-                  <th class="px-4 py-2.5 w-10 text-center"><input type="checkbox" id="mac-th-cb" onchange="toggleSelectAllRows(this.checked)"></th>
-                  <th class="px-3 py-2.5">Brand</th>
-                  <th class="px-3 py-2.5">Code / PIN</th>
-                  <th class="px-3 py-2.5">Account</th>
-                  <th class="px-3 py-2.5">Validity</th>
-                  <th class="px-3 py-2.5">Status</th>
-                  <th class="px-3 py-2.5 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="mac-vault-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- === TAB: COOLDOWNS === -->
-        <div id="mac-tab-cooldowns" class="hidden flex-1 overflow-y-auto">
-          <div class="sticky top-0 z-10 px-6 py-3 transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
-            <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">24-Hour Cooldowns</h2>
-            <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">One redemption per account per 24 hours</p>
-          </div>
-          <div class="p-6">
-            <div id="mac-cooldowns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-          </div>
-        </div>
-
-        <!-- === TAB: MATRIX === -->
-        <div id="mac-tab-matrix" class="hidden flex-1 overflow-y-auto">
-          <div class="sticky top-0 z-10 px-6 py-3 transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
-            <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em;">Benefit Rules</h2>
-            <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Quarterly, half-yearly, and annual entitlements per card type</p>
-          </div>
-          <div class="p-6 overflow-x-auto">
-            <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator);">
-              <table class="w-full text-left" style="font-size: 12px;">
-                <thead style="background: var(--fill-quaternary);">
-                  <tr style="font-size: 11px; font-weight: 500; color: var(--label-secondary); border-bottom: 0.5px solid var(--separator);">
-                    <th class="px-3 py-2.5" style="border-right: 0.5px solid var(--separator);">Benefit</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">PNB Imperial</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Union Emperio</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Jana SFB</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">BoB Bhoomi</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">Canara RSDC</th>
-                    <th class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">PNB Select CC</th>
-                    <th class="px-3 py-2.5 text-center">Canara CC</th>
-                  </tr>
-                </thead>
-                <tbody id="mac-matrix-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- === TAB: BLOCKED === -->
-        <div id="mac-tab-blocked" class="hidden flex-1 overflow-y-auto">
-          <div class="sticky top-0 z-10 px-6 py-3 flex items-center justify-between transition-theme" style="background: var(--toolbar-bg); backdrop-filter: blur(20px); border-bottom: 0.5px solid var(--separator);">
-            <div>
-              <h2 style="font-size: 17px; font-weight: 600; letter-spacing: -0.02em; color: var(--system-red);">Blocked Cards</h2>
-              <p style="font-size: 12px; color: var(--label-secondary); margin-top: 1px;">Sorted newest block date first</p>
-            </div>
-          </div>
-          <div class="p-6 space-y-2" id="mac-blocked-full-list"></div>
-        </div>
-
-      </section>
-    </div>
-  </main>
-
-
-  <!-- ===== iPHONE VIEW ===== -->
-  <main id="iphone-view" class="hidden flex-col items-center py-2">
-    <div class="iphone-bezel relative rounded-[48px] overflow-hidden flex flex-col transition-theme" style="width: 393px; height: 820px; background: #000; border: 4px solid #222;">
-
-      <!-- Status Bar -->
-      <div class="w-full h-11 shrink-0 flex items-center justify-between px-7 pt-1" style="background: #000;">
-        <span class="text-white" style="font-size: 13px; font-weight: 600;">9:41</span>
-        <div onclick="showToast('vibhavoswal1 cooldown complete')" class="cursor-pointer flex items-center gap-1.5 px-3 h-7 rounded-full" style="background: #000; border: 1px solid #333; font-size: 11px; color: #fff; font-weight: 500;">
-          <span class="w-1.5 h-1.5 rounded-full inline-block" style="background: var(--system-green);"></span>
-          vibhavoswal1
-        </div>
-        <div class="flex items-center gap-1.5 text-white">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
-          <div class="flex items-center" style="width: 22px; height: 11px; border: 1px solid #fff; border-radius: 3px; padding: 1px;"><div style="width: 75%; height: 100%; background: #fff; border-radius: 1px;"></div></div>
-        </div>
+        <button onclick="toggleTheme()" class="text-xs px-2 py-0.5 rounded-md" style="background: var(--fill-quaternary); color: var(--label-secondary);">
+          <span class="theme-label">Light</span>
+        </button>
       </div>
 
-      <!-- Screen -->
-      <div class="flex-1 overflow-y-auto flex flex-col transition-theme" style="background: var(--bg-grouped);">
+      <!-- Navigation List -->
+      <nav class="flex-1 overflow-y-auto px-2.5 pt-2 pb-3 space-y-1" style="font-size: 13px;">
+        <div class="px-2 pt-3 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); text-transform: uppercase;">Management</div>
 
-        <!-- iOS Tab: Cards -->
-        <div id="ios-tab-cards" class="px-4 pt-2 pb-20 space-y-4">
-          <div class="flex items-center justify-between pt-1">
-            <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Cards</h2>
-            <button onclick="openAddCardModal()" class="w-7 h-7 rounded-full flex items-center justify-center" style="background: var(--system-blue);">
-              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
-          </div>
-          <div id="ios-cards-list" class="space-y-3"></div>
-          <!-- Blocked Disclosure -->
-          <div class="rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <button class="w-full flex items-center justify-between px-4 py-3" onclick="toggleIosBlockedAccordion()">
-              <div class="flex items-center gap-2">
-                <svg class="w-4 h-4" style="color: var(--system-red);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-                <span style="font-size: 13px; font-weight: 500;">Blocked</span>
-                <span style="font-size: 12px; color: var(--label-tertiary);" id="ios-blocked-count">3</span>
-              </div>
-              <svg id="ios-blocked-chevron" class="w-3.5 h-3.5 transition-transform" style="color: var(--label-tertiary);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-            <div id="ios-blocked-list" class="hidden px-4 pb-3 space-y-1.5" style="border-top: 0.5px solid var(--separator);"></div>
-          </div>
-        </div>
-
-        <!-- iOS Tab: Vault -->
-        <div id="ios-tab-vault" class="hidden px-4 pt-2 pb-24 space-y-3">
-          <div class="flex items-center justify-between pt-1">
-            <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Vault</h2>
-            <button id="ios-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-full" style="font-size: 13px; font-weight: 400; color: var(--system-blue);">
-              Select
-            </button>
-          </div>
-          <div class="flex gap-2 overflow-x-auto pb-1">
-            <button onclick="filterVaultBrand('ALL')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 500;">All</button>
-            <button onclick="filterVaultBrand('Lakme')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Lakme</button>
-            <button onclick="filterVaultBrand('Kalyan')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Kalyan</button>
-            <button onclick="filterVaultBrand('Reliance')" class="px-3 py-1.5 rounded-full shrink-0" style="background: var(--fill-quaternary); color: var(--label-primary); font-size: 12px; font-weight: 400;">Reliance</button>
-          </div>
-          <div id="ios-vouchers-list" class="space-y-2"></div>
-        </div>
-
-        <!-- iOS Tab: Cooldowns -->
-        <div id="ios-tab-cooldowns" class="hidden px-4 pt-2 pb-20 space-y-3">
-          <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Cooldowns</h2>
-          <div id="ios-cooldowns-list" class="space-y-2"></div>
-        </div>
-
-        <!-- iOS Tab: Rules -->
-        <div id="ios-tab-matrix" class="hidden px-4 pt-2 pb-20 space-y-3">
-          <h2 style="font-size: 28px; font-weight: 700; letter-spacing: -0.03em;">Rules</h2>
-          <select id="ios-matrix-select" onchange="renderIosMatrixCard(this.value)" class="w-full rounded-xl px-3 py-2.5" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; font-weight: 500;">
-            <option value="pnb_imp">PNB Imperial RSDC</option>
-            <option value="union">Union Emperio RSDC</option>
-            <option value="bob">BoB Bhoomi RSDC</option>
-            <option value="canara_dc">Canara RSDC</option>
-            <option value="canara_cc">Canara Select CC</option>
-          </select>
-          <div id="ios-matrix-content" class="space-y-1"></div>
-        </div>
-      </div>
-
-      <!-- iOS Sticky Batch Bar -->
-      <div id="ios-batch-bar" class="hidden absolute bottom-14 left-0 right-0 px-4 py-2.5 flex items-center justify-between z-20" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
-        <div>
-          <span id="ios-sel-count" style="font-size: 13px; font-weight: 600; color: var(--system-blue);">2 Selected</span>
-          <p id="ios-sel-total" style="font-size: 11px; color: var(--label-tertiary); margin-top: 1px;"></p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="copyBatchPlaintext()" class="p-2 rounded-xl" style="background: var(--fill-quaternary);">
-            <svg class="w-4 h-4" style="color: var(--label-primary);" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          </button>
-          <button onclick="openWhatsAppModal()" class="px-3.5 py-2 rounded-xl flex items-center gap-1.5" style="background: #25D366; color: #fff; font-size: 12px; font-weight: 600;">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-            Share
-          </button>
-          <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-2 rounded-xl" style="background: var(--fill-tertiary); font-size: 12px; font-weight: 500; color: var(--system-orange);">
-            Used
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab Bar -->
-      <nav class="h-14 shrink-0 flex items-center justify-around px-4 z-10 transition-theme" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
-        <button onclick="setIosTab('cards')" id="ios-btn-cards" class="flex flex-col items-center gap-0.5" style="color: var(--system-blue);">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-          <span style="font-size: 10px; font-weight: 500;">Cards</span>
+        <button onclick="setTab('cards')" id="dt-sidebar-cards" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="background: var(--system-blue); color: #fff; font-weight: 500;">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+          <span class="flex-1">Cards &amp; Quotas</span>
+          <span id="dt-cards-count" class="text-xs px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,0.25);">5</span>
         </button>
-        <button onclick="setIosTab('vault')" id="ios-btn-vault" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
-          <span style="font-size: 10px; font-weight: 500;">Vault</span>
+
+        <button onclick="setTab('vault')" id="dt-sidebar-vault" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
+          <span class="flex-1">Voucher Vault</span>
+          <span id="dt-vault-count" class="text-xs px-2 py-0.5 rounded-full" style="background: var(--fill-quaternary); color: var(--system-blue);">0</span>
         </button>
-        <button onclick="setIosTab('cooldowns')" id="ios-btn-cooldowns" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          <span style="font-size: 10px; font-weight: 500;">Cooldowns</span>
+
+        <button onclick="setTab('cooldowns')" id="dt-sidebar-cooldowns" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="flex-1">24h Cooldowns</span>
+          <span id="dt-ready-count" class="text-xs font-semibold" style="color: var(--system-green);">Ready</span>
         </button>
-        <button onclick="setIosTab('matrix')" id="ios-btn-matrix" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          <span style="font-size: 10px; font-weight: 500;">Rules</span>
+
+        <button onclick="setTab('matrix')" id="dt-sidebar-matrix" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="flex-1">Benefit Rules</span>
+        </button>
+
+        <div class="px-2 pt-4 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); text-transform: uppercase;">Archive</div>
+        <button onclick="setTab('blocked')" id="dt-sidebar-blocked" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--system-red);">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+          <span class="flex-1">Blocked Cards</span>
+          <span id="dt-blocked-count" class="text-xs">3</span>
         </button>
       </nav>
 
-      <!-- Home Indicator -->
-      <div class="h-3 flex justify-center items-center shrink-0" style="background: #000;">
-        <div class="rounded-full" style="width: 134px; height: 5px; background: #555;"></div>
-      </div>
-    </div>
-  </main>
-
-
-  <!-- ===== MODAL: BLOCK CARD ===== -->
-  <div id="modal-block" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);">
-    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
-      <div class="flex items-center justify-between pb-3" style="border-bottom: 0.5px solid var(--separator);">
-        <h3 style="font-size: 15px; font-weight: 600;">Block Card</h3>
-        <button onclick="closeBlockModal()" style="color: var(--label-tertiary); font-size: 16px;">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <!-- Sidebar Status & Sync -->
+      <div class="p-3 border-t border-neutral-800/40 text-xs flex items-center justify-between" style="color: var(--label-tertiary);">
+        <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 hover:underline font-medium" style="color: var(--system-blue);">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Sync Sheets
         </button>
-      </div>
-      <div class="rounded-xl px-3 py-2.5" style="background: var(--fill-quaternary);">
-        <div class="flex justify-between" style="font-size: 13px; font-weight: 500;">
-          <span id="modal-block-title">PNB Imperial RSDC</span>
-          <span id="modal-block-last4" class="font-mono-apple" style="color: var(--label-secondary);">---- 4821</span>
+        <div class="flex items-center gap-1.5 font-mono-apple" style="font-size: 10px;">
+          <span class="w-2 h-2 rounded-full inline-block" id="dt-sync-dot" style="background: var(--system-green);"></span>
+          <span id="dt-sync-status">Live</span>
         </div>
-        <div id="modal-block-account" style="font-size: 12px; color: var(--label-tertiary); margin-top: 2px;"></div>
       </div>
-      <div class="space-y-1.5">
-        <label style="font-size: 12px; font-weight: 500; display: block;">Date of Block</label>
-        <input type="date" id="block-date-input" class="w-full rounded-lg px-3 py-2" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; outline: none;">
+    </aside>
+
+    <!-- macOS Main Work Area (100% full width and height) -->
+    <main class="flex-1 h-full overflow-hidden flex flex-col" style="background: var(--bg-grouped);">
+      
+      <!-- DESKTOP TAB 1: CARDS -->
+      <div id="dt-view-cards" class="flex-1 flex flex-col overflow-y-auto">
+        <div class="sticky top-0 z-10 px-8 py-3.5 flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
+          <div>
+            <h2 class="text-lg font-semibold tracking-tight">Active RuPay Cards</h2>
+            <p class="text-xs" style="color: var(--label-secondary);">Quarterly &amp; Annual Quota Tracking</p>
+          </div>
+          <button onclick="openAddCardModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90 shadow-sm" style="background: var(--system-blue);">
+            <span>+ Add Card</span>
+          </button>
+        </div>
+        <div class="p-8 space-y-6">
+          <div id="dt-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+          
+          <!-- Blocked Cards Inline Collapsible -->
+          <div class="rounded-xl overflow-hidden p-4" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <div class="flex items-center justify-between cursor-pointer" onclick="toggleBlockedAccordion()">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full inline-block" style="background: var(--system-red);"></span>
+                <span class="text-xs font-semibold uppercase tracking-wider">Blocked Cards Archive (<span id="dt-blocked-inline-count">3</span>)</span>
+                <span class="text-xs" style="color: var(--label-tertiary);">&middot; Reverse sorted by Block Date</span>
+              </div>
+              <span class="text-xs font-medium hover:underline" style="color: var(--system-blue);">Toggle</span>
+            </div>
+            <div id="dt-blocked-inline-list" class="hidden mt-3 pt-3 border-t border-neutral-800/40 space-y-2"></div>
+          </div>
+        </div>
       </div>
-      <div class="space-y-1.5">
-        <label style="font-size: 12px; font-weight: 500; display: block;">Note (optional)</label>
-        <input type="text" id="block-notes-input" placeholder="Reason for blocking" class="w-full rounded-lg px-3 py-2" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 13px; outline: none;">
+
+      <!-- DESKTOP TAB 2: VAULT -->
+      <div id="dt-view-vault" class="hidden flex-1 flex flex-col overflow-hidden">
+        <div class="sticky top-0 z-10 px-8 py-3.5 flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
+          <div>
+            <h2 class="text-lg font-semibold tracking-tight">Voucher Vault</h2>
+            <p class="text-xs" style="color: var(--label-secondary);">154 Parsed Vouchers &middot; WhatsApp batch generator</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+            <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+              <option value="ALL">All Brands</option>
+              <option value="Lakme">Lakme (₹1,500)</option>
+              <option value="FourFountains">Four Fountains Spa</option>
+              <option value="Kalyan">Kalyan (₹2,000)</option>
+              <option value="Reliance">Reliance Digital (₹500)</option>
+              <option value="Myntra">Myntra (₹500)</option>
+              <option value="Uber">Uber (₹100)</option>
+              <option value="Apollo">Apollo (₹250)</option>
+              <option value="BigBasket">BigBasket (₹250)</option>
+              <option value="Thyrocare">Thyrocare</option>
+              <option value="TaxSpanner">TaxSpanner</option>
+              <option value="TimesPrime">Times Prime</option>
+              <option value="AmazonPrime">Amazon Prime</option>
+              <option value="CultFit">Cult.fit</option>
+            </select>
+            <button id="dt-select-btn" onclick="toggleSelectMode()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+              Select Multiple
+            </button>
+          </div>
+        </div>
+
+        <!-- Floating Batch Action Bar -->
+        <div id="dt-batch-bar" class="hidden px-8 py-2.5 flex items-center justify-between" style="background: rgba(10, 132, 255, 0.1); border-bottom: 0.5px solid rgba(10, 132, 255, 0.25);">
+          <div class="flex items-center gap-2.5">
+            <span id="dt-sel-count" class="px-2 py-0.5 rounded text-white text-xs font-semibold" style="background: var(--system-blue);">0</span>
+            <span id="dt-sel-sum" class="text-xs font-semibold" style="color: var(--system-blue);">Total: ₹0</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="selectAllVouchers()" class="text-xs hover:underline" style="color: var(--system-blue);">Select All</button>
+            <button onclick="copyBatchPlaintext()" class="px-3 py-1 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator);">
+              Copy Plaintext
+            </button>
+            <button onclick="openWhatsAppModal()" class="px-3.5 py-1 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: #25D366;">
+              Share to WhatsApp
+            </button>
+            <button onclick="batchMarkAsRedeemed()" class="px-3 py-1 rounded-lg text-xs font-medium" style="background: var(--fill-secondary); color: var(--system-orange);">
+              Mark as Used
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="flex-1 overflow-y-auto px-8 py-4">
+          <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator); background: var(--bg-grouped-secondary);">
+            <table class="w-full text-left text-xs">
+              <thead class="sticky top-0 border-b border-neutral-800/40" style="background: var(--toolbar-bg); font-size: 11px; text-transform: uppercase; color: var(--label-tertiary);">
+                <tr>
+                  <th class="p-3 w-10 text-center"><input type="checkbox" id="dt-th-cb" onchange="toggleSelectAllRows(this.checked)"></th>
+                  <th class="p-3">Brand</th>
+                  <th class="p-3">Code / PIN</th>
+                  <th class="p-3">Account &amp; Card</th>
+                  <th class="p-3">Validity</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="dt-vault-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <label class="flex items-center gap-2 cursor-pointer" style="font-size: 12px;">
-        <input type="checkbox" id="block-auto-replace" checked> Add replacement card immediately
-      </label>
-      <div class="flex justify-end gap-2 pt-2" style="border-top: 0.5px solid var(--separator);">
-        <button onclick="closeBlockModal()" class="px-4 py-2 rounded-lg" style="font-size: 13px; font-weight: 400; color: var(--system-blue);">Cancel</button>
-        <button onclick="confirmBlockCard()" class="px-4 py-2 rounded-lg" style="background: var(--system-red); color: #fff; font-size: 13px; font-weight: 500;">Block</button>
+
+      <!-- DESKTOP TAB 3: COOLDOWNS -->
+      <div id="dt-view-cooldowns" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">24-Hour Account Cooldowns</h2>
+          <p class="text-xs" style="color: var(--label-secondary);">RuPay Select limit: 1 voucher per account per 24 hours. Rotate accounts to redeem entire card benefits in a sprint.</p>
+        </div>
+        <div id="dt-cooldowns-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+      </div>
+
+      <!-- DESKTOP TAB 4: MATRIX -->
+      <div id="dt-view-matrix" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight">RuPay Select Benefits Comparison</h2>
+          <p class="text-xs" style="color: var(--label-secondary);">Official bank quota entitlement matrix by card tier and BIN.</p>
+        </div>
+        <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator); background: var(--bg-grouped-secondary);">
+          <table class="w-full text-left text-xs">
+            <thead class="border-b border-neutral-800/40" style="background: var(--toolbar-bg); color: var(--label-secondary);">
+              <tr>
+                <th class="p-3 border-r border-neutral-800/40">Benefit</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">PNB Imperial</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">Union Emperio</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">Jana SFB</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">BoB Bhoomi</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">Canara RSDC</th>
+                <th class="p-3 text-center border-r border-neutral-800/40">PNB CC</th>
+                <th class="p-3 text-center">Canara CC</th>
+              </tr>
+            </thead>
+            <tbody id="dt-matrix-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DESKTOP TAB 5: BLOCKED -->
+      <div id="dt-view-blocked" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold tracking-tight text-rose-500">Blocked Cards Archive</h2>
+          <p class="text-xs" style="color: var(--label-secondary);">When cards are blocked and reissued, historical records are preserved here in reverse-chronological order.</p>
+        </div>
+        <div id="dt-blocked-full-list" class="space-y-2"></div>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- 2. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
+  <!-- ======================================================== -->
+  <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col justify-between">
+    
+    <!-- Top Bar with Safe Area Top Padding -->
+    <header class="px-4 pb-2.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
+      <div>
+        <h1 class="text-base font-bold tracking-tight">RuPay Vault</h1>
+        <p class="text-[10px]" style="color: var(--label-tertiary);" id="mb-sync-status">Sheet synced</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="syncWithGoogleSheets()" class="p-1.5 rounded-full" style="background: var(--fill-quaternary); color: var(--system-blue);">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+        <button onclick="toggleTheme()" class="px-2 py-1 rounded-full text-xs font-semibold" style="background: var(--fill-quaternary);">
+          <span class="theme-label">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Screen Content -->
+    <main class="flex-1 overflow-y-auto px-4 py-3 pb-24 space-y-4">
+      
+      <!-- MOBILE TAB 1: CARDS -->
+      <div id="mb-view-cards" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold tracking-tight">Cards &amp; Quotas</h2>
+          <button onclick="openAddCardModal()" class="w-7 h-7 rounded-full text-white font-bold flex items-center justify-center text-sm shadow-sm" style="background: var(--system-blue);">
+            +
+          </button>
+        </div>
+        <div id="mb-cards-list" class="space-y-3"></div>
+        
+        <!-- Blocked Collapsible -->
+        <div class="rounded-xl p-3.5" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleBlockedAccordion()">
+            <span class="text-xs font-semibold text-rose-500">Blocked Cards (<span id="mb-blocked-count">3</span>)</span>
+            <span class="text-xs" style="color: var(--label-tertiary);">Newest First ▾</span>
+          </div>
+          <div id="mb-blocked-inline-list" class="hidden mt-2.5 pt-2.5 border-t border-neutral-800/40 space-y-1.5"></div>
+        </div>
+      </div>
+
+      <!-- MOBILE TAB 2: VAULT -->
+      <div id="mb-view-vault" class="hidden space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold tracking-tight">Vault (<span id="mb-vault-count">0</span>)</h2>
+          <button id="mb-select-btn" onclick="toggleSelectMode()" class="text-xs font-semibold px-3 py-1 rounded-full" style="color: var(--system-blue); background: var(--fill-quaternary);">
+            Select
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <input type="text" id="mb-search-input" placeholder="Search brand, code, account..." oninput="syncSearchAndRender(this.value)" class="w-full rounded-xl px-3 py-2 text-xs focus:outline-none" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+        
+        <!-- Filter Pills (Scrollable) -->
+        <div id="mb-pills-container" class="flex gap-1.5 overflow-x-auto py-1 no-scrollbar">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div id="mb-vouchers-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- MOBILE TAB 3: COOLDOWNS -->
+      <div id="mb-view-cooldowns" class="hidden space-y-3">
+        <h2 class="text-xl font-bold tracking-tight">24h Cooldowns</h2>
+        <p class="text-xs" style="color: var(--label-secondary);">1 redemption per account per 24 hours.</p>
+        <div id="mb-cooldowns-list" class="space-y-2"></div>
+      </div>
+
+      <!-- MOBILE TAB 4: RULES -->
+      <div id="mb-view-matrix" class="hidden space-y-3">
+        <h2 class="text-xl font-bold tracking-tight">Benefit Rules</h2>
+        <select id="mb-matrix-select" onchange="renderMobileMatrixCard(this.value)" class="w-full rounded-xl p-3 text-xs font-semibold" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          <option value="pnb_imp">PNB Imperial RSDC (65249710)</option>
+          <option value="union">Union Bank Emperio (652411)</option>
+          <option value="bob">BoB Bhoomi RSDC (652505)</option>
+          <option value="canara_dc">Canara RSDC (652550)</option>
+          <option value="pnb_cc">PNB Select CC (652870)</option>
+          <option value="canara_cc">Canara CC (653020)</option>
+        </select>
+        <div id="mb-matrix-card-content" class="space-y-1.5 mt-2"></div>
+      </div>
+
+    </main>
+
+    <!-- Mobile Sticky Multi-Select Action Bar (Thumb Zone) -->
+    <div id="mb-sticky-bar" class="hidden fixed left-0 right-0 px-4 py-2.5 safe-sticky-bar flex items-center justify-between z-20" style="background: var(--material-thick); backdrop-filter: blur(20px); border-top: 0.5px solid var(--separator);">
+      <div>
+        <span id="mb-sel-count" class="text-xs font-bold" style="color: var(--system-blue);">0 Selected</span>
+        <p id="mb-sel-sum" class="text-[10px]" style="color: var(--label-tertiary);">₹0 Total</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="copyBatchPlaintext()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium" style="background: var(--fill-quaternary);">
+          Plain
+        </button>
+        <button onclick="openWhatsAppModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white flex items-center gap-1 shadow-sm" style="background: #25D366;">
+          WhatsApp
+        </button>
+        <button onclick="batchMarkAsRedeemed()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium" style="background: var(--fill-secondary); color: var(--system-orange);">
+          Used
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Tab Bar with Safe Area Bottom Padding -->
+    <nav class="safe-bottom-nav shrink-0 flex items-center justify-around px-2 z-10" style="background: var(--material-thick); backdrop-filter: blur(25px); border-top: 0.5px solid var(--separator);">
+      <button onclick="setTab('cards')" id="mb-btn-cards" class="flex flex-col items-center gap-0.5" style="color: var(--system-blue);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+        <span class="text-[10px] font-semibold">Cards</span>
+      </button>
+      <button onclick="setTab('vault')" id="mb-btn-vault" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
+        <span class="text-[10px] font-semibold">Vault</span>
+      </button>
+      <button onclick="setTab('cooldowns')" id="mb-btn-cooldowns" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="text-[10px] font-semibold">Cooldowns</span>
+      </button>
+      <button onclick="setTab('matrix')" id="mb-btn-matrix" class="flex flex-col items-center gap-0.5" style="color: var(--label-tertiary);">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span class="text-[10px] font-semibold">Rules</span>
+      </button>
+    </nav>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ADD CARD                                           -->
+  <!-- ======================================================== -->
+  <div id="modal-add-card" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
+    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
+        <h3 class="text-sm font-bold" style="color: var(--system-blue);">+ Add RuPay Select Card</h3>
+        <button onclick="closeAddCardModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
+      </div>
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block font-medium mb-1">Bank Name</label>
+          <input type="text" id="add-card-bank" placeholder="e.g. PNB, Bank of Baroda, Canara" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+        </div>
+        <div>
+          <label class="block font-medium mb-1">Card Nickname / Account</label>
+          <input type="text" id="add-card-nick" placeholder="e.g. PNB Imperial Primary" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium mb-1">BIN (6-8 digits)</label>
+            <input type="text" id="add-card-bin" placeholder="65249710" class="w-full rounded-lg px-3 py-2 font-mono-apple text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Last 4 Digits</label>
+            <input type="text" id="add-card-last4" placeholder="9102" maxlength="4" class="w-full rounded-lg px-3 py-2 font-mono-apple text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-medium mb-1">Total Quota</label>
+            <input type="number" id="add-card-total" value="5" min="1" max="20" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Card Type</label>
+            <select id="add-card-type" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+              <option value="Debit Card">Debit Card</option>
+              <option value="Credit Card">Credit Card</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-neutral-800/40">
+        <button onclick="closeAddCardModal()" class="px-3 py-1.5 rounded-lg text-xs" style="color: var(--label-secondary);">Cancel</button>
+        <button onclick="confirmAddCard()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: var(--system-blue);">Save Card</button>
       </div>
     </div>
   </div>
 
 
-  <!-- ===== MODAL: SHARE PREVIEW ===== -->
-  <div id="modal-share" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);">
-    <div class="rounded-2xl max-w-md w-full p-5 space-y-4 transition-theme" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
-      <div class="flex items-center justify-between pb-3" style="border-bottom: 0.5px solid var(--separator);">
-        <h3 style="font-size: 15px; font-weight: 600;">Share Preview</h3>
-        <button onclick="closeShareModal()" style="color: var(--label-tertiary);">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
+  <!-- ======================================================== -->
+  <!-- MODAL: BLOCK CARD                                        -->
+  <!-- ======================================================== -->
+  <div id="modal-block" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
+    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
+        <h3 class="text-sm font-bold text-rose-500">Block &amp; Decommission Card</h3>
+        <button onclick="closeBlockModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
       </div>
-      <textarea id="share-preview-text" rows="8" readonly class="w-full rounded-xl p-3 font-mono-apple resize-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary); font-size: 11px; line-height: 1.6; outline: none;"></textarea>
-      <div class="flex justify-between pt-2" style="border-top: 0.5px solid var(--separator);">
-        <button onclick="copyShareText()" class="flex items-center gap-1.5 px-3 py-2 rounded-lg" style="background: var(--fill-quaternary); font-size: 12px; font-weight: 500; color: var(--label-primary);">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          Copy
-        </button>
-        <button onclick="triggerNativeShare()" class="flex items-center gap-1.5 px-4 py-2 rounded-lg" style="background: var(--system-blue); color: #fff; font-size: 12px; font-weight: 600;">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
-          Share
-        </button>
+      <div class="rounded-xl p-3 text-xs space-y-1" style="background: var(--fill-quaternary);">
+        <div class="flex justify-between font-semibold">
+          <span id="modal-block-title">Card Name</span>
+          <span id="modal-block-last4" class="font-mono-apple">···· 0000</span>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label class="text-xs font-medium">Date of Block</label>
+        <input type="date" id="block-date-input" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+      </div>
+      <div class="space-y-1">
+        <label class="text-xs font-medium">Reason / Note</label>
+        <input type="text" id="block-notes-input" placeholder="e.g. Quotas exhausted, new card reissued" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-neutral-800/40">
+        <button onclick="closeBlockModal()" class="px-3 py-1.5 rounded-lg text-xs" style="color: var(--label-secondary);">Cancel</button>
+        <button onclick="confirmBlockCard()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: var(--system-red);">Block Card</button>
       </div>
     </div>
   </div>
 
 
-  <!-- Toast -->
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-tertiary); border: 0.5px solid var(--separator); font-size: 12px; font-weight: 500; color: var(--label-primary);">
+  <!-- ======================================================== -->
+  <!-- MODAL: WHATSAPP SHARE SHEET PREVIEW                      -->
+  <!-- ======================================================== -->
+  <div id="modal-share" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
+    <div class="rounded-2xl max-w-md w-full p-5 space-y-3 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
+        <h3 class="text-sm font-bold text-emerald-500">WhatsApp Message Preview</h3>
+        <button onclick="closeShareModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
+      </div>
+      <textarea id="share-preview-text" rows="9" readonly class="w-full rounded-xl p-3 font-mono-apple text-xs focus:outline-none resize-none leading-relaxed" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);"></textarea>
+      <div class="flex justify-between items-center pt-2 border-t border-neutral-800/40">
+        <button onclick="copyShareText()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary);">
+          Copy Formatted
+        </button>
+        <button onclick="triggerNativeShare()" class="px-4 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 shadow-sm" style="background: #25D366;">
+          Open Native Share Sheet
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
     <span id="toast-msg"></span>
   </div>
 
 
-  <!-- ===== JS ENGINE ===== -->
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT STATE ENGINE & GOOGLE SHEETS LIVE SYNC        -->
+  <!-- ======================================================== -->
   <script>
-    const S = {
-      isDark: true, viewMode: 'macos', macTab: 'cards', iosTab: 'cards',
-      isSelectMode: false, selectedIds: new Set(), blockTarget: null,
+    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
+
+    const state = {
+      isDark: true,
+      activeTab: 'cards',
+      isSelectMode: false,
+      selectedIds: new Set(),
+      searchQuery: '',
+      activeFilterBrand: 'ALL',
+      targetCardToBlock: null,
 
       accounts: [
-        { id: 'vibhavoswal1', lastRedeemed: new Date(Date.now() - 25*36e5), total: 15 },
-        { id: 'karthikrathod2067', lastRedeemed: new Date(Date.now() - 19.5*36e5), total: 8 },
-        { id: 'arunaoswal3', lastRedeemed: new Date(Date.now() - 8*36e5), total: 12 },
-        { id: 'nikhildsouza369', lastRedeemed: new Date(Date.now() - 26*36e5), total: 7 },
-        { id: 'madhuribhalekar369', lastRedeemed: new Date(Date.now() - 24.5*36e5), total: 6 },
-        { id: 'ayaanshekhawat369', lastRedeemed: new Date(Date.now() - 4*36e5), total: 4 }
+        { id: 'vibhavoswal9', lastRedeemed: new Date(Date.now() - 25 * 3600 * 1000) },
+        { id: 'karthikrathod2067', lastRedeemed: new Date(Date.now() - 19.5 * 3600 * 1000) },
+        { id: 'vibhavoswal2', lastRedeemed: new Date(Date.now() - 4 * 3600 * 1000) },
+        { id: 'nikhildsouza369', lastRedeemed: new Date(Date.now() - 26 * 3600 * 1000) },
+        { id: 'arunaoswal3', lastRedeemed: new Date(Date.now() - 8 * 3600 * 1000) },
+        { id: 'madhuribhalekar369', lastRedeemed: new Date(Date.now() - 24.5 * 3600 * 1000) }
       ],
 
       cards: [
-        { id:'c1', bank:'PNB', type:'PNB Imperial RSDC', bin:'65249710', last4:'9102', nick:'PNB Imperial', acct:'vibhavoswal1', status:'active', quota:{claimed:3,total:6} },
-        { id:'c2', bank:'Bank of Baroda', type:'BoB Bhoomi RSDC', bin:'652505', last4:'3314', nick:'BoB Bhoomi', acct:'vibhavoswal1', status:'active', quota:{claimed:2,total:5} },
-        { id:'c3', bank:'Canara Bank', type:'Canara RSDC', bin:'652550', last4:'5521', nick:'Canara RSDC', acct:'karthikrathod2067', status:'active', quota:{claimed:2,total:5} },
-        { id:'c4', bank:'Jana SFB', type:'Jana SFB RSDC', bin:'652520', last4:'7891', nick:'Jana SFB', acct:'nikhildsouza369', status:'active', quota:{claimed:3,total:5} },
-        { id:'c5', bank:'Canara Bank', type:'Canara Select CC', bin:'653020', last4:'1109', nick:'Canara CC', acct:'arunaoswal3', status:'active', quota:{claimed:1,total:2} },
-        { id:'cx1', bank:'PNB', type:'PNB Imperial RSDC', bin:'65249710', last4:'4821', nick:'PNB Imperial (Old)', acct:'vibhavoswal1', status:'blocked', blockedDate:'2026-10-14', notes:'Q3 quotas exhausted' },
-        { id:'cx2', bank:'Canara Bank', type:'Canara RSDC', bin:'652550', last4:'1120', nick:'Canara RSDC (Old)', acct:'karthikrathod2067', status:'blocked', blockedDate:'2026-09-28', notes:'Blocked via mobile banking' },
-        { id:'cx3', bank:'Bank of Baroda', type:'BoB Bhoomi RSDC', bin:'652505', last4:'2091', nick:'BoB Bhoomi (Old)', acct:'arunaoswal3', status:'blocked', blockedDate:'2026-08-15', notes:'Reissued new number' }
+        { id: 'c1', bank: 'PNB', type: 'PNB Imperial RSDC', bin: '65249710', last4: '9102', nick: 'PNB Imperial Primary', status: 'active', claimed: 3, total: 6 },
+        { id: 'c2', bank: 'Bank of Baroda', type: 'BoB Bhoomi RSDC', bin: '652505', last4: '3314', nick: 'Vibhav BoB DC', status: 'active', claimed: 2, total: 5 },
+        { id: 'c3', bank: 'Canara Bank', type: 'Canara RSDC', bin: '652550', last4: '7828', nick: 'Canara DC 7828', status: 'active', claimed: 2, total: 5 },
+        { id: 'c4', bank: 'Jana SFB', type: 'Jana SFB RSDC', bin: '652520', last4: '7891', nick: 'Jana SFB DC', status: 'active', claimed: 3, total: 5 },
+        { id: 'c5', bank: 'Canara Bank', type: 'Canara Select CC', bin: '653020', last4: '1109', nick: 'Canara CC Primary', status: 'active', claimed: 1, total: 2 },
+        
+        // Blocked cards (reverse chronological)
+        { id: 'cx1', bank: 'PNB', type: 'PNB Imperial RSDC', bin: '65249710', last4: '4821', nick: 'PNB Imperial (Old)', status: 'blocked', blockedDate: '2026-10-14', notes: 'Q3 quotas exhausted' },
+        { id: 'cx2', bank: 'Canara Bank', type: 'Canara RSDC', bin: '652550', last4: '1120', nick: 'Canara DC 1 (Old)', status: 'blocked', blockedDate: '2026-09-28', notes: 'Blocked via mobile app' },
+        { id: 'cx3', bank: 'Bank of Baroda', type: 'BoB Bhoomi RSDC', bin: '652505', last4: '2091', nick: 'Smiti BoB DC', status: 'blocked', blockedDate: '2026-08-15', notes: 'Reissued new card number' }
       ],
 
-      vouchers: [
-        { id:'v1', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460114752185', pin:'112972', cardId:'c1', acct:'karthikrathod2067', exp:'31 Dec 2026', used:false },
-        { id:'v2', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460112216149', pin:'115119', cardId:'c1', acct:'karthikrathod2067', exp:'31 Dec 2026', used:false },
-        { id:'v3', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460114391468', pin:'122241', cardId:'c3', acct:'nikhildsouza369', exp:'31 Dec 2026', used:false },
-        { id:'v4', brand:'Lakme', title:'Lakme Salon', amt:1500, code:'1001460119117144', pin:'218084', cardId:'c4', acct:'nikhildsouza369', exp:'31 Dec 2026', used:false },
-        { id:'v5', brand:'Kalyan', title:'Kalyan Jewellers', amt:2000, code:'1004681040330454', pin:'108190', cardId:'c1', acct:'devendixit369', exp:'30 Nov 2026', used:false },
-        { id:'v6', brand:'Kalyan', title:'Kalyan Jewellers', amt:2000, code:'1004681040953387', pin:'147977', cardId:'c1', acct:'chinmayjoshi2067', exp:'30 Nov 2026', used:false },
-        { id:'v7', brand:'Reliance', title:'Reliance Digital', amt:500, code:'GYFRR24673597621', pin:null, cardId:'c1', acct:'devendixit369', exp:'15 Dec 2026', used:false },
-        { id:'v8', brand:'Reliance', title:'Reliance Digital', amt:500, code:'GYFRR21133446771', pin:null, cardId:'c1', acct:'chinmayjoshi2067', exp:'15 Dec 2026', used:false },
-        { id:'v9', brand:'Myntra', title:'Myntra', amt:500, code:'6001221117496880', pin:'212116', cardId:'c1', acct:'ayaanshekhawat369', exp:'31 Jan 2027', used:false },
-        { id:'v10', brand:'Apollo', title:'Apollo Pharmacy', amt:250, code:'9802004492588540', pin:'426176', cardId:'c1', acct:'madhuribhalekar369', exp:'28 Feb 2027', used:false },
-        { id:'v11', brand:'BigBasket', title:'BigBasket', amt:250, code:'59437226918', pin:'148767', cardId:'c1', acct:'madhuribhalekar369', exp:'31 Dec 2026', used:true },
-        { id:'v12', brand:'Thyrocare', title:'Health Check-up', amt:1200, code:'035A87CDA0FB4986', pin:null, cardId:'c2', acct:'vibhavoswal2', exp:'15 Nov 2026', used:true }
-      ]
+      vouchers: []
     };
 
-    const RULES = [
-      { name:'Cult.fit Live 90 Days', pnb_imp:'Quarterly', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:null },
-      { name:'Cult.fit Elite 1 Month', pnb_imp:null, union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:null },
-      { name:'Lakme Salon / Four Fountains', pnb_imp:'Half-yearly', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:'Annually' },
-      { name:'Thyrocare Health Check-up', pnb_imp:'Annually', union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Annually', canara_cc:'Annually' },
-      { name:'Amazon Prime', pnb_imp:'Annually', union:'Annually', jana:'Annually', bob:'Annually', canara_dc:'Annually', pnb_cc:null, canara_cc:null },
-      { name:'TaxSpanner (2,950)', pnb_imp:'Annually', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Kalyan Jewellers (2,000)', pnb_imp:'Half-yearly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Myntra (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Decathlon (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Reliance Digital (500)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'BigBasket (250)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Apollo Pharmacy (250)', pnb_imp:'Quarterly', union:null, jana:null, bob:null, canara_dc:null, pnb_cc:null, canara_cc:null },
-      { name:'Uber (100)', pnb_imp:null, union:'Quarterly', jana:'Quarterly', bob:'Quarterly', canara_dc:'Quarterly', pnb_cc:'Quarterly', canara_cc:null }
+    const MATRIX_RULES = [
+      { name: 'Cult.fit Live - 90 Days', pnb_imp: 'Quarterly', union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Annually', canara_cc: null },
+      { name: 'Cult.fit Elite - 1 Month', pnb_imp: null, union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Annually', canara_cc: null },
+      { name: 'Four Fountains / Lakmé ₹1.5k', pnb_imp: 'Half-yearly', union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Annually', canara_cc: 'Annually' },
+      { name: 'Health Check-up (Thyrocare)', pnb_imp: 'Annually', union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Annually', canara_cc: 'Annually' },
+      { name: 'Amazon Prime', pnb_imp: 'Annually', union: 'Annually', jana: 'Annually', bob: 'Annually', canara_dc: 'Annually', pnb_cc: null, canara_cc: null },
+      { name: 'TaxSpanner - ₹2,950', pnb_imp: 'Annually', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Kalyan Jewellers - ₹2,000', pnb_imp: 'Half-yearly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Myntra - ₹500', pnb_imp: 'Quarterly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Decathlon - ₹500', pnb_imp: 'Quarterly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Reliance Digital - ₹500', pnb_imp: 'Quarterly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'BigBasket - ₹250', pnb_imp: 'Quarterly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Apollo Pharmacy - ₹250', pnb_imp: 'Quarterly', union: null, jana: null, bob: null, canara_dc: null, pnb_cc: null, canara_cc: null },
+      { name: 'Uber - ₹100', pnb_imp: null, union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Quarterly', canara_cc: null }
     ];
 
-    /* ---- Theme ---- */
+    /* --- THEME TOGGLE --- */
     function toggleTheme() {
-      S.isDark = !S.isDark;
-      document.documentElement.dataset.theme = S.isDark ? 'dark' : 'light';
-      document.getElementById('theme-icon-sun').classList.toggle('hidden', S.isDark);
-      document.getElementById('theme-icon-moon').classList.toggle('hidden', !S.isDark);
-      document.getElementById('theme-label').textContent = S.isDark ? 'Light' : 'Dark';
+      state.isDark = !state.isDark;
+      document.documentElement.setAttribute('data-theme', state.isDark ? 'dark' : 'light');
+      document.querySelectorAll('.theme-label').forEach(el => {
+        el.textContent = state.isDark ? 'Light' : 'Dark';
+      });
     }
 
-    /* ---- Viewport ---- */
-    function setViewMode(m) {
-      S.viewMode = m;
-      document.getElementById('macos-view').classList.toggle('hidden', m !== 'macos');
-      document.getElementById('iphone-view').classList.toggle('hidden', m !== 'iphone');
-      document.getElementById('iphone-view').classList.toggle('flex', m === 'iphone');
-      const bm = document.getElementById('btn-mac'), bi = document.getElementById('btn-ios');
-      bm.style.background = m === 'macos' ? 'var(--bg-tertiary)' : 'transparent';
-      bm.style.color = m === 'macos' ? 'var(--label-primary)' : 'var(--label-secondary)';
-      bi.style.background = m === 'iphone' ? 'var(--bg-tertiary)' : 'transparent';
-      bi.style.color = m === 'iphone' ? 'var(--label-primary)' : 'var(--label-secondary)';
-      renderAll();
-    }
-
-    /* ---- Mac Tabs ---- */
-    function setMacTab(t) {
-      S.macTab = t;
-      ['cards','vault','cooldowns','matrix','blocked'].forEach(x => {
-        document.getElementById('mac-tab-'+x).classList.toggle('hidden', x !== t);
-        const sb = document.getElementById('sidebar-'+x);
+    /* --- TAB SWITCHER --- */
+    function setTab(tab) {
+      state.activeTab = tab;
+      
+      // Desktop Views
+      ['cards', 'vault', 'cooldowns', 'matrix', 'blocked'].forEach(t => {
+        const v = document.getElementById(`dt-view-${t}`);
+        if (v) v.classList.toggle('hidden', t !== tab);
+        const sb = document.getElementById(`dt-sidebar-${t}`);
         if (sb) {
-          if (x === t) { sb.style.background = 'var(--system-blue)'; sb.style.color = '#fff'; sb.style.fontWeight = '500'; }
-          else { sb.style.background = 'transparent'; sb.style.color = 'var(--label-primary)'; sb.style.fontWeight = '400'; }
+          if (t === tab) {
+            sb.style.background = 'var(--system-blue)';
+            sb.style.color = '#fff';
+            sb.style.fontWeight = '600';
+          } else {
+            sb.style.background = 'transparent';
+            sb.style.color = (t === 'blocked') ? 'var(--system-red)' : 'var(--label-primary)';
+            sb.style.fontWeight = '400';
+          }
         }
       });
-      renderAll();
-    }
 
-    /* ---- iOS Tabs ---- */
-    function setIosTab(t) {
-      S.iosTab = t;
-      ['cards','vault','cooldowns','matrix'].forEach(x => {
-        document.getElementById('ios-tab-'+x).classList.toggle('hidden', x !== t);
-        const b = document.getElementById('ios-btn-'+x);
-        if (b) b.style.color = x === t ? 'var(--system-blue)' : 'var(--label-tertiary)';
+      // Mobile Views
+      ['cards', 'vault', 'cooldowns', 'matrix'].forEach(t => {
+        const mv = document.getElementById(`mb-view-${t}`);
+        if (mv) mv.classList.toggle('hidden', t !== tab);
+        const mbBtn = document.getElementById(`mb-btn-${t}`);
+        if (mbBtn) {
+          mbBtn.style.color = (t === tab) ? 'var(--system-blue)' : 'var(--label-tertiary)';
+        }
       });
+
       renderAll();
     }
 
-    /* ---- Cooldown Util ---- */
-    function cooldown(last) {
-      const r = 864e5 - (Date.now() - new Date(last).getTime());
-      if (r <= 0) return { ready: true, text: 'Available', color: 'var(--system-green)' };
-      const h = Math.floor(r / 36e5), m = Math.floor((r % 36e5) / 6e4);
-      return { ready: false, text: h + 'h ' + m + 'm', color: 'var(--system-orange)' };
+    /* --- LIVE GOOGLE SHEETS FETCH --- */
+    async function syncWithGoogleSheets() {
+      showToast("Connecting to Google Sheets...");
+      document.getElementById('dt-sync-status').textContent = 'Syncing...';
+      document.getElementById('mb-sync-status').textContent = 'Syncing...';
+      
+      try {
+        const res = await fetch(API_ENDPOINT);
+        const data = await res.json();
+        
+        if (data.vouchers && data.vouchers.length) {
+          state.vouchers = data.vouchers.map((v, i) => ({
+            id: 'v-' + i,
+            bookingId: v.bookingId || ('#' + (i + 1)),
+            brand: v.brand || 'Other',
+            title: (v.brand || 'Voucher') + ' Voucher',
+            amount: Number(v.amount) || 0,
+            code: v.code || '-',
+            pin: v.pin || null,
+            account: v.account || '-',
+            card: v.card || 'RuPay Select',
+            expiry: v.dateOfIssue || '31 Dec 2026',
+            status: (v.status || 'ACTIVE').toUpperCase()
+          }));
+
+          const countMsg = `Synced ${state.vouchers.length} vouchers from Sheet`;
+          showToast(countMsg);
+          document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
+          document.getElementById('mb-sync-status').textContent = `${state.vouchers.length} vouchers synced`;
+          document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
+        }
+
+        if (data.cooldowns && data.cooldowns.length) {
+          state.accounts = data.cooldowns.map(c => ({
+            id: c.account,
+            lastRedeemed: new Date(c.lastRedeemed || Date.now())
+          }));
+        }
+
+        renderAll();
+      } catch (err) {
+        console.error("Sync error:", err);
+        showToast("Offline mode: " + err.message);
+        document.getElementById('dt-sync-status').textContent = 'Offline';
+        document.getElementById('mb-sync-status').textContent = 'Offline mode';
+        document.getElementById('dt-sync-dot').style.background = 'var(--system-orange)';
+      }
     }
 
-    /* ---- Render Cards ---- */
+    /* --- RENDER CARDS --- */
     function renderCards() {
-      const active = S.cards.filter(c => c.status === 'active');
-      document.getElementById('sidebar-cards-badge').textContent = active.length;
+      const active = state.cards.filter(c => c.status === 'active');
+      const blocked = state.cards.filter(c => c.status === 'blocked').sort((a,b) => new Date(b.blockedDate) - new Date(a.blockedDate));
 
-      document.getElementById('mac-cards-grid').innerHTML = active.map(c => {
-        const pct = Math.round((c.quota.claimed / c.quota.total) * 100);
+      document.getElementById('dt-cards-count').textContent = active.length;
+      document.getElementById('dt-blocked-count').textContent = blocked.length;
+      document.getElementById('dt-blocked-inline-count').textContent = blocked.length;
+      document.getElementById('mb-blocked-count').textContent = blocked.length;
+
+      // Desktop Cards Grid
+      document.getElementById('dt-cards-grid').innerHTML = active.map(c => {
+        const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
         return `
-        <div class="rounded-xl p-4 space-y-3 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-          <div class="flex items-start justify-between">
-            <div>
-              <p style="font-size: 11px; font-weight: 600; color: var(--system-blue); letter-spacing: 0.03em; text-transform: uppercase;">${c.bank}</p>
-              <h3 style="font-size: 14px; font-weight: 600; margin-top: 2px;">${c.nick}</h3>
-              <p class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary); margin-top: 1px;">${c.bin} &middot; ${c.last4}</p>
-            </div>
-            <span style="font-size: 11px; font-weight: 500; color: var(--system-green); background: rgba(48,209,88,0.12); padding: 2px 8px; border-radius: 6px;">Active</span>
-          </div>
-          <div style="border-top: 0.5px solid var(--separator); padding-top: 10px;">
-            <div class="flex items-center justify-between" style="font-size: 11px; color: var(--label-secondary); margin-bottom: 6px;">
-              <span>Q4 Quota: ${c.quota.claimed}/${c.quota.total}</span>
-              <span class="font-mono-apple">${c.acct}</span>
-            </div>
-            <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
-              <div class="h-full rounded-full" style="width: ${pct}%; background: var(--system-blue); transition: width 0.3s ease;"></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px;">
-            <button onclick="quickClaimVoucher('${c.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-blue);">Log Claim</button>
-            <button onclick="promptBlockCard('${c.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-red);">Block Card</button>
-          </div>
-        </div>`;
-      }).join('');
-
-      document.getElementById('ios-cards-list').innerHTML = active.map(c => {
-        const pct = Math.round((c.quota.claimed / c.quota.total) * 100);
-        return `
-        <div class="rounded-xl p-4 space-y-2.5 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-          <div class="flex items-start justify-between">
-            <div>
-              <p style="font-size: 11px; font-weight: 600; color: var(--system-blue); text-transform: uppercase;">${c.bank}</p>
-              <h3 style="font-size: 15px; font-weight: 600; margin-top: 1px;">${c.nick}</h3>
-              <p class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary);">${c.last4} &middot; ${c.acct}</p>
-            </div>
-            <span style="font-size: 11px; font-weight: 500; color: var(--system-green); background: rgba(48,209,88,0.12); padding: 2px 8px; border-radius: 6px;">Active</span>
-          </div>
-          <div>
-            <div class="flex items-center justify-between" style="font-size: 11px; color: var(--label-secondary); margin-bottom: 4px;">
-              <span>Q4: ${c.quota.claimed} of ${c.quota.total}</span><span>${pct}%</span>
-            </div>
-            <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
-              <div class="h-full rounded-full" style="width: ${pct}%; background: var(--system-blue);"></div>
-            </div>
-          </div>
-          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px; font-size: 13px;">
-            <button onclick="quickClaimVoucher('${c.id}')" style="color: var(--system-blue); font-weight: 400;">Log Claim</button>
-            <button onclick="promptBlockCard('${c.id}')" style="color: var(--system-red); font-weight: 400;">Block</button>
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    /* ---- Render Blocked (Reverse by Date) ---- */
-    function renderBlocked() {
-      const blocked = S.cards.filter(c => c.status === 'blocked').sort((a,b) => new Date(b.blockedDate) - new Date(a.blockedDate));
-      document.getElementById('sidebar-blocked-badge').textContent = blocked.length;
-      document.getElementById('mac-blocked-inline-count').textContent = blocked.length;
-      document.getElementById('ios-blocked-count').textContent = blocked.length;
-
-      const html = blocked.map(c => `
-        <div class="flex items-center justify-between px-3 py-2.5 rounded-lg" style="background: var(--fill-quaternary);">
-          <div>
-            <span style="font-size: 13px; font-weight: 500; text-decoration: line-through; color: var(--system-red);">${c.nick}</span>
-            <span class="font-mono-apple" style="font-size: 12px; color: var(--label-tertiary); margin-left: 6px;">${c.last4}</span>
-            <p style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">${fmtDate(c.blockedDate)} &middot; ${c.notes || 'No note'}</p>
-          </div>
-          <span style="font-size: 10px; font-weight: 500; color: var(--system-red); background: rgba(255,69,58,0.12); padding: 2px 8px; border-radius: 6px;">Blocked</span>
-        </div>`).join('');
-
-      document.getElementById('mac-blocked-inline-list').innerHTML = html;
-      document.getElementById('mac-blocked-full-list').innerHTML = html;
-      document.getElementById('ios-blocked-list').innerHTML = html;
-    }
-
-    /* ---- Render Vault ---- */
-    function renderVault() {
-      const f = document.getElementById('mac-brand-filter')?.value || 'ALL';
-      let vs = f === 'ALL' ? S.vouchers : S.vouchers.filter(v => v.brand === f);
-      document.getElementById('sidebar-vault-badge').textContent = S.vouchers.length;
-
-      const sel = S.vouchers.filter(v => S.selectedIds.has(v.id));
-      const selTotal = sel.reduce((a,v) => a + v.amt, 0);
-
-      // Mac batch bar
-      const mb = document.getElementById('mac-batch-bar');
-      if (S.isSelectMode && sel.length) { mb.classList.remove('hidden'); document.getElementById('mac-sel-count').textContent = sel.length; document.getElementById('mac-sel-total').textContent = 'Total: Rs. ' + selTotal.toLocaleString(); }
-      else mb.classList.add('hidden');
-
-      // iOS batch bar
-      const ib = document.getElementById('ios-batch-bar');
-      if (S.isSelectMode && sel.length) { ib.classList.remove('hidden'); document.getElementById('ios-sel-count').textContent = sel.length + ' Selected'; document.getElementById('ios-sel-total').textContent = 'Rs. ' + selTotal.toLocaleString(); }
-      else ib.classList.add('hidden');
-
-      // Mac table
-      document.getElementById('mac-vault-tbody').innerHTML = vs.map(v => `
-        <tr style="border-bottom: 0.5px solid var(--separator); ${v.used ? 'opacity: 0.45;' : ''}">
-          <td class="px-4 py-2.5 text-center"><input type="checkbox" ${S.selectedIds.has(v.id)?'checked':''} onchange="toggleSel('${v.id}')"></td>
-          <td class="px-3 py-2.5"><div style="font-weight: 500;">${v.title}</div><div style="font-size: 11px; color: var(--system-green); font-weight: 500;">Rs. ${v.amt.toLocaleString()}</div></td>
-          <td class="px-3 py-2.5"><div class="flex items-center gap-1.5"><span class="font-mono-apple" style="color: ${v.used?'var(--label-tertiary)':'var(--system-blue)'}; ${v.used?'text-decoration:line-through;':''}">${v.code}</span><button onclick="copy('${v.code}','Code')" style="color: var(--label-tertiary); padding: 2px;" title="Copy"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button></div>${v.pin?`<div style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">PIN: <span class="font-mono-apple" style="color: var(--label-primary);">${v.pin}</span></div>`:''}</td>
-          <td class="px-3 py-2.5"><div class="font-mono-apple" style="font-size: 12px;">${v.acct}</div><div style="font-size: 11px; color: var(--label-tertiary); margin-top: 1px;">${cardNick(v.cardId)}</div></td>
-          <td class="px-3 py-2.5" style="color: var(--label-secondary);">${v.exp}</td>
-          <td class="px-3 py-2.5"><span style="font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; ${v.used ? 'color: var(--label-tertiary); background: var(--fill-quaternary);' : 'color: var(--system-green); background: rgba(48,209,88,0.12);'}">${v.used?'Used':'Active'}</span></td>
-          <td class="px-3 py-2.5 text-right"><div class="flex items-center justify-end gap-1.5"><button onclick="toggleUsed('${v.id}')" style="font-size: 12px; color: var(--system-blue);">${v.used?'Restore':'Mark Used'}</button><button onclick="shareSingle('${v.id}')" style="padding: 4px; color: var(--label-tertiary);" title="Share"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></button></div></td>
-        </tr>`).join('');
-
-      // iOS list
-      document.getElementById('ios-vouchers-list').innerHTML = vs.map(v => `
-        <div class="rounded-xl p-3.5 space-y-2 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator); ${v.used?'opacity:0.45;':''}">
-          <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2.5">
-              ${S.isSelectMode ? `<input type="checkbox" ${S.selectedIds.has(v.id)?'checked':''} onchange="toggleSel('${v.id}')" style="width:18px; height:18px;">` : ''}
+          <div class="rounded-xl p-4.5 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <div class="flex items-start justify-between">
               <div>
-                <h3 style="font-size: 14px; font-weight: 500;">${v.title}</h3>
-                <span style="font-size: 12px; font-weight: 500; color: var(--system-green);">Rs. ${v.amt.toLocaleString()}</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--system-blue);">${c.bank}</span>
+                <h3 class="font-bold text-sm mt-0.5">${c.nick}</h3>
+                <p class="font-mono-apple text-xs mt-0.5" style="color: var(--label-tertiary);">BIN ${c.bin} &middot; ···· ${c.last4}</p>
+              </div>
+              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full" style="color: var(--system-green); background: rgba(48,209,88,0.12);">
+                Active
+              </span>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1.5" style="color: var(--label-secondary);">
+                <span>Q4 Quota: ${c.claimed} of ${c.total} Claimed</span>
+                <span class="font-semibold">${pct}%</span>
+              </div>
+              <div class="w-full rounded-full overflow-hidden" style="height: 5px; background: var(--fill-quaternary);">
+                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: var(--system-blue);"></div>
               </div>
             </div>
-            <span style="font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 6px; ${v.used ? 'color: var(--label-tertiary); background: var(--fill-quaternary);' : 'color: var(--system-green); background: rgba(48,209,88,0.12);'}">${v.used?'Used':'Active'}</span>
-          </div>
-          <div class="rounded-lg px-3 py-2 flex items-center justify-between" style="background: var(--fill-quaternary);">
-            <div>
-              <div class="font-mono-apple" style="font-size: 13px; color: ${v.used?'var(--label-tertiary)':'var(--system-blue)'}; ${v.used?'text-decoration:line-through;':''}">${v.code}</div>
-              ${v.pin ? `<div class="font-mono-apple" style="font-size: 11px; color: var(--label-tertiary);">PIN: ${v.pin}</div>` : ''}
-            </div>
-            <button onclick="copy('${v.code}','Code')" class="px-2.5 py-1 rounded-md" style="background: var(--fill-tertiary); font-size: 11px; font-weight: 500; color: var(--label-primary);">Copy</button>
-          </div>
-          <div class="flex items-center justify-between" style="font-size: 13px;">
-            <span style="font-size: 11px; color: var(--label-tertiary);">Exp: ${v.exp}</span>
-            <div class="flex gap-3">
-              <button onclick="toggleUsed('${v.id}')" style="color: var(--system-blue); font-weight: 400;">${v.used?'Restore':'Mark Used'}</button>
-              <button onclick="shareSingle('${v.id}')" style="color: var(--system-blue); font-weight: 400;">Share</button>
+            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/40 text-xs">
+              <button onclick="quickClaim('${c.id}')" class="font-semibold hover:underline" style="color: var(--system-blue);">+ Log Claim</button>
+              <button onclick="promptBlock('${c.id}')" class="font-semibold text-rose-500 hover:underline">Block Card</button>
             </div>
           </div>
-        </div>`).join('');
-    }
+        `;
+      }).join('');
 
-    /* ---- Render Cooldowns ---- */
-    function renderCooldowns() {
-      const html = S.accounts.map(a => {
-        const c = cooldown(a.lastRedeemed);
+      // Mobile Cards List
+      document.getElementById('mb-cards-list').innerHTML = active.map(c => {
+        const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
         return `
-        <div class="rounded-xl p-4 space-y-3 transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="font-mono-apple" style="font-size: 13px; font-weight: 500;">${a.id}</span>
-              <p style="font-size: 11px; color: var(--label-tertiary); margin-top: 2px;">Total redeemed: ${a.total}</p>
+          <div class="rounded-xl p-4 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--system-blue);">${c.bank}</span>
+                <h3 class="font-bold text-sm mt-0.5">${c.nick}</h3>
+                <p class="font-mono-apple text-xs" style="color: var(--label-tertiary);">BIN ${c.bin} &middot; ···· ${c.last4}</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="color: var(--system-green); background: rgba(48,209,88,0.12);">Active</span>
             </div>
-            <span style="font-size: 11px; font-weight: 500; color: ${c.color}; background: ${c.ready ? 'rgba(48,209,88,0.12)' : 'rgba(255,159,10,0.12)'}; padding: 2px 8px; border-radius: 6px;">${c.text}</span>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1" style="color: var(--label-secondary);">
+                <span>Q4 Quota: ${c.claimed} of ${c.total}</span>
+                <span class="font-semibold">${pct}%</span>
+              </div>
+              <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
+                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: var(--system-blue);"></div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/40 text-xs">
+              <button onclick="quickClaim('${c.id}')" class="font-semibold" style="color: var(--system-blue);">+ Claim</button>
+              <button onclick="promptBlock('${c.id}')" class="font-semibold text-rose-500">Block</button>
+            </div>
           </div>
-          <div class="flex items-center justify-between" style="border-top: 0.5px solid var(--separator); padding-top: 8px;">
-            <span style="font-size: 11px; color: var(--label-tertiary);">1 per 24h limit</span>
-            <button onclick="resetTimer('${a.id}')" style="font-size: 12px; font-weight: 400; color: var(--system-blue);">Log Redemption</button>
-          </div>
-        </div>`;
+        `;
       }).join('');
-      document.getElementById('mac-cooldowns-grid').innerHTML = html;
-      document.getElementById('ios-cooldowns-list').innerHTML = html;
+
+      // Blocked Lists
+      const bHtml = blocked.map(c => `
+        <div class="flex items-center justify-between p-3 rounded-lg text-xs" style="background: var(--fill-quaternary);">
+          <div>
+            <span class="font-bold line-through text-rose-400">${c.nick}</span>
+            <span class="font-mono-apple ml-1.5" style="color: var(--label-tertiary);">···· ${c.last4}</span>
+            <p class="text-[10px] mt-0.5" style="color: var(--label-tertiary);">Blocked on ${c.blockedDate} &middot; ${c.notes || 'Decommissioned'}</p>
+          </div>
+          <span class="text-[9px] font-bold px-2 py-0.5 rounded text-rose-500" style="background: rgba(255,69,58,0.12);">Blocked</span>
+        </div>
+      `).join('') || `<p class="text-xs p-3" style="color: var(--label-tertiary);">No blocked cards in archive.</p>`;
+
+      document.getElementById('dt-blocked-inline-list').innerHTML = bHtml;
+      document.getElementById('dt-blocked-full-list').innerHTML = bHtml;
+      document.getElementById('mb-blocked-inline-list').innerHTML = bHtml;
     }
 
-    /* ---- Render Matrix ---- */
+    /* --- RENDER VAULT --- */
+    function renderVault() {
+      let vs = state.vouchers;
+
+      // Brand Filter
+      if (state.activeFilterBrand !== 'ALL') {
+        vs = vs.filter(v => v.brand.toLowerCase() === state.activeFilterBrand.toLowerCase());
+      }
+
+      // Search Query Filter
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        vs = vs.filter(v => 
+          v.brand.toLowerCase().includes(q) ||
+          v.code.toLowerCase().includes(q) ||
+          (v.pin && v.pin.toLowerCase().includes(q)) ||
+          v.account.toLowerCase().includes(q) ||
+          v.card.toLowerCase().includes(q)
+        );
+      }
+
+      document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+      document.getElementById('mb-vault-count').textContent = vs.length;
+
+      const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
+      const selSum = sel.reduce((a, v) => a + (v.amount || 0), 0);
+
+      // Header Checkbox Sync
+      const cbAll = document.getElementById('dt-th-cb');
+      if (cbAll) {
+        cbAll.checked = vs.length > 0 && vs.every(v => state.selectedIds.has(v.id));
+      }
+
+      // Desktop Batch Action Bar
+      const dtBar = document.getElementById('dt-batch-bar');
+      if (state.isSelectMode && sel.length) {
+        dtBar.classList.remove('hidden');
+        document.getElementById('dt-sel-count').textContent = `${sel.length} Selected`;
+        document.getElementById('dt-sel-sum').textContent = `Total: ₹${selSum.toLocaleString()}`;
+      } else {
+        dtBar.classList.add('hidden');
+      }
+
+      // Mobile Sticky Batch Bar
+      const mbBar = document.getElementById('mb-sticky-bar');
+      if (state.isSelectMode && sel.length) {
+        mbBar.classList.remove('hidden');
+        document.getElementById('mb-sel-count').textContent = `${sel.length} Selected`;
+        document.getElementById('mb-sel-sum').textContent = `₹${selSum.toLocaleString()} Total`;
+      } else {
+        mbBar.classList.add('hidden');
+      }
+
+      // Desktop Table Body
+      document.getElementById('dt-vault-tbody').innerHTML = vs.map(v => `
+        <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
+          <td class="p-3 text-center">
+            <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded">
+          </td>
+          <td class="p-3">
+            <div class="font-bold">${v.brand}</div>
+            <div class="text-[11px] font-semibold text-emerald-500">₹${(v.amount || 0).toLocaleString()}</div>
+          </td>
+          <td class="p-3">
+            <div class="flex items-center gap-1.5">
+              <span class="font-mono-apple font-medium ${v.status === 'USED' ? 'line-through' : 'text-blue-400'}">${v.code}</span>
+              <button onclick="copyToClipboard('${v.code}')" class="text-xs opacity-60 hover:opacity-100" title="Copy code">📋</button>
+            </div>
+            ${v.pin ? `<div class="font-mono-apple text-[11px]" style="color: var(--label-tertiary);">PIN: ${v.pin}</div>` : ''}
+          </td>
+          <td class="p-3">
+            <div class="font-mono-apple text-[11px] font-medium">${v.account}</div>
+            <div class="text-[10px]" style="color: var(--label-tertiary);">${v.card}</div>
+          </td>
+          <td class="p-3" style="color: var(--label-secondary);">${v.expiry}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${v.status === 'USED' ? 'text-neutral-400' : 'text-emerald-400'}" style="background: var(--fill-quaternary);">
+              ${v.status}
+            </span>
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="shareSingle('${v.id}')" class="text-xs font-semibold text-emerald-500 hover:underline">Share</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="7" class="p-8 text-center text-xs" style="color: var(--label-tertiary);">No vouchers found for "${state.searchQuery || state.activeFilterBrand}".</td></tr>`;
+
+      // Mobile Cards List
+      document.getElementById('mb-vouchers-list').innerHTML = vs.map(v => `
+        <div class="rounded-xl p-3.5 space-y-2.5 ${v.status === 'USED' ? 'opacity-40' : ''}" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2.5">
+              ${state.isSelectMode ? `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded">` : ''}
+              <div>
+                <h3 class="font-bold text-xs">${v.brand}</h3>
+                <span class="text-xs font-semibold text-emerald-500">₹${(v.amount || 0).toLocaleString()}</span>
+              </div>
+            </div>
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded" style="background: var(--fill-quaternary); color: ${v.status === 'USED' ? 'var(--label-tertiary)' : 'var(--system-green)'};">${v.status}</span>
+          </div>
+          <div class="rounded-lg p-2.5 flex items-center justify-between text-xs" style="background: var(--fill-quaternary);">
+            <div>
+              <div class="font-mono-apple text-blue-400 ${v.status === 'USED' ? 'line-through' : ''}">${v.code}</div>
+              ${v.pin ? `<div class="font-mono-apple text-[10px] mt-0.5" style="color: var(--label-tertiary);">PIN: ${v.pin}</div>` : ''}
+            </div>
+            <button onclick="copyToClipboard('${v.code}')" class="text-xs px-2.5 py-1 rounded font-medium" style="background: var(--fill-secondary);">Copy</button>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-0.5">
+            <span class="text-[10px] font-mono-apple" style="color: var(--label-tertiary);">${v.account}</span>
+            <button onclick="shareSingle('${v.id}')" class="text-xs font-semibold text-emerald-500">Share</button>
+          </div>
+        </div>
+      `).join('') || `<div class="p-6 text-center text-xs" style="color: var(--label-tertiary);">No vouchers found.</div>`;
+
+      renderFilterPills();
+    }
+
+    /* --- RENDER MOBILE FILTER PILLS --- */
+    function renderFilterPills() {
+      const brands = ['ALL', 'Lakme', 'FourFountains', 'Kalyan', 'Reliance', 'Myntra', 'Uber', 'Apollo', 'BigBasket', 'Thyrocare', 'TaxSpanner', 'TimesPrime', 'CultFit'];
+      const container = document.getElementById('mb-pills-container');
+      if (!container) return;
+
+      container.innerHTML = brands.map(b => {
+        const isSel = (state.activeFilterBrand.toLowerCase() === b.toLowerCase());
+        const label = b === 'ALL' ? 'All' : b;
+        return `
+          <button onclick="filterVaultBrand('${b}')" class="px-3 py-1 rounded-full text-xs font-medium shrink-0 transition-colors" style="${isSel ? 'background: var(--system-blue); color: #fff;' : 'background: var(--fill-quaternary); color: var(--label-secondary);'}">
+            ${label}
+          </button>
+        `;
+      }).join('');
+    }
+
+    /* --- SYNC SEARCH AND FILTER --- */
+    function syncSearchAndRender(val) {
+      state.searchQuery = val;
+      const dtInput = document.getElementById('dt-search-input');
+      const mbInput = document.getElementById('mb-search-input');
+      if (dtInput && dtInput.value !== val) dtInput.value = val;
+      if (mbInput && mbInput.value !== val) mbInput.value = val;
+      renderVault();
+    }
+
+    function filterVaultBrand(brand) {
+      state.activeFilterBrand = brand;
+      const dtSel = document.getElementById('dt-brand-filter');
+      if (dtSel) dtSel.value = brand;
+      renderVault();
+    }
+
+    /* --- RENDER COOLDOWNS --- */
+    function renderCooldowns() {
+      const html = state.accounts.map(a => {
+        const remainingMs = (24 * 3600 * 1000) - (Date.now() - new Date(a.lastRedeemed).getTime());
+        const isReady = remainingMs <= 0;
+        const text = isReady ? 'Ready' : `In ${Math.floor(remainingMs/36e5)}h ${Math.floor((remainingMs%36e5)/6e4)}m`;
+        return `
+          <div class="rounded-xl p-4 flex items-center justify-between" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <div>
+              <span class="font-mono-apple font-bold text-xs">${a.id}</span>
+              <p class="text-[10px]" style="color: var(--label-tertiary);">1 per 24h limit</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" style="color: ${isReady ? 'var(--system-green)' : 'var(--system-orange)'}; background: var(--fill-quaternary);">${text}</span>
+              <button onclick="resetAccountTimer('${a.id}')" class="text-xs px-2.5 py-1 rounded text-white font-medium shadow-sm" style="background: var(--system-blue);">Redeem</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('dt-cooldowns-grid').innerHTML = html;
+      document.getElementById('mb-cooldowns-list').innerHTML = html;
+    }
+
+    /* --- RENDER BENEFIT MATRIX --- */
     function renderMatrix() {
-      document.getElementById('mac-matrix-tbody').innerHTML = RULES.map(r => `
-        <tr style="border-bottom: 0.5px solid var(--separator);">
-          <td class="px-3 py-2.5" style="font-weight: 500; border-right: 0.5px solid var(--separator);">${r.name}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.pnb_imp)}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.union)}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.jana)}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.bob)}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.canara_dc)}</td>
-          <td class="px-3 py-2.5 text-center" style="border-right: 0.5px solid var(--separator);">${badge(r.pnb_cc)}</td>
-          <td class="px-3 py-2.5 text-center">${badge(r.canara_cc)}</td>
-        </tr>`).join('');
-      renderIosMatrixCard('pnb_imp');
+      document.getElementById('dt-matrix-tbody').innerHTML = MATRIX_RULES.map(r => `
+        <tr class="border-b border-neutral-800/40">
+          <td class="p-3 font-semibold border-r border-neutral-800/40">${r.name}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_imp)}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.union)}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.jana)}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.bob)}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.canara_dc)}</td>
+          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_cc)}</td>
+          <td class="p-3 text-center">${renderBadge(r.canara_cc)}</td>
+        </tr>
+      `).join('');
+
+      const sel = document.getElementById('mb-matrix-select');
+      renderMobileMatrixCard(sel ? sel.value : 'pnb_imp');
     }
 
-    function badge(v) {
-      if (!v) return `<span style="color: var(--label-quaternary);">—</span>`;
-      const colors = { Quarterly: 'var(--system-green)', 'Half-yearly': 'var(--system-orange)', Annually: 'var(--system-blue)' };
-      const bgs = { Quarterly: 'rgba(48,209,88,0.12)', 'Half-yearly': 'rgba(255,159,10,0.12)', Annually: 'rgba(10,132,255,0.12)' };
-      return `<span style="font-size: 10px; font-weight: 500; color: ${colors[v]}; background: ${bgs[v]}; padding: 2px 8px; border-radius: 6px;">${v}</span>`;
+    function renderBadge(val) {
+      if (!val) return `<span style="color: var(--label-tertiary);">—</span>`;
+      return `<span class="px-2 py-0.5 rounded text-[10px] font-semibold text-emerald-400" style="background: var(--fill-quaternary);">${val}</span>`;
     }
 
-    function renderIosMatrixCard(k) {
-      document.getElementById('ios-matrix-content').innerHTML = RULES.map(r => {
-        const v = r[k]; if (!v) return '';
-        return `<div class="flex items-center justify-between px-4 py-3 rounded-xl transition-theme" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);"><span style="font-size: 13px; font-weight: 400;">${r.name}</span>${badge(v)}</div>`;
+    function renderMobileMatrixCard(cardKey) {
+      document.getElementById('mb-matrix-card-content').innerHTML = MATRIX_RULES.map(r => {
+        const v = r[cardKey];
+        if (!v) return '';
+        return `
+          <div class="rounded-xl p-3 flex items-center justify-between text-xs" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+            <span>${r.name}</span>
+            ${renderBadge(v)}
+          </div>
+        `;
       }).join('');
     }
 
-    /* ---- Actions ---- */
-    function promptBlockCard(id) {
-      const c = S.cards.find(x => x.id === id); if (!c) return;
-      S.blockTarget = c;
+    /* --- ACTIONS: ADD CARD --- */
+    function openAddCardModal() {
+      document.getElementById('add-card-bank').value = '';
+      document.getElementById('add-card-nick').value = '';
+      document.getElementById('add-card-bin').value = '';
+      document.getElementById('add-card-last4').value = '';
+      document.getElementById('modal-add-card').classList.remove('hidden');
+    }
+
+    function closeAddCardModal() {
+      document.getElementById('modal-add-card').classList.add('hidden');
+    }
+
+    function confirmAddCard() {
+      const bank = document.getElementById('add-card-bank').value.trim() || 'RuPay Card';
+      const nick = document.getElementById('add-card-nick').value.trim() || 'New Card';
+      const bin = document.getElementById('add-card-bin').value.trim() || '652500';
+      const last4 = document.getElementById('add-card-last4').value.trim() || '0000';
+      const total = parseInt(document.getElementById('add-card-total').value) || 5;
+      const type = document.getElementById('add-card-type').value;
+
+      state.cards.push({
+        id: 'c-' + Date.now(),
+        bank: bank,
+        type: type,
+        bin: bin,
+        last4: last4,
+        nick: nick,
+        status: 'active',
+        claimed: 0,
+        total: total
+      });
+
+      closeAddCardModal();
+      showToast('Card added: ' + nick);
+      renderCards();
+    }
+
+    /* --- ACTIONS: QUICK CLAIM --- */
+    function quickClaim(cardId) {
+      const card = state.cards.find(c => c.id === cardId);
+      if (!card) return;
+      if (card.claimed >= card.total) {
+        showToast('All quotas already claimed for ' + card.nick);
+        return;
+      }
+      card.claimed += 1;
+      showToast(`Logged claim for ${card.nick} (${card.claimed}/${card.total})`);
+      renderCards();
+    }
+
+    /* --- ACTIONS: BLOCK CARD --- */
+    function promptBlock(id) {
+      const c = state.cards.find(x => x.id === id);
+      if (!c) return;
+      state.targetCardToBlock = c;
       document.getElementById('modal-block-title').textContent = c.nick;
-      document.getElementById('modal-block-last4').textContent = c.last4;
-      document.getElementById('modal-block-account').textContent = c.acct;
+      document.getElementById('modal-block-last4').textContent = `···· ${c.last4}`;
       document.getElementById('block-date-input').value = new Date().toISOString().split('T')[0];
       document.getElementById('block-notes-input').value = '';
       document.getElementById('modal-block').classList.remove('hidden');
     }
-    function closeBlockModal() { document.getElementById('modal-block').classList.add('hidden'); S.blockTarget = null; }
+
+    function closeBlockModal() {
+      document.getElementById('modal-block').classList.add('hidden');
+      state.targetCardToBlock = null;
+    }
+
     function confirmBlockCard() {
-      if (!S.blockTarget) return;
-      S.blockTarget.status = 'blocked';
-      S.blockTarget.blockedDate = document.getElementById('block-date-input').value || new Date().toISOString().split('T')[0];
-      S.blockTarget.notes = document.getElementById('block-notes-input').value || '';
-      const old = S.blockTarget;
+      if (!state.targetCardToBlock) return;
+      const d = document.getElementById('block-date-input').value || new Date().toISOString().split('T')[0];
+      const n = document.getElementById('block-notes-input').value || 'Reissued';
+      state.targetCardToBlock.status = 'blocked';
+      state.targetCardToBlock.blockedDate = d;
+      state.targetCardToBlock.notes = n;
       closeBlockModal();
-      showToast('Card ' + old.last4 + ' blocked');
-      if (document.getElementById('block-auto-replace').checked) {
-        setTimeout(() => {
-          const n4 = prompt('Last 4 digits for replacement ' + old.bank + ' card:', '');
-          if (n4) { S.cards.push({ id:'c'+Date.now(), bank:old.bank, type:old.type, bin:old.bin, last4:n4, nick:old.bank+' RSDC', acct:old.acct, status:'active', quota:{claimed:0,total:6} }); showToast('Replacement ' + n4 + ' added'); renderAll(); }
-        }, 200);
-      }
+      showToast('Card moved to Blocked archive');
       renderAll();
     }
 
+    /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
     function toggleSelectMode() {
-      S.isSelectMode = !S.isSelectMode;
-      const mb = document.getElementById('mac-select-btn'), ib = document.getElementById('ios-select-btn');
-      if (S.isSelectMode) {
-        if (mb) { mb.style.background = 'var(--system-blue)'; mb.style.color = '#fff'; mb.textContent = 'Done'; }
-        if (ib) { ib.style.color = 'var(--system-blue)'; ib.style.fontWeight = '600'; ib.textContent = 'Done'; }
-        S.selectedIds = new Set(['v1','v2','v3']);
+      state.isSelectMode = !state.isSelectMode;
+      const mbBtn = document.getElementById('mb-select-btn');
+      const dtBtn = document.getElementById('dt-select-btn');
+      if (state.isSelectMode) {
+        if (dtBtn) dtBtn.textContent = 'Done';
+        if (mbBtn) mbBtn.textContent = 'Done';
       } else {
-        if (mb) { mb.style.background = 'var(--fill-quaternary)'; mb.style.color = 'var(--label-primary)'; mb.textContent = 'Select'; }
-        if (ib) { ib.style.fontWeight = '400'; ib.textContent = 'Select'; }
-        S.selectedIds.clear();
+        if (dtBtn) dtBtn.textContent = 'Select Multiple';
+        if (mbBtn) mbBtn.textContent = 'Select';
+        state.selectedIds.clear();
       }
       renderVault();
     }
 
-    function toggleSel(id) { S.selectedIds.has(id) ? S.selectedIds.delete(id) : S.selectedIds.add(id); renderVault(); }
-    function toggleSelectAllRows(c) { if (c) S.selectedIds = new Set(S.vouchers.map(v=>v.id)); else S.selectedIds.clear(); renderVault(); }
-    function selectAllVouchers() { S.selectedIds = new Set(S.vouchers.map(v=>v.id)); renderVault(); }
+    function toggleSelectVoucher(id) {
+      state.selectedIds.has(id) ? state.selectedIds.delete(id) : state.selectedIds.add(id);
+      renderVault();
+    }
+
+    function toggleSelectAllRows(checked) {
+      checked ? state.selectedIds = new Set(state.vouchers.map(v => v.id)) : state.selectedIds.clear();
+      renderVault();
+    }
+
+    function selectAllVouchers() {
+      state.selectedIds = new Set(state.vouchers.map(v => v.id));
+      renderVault();
+    }
+
+    function getSelected() {
+      return state.vouchers.filter(v => state.selectedIds.has(v.id));
+    }
 
     function fmtWhatsApp(vs) {
       if (!vs.length) return '';
-      const brand = vs[0].title, total = vs.reduce((a,v) => a+v.amt, 0);
-      let t = `*${brand} Vouchers (${vs.length} Total — Rs. ${total.toLocaleString()})*\n`;
-      vs.forEach((v,i) => { t += `\n${i+1}. Code: ${v.code}`; if (v.pin) t += ` | PIN: ${v.pin}`; t += `\n   Valid: ${v.exp}\n`; });
-      t += `\nTotal: Rs. ${total.toLocaleString()}`;
+      const brand = vs[0].brand;
+      const sum = vs.reduce((a, v) => a + (v.amount || 0), 0);
+      let t = `*${brand} Vouchers (${vs.length} Total — Rs. ${sum.toLocaleString()})*\n----------------------------------------\n`;
+      vs.forEach((v, i) => {
+        t += `\n${i+1}. *Code:* \`${v.code}\``;
+        if (v.pin) t += `\n   *PIN:* \`${v.pin}\``;
+        t += `\n   *Valid:* ${v.expiry}\n`;
+      });
+      t += `----------------------------------------\n*Total:* Rs. ${sum.toLocaleString()}`;
       return t;
     }
 
     function fmtPlain(vs) {
       if (!vs.length) return '';
-      const brand = vs[0].title, total = vs.reduce((a,v) => a+v.amt, 0);
-      let t = `${brand} Vouchers (${vs.length} Total - Rs. ${total.toLocaleString()})\n${'—'.repeat(40)}\n`;
-      vs.forEach((v,i) => { t += `${i+1}. Code: ${v.code}`; if (v.pin) t += ` | PIN: ${v.pin}`; t += ` (${v.exp})\n`; });
-      t += `${'—'.repeat(40)}\nTotal: Rs. ${total.toLocaleString()}`;
+      const brand = vs[0].brand;
+      const sum = vs.reduce((a, v) => a + (v.amount || 0), 0);
+      let t = `${brand} Vouchers (${vs.length} Total - Rs. ${sum.toLocaleString()})\n----------------------------------------\n`;
+      vs.forEach((v, i) => {
+        t += `${i+1}. Code: ${v.code}`;
+        if (v.pin) t += ` | PIN: ${v.pin}`;
+        t += ` (${v.expiry})\n`;
+      });
+      t += `----------------------------------------\nTotal: Rs. ${sum.toLocaleString()}`;
       return t;
     }
 
     function openWhatsAppModal() {
-      const sel = S.vouchers.filter(v => S.selectedIds.has(v.id));
-      if (!sel.length) { showToast('Select at least one voucher'); return; }
+      const sel = getSelected();
+      if (!sel.length) {
+        showToast("Please select at least 1 voucher");
+        return;
+      }
       document.getElementById('share-preview-text').value = fmtWhatsApp(sel);
       document.getElementById('modal-share').classList.remove('hidden');
     }
-    function closeShareModal() { document.getElementById('modal-share').classList.add('hidden'); }
-    function copyShareText() { navigator.clipboard.writeText(document.getElementById('share-preview-text').value).then(() => showToast('Copied to clipboard')); }
-    function triggerNativeShare() { const t = document.getElementById('share-preview-text').value; if (navigator.share) navigator.share({title:'Vouchers',text:t}).catch(()=>{}); else copyShareText(); }
-    function shareSingle(id) { const v = S.vouchers.find(x => x.id === id); if (!v) return; document.getElementById('share-preview-text').value = fmtWhatsApp([v]); document.getElementById('modal-share').classList.remove('hidden'); }
-    function copyBatchPlaintext() { const sel = S.vouchers.filter(v => S.selectedIds.has(v.id)); if (!sel.length) return; navigator.clipboard.writeText(fmtPlain(sel)).then(() => showToast(sel.length + ' vouchers copied')); }
-    function batchMarkAsRedeemed() { S.selectedIds.forEach(id => { const v = S.vouchers.find(x => x.id === id); if (v) v.used = true; }); showToast(S.selectedIds.size + ' marked as used'); S.selectedIds.clear(); renderVault(); }
-    function toggleUsed(id) { const v = S.vouchers.find(x => x.id === id); if (v) { v.used = !v.used; showToast(v.used ? 'Marked as used' : 'Restored'); renderVault(); } }
-    function resetTimer(id) { const a = S.accounts.find(x => x.id === id); if (a) { a.lastRedeemed = new Date(); a.total++; showToast('24h timer started for ' + a.id); renderCooldowns(); } }
 
-    function openAddCardModal() {
-      const b = prompt('Bank name:','PNB'); if (!b) return;
-      const l = prompt('Last 4 digits:',''); if (!l) return;
-      S.cards.push({ id:'c'+Date.now(), bank:b, type:b+' RSDC', bin:'6524', last4:l, nick:b+' RSDC', acct:'vibhavoswal1', status:'active', quota:{claimed:0,total:6} });
-      showToast('Card added'); renderAll();
-    }
-    function quickClaimVoucher(cid) {
-      const b = prompt('Brand:','Lakme'); if (!b) return;
-      const code = prompt('Voucher code:',''); if (!code) return;
-      const pin = prompt('PIN (optional):','');
-      S.vouchers.unshift({ id:'v'+Date.now(), brand:b, title:b, amt:b.toLowerCase().includes('lakme')?1500:500, code, pin:pin||null, cardId:cid, acct:'vibhavoswal1', exp:'31 Dec 2026', used:false });
-      showToast(b + ' voucher logged'); renderAll();
+    function closeShareModal() {
+      document.getElementById('modal-share').classList.add('hidden');
     }
 
-    function toggleMacBlockedAccordion() { document.getElementById('mac-blocked-inline-list').classList.toggle('hidden'); document.getElementById('mac-blocked-chevron').classList.toggle('rotate-180'); }
-    function toggleIosBlockedAccordion() { document.getElementById('ios-blocked-list').classList.toggle('hidden'); document.getElementById('ios-blocked-chevron').classList.toggle('rotate-180'); }
+    function copyShareText() {
+      navigator.clipboard.writeText(document.getElementById('share-preview-text').value).then(() => showToast('Formatted WhatsApp text copied!'));
+    }
 
-    function copy(t,l) { navigator.clipboard.writeText(t).then(() => showToast(l + ' copied')); }
-    function cardNick(id) { const c = S.cards.find(x => x.id === id); return c ? c.nick : ''; }
-    function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : ''; }
-    function filterVaultBrand(b) { const s = document.getElementById('mac-brand-filter'); if (s) s.value = b; renderVault(); }
+    function triggerNativeShare() {
+      const text = document.getElementById('share-preview-text').value;
+      if (navigator.share) {
+        navigator.share({ title: 'RuPay Vouchers', text: text }).catch(() => {});
+      } else {
+        copyShareText();
+      }
+    }
+
+    function shareSingle(id) {
+      const v = state.vouchers.find(x => x.id === id);
+      if (!v) return;
+      document.getElementById('share-preview-text').value = fmtWhatsApp([v]);
+      document.getElementById('modal-share').classList.remove('hidden');
+    }
+
+    function copyBatchPlaintext() {
+      const sel = getSelected();
+      if (!sel.length) {
+        showToast("Please select at least 1 voucher");
+        return;
+      }
+      navigator.clipboard.writeText(fmtPlain(sel)).then(() => showToast('Plaintext copied!'));
+    }
+
+    async function batchMarkAsRedeemed() {
+      const toRedeem = Array.from(state.selectedIds);
+      if (!toRedeem.length) return;
+
+      toRedeem.forEach(id => {
+        const v = state.vouchers.find(x => x.id === id);
+        if (v) {
+          v.status = 'USED';
+          // Try background sync to Sheet
+          fetch(API_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'MARK_REDEEMED',
+              brand: v.brand,
+              bookingId: v.bookingId,
+              code: v.code
+            })
+          }).catch(e => console.warn('Sync post error', e));
+        }
+      });
+
+      showToast(`Marked ${toRedeem.length} vouchers as Used`);
+      state.selectedIds.clear();
+      renderVault();
+    }
+
+    function resetAccountTimer(accId) {
+      const a = state.accounts.find(x => x.id === accId);
+      if (a) {
+        a.lastRedeemed = new Date();
+        showToast('24h timer restarted for ' + accId);
+        renderCooldowns();
+      }
+    }
+
+    function toggleBlockedAccordion() {
+      document.getElementById('dt-blocked-inline-list')?.classList.toggle('hidden');
+      document.getElementById('mb-blocked-inline-list')?.classList.toggle('hidden');
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => showToast('Copied: ' + text));
+    }
 
     function showToast(msg) {
       const t = document.getElementById('toast');
       document.getElementById('toast-msg').textContent = msg;
-      t.style.opacity = '1'; t.style.pointerEvents = 'auto';
-      setTimeout(() => { t.style.opacity = '0'; t.style.pointerEvents = 'none'; }, 2000);
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2200);
     }
 
-    function renderAll() { renderCards(); renderBlocked(); renderVault(); renderCooldowns(); renderMatrix(); }
-
-    
-    const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
-
-    async function syncWithGoogleSheets() {
-      showToast("Syncing with Google Sheets...");
-      try {
-        const res = await fetch(API_ENDPOINT);
-        const data = await res.json();
-        if (data.vouchers && data.vouchers.length) {
-          appState.vouchers = data.vouchers.map((v, i) => ({
-            id: "v-" + i,
-            brand: v.brand,
-            title: v.brand + " Voucher",
-            amount: v.amount || 500,
-            code: v.code,
-            pin: v.pin || null,
-            cardId: "card-1",
-            account: v.account || "vibhavoswal9",
-            expiry: v.dateOfIssue || "31 Dec 2026",
-            isRedeemed: v.status === "USED"
-          }));
-          showToast("Loaded " + data.vouchers.length + " live vouchers from Sheet!");
-          renderAll();
-        }
-      } catch (err) {
-        showToast("Error syncing with Sheet: " + err.message);
-      }
+    function renderAll() {
+      renderCards();
+      renderVault();
+      renderCooldowns();
+      renderMatrix();
     }
 
-    document.addEventListener('DOMContentLoaded', () => { renderAll(); syncWithGoogleSheets(); });
+    // Auto tick every 15s to update remaining cooldowns
+    setInterval(renderCooldowns, 15000);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      syncWithGoogleSheets();
+    });
   </script>
 </body>
 </html>
