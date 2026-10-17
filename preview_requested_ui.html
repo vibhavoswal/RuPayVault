@@ -379,6 +379,7 @@
     // Switch Active Brand
     function setBrand(brandKey) {
       activeBrandKey = brandKey;
+      localStorage.setItem('rupay_active_brand', brandKey);
       selectedCodes.clear();
       updateHeader();
       renderBrandsCarousel();
@@ -571,6 +572,7 @@
           Object.keys(grouped).forEach(k => {
             liveVouchers[k] = grouped[k];
           });
+          localStorage.setItem('rupay_vouchers_grouped', JSON.stringify(liveVouchers));
         }
 
         if (data.sheetUrl) {
@@ -581,6 +583,7 @@
 
         const now = new Date();
         syncTimestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        localStorage.setItem('rupay_sync_time', syncTimestamp);
         showToast('Sheets synced successfully');
       } catch (err) {
         console.warn('Sync failed, using cached data:', err);
@@ -602,8 +605,30 @@
         const sheetLink = document.getElementById('sheet-link-btn');
         if (sheetLink) sheetLink.href = savedSheetUrl;
       }
+
+      const savedBrand = localStorage.getItem('rupay_active_brand');
+      if (savedBrand && BRAND_CONFIG.some(b => b.key === savedBrand)) {
+        activeBrandKey = savedBrand;
+      }
+
+      const cachedGrouped = localStorage.getItem('rupay_vouchers_grouped');
+      if (cachedGrouped) {
+        try {
+          const parsed = JSON.parse(cachedGrouped);
+          if (parsed && typeof parsed === 'object') {
+            Object.keys(parsed).forEach(k => {
+              liveVouchers[k] = parsed[k];
+            });
+          }
+        } catch (e) {
+          console.warn('Cache error:', e);
+        }
+      }
+
+      const savedTime = localStorage.getItem('rupay_sync_time');
       const now = new Date();
-      syncTimestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      syncTimestamp = savedTime || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       updateHeader();
       renderBrandsCarousel();
       renderVouchersFeed();

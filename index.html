@@ -739,6 +739,8 @@
             };
           });
 
+          localStorage.setItem('rupay_vouchers_cache', JSON.stringify(state.vouchers));
+
           const countMsg = `Synced ${state.vouchers.length} vouchers from Sheet`;
           showToast(countMsg);
           if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
@@ -761,6 +763,7 @@
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        localStorage.setItem('rupay_sync_time', timeStr);
         const mbSyncTime = document.getElementById('mb-sync-time');
         if (mbSyncTime) mbSyncTime.textContent = `Synced at ${timeStr}`;
 
@@ -1090,6 +1093,7 @@
 
     function filterVaultBrand(brand) {
       state.activeFilterBrand = brand;
+      localStorage.setItem('rupay_active_brand', brand);
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = brand;
       const mbScroll = document.querySelector('.mobile-scroll-container');
@@ -1520,11 +1524,39 @@
     setInterval(renderCooldowns, 15000);
 
     document.addEventListener('DOMContentLoaded', () => {
+      // 1. Restore cached Google Sheet URL
       const savedSheetUrl = localStorage.getItem('rupay_sheet_url');
       if (savedSheetUrl) {
         const sheetLink = document.getElementById('sheet-link-btn');
         if (sheetLink) sheetLink.href = savedSheetUrl;
       }
+
+      // 2. Restore active brand preference across page refresh
+      const savedBrand = localStorage.getItem('rupay_active_brand');
+      if (savedBrand) {
+        state.activeFilterBrand = savedBrand;
+        const dtSel = document.getElementById('dt-brand-filter');
+        if (dtSel) dtSel.value = savedBrand;
+      }
+
+      // 3. Instant cache hydration: render instantly on refresh with zero blank state
+      const cachedVouchers = localStorage.getItem('rupay_vouchers_cache');
+      if (cachedVouchers) {
+        try {
+          const parsed = JSON.parse(cachedVouchers);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            state.vouchers = parsed;
+            const savedTime = localStorage.getItem('rupay_sync_time');
+            const mbSyncTime = document.getElementById('mb-sync-time');
+            if (mbSyncTime && savedTime) {
+              mbSyncTime.textContent = `Synced at ${savedTime}`;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not load cached vouchers:", e);
+        }
+      }
+
       setTab('vault');
       renderAll();
       syncWithGoogleSheets();
