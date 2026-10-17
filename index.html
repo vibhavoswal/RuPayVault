@@ -233,6 +233,7 @@
           <div class="flex items-center gap-3">
             <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
             <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+              <option value="RecentlyAdded">⚡ Recently Added (All Brands)</option>
               <option value="Lakme" selected>1. Lakmé Salon (₹1,500)</option>
               <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
               <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
@@ -539,6 +540,7 @@
 
     // STRICT USER ORDER & CONFIGURATION
     const BRAND_CONFIG = [
+      { key: 'RecentlyAdded', name: '⚡ Recently Added', denom: 0, hasPin: false, tag: 'All Brands', isSpecial: true },
       { key: 'Lakme', name: 'Lakmé Salon', denom: 1500, hasPin: true, tag: 'Wellness' },
       { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: 'Strict 30D Expiry' },
       { key: 'Kalyan', name: 'Kalyan Jewellers', denom: 2000, hasPin: true, tag: 'Jewellery' },
@@ -558,6 +560,7 @@
     function normalizeBrandKey(brand) {
       if (!brand) return 'Other';
       const b = brand.toLowerCase().replace(/[\s\.\-_]/g, '');
+      if (b.includes('recent') || b.includes('newly') || b === 'recentlyadded') return 'RecentlyAdded';
       if (b.includes('lakme')) return 'Lakme';
       if (b.includes('fourfountain') || b.includes('four')) return 'FourFountains';
       if (b.includes('kalyan')) return 'Kalyan';
@@ -575,8 +578,54 @@
       return brand;
     }
 
+    function parseTimestamp(ts) {
+      if (!ts) return 0;
+      const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
+      const parsed = Date.parse(clean);
+      if (!isNaN(parsed)) return parsed;
+
+      // Handle "dd-MMM-yyyy hh:mm:ss a" or "dd-MMM-yyyy, hh:mm a"
+      const m = clean.match(/(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+      if (m) {
+        const day = parseInt(m[1], 10);
+        const monthStr = m[2].toLowerCase();
+        const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+        const month = months[monthStr.slice(0, 3)] ?? 0;
+        const year = parseInt(m[3], 10);
+        let hour = parseInt(m[4], 10);
+        const min = parseInt(m[5], 10);
+        const sec = m[6] ? parseInt(m[6], 10) : 0;
+        const meridiem = m[7] ? m[7].toUpperCase() : null;
+        if (meridiem === 'PM' && hour < 12) hour += 12;
+        if (meridiem === 'AM' && hour === 12) hour = 0;
+        return new Date(year, month, day, hour, min, sec).getTime();
+      }
+      return 0;
+    }
+
     function getCumulativeHeader(brandKey) {
       const normKey = normalizeBrandKey(brandKey);
+
+      if (normKey === 'RecentlyAdded') {
+        const recentVs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+        const count = recentVs.length;
+        const distinctBrands = new Set(recentVs.map(v => normalizeBrandKey(v.brand))).size;
+        const totalVal = recentVs.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+
+        if (count === 0) {
+          return {
+            title: '⚡ Recently Added',
+            calc: '0 newly synced vouchers · Ready for incoming emails',
+            sub: 'Forwarded or auto-synced vouchers with timestamps appear here'
+          };
+        }
+        return {
+          title: '⚡ Recently Added',
+          calc: `${count} newly synced voucher${count === 1 ? '' : 's'} across ${distinctBrands} brand${distinctBrands === 1 ? '' : 's'} · Total Value: ₹${totalVal.toLocaleString()}`,
+          sub: 'Sorted strictly by newest arrival timestamp'
+        };
+      }
+
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
       const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
       const count = vs.length;
@@ -887,7 +936,15 @@
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
     function renderVault() {
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
-      let vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
+      const isRecentTab = normActiveBrand === 'RecentlyAdded';
+
+      let vs = [];
+      if (isRecentTab) {
+        vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+        vs.sort((a, b) => parseTimestamp(b.timestampIST) - parseTimestamp(a.timestampIST));
+      } else {
+        vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
+      }
 
       // Search Query Filter (Desktop)
       if (state.searchQuery) {
@@ -949,14 +1006,16 @@
         }
       }
 
-      // Desktop Table Body (Zero account, zero source clutter)
-      document.getElementById('dt-vault-tbody').innerHTML = vs.map((v, i) => `
+      // Desktop Table Body
+      document.getElementById('dt-vault-tbody').innerHTML = vs.length ? vs.map((v, i) => {
+        const vBrandName = getBrandDisplayName(v.brand);
+        return `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
           <td class="p-3 text-center">
             <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-blue-500">
           </td>
           <td class="p-3">
-            <div class="font-bold text-sm">${v.brand}</div>
+            <div class="font-bold text-sm">${vBrandName}</div>
             <div class="text-xs font-semibold text-emerald-500">₹${(v.amount || 0).toLocaleString()}</div>
           </td>
           <td class="p-3">
@@ -967,7 +1026,11 @@
             ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
           </td>
           <td class="p-3 text-xs" style="color: var(--label-secondary);">
-            ${v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
+            ${isRecentTab && v.timestampIST ? `
+              <span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[11px] font-mono-apple inline-block">
+                ⏱ Ingested: ${v.timestampIST}
+              </span>
+            ` : (v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active'))}
           </td>
           <td class="p-3">
             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-emerald-400 bg-emerald-950/60'}">
@@ -979,28 +1042,57 @@
             <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Used'}</button>
           </td>
         </tr>
-      `).join('') || `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
+      `;
+      }).join('') : (isRecentTab ? `
+        <tr>
+          <td colspan="6" class="p-12 text-center">
+            <div class="max-w-md mx-auto space-y-2">
+              <div class="text-2xl text-amber-400 mb-1">⚡</div>
+              <div class="font-bold text-sm text-neutral-200">No newly synced vouchers yet</div>
+              <p class="text-xs text-neutral-400 leading-relaxed">Forwarded or auto-synced vouchers will automatically appear here with their arrival timestamp.</p>
+            </div>
+          </td>
+        </tr>
+      ` : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`);
 
       // Mobile VIP Wallet Cards (Luxury Pass Aesthetic, High Tactile Feedback)
-      document.getElementById('mb-vouchers-list').innerHTML = vs.map((v, i) => {
+      document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
-        const isFF = normActiveBrand === 'FourFountains';
+        const isFF = normalizeBrandKey(v.brand) === 'FourFountains';
         const isChecked = state.selectedIds.has(v.id);
+        const vBrandName = getBrandDisplayName(v.brand);
+
         return `
           <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''} ${v.status === 'USED' ? 'opacity-40' : ''}">
-            <!-- Top Row: Checkbox, PASS #, Date/Expiry, Status -->
+            <!-- Top Row: Checkbox, PASS # or Brand Badge, Status -->
             <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">` : ''}
-                <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                ${isRecentTab ? `
+                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                    ${vBrandName}${v.amount > 0 ? ` · ₹${v.amount.toLocaleString()}` : ''}
+                  </span>
+                ` : `
+                  <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                `}
               </div>
               <div class="flex items-center gap-1.5">
-                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed on: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
+                ${!isRecentTab ? (
+                  isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)
+                ) : ''}
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'}">
                   ${v.status}
                 </span>
               </div>
             </div>
+
+            <!-- Ingested Timestamp Badge (ONLY for Recently Added Tab) -->
+            ${isRecentTab && v.timestampIST ? `
+              <div class="flex items-center justify-between text-[10px] font-mono-apple text-amber-300/90 bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                <span>⏱ Ingested: ${v.timestampIST}</span>
+                <span class="text-neutral-400 font-sans">${v.redeemedOn ? `Redeemed: ${v.redeemedOn}` : (v.expiry || 'Active')}</span>
+              </div>
+            ` : ''}
 
             <!-- Embossed Monospace Code Box (Tap anywhere to copy) -->
             <div onclick="copyToClipboard('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
@@ -1022,7 +1114,23 @@
             </div>
           </div>
         `;
-      }).join('') || `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
+      }).join('') : (isRecentTab ? `
+        <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
+          <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
+            ⚡
+          </div>
+          <h4 class="font-bold text-sm text-neutral-200">No newly synced vouchers yet</h4>
+          <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+            Forwarded or auto-synced vouchers will automatically appear here with their arrival timestamp.
+          </p>
+          <div class="pt-2">
+            <button onclick="syncWithGoogleSheets()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 inline-flex items-center gap-1.5 active:scale-95 transition-all">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Check Gmail & Sync Now
+            </button>
+          </div>
+        </div>
+      ` : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`);
 
       // Update badge on floating WhatsApp FAB
       const fabBadge = document.getElementById('mb-hover-badge');
@@ -1068,18 +1176,26 @@
 
       // Live counts by normalized brand key
       const counts = {};
+      let recentCount = 0;
       state.vouchers.forEach(v => {
         const k = normalizeBrandKey(v.brand);
         counts[k] = (counts[k] || 0) + 1;
+        if (v.timestampIST && String(v.timestampIST).trim() !== '') {
+          recentCount++;
+        }
       });
+      counts['RecentlyAdded'] = recentCount;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
         const isSel = (normActive === item.key);
+        const isSpecial = item.isSpecial;
         return `
-          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
+          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : (isSpecial ? 'bg-neutral-900 text-amber-300 border border-amber-500/40 hover:border-amber-400' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700')}">
             <div class="truncate max-w-[125px]">${item.name}</div>
-            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">${count} vouchers</div>
+            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : (isSpecial ? 'text-amber-400/90 font-medium' : 'text-neutral-400')} font-normal mt-0.5">
+              ${isSpecial ? `${count} new` : `${count} vouchers`}
+            </div>
           </button>
         `;
       }).join('');
@@ -1088,13 +1204,19 @@
     /* --- BATCH WHATSAPP GENERATION FOR ACTIVE BRAND --- */
     function copyCurrentBrandBatch() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
-      const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
-      const allVs = vs.length ? vs : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
-      if (!allVs.length) {
+      let vs;
+      if (normKey === 'RecentlyAdded') {
+        vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
+        if (!vs.length) vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+      } else {
+        vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
+        if (!vs.length) vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
+      }
+      if (!vs.length) {
         showToast("No vouchers in this category");
         return;
       }
-      const text = fmtWhatsApp(allVs);
+      const text = fmtWhatsApp(vs);
       document.getElementById('share-preview-text').value = text;
       document.getElementById('modal-share').classList.remove('hidden');
     }
@@ -1302,7 +1424,35 @@
 
     function shareSelectedWithShareSheet() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
-      const brandVouchers = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
+      let brandVouchers;
+      if (normKey === 'RecentlyAdded') {
+        brandVouchers = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
+        const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+        const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+        const targets = sel.length > 0 ? sel : allBrandVouchers;
+        if (!targets.length) {
+          showToast("No vouchers to share");
+          return;
+        }
+        const text = fmtWhatsApp(targets);
+        if (navigator.share) {
+          navigator.share({
+            title: 'Recently Added RuPay Vouchers',
+            text: text
+          }).then(() => {
+            showToast('Shared successfully');
+          }).catch(err => {
+            if (err && err.name !== 'AbortError') {
+              openWhatsAppDirect(text);
+            }
+          });
+        } else {
+          openWhatsAppDirect(text);
+        }
+        return;
+      }
+
+      brandVouchers = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
       const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
       const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
       const targets = sel.length > 0 ? sel : allBrandVouchers;
@@ -1359,32 +1509,41 @@
 
     function getBrandDisplayName(brand) {
       const map = {
-        'lakme': 'Lakme',
+        'recentlyadded': '⚡ Recently Added',
+        'lakme': 'Lakmé Salon',
         'fourfountains': 'Four Fountains',
         'kalyan': 'Kalyan Jewellers',
         'reliance': 'Reliance Digital',
         'myntra': 'Myntra',
-        'uber': 'Uber',
+        'uber': 'Uber Rides',
         'apollo': 'Apollo Pharmacy',
         'bigbasket': 'BigBasket',
         'thyrocare': 'Thyrocare',
         'taxspanner': 'TaxSpanner',
         'timesprime': 'Times Prime',
-        'cultfit': 'Cult.fit',
+        'cultfit': 'Cult.fit Elite',
         'amazonprime': 'Amazon Prime',
         'tattvaspa': 'Tattva Spa'
       };
-      return map[(brand || '').toLowerCase()] || brand || 'Voucher';
+      const clean = (brand || '').toLowerCase().replace(/[\s\.\-_]/g, '');
+      return map[clean] || brand || 'Voucher';
     }
 
     function fmtWhatsApp(vs) {
       if (!vs.length) return '';
-      const brandName = getBrandDisplayName(vs[0].brand);
-      const title = vs.length === 1 ? `${brandName} Voucher` : `${brandName} Vouchers`;
+      const distinctBrands = new Set(vs.map(v => normalizeBrandKey(v.brand)));
+      const isMultiBrand = distinctBrands.size > 1 || normalizeBrandKey(state.activeFilterBrand) === 'RecentlyAdded';
+      const brandName = isMultiBrand ? 'Recently Added Vouchers' : getBrandDisplayName(vs[0].brand);
+      const title = isMultiBrand ? '⚡ Recently Added RuPay Vouchers' : (vs.length === 1 ? `${brandName} Voucher` : `${brandName} Vouchers`);
       
       let lines = [title, ''];
       vs.forEach((v, i) => {
-        lines.push(`${i + 1}. Code: ${v.code}`);
+        const vBrand = getBrandDisplayName(v.brand);
+        if (isMultiBrand) {
+          lines.push(`${i + 1}. [${vBrand}${v.amount > 0 ? ` · ₹${v.amount.toLocaleString()}` : ''}] Code: ${v.code}`);
+        } else {
+          lines.push(`${i + 1}. Code: ${v.code}`);
+        }
         if (v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-') {
           lines.push(`PIN: ${v.pin}`);
         }
@@ -1397,13 +1556,13 @@
 
       if (count === 1) {
         lines.push('Total 1 voucher');
-        if (sum > 0) lines.push(`₹${sum}`);
+        if (sum > 0) lines.push(`₹${sum.toLocaleString()}`);
       } else {
         lines.push(`Total ${count} vouchers`);
         if (allSameAmount && vs[0].amount > 0) {
-          lines.push(`₹${vs[0].amount} x ${count} = ₹${sum}`);
+          lines.push(`₹${vs[0].amount.toLocaleString()} x ${count} = ₹${sum.toLocaleString()}`);
         } else if (sum > 0) {
-          lines.push(`Total: ₹${sum}`);
+          lines.push(`Total Value: ₹${sum.toLocaleString()}`);
         }
       }
 

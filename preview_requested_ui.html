@@ -163,6 +163,7 @@
 
     // STRICT USER ORDER & SPECIFICATION
     const BRAND_CONFIG = [
+      { key: 'RecentlyAdded', name: '⚡ Recently Added', denom: 0, hasPin: false, tag: 'All Brands', isSpecial: true },
       { key: 'Lakme', name: 'Lakmé', denom: 1500, hasPin: true, tag: 'Wellness' },
       { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: '30-Day Expiry' },
       { key: 'Kalyan', name: 'Kalyan', denom: 2000, hasPin: true, tag: 'Jewellery' },
@@ -181,61 +182,67 @@
 
     // Fallback Mock Data for instant offline loading & demo
     const MOCK_DATA = {
+      RecentlyAdded: [
+        { code: 'RD-TECH-1002931', pin: '', expiry: '31 Dec 2026', brand: 'Reliance Digital', amount: 500, timestampIST: '18-Oct-2026, 01:25 AM IST' },
+        { code: 'LAKME982310', pin: '4481', expiry: '31 Dec 2026', brand: 'Lakmé Salon', amount: 1500, timestampIST: '17-Oct-2026, 11:42 PM IST' },
+        { code: 'KALYAN-481920', pin: '9102', expiry: '31 Dec 2026', brand: 'Kalyan Jewellers', amount: 2000, timestampIST: '17-Oct-2026, 09:30 PM IST' },
+        { code: 'LAKME982311', pin: '5592', expiry: '31 Dec 2026', brand: 'Lakmé Salon', amount: 1500, timestampIST: '17-Oct-2026, 08:15 PM IST' }
+      ],
       Lakme: [
-        { code: 'LAKME982310', pin: '4481', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'LAKME982311', pin: '5592', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'LAKME982312', pin: '1103', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'LAKME982313', pin: '9921', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'LAKME982314', pin: '3349', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'LAKME982310', pin: '4481', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Lakmé Salon', amount: 1500, timestampIST: '17-Oct-2026, 11:42 PM IST' },
+        { code: 'LAKME982311', pin: '5592', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Lakmé Salon', amount: 1500, timestampIST: '17-Oct-2026, 08:15 PM IST' },
+        { code: 'LAKME982312', pin: '1103', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Lakmé Salon', amount: 1500 },
+        { code: 'LAKME982313', pin: '9921', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Lakmé Salon', amount: 1500 },
+        { code: 'LAKME982314', pin: '3349', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Lakmé Salon', amount: 1500 }
       ],
       FourFountains: [
-        { code: 'FF-SPA-88319', pin: '2291', expiry: '30 Days from date', redeemedOn: '16 Oct 2026' },
-        { code: 'FF-SPA-88320', pin: '7741', expiry: '30 Days from date', redeemedOn: '14 Oct 2026' }
+        { code: 'FF-SPA-88319', pin: '2291', expiry: '30 Days from date', redeemedOn: '16 Oct 2026', brand: 'Four Fountains', amount: 1500 },
+        { code: 'FF-SPA-88320', pin: '7741', expiry: '30 Days from date', redeemedOn: '14 Oct 2026', brand: 'Four Fountains', amount: 1500 }
       ],
       Kalyan: [
-        { code: 'KALYAN-481920', pin: '9102', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'KALYAN-481921', pin: '3321', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'KALYAN-481920', pin: '9102', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Kalyan Jewellers', amount: 2000, timestampIST: '17-Oct-2026, 09:30 PM IST' },
+        { code: 'KALYAN-481921', pin: '3321', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Kalyan Jewellers', amount: 2000 }
       ],
       Myntra: [
-        { code: 'MYNTRA500-A91', pin: '1234', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'MYNTRA500-B22', pin: '5678', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'MYNTRA500-A91', pin: '1234', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Myntra', amount: 500 },
+        { code: 'MYNTRA500-B22', pin: '5678', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Myntra', amount: 500 }
       ],
       BigBasket: [
-        { code: 'BB-GROCERY-901', pin: '8812', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'BB-GROCERY-902', pin: '9941', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'BB-GROCERY-901', pin: '8812', expiry: '31 Dec 2026', redeemedOn: null, brand: 'BigBasket', amount: 250 },
+        { code: 'BB-GROCERY-902', pin: '9941', expiry: '31 Dec 2026', redeemedOn: null, brand: 'BigBasket', amount: 250 }
       ],
       Reliance: [
-        { code: 'RD-TECH-1002931', pin: '', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'RD-TECH-1002932', pin: '', expiry: '31 Dec 2026', redeemedOn: null },
-        { code: 'RD-TECH-1002933', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'RD-TECH-1002931', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Reliance Digital', amount: 500, timestampIST: '18-Oct-2026, 01:25 AM IST' },
+        { code: 'RD-TECH-1002932', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Reliance Digital', amount: 500 },
+        { code: 'RD-TECH-1002933', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Reliance Digital', amount: 500 }
       ],
       Apollo: [
-        { code: 'APOLLO-PHARM-331', pin: '4410', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'APOLLO-PHARM-331', pin: '4410', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Apollo Pharmacy', amount: 250 }
       ],
       AmazonPrime: [
-        { code: 'PRIME-OTT-1YR-091', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'PRIME-OTT-1YR-091', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Amazon Prime', amount: 0 }
       ],
       CultFit: [
-        { code: 'CULT-ELITE-30D-81', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'CULT-ELITE-30D-81', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Cult.fit Elite', amount: 0 }
       ],
       TimesPrime: [
-        { code: 'TP-ACE-ANNUAL-44', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'TP-ACE-ANNUAL-44', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Times Prime', amount: 0 }
       ],
       TattvaSpa: [
-        { code: 'TATTVA-WELL-991', pin: '1102', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'TATTVA-WELL-991', pin: '1102', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Tattva Spa', amount: 1500 }
       ],
       TaxSpanner: [
-        { code: 'TAX-PREP-2950-8', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'TAX-PREP-2950-8', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'TaxSpanner', amount: 2950 }
       ],
       Thyrocare: [
-        { code: 'THYRO-TEST-7712', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'THYRO-TEST-7712', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Thyrocare', amount: 0 }
       ],
       Uber: [
-        { code: 'UBER100-RIDE-51', pin: '', expiry: '31 Dec 2026', redeemedOn: null }
+        { code: 'UBER100-RIDE-51', pin: '', expiry: '31 Dec 2026', redeemedOn: null, brand: 'Uber Rides', amount: 100 }
       ]
     };
 
-    let activeBrandKey = 'Lakme';
+    let activeBrandKey = 'RecentlyAdded';
     let isSelectMode = false;
     let selectedCodes = new Set();
     let syncTimestamp = "12:25 AM";
@@ -244,6 +251,7 @@
     function normalizeBrandKey(brand) {
       if (!brand) return 'Other';
       const b = brand.toLowerCase().replace(/[\s\.\-_]/g, '');
+      if (b.includes('recent') || b.includes('newly') || b === 'recentlyadded') return 'RecentlyAdded';
       if (b.includes('lakme')) return 'Lakme';
       if (b.includes('fourfountain') || b.includes('four')) return 'FourFountains';
       if (b.includes('kalyan')) return 'Kalyan';
@@ -261,22 +269,57 @@
       return brand;
     }
 
+    function parseTimestamp(ts) {
+      if (!ts) return 0;
+      const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
+      const parsed = Date.parse(clean);
+      if (!isNaN(parsed)) return parsed;
+
+      const m = clean.match(/(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+      if (m) {
+        const day = parseInt(m[1], 10);
+        const monthStr = m[2].toLowerCase();
+        const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+        const month = months[monthStr.slice(0, 3)] ?? 0;
+        const year = parseInt(m[3], 10);
+        let hour = parseInt(m[4], 10);
+        const min = parseInt(m[5], 10);
+        const sec = m[6] ? parseInt(m[6], 10) : 0;
+        const meridiem = m[7] ? m[7].toUpperCase() : null;
+        if (meridiem === 'PM' && hour < 12) hour += 12;
+        if (meridiem === 'AM' && hour === 12) hour = 0;
+        return new Date(year, month, day, hour, min, sec).getTime();
+      }
+      return 0;
+    }
+
     // Update Header Pill with Cumulative Calculation
     function updateHeader() {
       const b = BRAND_CONFIG.find(x => x.key === activeBrandKey) || BRAND_CONFIG[0];
       const vs = liveVouchers[activeBrandKey] || [];
       const count = vs.length;
-      const denom = b.denom || 0;
-      const total = count * denom;
 
       const brandTitleEl = document.getElementById('header-brand-title');
       if (brandTitleEl) brandTitleEl.textContent = b.name;
 
       const pill = document.getElementById('cumulative-pill');
-      if (denom > 0) {
-        pill.innerHTML = `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`;
+
+      if (activeBrandKey === 'RecentlyAdded') {
+        const distinctBrands = new Set(vs.map(v => normalizeBrandKey(v.brand))).size;
+        const total = vs.reduce((a, v) => a + (v.amount || 0), 0);
+        if (count > 0) {
+          pill.innerHTML = `Shows ${count} newly synced vouchers across ${distinctBrands} brands · Total Value: ₹${total.toLocaleString()}`;
+        } else {
+          pill.innerHTML = `0 newly synced vouchers · Ready for incoming emails`;
+        }
       } else {
-        pill.innerHTML = `${count} vouchers total`;
+        const denom = b.denom || 0;
+        const total = count * denom;
+        if (denom > 0) {
+          pill.innerHTML = `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`;
+        } else {
+          pill.innerHTML = `${count} vouchers total`;
+        }
       }
 
       document.getElementById('sync-time-label').textContent = `Synced at ${syncTimestamp}`;
@@ -288,10 +331,13 @@
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = (liveVouchers[item.key] || []).length;
         const isActive = item.key === activeBrandKey;
+        const isSpecial = item.isSpecial;
         return `
-          <button onclick="setBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isActive ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
+          <button onclick="setBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isActive ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : (isSpecial ? 'bg-neutral-900 text-amber-300 border border-amber-500/40 hover:border-amber-400' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700')}">
             <div class="truncate max-w-[125px]">${item.name}</div>
-            <div class="text-[10px] ${isActive ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">${count} vouchers</div>
+            <div class="text-[10px] ${isActive ? 'text-black/85 font-semibold' : (isSpecial ? 'text-amber-400/90 font-medium' : 'text-neutral-400')} font-normal mt-0.5">
+              ${isSpecial ? `${count} new` : `${count} vouchers`}
+            </div>
           </button>
         `;
       }).join('');
@@ -300,8 +346,13 @@
     // Render Voucher Pass Cards (Approach 4: VIP Wallet Pass Cards)
     function renderVouchersFeed() {
       const feed = document.getElementById('vouchers-feed');
-      const vs = liveVouchers[activeBrandKey] || [];
+      let vs = liveVouchers[activeBrandKey] || [];
       const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+      const isRecentTab = activeBrandKey === 'RecentlyAdded';
+
+      if (isRecentTab) {
+        vs = [...vs].sort((a, b) => parseTimestamp(b.timestampIST) - parseTimestamp(a.timestampIST));
+      }
 
       let html = '';
 
@@ -319,34 +370,71 @@
       }
 
       if (vs.length === 0) {
-        html += `
-          <div class="py-16 text-center text-neutral-500">
-            <p class="text-sm font-semibold">No vouchers available for ${b ? b.name : 'this brand'}</p>
-          </div>
-        `;
+        if (isRecentTab) {
+          html += `
+            <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
+              <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
+                ⚡
+              </div>
+              <h4 class="font-bold text-sm text-neutral-200">No newly synced vouchers yet</h4>
+              <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
+                Forwarded or auto-synced vouchers will automatically appear here with their arrival timestamp.
+              </p>
+              <div class="pt-2">
+                <button onclick="syncWithGoogleSheets()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 inline-flex items-center gap-1.5 active:scale-95 transition-all">
+                  <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  Check Gmail & Sync Now
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="py-16 text-center text-neutral-500">
+              <p class="text-sm font-semibold">No vouchers available for ${b ? b.name : 'this brand'}</p>
+            </div>
+          `;
+        }
       } else {
         html += vs.map((v, i) => {
           const isChecked = selectedCodes.has(v.code);
+          const brandName = v.brand || (b ? b.name : 'Voucher');
           return `
             <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''}">
               
-              <!-- Card Header Row: Checkbox (Select Mode), PASS #, Date/Expiry -->
+              <!-- Card Header Row: Checkbox, PASS # or Brand Badge, Date/Expiry -->
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2.5">
                   ${isSelectMode ? `
                     <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectCode('${v.code}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">
                   ` : ''}
-                  <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                  ${isRecentTab ? `
+                    <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                      ${brandName}${v.amount > 0 ? ` · ₹${v.amount.toLocaleString()}` : ''}
+                    </span>
+                  ` : `
+                    <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                  `}
                 </div>
                 
-                ${v.redeemedOn ? `
+                ${!isRecentTab ? (v.redeemedOn ? `
                   <span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">
                     Redeemed on: ${v.redeemedOn}
                   </span>
                 ` : `
                   <span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>
+                `) : `
+                  <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">ACTIVE</span>
                 `}
               </div>
+
+              <!-- Timestamp Badge (ONLY for Recently Added tab) -->
+              ${isRecentTab && v.timestampIST ? `
+                <div class="flex items-center justify-between text-[10px] font-mono-apple text-amber-300/90 bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                  <span>⏱ Ingested: ${v.timestampIST}</span>
+                  <span class="text-neutral-400 font-sans">${v.redeemedOn ? `Redeemed: ${v.redeemedOn}` : (v.expiry || 'Active')}</span>
+                </div>
+              ` : ''}
 
               <!-- Embossed Monospace Code Box (Tap anywhere to copy) -->
               <div onclick="copyCode('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
@@ -440,18 +528,24 @@
       const vs = allVs.filter(v => selectedCodes.has(v.code));
       const targets = vs.length > 0 ? vs : allVs;
       const b = BRAND_CONFIG.find(x => x.key === activeBrandKey);
+      const isRecentTab = activeBrandKey === 'RecentlyAdded';
       const count = targets.length;
-      const denom = b ? b.denom : 0;
-      const total = count * denom;
 
-      let text = `${b ? b.name : activeBrandKey} Vouchers\n\n`;
+      let text = isRecentTab ? `⚡ Recently Added RuPay Vouchers\n\n` : `${b ? b.name : activeBrandKey} Vouchers\n\n`;
+      let total = 0;
       targets.forEach((v, i) => {
-        text += `${i + 1}. Code: ${v.code}\n`;
+        const vBrand = v.brand || (b ? b.name : 'Voucher');
+        if (isRecentTab) {
+          text += `${i + 1}. [${vBrand}${v.amount > 0 ? ` · ₹${v.amount.toLocaleString()}` : ''}] Code: ${v.code}\n`;
+        } else {
+          text += `${i + 1}. Code: ${v.code}\n`;
+        }
         if (v.pin) text += `PIN: ${v.pin}\n`;
         text += `\n`;
+        total += (v.amount || (b ? b.denom : 0));
       });
       text += `Total ${count} vouchers\n`;
-      if (denom > 0) text += `₹${denom} x ${count} = ₹${total}`;
+      if (total > 0) text += `Total Value: ₹${total.toLocaleString()}`;
 
       // Open Native Share Sheet if available, else WhatsApp direct
       if (navigator.share) {
@@ -550,7 +644,7 @@
         const data = await res.json();
 
         if (data.vouchers && data.vouchers.length) {
-          const grouped = {};
+          const grouped = { RecentlyAdded: [] };
           data.vouchers.forEach(v => {
             const rawBrand = v.brand || 'Other';
             const normKey = normalizeBrandKey(rawBrand);
@@ -561,14 +655,21 @@
               redeemedOn = String(v.dateOfIssue).trim();
             }
 
-            grouped[normKey].push({
+            const item = {
               code: v.code || '-',
               pin: v.pin || '',
               expiry: v.dateOfIssue || '31 Dec 2026',
               redeemedOn: redeemedOn,
+              brand: rawBrand,
+              amount: Number(v.amount) || 0,
               timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
               status: (v.status || 'ACTIVE').toUpperCase()
-            });
+            };
+
+            grouped[normKey].push(item);
+            if (item.timestampIST) {
+              grouped.RecentlyAdded.push(item);
+            }
           });
 
           Object.keys(grouped).forEach(k => {
