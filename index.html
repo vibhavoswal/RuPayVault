@@ -826,7 +826,9 @@
       }).join('');
 
       // Mobile Cards List
-      document.getElementById('mb-cards-list').innerHTML = active.map(c => {
+      const mbCardsList = document.getElementById('mb-cards-list');
+      if (mbCardsList) {
+        mbCardsList.innerHTML = active.map(c => {
         const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
         return `
           <div class="rounded-xl p-4 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
@@ -854,6 +856,7 @@
           </div>
         `;
       }).join('');
+      }
 
       // Blocked Lists
       const bHtml = blocked.map(c => `
@@ -923,14 +926,18 @@
         dtBar.classList.add('hidden');
       }
 
-      // Mobile Sticky Batch Bar
+      // Mobile Sticky Batch Bar (if present)
       const mbBar = document.getElementById('mb-sticky-bar');
-      if (state.isSelectMode && sel.length) {
-        mbBar.classList.remove('hidden');
-        document.getElementById('mb-sel-count').textContent = `${sel.length} Selected`;
-        document.getElementById('mb-sel-sum').textContent = `₹${selSum.toLocaleString()} Total`;
-      } else {
-        mbBar.classList.add('hidden');
+      if (mbBar) {
+        if (state.isSelectMode && sel.length) {
+          mbBar.classList.remove('hidden');
+          const mbSelCount = document.getElementById('mb-sel-count');
+          if (mbSelCount) mbSelCount.textContent = `${sel.length} Selected`;
+          const mbSelSum = document.getElementById('mb-sel-sum');
+          if (mbSelSum) mbSelSum.textContent = `₹${selSum.toLocaleString()} Total`;
+        } else {
+          mbBar.classList.add('hidden');
+        }
       }
 
       // Desktop Table Body (Zero account, zero source clutter)
@@ -1121,24 +1128,29 @@
         `;
       }).join('');
 
-      document.getElementById('dt-cooldowns-grid').innerHTML = html;
-      document.getElementById('mb-cooldowns-list').innerHTML = html;
+      const dtGrid = document.getElementById('dt-cooldowns-grid');
+      if (dtGrid) dtGrid.innerHTML = html;
+      const mbList = document.getElementById('mb-cooldowns-list');
+      if (mbList) mbList.innerHTML = html;
     }
 
     /* --- RENDER BENEFIT MATRIX --- */
     function renderMatrix() {
-      document.getElementById('dt-matrix-tbody').innerHTML = MATRIX_RULES.map(r => `
-        <tr class="border-b border-neutral-800/40">
-          <td class="p-3 font-semibold border-r border-neutral-800/40">${r.name}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_imp)}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.union)}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.jana)}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.bob)}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.canara_dc)}</td>
-          <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_cc)}</td>
-          <td class="p-3 text-center">${renderBadge(r.canara_cc)}</td>
-        </tr>
-      `).join('');
+      const dtM = document.getElementById('dt-matrix-tbody');
+      if (dtM) {
+        dtM.innerHTML = MATRIX_RULES.map(r => `
+          <tr class="border-b border-neutral-800/40">
+            <td class="p-3 font-semibold border-r border-neutral-800/40">${r.name}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_imp)}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.union)}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.jana)}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.bob)}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.canara_dc)}</td>
+            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_cc)}</td>
+            <td class="p-3 text-center">${renderBadge(r.canara_cc)}</td>
+          </tr>
+        `).join('');
+      }
 
       const sel = document.getElementById('mb-matrix-select');
       renderMobileMatrixCard(sel ? sel.value : 'pnb_imp');
@@ -1150,16 +1162,19 @@
     }
 
     function renderMobileMatrixCard(cardKey) {
-      document.getElementById('mb-matrix-card-content').innerHTML = MATRIX_RULES.map(r => {
-        const v = r[cardKey];
-        if (!v) return '';
-        return `
-          <div class="rounded-xl p-3 flex items-center justify-between text-xs" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <span>${r.name}</span>
-            ${renderBadge(v)}
-          </div>
-        `;
-      }).join('');
+      const mbMatrix = document.getElementById('mb-matrix-card-content');
+      if (mbMatrix) {
+        mbMatrix.innerHTML = MATRIX_RULES.map(r => {
+          const v = r[cardKey];
+          if (!v) return '';
+          return `
+            <div class="rounded-xl p-3 flex items-center justify-between text-xs" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
+              <span>${r.name}</span>
+              ${renderBadge(v)}
+            </div>
+          `;
+        }).join('');
+      }
     }
 
     /* --- ACTIONS: ADD CARD --- */
