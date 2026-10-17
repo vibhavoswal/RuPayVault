@@ -575,7 +575,7 @@
   </div>
 
   <!-- Notification Toast -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+  <div id="toast" class="fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
     <span id="toast-msg"></span>
   </div>
 
@@ -821,10 +821,10 @@
       const active = state.cards.filter(c => c.status === 'active');
       const blocked = state.cards.filter(c => c.status === 'blocked').sort((a,b) => new Date(b.blockedDate) - new Date(a.blockedDate));
 
-      document.getElementById('dt-cards-count').textContent = active.length;
-      document.getElementById('dt-blocked-count').textContent = blocked.length;
-      document.getElementById('dt-blocked-inline-count').textContent = blocked.length;
-      document.getElementById('mb-blocked-count').textContent = blocked.length;
+      if (document.getElementById('dt-cards-count')) document.getElementById('dt-cards-count').textContent = active.length;
+      if (document.getElementById('dt-blocked-count')) document.getElementById('dt-blocked-count').textContent = blocked.length;
+      if (document.getElementById('dt-blocked-inline-count')) document.getElementById('dt-blocked-inline-count').textContent = blocked.length;
+      if (document.getElementById('mb-blocked-count')) document.getElementById('mb-blocked-count').textContent = blocked.length;
 
       // Desktop Cards Grid
       document.getElementById('dt-cards-grid').innerHTML = active.map(c => {
@@ -900,9 +900,9 @@
         </div>
       `).join('') || `<p class="text-xs p-3" style="color: var(--label-tertiary);">No blocked cards in archive.</p>`;
 
-      document.getElementById('dt-blocked-inline-list').innerHTML = bHtml;
-      document.getElementById('dt-blocked-full-list').innerHTML = bHtml;
-      document.getElementById('mb-blocked-inline-list').innerHTML = bHtml;
+      if (document.getElementById('dt-blocked-inline-list')) document.getElementById('dt-blocked-inline-list').innerHTML = bHtml;
+      if (document.getElementById('dt-blocked-full-list')) document.getElementById('dt-blocked-full-list').innerHTML = bHtml;
+      if (document.getElementById('mb-blocked-inline-list')) document.getElementById('mb-blocked-inline-list').innerHTML = bHtml;
     }
 
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
@@ -943,8 +943,8 @@
         }
       }
 
-      document.getElementById('dt-vault-count').textContent = state.vouchers.length;
-      document.getElementById('mb-vault-count').textContent = vs.length;
+      if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+      if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = vs.length;
 
       const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
       const selSum = sel.reduce((a, v) => a + (v.amount || 0), 0);
@@ -1129,6 +1129,8 @@
       state.activeFilterBrand = brand;
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = brand;
+      const mbScroll = document.querySelector('.mobile-scroll-container');
+      if (mbScroll) mbScroll.scrollTop = 0;
       renderVault();
     }
 
@@ -1276,14 +1278,22 @@
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
     function toggleSelectMode() {
       state.isSelectMode = !state.isSelectMode;
-      const mbBtn = document.getElementById('mb-select-btn');
+      const mbBtn = document.getElementById('mb-select-toggle') || document.getElementById('mb-select-btn');
       const dtBtn = document.getElementById('dt-select-btn');
       if (state.isSelectMode) {
         if (dtBtn) dtBtn.textContent = 'Done';
-        if (mbBtn) mbBtn.textContent = 'Done';
+        if (mbBtn) {
+          mbBtn.textContent = 'Done';
+          mbBtn.classList.add('bg-blue-600', 'text-white');
+          mbBtn.classList.remove('bg-white/10', 'text-neutral-300');
+        }
       } else {
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
-        if (mbBtn) mbBtn.textContent = 'Select';
+        if (mbBtn) {
+          mbBtn.textContent = 'Select';
+          mbBtn.classList.remove('bg-blue-600', 'text-white');
+          mbBtn.classList.add('bg-white/10', 'text-neutral-300');
+        }
         state.selectedIds.clear();
       }
       renderVault();
@@ -1395,7 +1405,7 @@
     function openInWhatsApp() {
       const text = document.getElementById('share-preview-text').value;
       const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
-      window.open(url, '_blank');
+      window.location.href = url;
     }
 
     function shareSingle(id) {
@@ -1411,7 +1421,7 @@
         showToast("Please select at least 1 voucher");
         return;
       }
-      navigator.clipboard.writeText(fmtPlain(sel)).then(() => showToast('Plaintext copied!'));
+      copyToClipboard(fmtPlain(sel));
     }
 
     async function batchMarkAsRedeemed() {
@@ -1455,7 +1465,30 @@
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => showToast('Copied: ' + text));
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => showToast('Copied: ' + text))
+          .catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Copied: ' + text);
+      } catch (e) {
+        prompt('Copy code:', text);
+      }
+      document.body.removeChild(ta);
     }
 
     function showToast(msg) {
