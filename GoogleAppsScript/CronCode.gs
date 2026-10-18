@@ -319,58 +319,6 @@ function fulfillVoucherCode(ss, data) {
   sheet.appendRow(rowData);
 }
 
-/**
- * 4. ASSIGN CARD IN BULK (Called by App)
- */
-function assignCardToRedemptions(ss, assignments) {
-  const unassignedSheet = ss.getSheetByName("⚡ Unassigned");
-  if (!unassignedSheet) return { success: true };
-
-  const uRows = unassignedSheet.getDataRange().getValues();
-  const toDelete = [];
-
-  for (const assign of assignments) {
-    for (let i = 1; i < uRows.length; i++) {
-      if (uRows[i][0] === assign.bookingId) {
-        const brand = uRows[i][1];
-        const amount = uRows[i][2];
-        const account = uRows[i][3];
-        const dateOfIssue = uRows[i][4];
-        const cardName = assign.card;
-
-        let bSheet = ss.getSheetByName(brand);
-        if (!bSheet) {
-          bSheet = ss.insertSheet(brand);
-          bSheet.appendRow(UNIFIED_BRAND_HEADERS);
-          bSheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-          bSheet.setFrozenRows(1);
-        }
-
-        const bRows = bSheet.getDataRange().getValues();
-        const nextNum = bRows.length;
-        const rowData = [
-          nextNum,
-          assign.bookingId,
-          "PENDING_DELIVERY",
-          "",
-          amount,
-          dateOfIssue,
-          account,
-          cardName,
-          "PENDING",
-          formatISTTimestamp(new Date())
-        ];
-        bSheet.appendRow(rowData);
-
-        toDelete.push(i + 1);
-        break;
-      }
-    }
-  }
-
-  toDelete.sort((a,b) => b - a).forEach(rowIdx => unassignedSheet.deleteRow(rowIdx));
-  return { success: true, count: assignments.length };
-}
 
 /**
  * 5. PERSISTENT SYSTEM SHEETS INITIALIZATION & COOLDOWN ENGINE
@@ -575,24 +523,7 @@ function doGet(e) {
       }
     }
 
-    // Clear test timestamps on historical vouchers (e.g. from undo testing)
-    if (e && e.parameter && e.parameter.clean_test_timestamps === "true") {
-      const brandsToClean = ["CultFit", "TattvaSpa"];
-      const cleaned = [];
-      brandsToClean.forEach(bName => {
-        const sh = ss.getSheetByName(bName);
-        if (sh) {
-          const data = sh.getDataRange().getValues();
-          for (let i = 1; i < data.length; i++) {
-            if (data[i][9]) { // Column J
-              sh.getRange(i + 1, 10).setValue(""); // clear cell
-              cleaned.push({ brand: bName, code: data[i][2], clearedTimestamp: data[i][9] });
-            }
-          }
-        }
-      });
-      return ContentService.createTextOutput(JSON.stringify({ success: true, cleaned: cleaned })).setMimeType(ContentService.MimeType.JSON);
-    }
+
 
     // Deduplicate brand sheets on-demand via GET
     if (e && e.parameter && e.parameter.dedup === "true") {
@@ -791,11 +722,6 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 2. Assign Cards to Redemptions
-    if (data.action === "ASSIGN_CARDS") {
-      const res = assignCardToRedemptions(ss, data.assignments);
-      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
-    }
 
     // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
     if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
