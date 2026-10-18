@@ -1814,6 +1814,7 @@
     function renderVault() {
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
       const isActivityTab = normActiveBrand === 'ActivityLog';
+      const isRedeemedTab = normActiveBrand === 'Redeemed';
 
       const headerInfo = getCumulativeHeader(normActiveBrand);
       const bConfig = BRAND_CONFIG.find(x => x.key === normActiveBrand) || { name: state.activeFilterBrand, tag: 'Voucher' };
