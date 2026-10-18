@@ -499,41 +499,6 @@ function migrateSheetsToUnifiedSchema(ss) {
   };
 }
 
-/**
- * 6B. DEDUPLICATE BRAND SHEETS (Removes duplicate rows where Code is identical)
- */
-function deduplicateBrandSheets(ss) {
-  const allSheets = ss.getSheets();
-  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
-  const report = {};
-
-  for (const s of allSheets) {
-    const sName = s.getName();
-    if (systemTabs.has(sName)) continue;
-    const vals = s.getDataRange().getValues();
-    const seenCodes = new Set();
-    const toDeleteRows = [];
-
-    for (let i = 1; i < vals.length; i++) {
-      const code = String(vals[i][2] || '').trim();
-      if (!code || code === '-') continue;
-      if (seenCodes.has(code)) {
-        toDeleteRows.push(i + 1);
-      } else {
-        seenCodes.add(code);
-      }
-    }
-
-    // Delete in descending order so earlier row indices don't shift
-    toDeleteRows.sort((a, b) => b - a).forEach(r => s.deleteRow(r));
-    if (toDeleteRows.length > 0) {
-      report[sName] = toDeleteRows.length;
-    }
-  }
-
-  SpreadsheetApp.flush();
-  return report;
-}
 
 /**
  * 7. REST API (GET / POST)
@@ -565,12 +530,6 @@ function doGet(e) {
     }
 
 
-
-    // Deduplicate brand sheets on-demand via GET
-    if (e && e.parameter && e.parameter.dedup === "true") {
-      const dedupReport = deduplicateBrandSheets(ss);
-      return ContentService.createTextOutput(JSON.stringify({ success: true, dedupReport: dedupReport })).setMimeType(ContentService.MimeType.JSON);
-    }
 
     // Purge spurious pending rows created during the 12:16 - 12:20 AM IST run
     if (e && e.parameter && e.parameter.clean_spurious === "true") {
@@ -1018,15 +977,6 @@ function doPost(e) {
 
       return ContentService.createTextOutput(JSON.stringify({
         error: "Voucher(s) not found in Redeemed sheet: " + codes.join(", ")
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // 4B. Deduplicate Brand Sheets Action
-    if (data.action === "DEDUPLICATE_SHEETS") {
-      const dedupReport = deduplicateBrandSheets(ss);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        report: dedupReport
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
