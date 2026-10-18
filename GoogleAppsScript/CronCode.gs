@@ -595,6 +595,32 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, dedupReport: dedupReport })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // Inspect recent inbox messages for debugging email forwarding and ingestion
+    if (e && e.parameter && e.parameter.debug_inbox === "true") {
+      const q = (e && e.parameter && e.parameter.q) ? e.parameter.q : "";
+      const threads = q ? GmailApp.search(q, 0, 5) : GmailApp.getInboxThreads(0, 5);
+      const inboxList = [];
+      threads.forEach(t => {
+        t.getMessages().forEach(m => {
+          inboxList.push({
+            id: m.getId(),
+            subject: m.getSubject(),
+            from: m.getFrom(),
+            to: m.getTo(),
+            date: m.getDate(),
+            isUnread: m.isUnread(),
+            snippet: m.getPlainBody().substring(0, 300)
+          });
+        });
+      });
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        query: q,
+        count: inboxList.length,
+        messages: inboxList
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // ON-DEMAND REAL-TIME EMAIL INGESTION
     if (!e || !e.parameter || e.parameter.ingest !== "false") {
       try {
