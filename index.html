@@ -395,8 +395,8 @@
           <div class="flex items-center gap-3">
             <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
             <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              <option value="ActivityLog">⚡ Activity Log (All Brands)</option>
-              <option value="Lakme" selected>1. Lakmé Salon (₹1,500)</option>
+              <option value="ActivityLog" selected>⚡ Activity Log (All Brands)</option>
+              <option value="Lakme">1. Lakmé Salon (₹1,500)</option>
               <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
               <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
               <option value="Myntra">4. Myntra (₹500)</option>
@@ -1539,15 +1539,15 @@
         if (dtFilterBar) dtFilterBar.classList.remove('hidden');
         if (mbFilterBar) mbFilterBar.classList.remove('hidden');
 
-        const ingestedCount = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '').length;
+        const ingestedCount = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code)).length;
         const sharedCount = sharedActivity.length;
         const redeemedCount = redeemedList.length;
         const totalEvents = ingestedCount + sharedCount + redeemedCount;
 
         return {
           title: '⚡ Activity Log',
-          calc: `${totalEvents} events (${ingestedCount} ingested · ${sharedCount} shared · ${redeemedCount} redeemed)`,
-          sub: 'Reverse-chronological activity across newly synced, shared, and redeemed'
+          calc: `${totalEvents} events (${ingestedCount} active · ${sharedCount} shared · ${redeemedCount} redeemed)`,
+          sub: 'Unified activity across all active vault vouchers, shared, and redeemed'
         };
       } else {
         const dtFilterBar = document.getElementById('dt-activity-filters-bar');
@@ -1601,7 +1601,7 @@
       isSelectMode: false,
       selectedIds: new Set(),
       searchQuery: '',
-      activeFilterBrand: 'Lakme',
+      activeFilterBrand: 'ActivityLog',
       targetCardToBlock: null,
       pendingShareVoucher: null,
 
@@ -1970,8 +1970,11 @@
         // Collect unified activity events:
         let allActivities = [];
 
-        // 1. Ingested from Gmail (exclude vouchers already in redeemedList to avoid duplicate events)
-        state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && !redeemedList.some(r => r.code === v.code)).forEach(v => {
+        // 1. Ingested from Gmail / Active Vault (exclude vouchers already in redeemedList to avoid duplicate events)
+        state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code)).forEach((v, idx) => {
+          const hasIst = v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null';
+          const timeStr = hasIst ? v.timestampIST : (v.expiry && v.expiry !== '31 Dec 2026' ? v.expiry : 'Active Vault');
+          const timeMs = hasIst ? parseTimestamp(v.timestampIST) : (parseTimestamp(v.expiry) || (Date.now() - idx * 1000));
           allActivities.push({
             type: 'INGESTED',
             id: v.id,
@@ -1979,8 +1982,8 @@
             brand: v.brand,
             amount: v.amount,
             pin: v.pin,
-            timestampStr: v.timestampIST,
-            timestampMs: parseTimestamp(v.timestampIST),
+            timestampStr: timeStr,
+            timestampMs: timeMs,
             status: v.status || 'ACTIVE',
             expiry: v.expiry
           });
@@ -2059,7 +2062,7 @@
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${isRedeemed ? 'opacity-50' : ''}">
               <td class="p-3 text-center">
-                <input type="checkbox" ${state.selectedIds.has(act.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-blue-500">
+                ${isIngested ? `<input type="checkbox" ${state.selectedIds.has(act.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-blue-500">` : ''}
               </td>
               <td class="p-3">
                 <div class="font-bold text-sm">${vBrandName}</div>
@@ -2107,11 +2110,66 @@
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
           const brandDisplay = getBrandDisplayName(act.brand);
+          const isChecked = isIngested && state.selectedIds.has(act.id);
 
           let typeBadgeHtml = '';
           if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold">📤 SHARED</span>`;
           else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[10px] font-bold">⚡ INGESTED</span>`;
           else if (isRedeemed) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">✓ REDEEMED</span>`;
+
+          if (isIngested) {
+            return `
+              <div id="mb-card-${act.id}"
+                   data-code="${act.code}"
+                   onclick="handleCardClick('${act.id}')"
+                   class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]" style="max-height: 250px;">
+                <!-- Header Row -->
+                <div class="flex items-center justify-between text-xs pointer-events-none">
+                  <div class="flex items-center gap-2">
+                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
+                    <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                      ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
+                    </span>
+                  </div>
+                  ${typeBadgeHtml}
+                </div>
+
+                <!-- Timestamp Row -->
+                <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80 pointer-events-none">
+                  <span class="truncate">⏱ Ingested: ${act.timestampStr || 'Active Vault'}</span>
+                </div>
+
+                <!-- Embossed Code Box -->
+                <div class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between pointer-events-auto">
+                  <div class="space-y-0.5">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
+                      <span id="mb-code-${act.id}" class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
+                    </div>
+                    ${act.pin ? `
+                      <div class="flex items-center gap-2 pt-0.5">
+                        <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
+                        <span class="font-mono-apple text-sm font-bold text-amber-300">${act.pin}</span>
+                      </div>
+                    ` : ''}
+                  </div>
+                  <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+                    Copy
+                  </button>
+                </div>
+
+                <!-- Action Buttons Row -->
+                <div class="flex items-center gap-2 pt-0.5 pointer-events-auto">
+                  <button onclick="event.stopPropagation(); shareSingle('${act.code}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                    <span>↗</span> Share via WhatsApp
+                  </button>
+                  <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1">
+                    <span>✓</span> Redeem
+                  </button>
+                </div>
+              </div>
+            `;
+          }
 
           return `
             <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isRedeemed ? 'opacity-80' : ''}">
@@ -2125,7 +2183,7 @@
 
               <!-- Timestamp Row -->
               <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80">
-                <span class="truncate">⏱ ${isShared ? 'Shared' : (isRedeemed ? 'Redeemed' : 'Ingested')}: ${act.timestampStr || 'Recent'}</span>
+                <span class="truncate">⏱ ${isShared ? 'Shared' : 'Redeemed'}: ${act.timestampStr || 'Recent'}</span>
                 ${isRedeemed && act.originalTab ? `<span class="text-neutral-500 text-[9px]">Tab: ${act.originalTab}</span>` : ''}
               </div>
 
@@ -2159,15 +2217,6 @@
                   </button>
                 ` : ''}
 
-                ${isIngested ? `
-                  <button onclick="shareSingle('${act.code}')" class="flex-1 py-1.5 px-3 rounded-xl bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] font-bold text-xs hover:bg-[#25D366]/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                    <span>↗</span> Share via WhatsApp
-                  </button>
-                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1">
-                    <span>✓</span> Redeem
-                  </button>
-                ` : ''}
-
                 ${isRedeemed ? `
                   <button onclick="undoRedemption('${act.code}', '${act.brand || act.originalTab}')" class="flex-1 py-1.5 px-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs hover:bg-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
                     <span>↶</span> Restore to Sheet (${act.originalTab || act.brand})
@@ -2188,6 +2237,7 @@
           </div>
         `;
 
+        updateFloatingDock();
         renderDeckSelector();
         return;
       }
@@ -2435,29 +2485,28 @@
 
       // Live counts by normalized brand key
       const counts = {};
-      let ingestedCount = 0;
+      let activeCount = 0;
       state.vouchers.forEach(v => {
-        const k = normalizeBrandKey(v.brand);
-        counts[k] = (counts[k] || 0) + 1;
-        if (v.timestampIST && String(v.timestampIST).trim() !== '') {
-          ingestedCount++;
+        if (!redeemedList.some(r => r.code === v.code)) {
+          const k = normalizeBrandKey(v.brand);
+          counts[k] = (counts[k] || 0) + 1;
+          activeCount++;
         }
       });
-      counts['ActivityLog'] = ingestedCount + sharedActivity.length;
+      counts['ActivityLog'] = activeCount + sharedActivity.length;
       counts['Redeemed'] = redeemedList.length;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
         const isSel = (normActive === item.key);
-        const isSpecial = item.isSpecial;
         let countLabel = `${count} vouchers`;
         if (item.key === 'ActivityLog') countLabel = `${count} active`;
         else if (item.key === 'Redeemed') countLabel = `${count} redeemed`;
 
         return `
-          <button onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : (isSpecial ? 'bg-neutral-900 text-amber-300 border border-amber-500/40 hover:border-amber-400' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700')}">
+          <button id="deck-btn-${item.key}" onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
             <div class="truncate max-w-[125px]">${item.name}</div>
-            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : (isSpecial ? 'text-amber-400/90 font-medium' : 'text-neutral-400')} font-normal mt-0.5">
+            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">
               ${countLabel}
             </div>
           </button>
@@ -2470,8 +2519,8 @@
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let vs;
       if (normKey === 'ActivityLog') {
-        vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
-        if (!vs.length) vs = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+        vs = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code) && v.status !== 'USED');
+        if (!vs.length) vs = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code));
       } else {
         vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
         if (!vs.length) vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
@@ -2501,6 +2550,11 @@
       const mbScroll = document.querySelector('.mobile-scroll-container');
       if (mbScroll) mbScroll.scrollTop = 0;
       renderVault();
+
+      const btn = document.getElementById(`deck-btn-${normalizeBrandKey(brand)}`);
+      if (btn) {
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
     }
 
     /* --- RENDER COOLDOWNS --- */
@@ -3309,13 +3363,11 @@
       const dtSheetLink = document.getElementById('dt-sheet-link-btn');
       if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
-      // 2. Restore active brand preference across page refresh
-      const savedBrand = localStorage.getItem('rupay_active_brand');
-      if (savedBrand) {
-        state.activeFilterBrand = savedBrand;
-        const dtSel = document.getElementById('dt-brand-filter');
-        if (dtSel) dtSel.value = savedBrand;
-      }
+      // 2. Always default to Activity Log on page load/reload
+      state.activeFilterBrand = 'ActivityLog';
+      const dtSel = document.getElementById('dt-brand-filter');
+      if (dtSel) dtSel.value = 'ActivityLog';
+      localStorage.removeItem('rupay_active_brand');
 
       // 3. Restore last synced time to header
       const savedTime = localStorage.getItem('rupay_sync_time');
