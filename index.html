@@ -414,11 +414,28 @@
         </div>
 
         <!-- Desktop Activity Log Sub-Filters (Visible when Activity Log is active) -->
-        <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center gap-2">
-          <button onclick="setActivityFilter('all')" id="dt-btn-filter-all" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black">All Activity</button>
-          <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">⚡ Ingested</button>
-          <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📤 Shared</button>
-          <button onclick="setActivityFilter('redeemed')" id="dt-btn-filter-redeemed" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📜 Redeemed</button>
+        <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black">⚡ Ingested</button>
+            <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📤 Shared</button>
+          </div>
+          <button id="dt-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Clear Visible Items">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span id="dt-clear-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
+          </button>
+        </div>
+
+        <!-- Desktop Redeemed Action Bar (Visible when Redeemed tab is active) -->
+        <div id="dt-redeemed-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center justify-between gap-2">
+          <span class="text-xs font-bold text-white flex items-center gap-1.5"><span>📜</span> Redeemed Archive</span>
+          <button id="dt-btn-clear-redeemed-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Clear Redeemed Archive">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span id="dt-clear-redeemed-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
+          </button>
         </div>
 
         <!-- Floating Batch Action Bar -->
@@ -561,11 +578,28 @@
     </div>
 
     <!-- Activity Log Sub-Filters (Visible ONLY when Activity Log tab is selected) -->
-    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar">
-      <button onclick="setActivityFilter('all')" id="mb-btn-filter-all" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all">All Activity</button>
-      <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">⚡ Ingested</button>
-      <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📤 Shared</button>
-      <button onclick="setActivityFilter('redeemed')" id="mb-btn-filter-redeemed" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📜 Redeemed</button>
+    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex items-center justify-between gap-1.5 shrink-0">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all">⚡ Ingested</button>
+        <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📤 Shared</button>
+      </div>
+      <button id="mb-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-xl bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Clear Visible Items">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        <span id="mb-clear-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
+      </button>
+    </div>
+
+    <!-- Redeemed Action Bar (Visible ONLY when Redeemed tab is selected) -->
+    <div id="mb-redeemed-bar" class="hidden mx-3 mb-2 flex items-center justify-between gap-1.5 shrink-0">
+      <span class="text-xs font-bold text-white flex items-center gap-1.5"><span>📜</span> Redeemed Archive</span>
+      <button id="mb-btn-clear-redeemed-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-xl bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Clear Redeemed Archive">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        <span id="mb-clear-redeemed-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
+      </button>
     </div>
 
     <!-- Scrollable Pass Cards Deck Content -->
@@ -1193,12 +1227,20 @@
     }
 
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
-    let activityFilter = 'all';
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    let activityFilter = 'added';
     let sharedActivity = (JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]'))
       .filter(s => s.code !== 'RD-TECH-1002931');
     saveSharedActivity();
     let redeemedList = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
-    let undoState = { timer: null, secondsLeft: 3, code: null, brand: null };
+    let undoState = {
+      timer: null,
+      secondsLeft: 3,
+      actionType: null, // 'redeem' | 'clear'
+      code: null,
+      brand: null,
+      clearedItems: null // { context: 'ingested' | 'shared' | 'redeemed', targets: [...] }
+    };
 
     function saveSharedActivity() {
       try {
@@ -1376,7 +1418,14 @@
     }
 
     function showUndoToast(code, brand) {
-      if (undoState.timer) clearInterval(undoState.timer);
+      if (undoState.timer) {
+        if (undoState.actionType === 'clear' && undoState.clearedItems) {
+          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
+        }
+        clearInterval(undoState.timer);
+      }
+      undoState.actionType = 'redeem';
+      undoState.clearedItems = null;
       undoState.code = code;
       undoState.brand = brand;
       undoState.secondsLeft = 3;
@@ -1400,12 +1449,117 @@
           undoState.timer = null;
           if (dtBanner) dtBanner.classList.add('hidden');
           if (mbBanner) mbBanner.classList.add('hidden');
+          undoState.actionType = null;
         } else {
           const t = `↶ Undo (${undoState.secondsLeft}s)`;
           if (dtBtn) dtBtn.textContent = t;
           if (mbBtn) mbBtn.textContent = t;
         }
       }, 1000);
+    }
+
+    function showClearUndoToast(context, targets) {
+      if (undoState.timer) {
+        if (undoState.actionType === 'clear' && undoState.clearedItems) {
+          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
+        }
+        clearInterval(undoState.timer);
+      }
+
+      undoState.actionType = 'clear';
+      undoState.clearedItems = { context, targets };
+      undoState.secondsLeft = 3;
+
+      const dtBanner = document.getElementById('dt-undo-banner');
+      const mbBanner = document.getElementById('mb-undo-banner');
+      const dtBtn = document.getElementById('dt-undo-banner-btn');
+      const mbBtn = document.getElementById('mb-undo-banner-btn');
+      const dtText = document.getElementById('dt-undo-banner-text');
+      const mbText = document.getElementById('mb-undo-banner-text');
+
+      const contextLabel = context === 'ingested' ? 'Ingested' : (context === 'shared' ? 'Shared' : 'Redeemed');
+      const msg = `Cleared ${targets.length} ${targets.length === 1 ? 'item' : 'items'} from ${contextLabel}`;
+      const btnTxt = `↶ Undo (${undoState.secondsLeft}s)`;
+
+      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.textContent = btnTxt; }
+      if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.textContent = btnTxt; }
+
+      undoState.timer = setInterval(() => {
+        undoState.secondsLeft--;
+        if (undoState.secondsLeft <= 0) {
+          clearInterval(undoState.timer);
+          undoState.timer = null;
+          if (dtBanner) dtBanner.classList.add('hidden');
+          if (mbBanner) mbBanner.classList.add('hidden');
+          commitClearToBackend(context, targets);
+          undoState.clearedItems = null;
+          undoState.actionType = null;
+        } else {
+          const t = `↶ Undo (${undoState.secondsLeft}s)`;
+          if (dtBtn) dtBtn.textContent = t;
+          if (mbBtn) mbBtn.textContent = t;
+        }
+      }, 1000);
+    }
+
+    function restoreClearedItems() {
+      if (!undoState.clearedItems) return;
+      const { context, targets } = undoState.clearedItems;
+      targets.forEach(t => { t.displayInUI = true; });
+      if (context === 'ingested') {
+        saveEncryptedVouchers(state.vouchers);
+      } else if (context === 'shared') {
+        saveSharedActivity();
+      } else if (context === 'redeemed') {
+        saveRedeemedList();
+      }
+      hideUndoToast();
+      showToast('Clear undone');
+      renderDeckSelector();
+      renderVault();
+      updateClearTrashBadges();
+    }
+
+    async function commitClearToBackend(context, targets) {
+      const codes = (targets || []).map(t => t.code).filter(Boolean);
+      if (!codes.length) return;
+      try {
+        if (context === 'ingested') {
+          await fetch(API_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+              auth: VAULT_AUTH_KEY,
+              action: 'CLEAR_ACTIVITY',
+              type: 'INGESTED',
+              codes: codes
+            })
+          });
+          await saveEncryptedVouchers(state.vouchers);
+        } else if (context === 'shared') {
+          await fetch(API_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+              auth: VAULT_AUTH_KEY,
+              action: 'CLEAR_ACTIVITY',
+              type: 'SHARED',
+              codes: codes
+            })
+          });
+          saveSharedActivity();
+        } else if (context === 'redeemed') {
+          await fetch(API_ENDPOINT, {
+            method: 'POST',
+            body: JSON.stringify({
+              auth: VAULT_AUTH_KEY,
+              action: 'CLEAR_REDEEMED',
+              codes: codes
+            })
+          });
+          saveRedeemedList();
+        }
+      } catch(e) {
+        console.warn('Backend clear sync error:', e);
+      }
     }
 
     function hideUndoToast() {
@@ -1418,63 +1572,240 @@
     }
 
     function triggerUndoLast() {
-      if (undoState.code && undoState.brand) {
+      if (undoState.actionType === 'clear') {
+        restoreClearedItems();
+      } else if (undoState.code && undoState.brand) {
         undoRedemption(undoState.code, undoState.brand);
       }
     }
 
     function setActivityFilter(filter) {
       activityFilter = filter;
-      ['all', 'added', 'shared', 'redeemed'].forEach(f => {
+      ['added', 'shared'].forEach(f => {
         const dtBtn = document.getElementById(`dt-btn-filter-${f}`);
         const mbBtn = document.getElementById(`mb-btn-filter-${f}`);
         [dtBtn, mbBtn].forEach(btn => {
           if (btn) {
             if (f === filter) {
-              btn.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all';
+              btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black shadow transition-all';
             } else {
-              btn.className = 'px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all';
+              btn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all';
             }
           }
         });
       });
+      updateClearTrashBadges();
       renderVault();
+    }
+
+    function updateClearTrashBadges() {
+      const normActive = normalizeBrandKey(state.activeFilterBrand);
+      const dtBadge = document.getElementById('dt-clear-badge');
+      const mbBadge = document.getElementById('mb-clear-badge');
+      const dtRedeemedBadge = document.getElementById('dt-clear-redeemed-badge');
+      const mbRedeemedBadge = document.getElementById('mb-clear-redeemed-badge');
+
+      let selectedCount = 0;
+      const nowMs = Date.now();
+
+      if (state.isSelectMode) {
+        if (normActive === 'ActivityLog') {
+          if (activityFilter === 'shared') {
+            const visibleShared = sharedActivity.filter(s =>
+              s.displayInUI !== false &&
+              !redeemedList.some(r => r.code === s.code) &&
+              (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+              (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+            );
+            selectedCount = visibleShared.filter(s => state.selectedIds.has('shared-' + s.code) || state.selectedIds.has(s.code)).length;
+          } else {
+            const visibleIngested = state.vouchers.filter(v =>
+              v.displayInUI !== false &&
+              !redeemedList.some(r => r.code === v.code) &&
+              v.timestampIST &&
+              (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
+            );
+            selectedCount = visibleIngested.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code)).length;
+          }
+        } else if (normActive === 'Redeemed') {
+          const visibleRedeemed = redeemedList.filter(r => r.displayInUI !== false);
+          selectedCount = visibleRedeemed.filter(r => state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code)).length;
+        }
+      }
+
+      [dtBadge, mbBadge].forEach(b => {
+        if (b) {
+          if (selectedCount > 0 && normActive === 'ActivityLog') {
+            b.textContent = selectedCount;
+            b.classList.remove('hidden');
+          } else {
+            b.classList.add('hidden');
+          }
+        }
+      });
+
+      [dtRedeemedBadge, mbRedeemedBadge].forEach(b => {
+        if (b) {
+          if (selectedCount > 0 && normActive === 'Redeemed') {
+            b.textContent = selectedCount;
+            b.classList.remove('hidden');
+          } else {
+            b.classList.add('hidden');
+          }
+        }
+      });
+    }
+
+    function triggerClearTrashAction() {
+      const normActive = normalizeBrandKey(state.activeFilterBrand);
+      const nowMs = Date.now();
+      let context = 'ingested';
+      let targets = [];
+
+      if (normActive === 'ActivityLog') {
+        if (activityFilter === 'shared') {
+          context = 'shared';
+          const visibleShared = sharedActivity.filter(s =>
+            s.displayInUI !== false &&
+            !redeemedList.some(r => r.code === s.code) &&
+            (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+            (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+          );
+          if (state.isSelectMode) {
+            targets = visibleShared.filter(s => state.selectedIds.has('shared-' + s.code) || state.selectedIds.has(s.code));
+            if (!targets.length) {
+              showToast("Please select shared items to clear");
+              return;
+            }
+          } else {
+            targets = [...visibleShared];
+            if (!targets.length) {
+              showToast("No shared items to clear");
+              return;
+            }
+          }
+        } else {
+          context = 'ingested';
+          const visibleIngested = state.vouchers.filter(v =>
+            v.displayInUI !== false &&
+            !redeemedList.some(r => r.code === v.code) &&
+            v.timestampIST &&
+            (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
+          );
+          if (state.isSelectMode) {
+            targets = visibleIngested.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code));
+            if (!targets.length) {
+              showToast("Please select ingested items to clear");
+              return;
+            }
+          } else {
+            targets = [...visibleIngested];
+            if (!targets.length) {
+              showToast("No ingested items to clear");
+              return;
+            }
+          }
+        }
+      } else if (normActive === 'Redeemed') {
+        context = 'redeemed';
+        const visibleRedeemed = redeemedList.filter(r => r.displayInUI !== false);
+        if (state.isSelectMode) {
+          targets = visibleRedeemed.filter(r => state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code));
+          if (!targets.length) {
+            showToast("Please select redeemed items to clear");
+            return;
+          }
+        } else {
+          targets = [...visibleRedeemed];
+          if (!targets.length) {
+            showToast("No redeemed items to clear");
+            return;
+          }
+        }
+      } else {
+        return;
+      }
+
+      // 1. Optimistically hide targets from the active view
+      targets.forEach(t => { t.displayInUI = false; });
+      if (context === 'shared') {
+        saveSharedActivity();
+      } else if (context === 'redeemed') {
+        saveRedeemedList();
+      }
+
+      // 2. Remove cleared IDs from selection
+      targets.forEach(t => {
+        state.selectedIds.delete(t.id);
+        state.selectedIds.delete(t.code);
+        state.selectedIds.delete('shared-' + t.code);
+        state.selectedIds.delete('redeemed-' + t.code);
+      });
+
+      // 3. Render and update badges
+      renderDeckSelector();
+      renderVault();
+      updateClearTrashBadges();
+      updateFloatingDock();
+
+      // 4. Show 3-second undo toast
+      showClearUndoToast(context, targets);
     }
 
     function getCumulativeHeader(brandKey) {
       const normKey = normalizeBrandKey(brandKey);
+      const dtFilterBar = document.getElementById('dt-activity-filters-bar');
+      const mbFilterBar = document.getElementById('mb-activity-filters-bar');
+      const dtRedeemedBar = document.getElementById('dt-redeemed-bar');
+      const mbRedeemedBar = document.getElementById('mb-redeemed-bar');
 
       if (normKey === 'ActivityLog') {
-        const dtFilterBar = document.getElementById('dt-activity-filters-bar');
-        const mbFilterBar = document.getElementById('mb-activity-filters-bar');
         if (dtFilterBar) dtFilterBar.classList.remove('hidden');
         if (mbFilterBar) mbFilterBar.classList.remove('hidden');
+        if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
+        if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
 
-        const ingestedCount = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code)).length;
-        const sharedCount = sharedActivity.length;
-        const redeemedCount = redeemedList.length;
-        const totalEvents = ingestedCount + sharedCount + redeemedCount;
+        const nowMs = Date.now();
+        const ingestedCount = state.vouchers.filter(v =>
+          v.displayInUI !== false &&
+          !redeemedList.some(r => r.code === v.code) &&
+          v.timestampIST &&
+          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
+        ).length;
+
+        const sharedCount = sharedActivity.filter(s =>
+          s.displayInUI !== false &&
+          !redeemedList.some(r => r.code === s.code) &&
+          (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+          (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+        ).length;
+
+        const totalEvents = ingestedCount + sharedCount;
 
         return {
           title: '⚡ Activity Log',
-          calc: `${totalEvents} events (${ingestedCount} active · ${sharedCount} shared · ${redeemedCount} redeemed)`,
-          sub: 'Unified activity across all active vault vouchers, shared, and redeemed'
+          calc: `${totalEvents} events (${ingestedCount} ingested · ${sharedCount} shared · 7-day window)`,
+          sub: 'Live activity stream from Gmail ingestion and shared vouchers in the last 7 days'
         };
-      } else {
-        const dtFilterBar = document.getElementById('dt-activity-filters-bar');
-        const mbFilterBar = document.getElementById('mb-activity-filters-bar');
+      } else if (normKey === 'Redeemed') {
         if (dtFilterBar) dtFilterBar.classList.add('hidden');
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
-      }
+        if (dtRedeemedBar) dtRedeemedBar.classList.remove('hidden');
+        if (mbRedeemedBar) mbRedeemedBar.classList.remove('hidden');
 
-      if (normKey === 'Redeemed') {
-        const redeemedCount = redeemedList.length;
-        const totalValue = redeemedList.reduce((acc, r) => acc + (r.amount || 0), 0);
+        const visibleRedeemed = redeemedList.filter(r => r.displayInUI !== false);
+        const redeemedCount = visibleRedeemed.length;
+        const totalValue = visibleRedeemed.reduce((acc, r) => acc + (r.amount || 0), 0);
         return {
           title: '📜 Redeemed Archive',
           calc: `${redeemedCount} Vouchers (${totalValue > 0 ? `₹${totalValue.toLocaleString()} Value · ` : ''}Archived in Google Sheet)`,
           sub: 'Cumulative list of all vouchers marked redeemed and stored in Google Sheets'
         };
+      } else {
+        if (dtFilterBar) dtFilterBar.classList.add('hidden');
+        if (mbFilterBar) mbFilterBar.classList.add('hidden');
+        if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
+        if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
       }
 
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
@@ -1659,6 +1990,7 @@
               expiry: v.dateOfIssue || '31 Dec 2026',
               redeemedOn: redeemedOn,
               timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
+              displayInUI: v.displayInUI !== false && String(v.displayInUI).toLowerCase() !== 'false',
               status: (v.status || 'ACTIVE').toUpperCase()
             };
           });
@@ -1677,7 +2009,8 @@
             amount: Number(r.amount) || 0,
             pin: r.pin || '',
             redeemedTimestampIST: r.redeemedTimestampIST || '',
-            originalTab: r.originalTab || r.brand || ''
+            originalTab: r.originalTab || r.brand || '',
+            displayInUI: r.displayInUI !== false && String(r.displayInUI).toLowerCase() !== 'false'
           }));
           sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
           saveSharedActivity();
@@ -1708,7 +2041,8 @@
             amount: Number(s.amount) || 0,
             pin: s.pin || '',
             sharedAt: s.sharedAt || '',
-            timestampMs: parseTimestamp(s.sharedAt) || Date.now()
+            timestampMs: parseTimestamp(s.sharedAt) || Date.now(),
+            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
           }));
           sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
           saveSharedActivity();
@@ -1878,14 +2212,18 @@
       }
 
       if (isActivityTab) {
-        // Collect unified activity events:
+        // Collect unified activity events strictly within 7 days:
+        const nowMs = Date.now();
         let allActivities = [];
 
-        // 1. Ingested from Gmail / Active Vault (exclude vouchers already in redeemedList to avoid duplicate events)
-        state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code)).forEach((v, idx) => {
-          const hasIst = v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null';
-          const timeStr = hasIst ? v.timestampIST : (v.expiry && v.expiry !== '31 Dec 2026' ? v.expiry : 'Active Vault');
-          const timeMs = hasIst ? parseTimestamp(v.timestampIST) : (parseTimestamp(v.expiry) || (Date.now() - idx * 1000));
+        // 1. Ingested from Gmail / Active Vault (strictly within 7 days, valid timestampIST, displayInUI !== false, exclude redeemed)
+        state.vouchers.filter(v => {
+          if (v.displayInUI === false) return false;
+          if (redeemedList.some(r => r.code === v.code)) return false;
+          if (!v.timestampIST || String(v.timestampIST).trim() === '' || String(v.timestampIST).trim() === 'null') return false;
+          const timeMs = parseTimestamp(v.timestampIST);
+          return timeMs > 0 && (nowMs - timeMs) <= SEVEN_DAYS_MS;
+        }).forEach(v => {
           allActivities.push({
             type: 'INGESTED',
             id: v.id,
@@ -1893,53 +2231,38 @@
             brand: v.brand,
             amount: v.amount,
             pin: v.pin,
-            timestampStr: timeStr,
-            timestampMs: timeMs,
+            timestampStr: v.timestampIST,
+            timestampMs: parseTimestamp(v.timestampIST),
             status: v.status || 'ACTIVE',
             expiry: v.expiry
           });
         });
 
-        // 2. Shared Activity
-        sharedActivity.forEach(s => {
-          if (!redeemedList.some(r => r.code === s.code)) {
-            allActivities.push({
-              type: 'SHARED',
-              id: 'shared-' + s.code,
-              code: s.code,
-              brand: s.brand,
-              amount: s.amount,
-              pin: s.pin,
-              timestampStr: s.sharedAt,
-              timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
-              status: 'SHARED'
-            });
-          }
-        });
-
-        // 3. Redeemed Activity
-        redeemedList.forEach(r => {
+        // 2. Shared Activity (strictly within 7 days, displayInUI !== false, exclude redeemed)
+        sharedActivity.filter(s => {
+          if (s.displayInUI === false) return false;
+          if (redeemedList.some(r => r.code === s.code)) return false;
+          const timeMs = s.timestampMs || parseTimestamp(s.sharedAt);
+          return timeMs > 0 && (nowMs - timeMs) <= SEVEN_DAYS_MS;
+        }).forEach(s => {
           allActivities.push({
-            type: 'REDEEMED',
-            id: 'redeemed-' + r.code,
-            code: r.code,
-            brand: r.brand,
-            amount: r.amount,
-            pin: r.pin,
-            timestampStr: r.redeemedTimestampIST,
-            timestampMs: parseTimestamp(r.redeemedTimestampIST),
-            status: 'REDEEMED',
-            originalTab: r.originalTab
+            type: 'SHARED',
+            id: 'shared-' + s.code,
+            code: s.code,
+            brand: s.brand,
+            amount: s.amount,
+            pin: s.pin,
+            timestampStr: s.sharedAt,
+            timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
+            status: 'SHARED'
           });
         });
 
-        // Sub-filter
-        if (activityFilter === 'added') {
-          allActivities = allActivities.filter(a => a.type === 'INGESTED');
-        } else if (activityFilter === 'shared') {
+        // Sub-filter: strictly 'added' (INGESTED) or 'shared' (SHARED)
+        if (activityFilter === 'shared') {
           allActivities = allActivities.filter(a => a.type === 'SHARED');
-        } else if (activityFilter === 'redeemed') {
-          allActivities = allActivities.filter(a => a.type === 'REDEEMED');
+        } else {
+          allActivities = allActivities.filter(a => a.type === 'INGESTED');
         }
 
         // Search Filter (Desktop)
@@ -1955,25 +2278,24 @@
         // Sort latest at the top
         allActivities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
 
-        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = allActivities.length;
         if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = allActivities.length;
 
         // Desktop Table Body for Activity Log
         document.getElementById('dt-vault-tbody').innerHTML = allActivities.length ? allActivities.map((act, i) => {
           const vBrandName = getBrandDisplayName(act.brand);
-          const isRedeemed = act.type === 'REDEEMED';
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
+          const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadge = '';
           if (isShared) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">📤 SHARED</span>`;
           else if (isIngested) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">⚡ INGESTED</span>`;
-          else if (isRedeemed) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ REDEEMED</span>`;
 
           return `
-            <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${isRedeemed ? 'opacity-50' : ''}">
+            <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40">
               <td class="p-3 text-center">
-                ${isIngested ? `<input type="checkbox" ${state.selectedIds.has(act.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-blue-500">` : ''}
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-amber-400">
               </td>
               <td class="p-3">
                 <div class="font-bold text-sm">${vBrandName}</div>
@@ -1981,14 +2303,14 @@
               </td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
-                  <span class="font-mono-apple font-bold ${isRedeemed ? 'line-through text-neutral-400' : 'text-blue-400'}">${act.code}</span>
+                  <span class="font-mono-apple font-bold text-blue-400">${act.code}</span>
                   <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700" title="Copy code">Copy</button>
                 </div>
                 ${act.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${act.pin}</div>` : ''}
               </td>
               <td class="p-3 text-xs" style="color: var(--label-secondary);">
                 <span class="px-2 py-0.5 rounded-full bg-black/60 border border-neutral-800 text-neutral-300 text-[11px] font-mono-apple inline-block">
-                  ⏱ ${isShared ? 'Shared' : (isRedeemed ? 'Redeemed' : 'Ingested')}: ${act.timestampStr || 'Recent'}
+                  ⏱ ${isShared ? 'Shared' : 'Ingested'}: ${act.timestampStr || 'Recent'}
                 </span>
               </td>
               <td class="p-3">
@@ -1998,35 +2320,31 @@
                 ${isShared ? `
                   <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">Mark Redeemed</button>
                   <button onclick="dismissSharedActivity('${act.code}')" class="text-xs font-medium text-neutral-400 hover:text-white">Dismiss</button>
-                ` : (isIngested ? `
+                ` : `
                   <button onclick="shareSingle('${act.code}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">WhatsApp</button>
                   <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-medium text-neutral-300 hover:text-white">Redeem</button>
-                ` : `
-                  <button onclick="undoRedemption('${act.code}', '${act.brand || act.originalTab}')" class="text-xs font-bold text-amber-400 hover:underline">Restore to Sheet</button>
-                `)}
+                `}
               </td>
             </tr>
           `;
         }).join('') : `
           <tr>
             <td colspan="6" class="p-12 text-center text-sm text-neutral-400">
-              No activity matching the current filter.
+              No activity in the last 7 days matching this filter.
             </td>
           </tr>
         `;
 
         // Mobile VIP Wallet Cards for Activity Log
         document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
-          const isRedeemed = act.type === 'REDEEMED';
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
           const brandDisplay = getBrandDisplayName(act.brand);
-          const isChecked = isIngested && state.selectedIds.has(act.id);
+          const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadgeHtml = '';
           if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold">📤 SHARED</span>`;
           else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[10px] font-bold">⚡ INGESTED</span>`;
-          else if (isRedeemed) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">✓ REDEEMED</span>`;
 
           if (isIngested) {
             return `
@@ -2047,7 +2365,7 @@
 
                 <!-- Timestamp Row -->
                 <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80 pointer-events-none">
-                  <span class="truncate">⏱ Ingested: ${act.timestampStr || 'Active Vault'}</span>
+                  <span class="truncate">⏱ Ingested: ${act.timestampStr || 'Recent'}</span>
                 </div>
 
                 <!-- Embossed Code Box -->
@@ -2073,27 +2391,32 @@
           }
 
           return `
-            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isRedeemed ? 'opacity-80' : ''}">
+            <div id="mb-card-${act.id}"
+                 data-code="${act.code}"
+                 onclick="handleCardClick('${act.id}')"
+                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]">
               <!-- Header Row -->
-              <div class="flex items-center justify-between text-xs">
-                <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
-                  ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
-                </span>
+              <div class="flex items-center justify-between text-xs pointer-events-none">
+                <div class="flex items-center gap-2">
+                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
+                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                    ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
+                  </span>
+                </div>
                 ${typeBadgeHtml}
               </div>
 
               <!-- Timestamp Row -->
-              <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80">
-                <span class="truncate">⏱ ${isShared ? 'Shared' : 'Redeemed'}: ${act.timestampStr || 'Recent'}</span>
-                ${isRedeemed && act.originalTab ? `<span class="text-neutral-500 text-[9px]">Tab: ${act.originalTab}</span>` : ''}
+              <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80 pointer-events-none">
+                <span class="truncate">⏱ Shared: ${act.timestampStr || 'Recent'}</span>
               </div>
 
               <!-- Embossed Code Box -->
-              <div onclick="copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
+              <div onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all pointer-events-auto">
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                    <span class="font-mono-apple text-base font-bold ${isRedeemed ? 'line-through text-neutral-400' : 'text-white'} tracking-wider">${act.code}</span>
+                    <span class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
                   </div>
                   ${act.pin ? `
                     <div class="flex items-center gap-2 pt-0.5">
@@ -2108,21 +2431,13 @@
               </div>
 
               <!-- Action Buttons Row -->
-              <div class="flex items-center gap-2 pt-0.5">
-                ${isShared ? `
-                  <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                    <span>✓</span> Mark as Redeemed
-                  </button>
-                  <button onclick="dismissSharedActivity('${act.code}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1" title="Remove from activity log">
-                    <span>✕</span> Dismiss
-                  </button>
-                ` : ''}
-
-                ${isRedeemed ? `
-                  <button onclick="undoRedemption('${act.code}', '${act.brand || act.originalTab}')" class="flex-1 py-1.5 px-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs hover:bg-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                    <span>↶</span> Restore to Sheet (${act.originalTab || act.brand})
-                  </button>
-                ` : ''}
+              <div class="flex items-center gap-2 pt-0.5 pointer-events-auto">
+                <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                  <span>✓</span> Mark as Redeemed
+                </button>
+                <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1" title="Remove from activity log">
+                  <span>✕</span> Dismiss
+                </button>
               </div>
             </div>
           `;
@@ -2133,18 +2448,19 @@
             </div>
             <h4 class="font-bold text-sm text-neutral-200">No activity recorded yet</h4>
             <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
-              Synced vouchers from Gmail and vouchers you share to merchants will appear here.
+              Newly ingested vouchers from Gmail and vouchers you share within the last 7 days will appear here.
             </p>
           </div>
         `;
 
+        updateClearTrashBadges();
         updateFloatingDock();
         renderDeckSelector();
         return;
       }
 
       if (isRedeemedTab) {
-        let rList = [...redeemedList];
+        let rList = redeemedList.filter(r => r.displayInUI !== false);
         if (state.searchQuery) {
           const q = state.searchQuery.toLowerCase();
           rList = rList.filter(r =>
@@ -2154,15 +2470,18 @@
           );
         }
 
-        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
+        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = rList.length;
         if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = rList.length;
 
         // Desktop Table Body for Redeemed Tab
         document.getElementById('dt-vault-tbody').innerHTML = rList.length ? rList.map((r, i) => {
           const vBrandName = getBrandDisplayName(r.brand);
+          const isChecked = state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code);
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 opacity-75">
-              <td class="p-3 text-center text-xs font-mono-apple text-neutral-400">#${i + 1}</td>
+              <td class="p-3 text-center">
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('redeemed-${r.code}')" class="rounded accent-amber-400">` : `<span class="text-xs font-mono-apple text-neutral-400">#${i + 1}</span>`}
+              </td>
               <td class="p-3">
                 <div class="font-bold text-sm text-neutral-300">${vBrandName}</div>
                 ${r.amount > 0 ? `<div class="text-xs font-semibold text-emerald-400">₹${r.amount.toLocaleString()}</div>` : ''}
@@ -2186,19 +2505,26 @@
               </td>
             </tr>
           `;
-        }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No redeemed vouchers yet.</td></tr>`;
+        }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No redeemed vouchers in archive.</td></tr>`;
 
         // Mobile VIP Wallet Cards for Redeemed Tab
         document.getElementById('mb-vouchers-list').innerHTML = rList.length ? rList.map((r, i) => {
           const vBrandName = getBrandDisplayName(r.brand);
           const hasPin = r.pin && String(r.pin).trim() && String(r.pin).trim() !== 'null' && String(r.pin).trim() !== '-';
+          const isChecked = state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code);
           return `
-            <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85">
+            <div id="mb-card-redeemed-${r.code}"
+                 data-code="${r.code}"
+                 onclick="handleCardClick('redeemed-${r.code}')"
+                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85 cursor-pointer select-none active:scale-[0.99]">
               <!-- Top Row: Brand, Value, Status -->
-              <div class="flex items-center justify-between text-xs">
-                <div>
-                  <span class="font-bold text-sm text-white">${vBrandName}</span>
-                  ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
+              <div class="flex items-center justify-between text-xs pointer-events-none">
+                <div class="flex items-center gap-2">
+                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
+                  <div>
+                    <span class="font-bold text-sm text-white">${vBrandName}</span>
+                    ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
+                  </div>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold">✓ REDEEMED</span>
@@ -2206,7 +2532,7 @@
               </div>
 
               <!-- Embossed Monospace Code Box -->
-              <div onclick="copyToClipboard('${r.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-neutral-700 active:scale-[0.99] transition-all">
+              <div onclick="event.stopPropagation(); copyToClipboard('${r.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-neutral-700 active:scale-[0.99] transition-all pointer-events-auto">
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
@@ -2225,12 +2551,12 @@
               </div>
 
               <!-- Bottom Row: Timestamp & Restore Button -->
-              <div class="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-xs">
+              <div class="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-xs pointer-events-auto">
                 <div class="flex items-center gap-1.5 text-[11px] text-neutral-400">
                   <span>⏱ ${r.redeemedTimestampIST || 'Recent'}</span>
                   ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${r.originalTab}</span>` : ''}
                 </div>
-                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-amber-200 hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
+                <button onclick="event.stopPropagation(); undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-amber-200 hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
                   <span>↶</span> Restore to Vault
                 </button>
               </div>
@@ -2241,13 +2567,14 @@
             <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl font-bold">
               📜
             </div>
-            <h4 class="font-bold text-sm text-neutral-200">No redeemed vouchers yet</h4>
+            <h4 class="font-bold text-sm text-neutral-200">No redeemed vouchers in archive</h4>
             <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
               When you select vouchers and tap "Redeem", they will be archived here and synced directly into your Google Sheet's "Redeemed" tab.
             </p>
           </div>
         `;
 
+        updateClearTrashBadges();
         renderDeckSelector();
         return;
       }
@@ -2386,16 +2713,30 @@
 
       // Live counts by normalized brand key
       const counts = {};
-      let activeCount = 0;
+      const nowMs = Date.now();
       state.vouchers.forEach(v => {
         if (!redeemedList.some(r => r.code === v.code)) {
           const k = normalizeBrandKey(v.brand);
           counts[k] = (counts[k] || 0) + 1;
-          activeCount++;
         }
       });
-      counts['ActivityLog'] = activeCount + sharedActivity.length;
-      counts['Redeemed'] = redeemedList.length;
+
+      const activeIngested7d = state.vouchers.filter(v =>
+        v.displayInUI !== false &&
+        !redeemedList.some(r => r.code === v.code) &&
+        v.timestampIST &&
+        (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
+      ).length;
+
+      const activeShared7d = sharedActivity.filter(s =>
+        s.displayInUI !== false &&
+        !redeemedList.some(r => r.code === s.code) &&
+        (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+        (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+      ).length;
+
+      counts['ActivityLog'] = activeIngested7d + activeShared7d;
+      counts['Redeemed'] = redeemedList.filter(r => r.displayInUI !== false).length;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
@@ -2808,8 +3149,20 @@
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let brandVouchers;
       if (normKey === 'ActivityLog') {
-        brandVouchers = state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '' && v.status !== 'USED');
-        const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => v.timestampIST && String(v.timestampIST).trim() !== '');
+        const nowMs = Date.now();
+        brandVouchers = state.vouchers.filter(v =>
+          v.displayInUI !== false &&
+          !redeemedList.some(r => r.code === v.code) &&
+          v.timestampIST &&
+          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS &&
+          v.status !== 'USED'
+        );
+        const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v =>
+          v.displayInUI !== false &&
+          !redeemedList.some(r => r.code === v.code) &&
+          v.timestampIST &&
+          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
+        );
         const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
         if (state.isSelectMode && !sel.length) {
           showToast("Please select at least 1 voucher to share");
@@ -3270,11 +3623,12 @@
       const dtSheetLink = document.getElementById('dt-sheet-link-btn');
       if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
-      // 2. Always default to Activity Log on page load/reload
+      // 2. Always default to Activity Log on page load/reload and sub-filter to Ingested
       state.activeFilterBrand = 'ActivityLog';
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = 'ActivityLog';
       localStorage.removeItem('rupay_active_brand');
+      setActivityFilter('added');
 
       // 3. Restore last synced time to header
       const savedTime = localStorage.getItem('rupay_sync_time');

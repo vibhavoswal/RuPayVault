@@ -10,11 +10,11 @@ const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
 
 // Standard Unified Column Schemas
 const UNIFIED_BRAND_HEADERS = [
-  "#", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)"
+  "#", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)", "Display in UI"
 ];
 
 const UNIFIED_REDEEMED_HEADERS = [
-  "#", "Brand", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Redeemed Timestamp (IST)", "Original Tab", "Appended Timestamp (IST)"
+  "#", "Brand", "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Redeemed Timestamp (IST)", "Original Tab", "Appended Timestamp (IST)", "Display in UI"
 ];
 
 const UNIFIED_CARD_HEADERS = [
@@ -22,7 +22,7 @@ const UNIFIED_CARD_HEADERS = [
 ];
 
 const UNIFIED_SHARED_HEADERS = [
-  "#", "Code", "Brand", "Amount", "PIN", "Shared Timestamp (IST)", "Status", "Platform"
+  "#", "Code", "Brand", "Amount", "PIN", "Shared Timestamp (IST)", "Status", "Platform", "Display in UI"
 ];
 
 const UNIFIED_COOLDOWN_HEADERS = [
@@ -223,6 +223,7 @@ function fulfillVoucherCode(ss, data) {
       }
       sheet.getRange(i + 1, 9).setValue("ACTIVE");
       sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+      sheet.getRange(i + 1, 11).setValue(true);
       return;
     }
   }
@@ -238,7 +239,8 @@ function fulfillVoucherCode(ss, data) {
     data.account,
     "Unassigned",
     "ACTIVE",
-    formatISTTimestamp(new Date())
+    formatISTTimestamp(new Date()),
+    true
   ];
   sheet.appendRow(rowData);
 }
@@ -376,13 +378,21 @@ function migrateSheetsToUnifiedSchema(ss) {
   const sheets = ss.getSheets();
   const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
   
-  // 1. Ensure master "Redeemed" tab exists with 12 columns
+  // 1. Ensure master "Redeemed" tab exists with UNIFIED_REDEEMED_HEADERS (14 cols)
   let redeemedSheet = ss.getSheetByName("Redeemed");
   if (!redeemedSheet) {
     redeemedSheet = ss.insertSheet("Redeemed");
-    redeemedSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
-    redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-    redeemedSheet.setFrozenRows(1);
+  }
+  redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setValues([UNIFIED_REDEEMED_HEADERS]);
+  redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+  redeemedSheet.setFrozenRows(1);
+
+  // 2. Ensure "Shared_Activity" tab has UNIFIED_SHARED_HEADERS (9 cols)
+  let sharedSheet = ss.getSheetByName("Shared_Activity");
+  if (sharedSheet) {
+    sharedSheet.getRange(1, 1, 1, UNIFIED_SHARED_HEADERS.length).setValues([UNIFIED_SHARED_HEADERS]);
+    sharedSheet.getRange(1, 1, 1, UNIFIED_SHARED_HEADERS.length).setFontWeight("bold").setBackground("#D1FAE5");
+    sharedSheet.setFrozenRows(1);
   }
 
   const report = [];
@@ -403,8 +413,6 @@ function migrateSheetsToUnifiedSchema(ss) {
     const pinColIndex = headers.findIndex(h => h === "pin" || h === "coupon pin" || h === "voucher pin");
 
     if (pinColIndex === -1) {
-      // 9-column sheet missing PIN: Col 1=#, Col 2=Booking ID, Col 3=Code, Col 4=Value...
-      // Safely insert PIN column before column 4 (Column D)
       sheet.insertColumnBefore(4);
       sheet.getRange(1, 4).setValue("PIN").setFontWeight("bold").setBackground("#F3F4F6");
       report.push({ brand: name, status: "INSERTED_PIN_COLUMN", rows: lastRow - 1 });
@@ -414,7 +422,7 @@ function migrateSheetsToUnifiedSchema(ss) {
 
     totalMigratedVouchers += Math.max(0, lastRow - 1);
 
-    // Standardize row 1 headers to UNIFIED_BRAND_HEADERS
+    // Standardize row 1 headers to UNIFIED_BRAND_HEADERS (11 cols)
     sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setValues([UNIFIED_BRAND_HEADERS]);
     sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
     sheet.setFrozenRows(1);
@@ -555,6 +563,7 @@ function doGet(e) {
           if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
           const status = String(rows[i][6] || 'SHARED').trim().toUpperCase();
           if (status === "DISMISSED") continue;
+          const isDisp = rows[i].length > 8 ? (rows[i][8] !== false && String(rows[i][8]).toUpperCase() !== 'FALSE') : true;
           result.shared.push({
             code: String(rows[i][1] || ''),
             brand: String(rows[i][2] || ''),
@@ -562,13 +571,15 @@ function doGet(e) {
             pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
             sharedAt: String(rows[i][5] || ''),
             status: status,
-            platform: String(rows[i][7] || 'WhatsApp')
+            platform: String(rows[i][7] || 'WhatsApp'),
+            displayInUI: isDisp
           });
         }
       } else if (name === "Redeemed") {
-        // 12-Column Unified Redeemed Archive
+        // Unified Redeemed Archive (Col 14: Display in UI)
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][3] || String(rows[i][3]).trim() === "") continue;
+          const isDisp = rows[i].length > 13 ? (rows[i][13] !== false && String(rows[i][13]).toUpperCase() !== 'FALSE') : true;
           result.redeemed.push({
             brand: String(rows[i][1] || ''),
             bookingId: String(rows[i][2] || ''),
@@ -580,13 +591,15 @@ function doGet(e) {
             card: rows[i][8] ? String(rows[i][8]) : '',
             status: "REDEEMED",
             redeemedTimestampIST: rows[i][10] ? String(rows[i][10]) : '',
-            originalTab: String(rows[i][11] || rows[i][1] || '')
+            originalTab: String(rows[i][11] || rows[i][1] || ''),
+            displayInUI: isDisp
           });
         }
       } else {
-        // Uniform 10-Column Brand Tabs
+        // Uniform Brand Tabs (Col 11: Display in UI)
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][2] || String(rows[i][2]).trim() === "") continue;
+          const isDisp = rows[i].length > 10 ? (rows[i][10] !== false && String(rows[i][10]).toUpperCase() !== 'FALSE') : true;
           result.vouchers.push({
             brand: name,
             bookingId: String(rows[i][1] || ''),
@@ -597,7 +610,8 @@ function doGet(e) {
             account: rows[i][6] ? String(rows[i][6]) : '',
             card: rows[i][7] ? String(rows[i][7]) : '',
             status: rows[i][8] ? String(rows[i][8]) : 'ACTIVE',
-            timestampIST: rows[i][9] ? String(rows[i][9]) : null
+            timestampIST: rows[i][9] ? String(rows[i][9]) : null,
+            displayInUI: isDisp
           });
         }
       }
@@ -714,7 +728,8 @@ function doPost(e) {
             "REDEEMED",                             // J: Status
             formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
             origBrand,                              // L: Original Tab
-            rowData[9] ? String(rowData[9]) : ""    // M: Original Ingested Timestamp (if any)
+            rowData[9] ? String(rowData[9]) : "",   // M: Original Ingested Timestamp (if any)
+            true                                    // N: Display in UI
           ];
           rSheet.appendRow(redeemedRow);
           targetSheet.deleteRow(targetRowIndex);
@@ -951,6 +966,7 @@ function doPost(e) {
           sSheet.getRange(foundIndex, 6).setValue(timeStr);
           sSheet.getRange(foundIndex, 7).setValue("SHARED");
           if (item.platform) sSheet.getRange(foundIndex, 8).setValue(item.platform);
+          sSheet.getRange(foundIndex, 9).setValue(true);
         } else {
           const nextNum = sSheet.getLastRow();
           sSheet.appendRow([
@@ -961,7 +977,8 @@ function doPost(e) {
             item.pin ? `'${item.pin}` : '',
             timeStr,
             "SHARED",
-            item.platform || "WhatsApp"
+            item.platform || "WhatsApp",
+            true
           ]);
         }
         logged.push(cStr);
@@ -1078,6 +1095,78 @@ function doPost(e) {
           message: "Passcode configured in ScriptProperties."
         })).setMimeType(ContentService.MimeType.JSON);
       }
+    }
+
+    // 14. Clear Activity Log Items (sets Display in UI = FALSE in brand tabs or Shared_Activity)
+    if (data.action === "CLEAR_ACTIVITY") {
+      const type = String(data.type || "INGESTED").toUpperCase();
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      const updated = [];
+
+      if (type === "SHARED") {
+        const sh = ss.getSheetByName("Shared_Activity");
+        if (sh) {
+          const vals = sh.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowCode = String(vals[i][1] || "").trim();
+            if (codes.size === 0 || codes.has(rowCode)) {
+              sh.getRange(i + 1, 9).setValue(false); // Col 9: Display in UI
+              sh.getRange(i + 1, 7).setValue("DISMISSED");
+              updated.push(rowCode);
+            }
+          }
+        }
+      } else {
+        // INGESTED: Search in Brand tabs
+        const sheets = ss.getSheets();
+        const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
+        for (const sheet of sheets) {
+          if (systemSheets.has(sheet.getName())) continue;
+          const vals = sheet.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowCode = String(vals[i][2] || "").trim();
+            if (codes.size === 0 || codes.has(rowCode)) {
+              sheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
+              updated.push(rowCode);
+            }
+          }
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "CLEAR_ACTIVITY",
+        type: type,
+        clearedCount: updated.length,
+        clearedCodes: updated
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 15. Clear Redeemed Items (sets Display in UI = FALSE in Redeemed tab)
+    if (data.action === "CLEAR_REDEEMED") {
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      const updated = [];
+
+      const rSheet = ss.getSheetByName("Redeemed");
+      if (rSheet) {
+        const vals = rSheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const rowCode = String(vals[i][3] || "").trim();
+          if (codes.size === 0 || codes.has(rowCode)) {
+            rSheet.getRange(i + 1, 14).setValue(false); // Col 14: Display in UI
+            updated.push(rowCode);
+          }
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "CLEAR_REDEEMED",
+        clearedCount: updated.length,
+        clearedCodes: updated
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
   } catch(err) {
