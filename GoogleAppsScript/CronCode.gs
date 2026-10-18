@@ -437,6 +437,42 @@ function migrateSheetsToUnifiedSchema(ss) {
 }
 
 /**
+ * 6B. DEDUPLICATE BRAND SHEETS (Removes duplicate rows where Code is identical)
+ */
+function deduplicateBrandSheets(ss) {
+  const allSheets = ss.getSheets();
+  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  const report = {};
+
+  for (const s of allSheets) {
+    const sName = s.getName();
+    if (systemTabs.has(sName)) continue;
+    const vals = s.getDataRange().getValues();
+    const seenCodes = new Set();
+    const toDeleteRows = [];
+
+    for (let i = 1; i < vals.length; i++) {
+      const code = String(vals[i][2] || '').trim();
+      if (!code || code === '-') continue;
+      if (seenCodes.has(code)) {
+        toDeleteRows.push(i + 1);
+      } else {
+        seenCodes.add(code);
+      }
+    }
+
+    // Delete in descending order so earlier row indices don't shift
+    toDeleteRows.sort((a, b) => b - a).forEach(r => s.deleteRow(r));
+    if (toDeleteRows.length > 0) {
+      report[sName] = toDeleteRows.length;
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return report;
+}
+
+/**
  * 7. REST API (GET / POST)
  */
 function doGet(e) {
@@ -482,6 +518,12 @@ function doGet(e) {
         }
       });
       return ContentService.createTextOutput(JSON.stringify({ success: true, cleaned: cleaned })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Deduplicate brand sheets on-demand via GET
+    if (e && e.parameter && e.parameter.dedup === "true") {
+      const dedupReport = deduplicateBrandSheets(ss);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, dedupReport: dedupReport })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // ON-DEMAND REAL-TIME EMAIL INGESTION
@@ -654,7 +696,7 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 3. Move Voucher to "Redeemed" Tab (Approach A - Cut & Paste)
+    // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
     if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
       let rSheet = ss.getSheetByName("Redeemed");
       if (!rSheet) {
@@ -665,16 +707,26 @@ function doPost(e) {
       }
 
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      // Unique codes only
+      const codes = Array.from(new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []));
       if (!codes.length && data.bookingId) {
         codes.push(String(data.bookingId).trim());
       }
 
       const moved = [];
+      const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+
+      // Pre-fetch Redeemed sheet codes to prevent duplicate entries in Redeemed tab
+      const rVals = rSheet.getDataRange().getValues();
+      const existingRedeemedCodes = new Set();
+      for (let r = 1; r < rVals.length; r++) {
+        const c = String(rVals[r][3] || '').trim();
+        if (c) existingRedeemedCodes.add(c);
+      }
 
       codes.forEach(codeVal => {
         let targetSheet = null;
-        let targetRowIndex = -1;
+        let matchingRowIndices = [];
         let rowData = null;
 
         // 1. Try provided brand if present
@@ -685,9 +737,8 @@ function doPost(e) {
             for (let i = 1; i < vals.length; i++) {
               if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
                 targetSheet = directSheet;
-                targetRowIndex = i + 1;
-                rowData = vals[i];
-                break;
+                matchingRowIndices.push(i + 1);
+                if (!rowData) rowData = vals[i];
               }
             }
           }
@@ -695,7 +746,6 @@ function doPost(e) {
 
         // 2. If not found in provided brand, scan ALL brand sheets (excluding system tabs)
         if (!targetSheet) {
-          const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
           const allSheets = ss.getSheets();
           for (const s of allSheets) {
             const sName = s.getName();
@@ -704,9 +754,8 @@ function doPost(e) {
             for (let i = 1; i < vals.length; i++) {
               if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
                 targetSheet = s;
-                targetRowIndex = i + 1;
-                rowData = vals[i];
-                break;
+                matchingRowIndices.push(i + 1);
+                if (!rowData) rowData = vals[i];
               }
             }
             if (targetSheet) break;
@@ -715,27 +764,40 @@ function doPost(e) {
 
         if (targetSheet && rowData) {
           const origBrand = targetSheet.getName();
-          const redeemedRow = [
-            rSheet.getLastRow(),                    // A: #
-            origBrand,                              // B: Brand
-            rowData[1],                             // C: Booking ID
-            `'${rowData[2]}`,                       // D: Code
-            rowData[3] ? `'${rowData[3]}` : "",     // E: PIN
-            rowData[4],                             // F: Value
-            rowData[5],                             // G: Date of Issue
-            rowData[6],                             // H: Account
-            rowData[7],                             // I: Card
-            "REDEEMED",                             // J: Status
-            formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
-            origBrand,                              // L: Original Tab
-            rowData[9] ? String(rowData[9]) : "",   // M: Original Ingested Timestamp (if any)
-            true                                    // N: Display in UI
-          ];
-          rSheet.appendRow(redeemedRow);
-          targetSheet.deleteRow(targetRowIndex);
+
+          // DEDUPLICATION LOCK: Only append to Redeemed if not already present in Redeemed!
+          if (!existingRedeemedCodes.has(codeVal)) {
+            const redeemedRow = [
+              rSheet.getLastRow(),                    // A: #
+              origBrand,                              // B: Brand
+              rowData[1],                             // C: Booking ID
+              `'${rowData[2]}`,                       // D: Code
+              rowData[3] ? `'${rowData[3]}` : "",     // E: PIN
+              rowData[4],                             // F: Value
+              rowData[5],                             // G: Date of Issue
+              rowData[6],                             // H: Account
+              rowData[7],                             // I: Card
+              "REDEEMED",                             // J: Status
+              formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
+              origBrand,                              // L: Original Tab
+              rowData[9] ? String(rowData[9]) : "",   // M: Original Ingested Timestamp (if any)
+              true                                    // N: Display in UI
+            ];
+            rSheet.appendRow(redeemedRow);
+            existingRedeemedCodes.add(codeVal);
+          }
+
+          // ATOMIC CUT: Delete all matching instances from target brand sheet in reverse (descending) order
+          matchingRowIndices.sort((a, b) => b - a).forEach(idx => {
+            targetSheet.deleteRow(idx);
+          });
+
           moved.push({ code: codeVal, brand: origBrand });
         }
       });
+
+      // Force atomic persistence
+      SpreadsheetApp.flush();
 
       // Also update Shared_Activity status to REDEEMED for these codes if present
       const sSheet = ss.getSheetByName("Shared_Activity");
@@ -763,7 +825,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 4. Undo Redemption (Restore to Brand Tab)
+    // 4. Undo Redemption (Restore to Brand Tab - Cut from Redeemed, Paste into Brand with Deduplication Lock)
     if (data.action === "UNDO_REDEEM") {
       const rSheet = ss.getSheetByName("Redeemed");
       if (!rSheet) {
@@ -773,13 +835,14 @@ function doPost(e) {
       }
 
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      const codes = Array.from(new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []));
       if (!codes.length && data.bookingId) {
         codes.push(String(data.bookingId).trim());
       }
 
       const restored = [];
       const rRows = rSheet.getDataRange().getValues();
+      const rowsToDeleteFromRedeemed = [];
 
       // Search backwards so deleting rows does not alter row index of earlier rows
       for (let i = rRows.length - 1; i >= 1; i--) {
@@ -796,25 +859,53 @@ function doPost(e) {
             bSheet.setFrozenRows(1);
           }
 
-          const originalTimestamp = (rRows[i].length > 12 && rRows[i][12]) ? String(rRows[i][12]) : "";
-          const restoredRow = [
-            bSheet.getLastRow(),                    // A: #
-            rRows[i][2],                            // B: Booking ID
-            `'${rRows[i][3]}`,                      // C: Code
-            rRows[i][4] ? `'${rRows[i][4]}` : "",   // D: PIN
-            rRows[i][5],                            // E: Value
-            rRows[i][6],                            // F: Date of Issue
-            rRows[i][7],                            // G: Account
-            rRows[i][8],                            // H: Card
-            "ACTIVE",                               // I: Status
-            originalTimestamp                       // J: Appended Timestamp (IST) - only restore if originally existed!
-          ];
+          // DEDUPLICATION LOCK: Inspect brand sheet first! Does this code already exist in brand sheet?
+          const bVals = bSheet.getDataRange().getValues();
+          let existingBrandRowIndex = -1;
+          for (let b = 1; b < bVals.length; b++) {
+            if (String(bVals[b][2]).trim() === rowCode) {
+              existingBrandRowIndex = b + 1;
+              break;
+            }
+          }
 
-          bSheet.appendRow(restoredRow);
-          rSheet.deleteRow(i + 1); // Remove from Redeemed sheet
+          if (existingBrandRowIndex > 0) {
+            // ALREADY EXISTS in brand tab! Do NOT append a duplicate row.
+            // Just ensure its Status is ACTIVE and Display in UI is true.
+            bSheet.getRange(existingBrandRowIndex, 9).setValue("ACTIVE");
+            bSheet.getRange(existingBrandRowIndex, 11).setValue(true);
+          } else {
+            // DOES NOT EXIST in brand tab: Safe to append!
+            const originalTimestamp = (rRows[i].length > 12 && rRows[i][12]) ? String(rRows[i][12]) : "";
+            const restoredRow = [
+              bSheet.getLastRow(),                    // A: #
+              rRows[i][2],                            // B: Booking ID
+              `'${rRows[i][3]}`,                      // C: Code
+              rRows[i][4] ? `'${rRows[i][4]}` : "",   // D: PIN
+              rRows[i][5],                            // E: Value
+              rRows[i][6],                            // F: Date of Issue
+              rRows[i][7],                            // G: Account
+              rRows[i][8],                            // H: Card
+              "ACTIVE",                               // I: Status
+              originalTimestamp,                      // J: Appended Timestamp (IST)
+              true                                    // K: Display in UI
+            ];
+            bSheet.appendRow(restoredRow);
+          }
+
+          // Mark row in Redeemed for deletion
+          rowsToDeleteFromRedeemed.push(i + 1);
           restored.push({ code: rowCode, brand: origBrand });
         }
       }
+
+      // Delete from Redeemed sheet in reverse (descending) order
+      rowsToDeleteFromRedeemed.sort((a, b) => b - a).forEach(rowIdx => {
+        rSheet.deleteRow(rowIdx);
+      });
+
+      // Force atomic persistence
+      SpreadsheetApp.flush();
 
       if (restored.length > 0) {
         return ContentService.createTextOutput(JSON.stringify({
@@ -827,6 +918,15 @@ function doPost(e) {
 
       return ContentService.createTextOutput(JSON.stringify({
         error: "Voucher(s) not found in Redeemed sheet: " + codes.join(", ")
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 4B. Deduplicate Brand Sheets Action
+    if (data.action === "DEDUPLICATE_SHEETS") {
+      const dedupReport = deduplicateBrandSheets(ss);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        report: dedupReport
       })).setMimeType(ContentService.MimeType.JSON);
     }
 

@@ -1588,12 +1588,17 @@
     async function undoRedemption(code, brand) {
       const targetCodes = (code || '').split(',').map(c => c.trim()).filter(Boolean);
       targetCodes.forEach(c => {
-        const existing = state.vouchers.find(x => x.code === c);
-        if (existing) {
-          existing.status = 'ACTIVE';
+        const matches = state.vouchers.filter(x => x.code === c);
+        if (matches.length > 0) {
+          matches.forEach(m => m.status = 'ACTIVE');
+          // If there were somehow duplicate entries in state, prune down to 1
+          if (matches.length > 1) {
+            const firstIdx = state.vouchers.findIndex(x => x.code === c);
+            state.vouchers = state.vouchers.filter((x, idx) => x.code !== c || idx === firstIdx);
+          }
         } else {
           const r = redeemedList.find(x => x.code === c);
-          if (r) {
+          if (r && !state.vouchers.some(x => x.code === c)) {
             state.vouchers.push({
               id: 'v-restored-' + c,
               bookingId: r.bookingId || ('#restored-' + c),
@@ -2265,7 +2270,15 @@
         const data = await res.json();
         
         if (data.vouchers && data.vouchers.length) {
-          state.vouchers = data.vouchers.map((v, i) => {
+          // Defensive deduplication: ensure each voucher code only appears once in state.vouchers
+          const seenCodes = new Set();
+          state.vouchers = data.vouchers.filter(v => {
+            const c = (v.code || '').trim();
+            if (!c || c === '-') return true;
+            if (seenCodes.has(c)) return false;
+            seenCodes.add(c);
+            return true;
+          }).map((v, i) => {
             const rawBrand = v.brand || 'Other';
             const normKey = normalizeBrandKey(rawBrand);
             const bConfig = BRAND_CONFIG.find(x => x.key === normKey);
@@ -2883,8 +2896,17 @@
         return;
       }
 
-      // Normal Brand Tab Feed
-      let vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normActiveBrand);
+      // Normal Brand Tab Feed (deduplicated by voucher code)
+      const renderedCodes = new Set();
+      let vs = state.vouchers.filter(v => {
+        if (normalizeBrandKey(v.brand) !== normActiveBrand) return false;
+        const c = (v.code || '').trim();
+        if (c && c !== '-') {
+          if (renderedCodes.has(c)) return false;
+          renderedCodes.add(c);
+        }
+        return true;
+      });
       if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         vs = vs.filter(v => 
