@@ -120,6 +120,28 @@
       border-color: rgba(12, 140, 70, 0.20) !important;
       box-shadow: 0 3px 12px rgba(12, 140, 70, 0.06) !important;
     }
+    /* Brand names and code text inside cards in light mode */
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-white,
+    html.light .mobile-view [id^="mb-card-"] .text-white {
+      color: #141212 !important;
+    }
+    /* Neutral labels (CODE, PIN, etc.) inside cards */
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-neutral-400,
+    html.light .mobile-view [id^="mb-card-"] .text-neutral-400 {
+      color: #5e5959 !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-neutral-300,
+    html.light .mobile-view [id^="mb-card-"] .text-neutral-300 {
+      color: #141212 !important;
+    }
+    /* Redeemed tag and amounts */
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-emerald-300,
+    html.light .mobile-view [id^="mb-card-"] .text-emerald-300,
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-emerald-400,
+    html.light .mobile-view [id^="mb-card-"] .text-emerald-400 {
+      color: #0C8C46 !important;
+    }
+    /* Card badge pills */
     [data-theme="light"] .mobile-view [id^="mb-card-"] .bg-neutral-800,
     html.light .mobile-view [id^="mb-card-"] .bg-neutral-800 {
       background-color: #FFF3EC !important;
@@ -146,6 +168,61 @@
     [data-theme="light"] .mobile-view [id^="mb-card-"] .text-amber-300,
     html.light .mobile-view [id^="mb-card-"] .text-amber-300 {
       color: #F47A21 !important;
+    }
+    /* Buttons inside cards (Copy, Dismiss, Restore) */
+    [data-theme="light"] .mobile-view [id^="mb-card-"] button.bg-neutral-800,
+    html.light .mobile-view [id^="mb-card-"] button.bg-neutral-800,
+    [data-theme="light"] .mobile-view [id^="mb-card-"] button.bg-neutral-900,
+    html.light .mobile-view [id^="mb-card-"] button.bg-neutral-900 {
+      background-color: #f0f6f2 !important;
+      border-color: rgba(12, 140, 70, 0.20) !important;
+      color: #141212 !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] button.bg-neutral-900.text-\[\#F47A21\],
+    html.light .mobile-view [id^="mb-card-"] button.bg-neutral-900.text-\[\#F47A21\] {
+      background-color: #FFF3EC !important;
+      border-color: rgba(244, 122, 33, 0.3) !important;
+      color: #F47A21 !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] button.bg-\[\#0C8C46\],
+    html.light .mobile-view [id^="mb-card-"] button.bg-\[\#0C8C46\] {
+      color: #ffffff !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .border-t,
+    html.light .mobile-view [id^="mb-card-"] .border-t {
+      border-color: rgba(12, 140, 70, 0.15) !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] span.bg-neutral-900,
+    html.light .mobile-view [id^="mb-card-"] span.bg-neutral-900 {
+      background-color: #f0f6f2 !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #5e5959 !important;
+    }
+    /* Brand Deck Selector subtitle */
+    [data-theme="light"] #mb-deck-selector button:not(.bg-\[\#0C8C46\]) .text-neutral-400,
+    html.light #mb-deck-selector button:not(.bg-\[\#0C8C46\]) .text-neutral-400 {
+      color: #5e5959 !important;
+    }
+    /* Header action bars and alerts */
+    [data-theme="light"] #mb-redeemed-bar span.text-white,
+    html.light #mb-redeemed-bar span.text-white,
+    [data-theme="light"] #dt-redeemed-bar span.text-white,
+    html.light #dt-redeemed-bar span.text-white {
+      color: #141212 !important;
+    }
+    [data-theme="light"] #mb-ff-alert,
+    html.light #mb-ff-alert {
+      background-color: #FFF3EC !important;
+      border-color: rgba(244, 122, 33, 0.35) !important;
+      color: #c25e10 !important;
+    }
+    [data-theme="light"] #mb-ff-alert strong,
+    html.light #mb-ff-alert strong {
+      color: #c25e10 !important;
+    }
+    [data-theme="light"] .mobile-view .mx-3.my-2 .text-neutral-400,
+    html.light .mobile-view .mx-3.my-2 .text-neutral-400 {
+      color: #5e5959 !important;
     }
     [data-theme="light"] .mobile-view #mb-activity-filters-bar button:not(.bg-\[\#0C8C46\]):not(.bg-amber-400),
     html.light .mobile-view #mb-activity-filters-bar button:not(.bg-\[\#0C8C46\]):not(.bg-amber-400),
@@ -183,6 +260,76 @@
     [data-theme="light"] .mobile-view #btn-master-trigger svg,
     html.light .mobile-view #btn-master-trigger svg {
       stroke: #141212 !important;
+    }
+    /* Empty State in Light Mode */
+    [data-theme="light"] .mobile-view .text-neutral-200,
+    html.light .mobile-view .text-neutral-200 {
+      color: #141212 !important;
+    }
+    [data-theme="light"] .mobile-view .text-neutral-400,
+    html.light .mobile-view .text-neutral-400 {
+      color: #5e5959 !important;
+    }
+    [data-theme="light"] .mobile-view .bg-neutral-900\/40,
+    html.light .mobile-view .bg-neutral-900\/40,
+    [data-theme="light"] .mobile-view .bg-neutral-900\/60,
+    html.light .mobile-view .bg-neutral-900\/60 {
+      background-color: #ffffff !important;
+      border-color: rgba(12, 140, 70, 0.18) !important;
+    }
+    /* Desktop View Light Mode */
+    [data-theme="light"] .desktop-view,
+    html.light .desktop-view {
+      color: #141212 !important;
+    }
+    [data-theme="light"] #dt-activity-filters-bar,
+    html.light #dt-activity-filters-bar,
+    [data-theme="light"] #dt-redeemed-bar,
+    html.light #dt-redeemed-bar {
+      background-color: #ffffff !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+    }
+    [data-theme="light"] #dt-activity-filters-bar button:not(.bg-\[\#0C8C46\]),
+    html.light #dt-activity-filters-bar button:not(.bg-\[\#0C8C46\]),
+    [data-theme="light"] #dt-btn-clear-trash,
+    html.light #dt-btn-clear-trash,
+    [data-theme="light"] #dt-btn-clear-redeemed-trash,
+    html.light #dt-btn-clear-redeemed-trash {
+      background-color: #f5f7f5 !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #5e5959 !important;
+    }
+    [data-theme="light"] #dt-vault-tbody tr,
+    html.light #dt-vault-tbody tr {
+      border-bottom-color: rgba(12, 140, 70, 0.12) !important;
+    }
+    [data-theme="light"] #dt-vault-tbody tr:hover,
+    html.light #dt-vault-tbody tr:hover {
+      background-color: rgba(12, 140, 70, 0.04) !important;
+    }
+    [data-theme="light"] #dt-vault-tbody .text-white,
+    html.light #dt-vault-tbody .text-white {
+      color: #141212 !important;
+    }
+    [data-theme="light"] #dt-vault-tbody .text-neutral-300,
+    html.light #dt-vault-tbody .text-neutral-300 {
+      color: #141212 !important;
+    }
+    [data-theme="light"] #dt-vault-tbody .text-neutral-400,
+    html.light #dt-vault-tbody .text-neutral-400 {
+      color: #5e5959 !important;
+    }
+    [data-theme="light"] #dt-vault-tbody button.bg-neutral-800,
+    html.light #dt-vault-tbody button.bg-neutral-800 {
+      background-color: #f0f6f2 !important;
+      color: #141212 !important;
+      border: 0.5px solid rgba(12, 140, 70, 0.20) !important;
+    }
+    [data-theme="light"] #dt-vault-tbody span.bg-black\/60,
+    html.light #dt-vault-tbody span.bg-black\/60 {
+      background-color: #f0f6f2 !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #5e5959 !important;
     }
 
     * {
@@ -902,27 +1049,27 @@
   <!-- MODAL: CHANGE MASTER PASSCODE                            -->
   <!-- ======================================================== -->
   <div id="modal-change-pin" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);">
-    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl bg-neutral-900 border border-neutral-800 text-white">
-      <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
+    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+      <div class="flex items-center justify-between pb-2" style="border-bottom: 0.5px solid var(--separator);">
         <h3 class="text-sm font-bold text-[#F47A21]">Change Master Passcode</h3>
         <button onclick="closeChangePinModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
       </div>
       <div class="space-y-3">
         <div>
-          <label class="block text-[11px] text-neutral-400 mb-1">Current 6-Digit Passcode</label>
-          <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter current 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
+          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">Current 6-Digit Passcode</label>
+          <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter current 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
         </div>
         <div>
-          <label class="block text-[11px] text-neutral-400 mb-1">New 6-Digit Passcode</label>
-          <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
+          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">New 6-Digit Passcode</label>
+          <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter new 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
         </div>
         <div>
-          <label class="block text-[11px] text-neutral-400 mb-1">Confirm New Passcode</label>
-          <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
+          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">Confirm New Passcode</label>
+          <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
         </div>
       </div>
-      <div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
-        <button onclick="closeChangePinModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white">Cancel</button>
+      <div class="flex items-center justify-end gap-2 pt-2" style="border-top: 0.5px solid var(--separator);">
+        <button onclick="closeChangePinModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-medium" style="color: var(--label-secondary);">Cancel</button>
         <button onclick="confirmChangePin()" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] text-white hover:bg-[#0A753A] shadow">Update Passcode</button>
       </div>
     </div>
@@ -2733,7 +2880,7 @@
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                    <span class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
+                    <span id="mb-code-${act.id}" class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
                   </div>
                   ${act.pin ? `
                     <div class="flex items-center gap-2 pt-0.5">
