@@ -3102,13 +3102,17 @@
             ${v.redeemedOn ? `<span class="text-[#F47A21] font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
           <td class="p-3">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30'}">
-              ${v.status}
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'PENDING' ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
+              ${v.status === 'PENDING' ? '⏳ PENDING' : v.status}
             </span>
           </td>
           <td class="p-3 text-right">
-            <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
-            <button onclick="markVoucherAsRedeemed('${v.code}', '${v.brand}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
+            ${v.status === 'PENDING' ? `
+              <span class="text-xs text-amber-400/90 font-medium mr-3">Awaiting Code</span>
+            ` : `
+              <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
+              <button onclick="markVoucherAsRedeemed('${v.code}', '${v.brand}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
+            `}
           </td>
         </tr>
       `;
@@ -3134,8 +3138,8 @@
               </div>
               <div class="flex items-center gap-1.5">
                 ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-[#F47A21]/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/30'}">
-                  ${v.status}
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : (v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/30')}">
+                  ${v.status === 'PENDING' ? '⏳ PENDING' : v.status}
                 </span>
               </div>
             </div>
@@ -3145,7 +3149,7 @@
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
+                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : (v.status === 'PENDING' ? 'text-amber-400 text-xs font-semibold' : '')}">${v.status === 'PENDING' ? 'Pending Delivery (24-48h)' : v.code}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
@@ -3154,9 +3158,15 @@
                   </div>
                 ` : ''}
               </div>
-              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
-                Copy
-              </button>
+              ${v.status === 'PENDING' ? `
+                <span class="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                  Awaiting Delivery
+                </span>
+              ` : `
+                <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
+                  Copy
+                </button>
+              `}
             </div>
           </div>
         `;

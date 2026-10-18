@@ -31,115 +31,149 @@ const UNIFIED_COOLDOWN_HEADERS = [
 
 /**
  * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
+ * Two-Stage RUPS Lifecycle:
+ *  - Stage 1 (Ack Email): Detects RUPS booking ID, delay/pending message -> records in Brand Tab as "PENDING" & starts 24h cooldown
+ *  - Stage 2 (Delivery Email): Detects RUPS booking ID & alphanumeric code -> finds row by RUPS ID and populates Code/PIN as "ACTIVE" in SAME row!
  */
 function processRupayEmails() {
-  // Query handles both direct RuPay emails and emails forwarded from any personal address
-  const query = 'is:unread (from:rupay@truztee.com OR subject:"Fwd:" OR subject:"Fw:" OR "rupay@truztee.com" OR "Booking ID:")';
-  const threads = GmailApp.search(query, 0, 25);
-  if (!threads.length) return;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(25000)) {
+    console.warn("processRupayEmails: script is currently running in another thread, skipping.");
+    return;
+  }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    // Search unread emails from Truztee or containing RUPS booking references
+    const query = 'is:unread (from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:")';
+    const threads = GmailApp.search(query, 0, 25);
+    if (!threads.length) return;
 
-  for (const thread of threads) {
-    const messages = thread.getMessages();
-    for (const msg of messages) {
-      if (!msg.isUnread()) continue;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-      const subject = msg.getSubject() || "";
-      const body = msg.getPlainBody() || "";
-      const toHeader = msg.getTo() || "";
-      const fromHeader = msg.getFrom() || "";
+    for (const thread of threads) {
+      const messages = thread.getMessages();
+      for (const msg of messages) {
+        if (!msg.isUnread()) continue;
 
-      // 1. Detect if this is a forwarded email
-      const isForwarded = /^(?:Fwd|Fw):/i.test(subject) || 
-                          body.includes("---------- Forwarded message ---------") ||
-                          /Forwarded message/i.test(body) ||
-                          /Begin forwarded message/i.test(body);
+        const subject = msg.getSubject() || "";
+        const body = msg.getPlainBody() || "";
+        const toHeader = msg.getTo() || "";
+        const fromHeader = msg.getFrom() || "";
 
-      // 2. Extract original recipient account
-      let account = "";
-      if (isForwarded) {
-        // Look for nested "To: <email>" inside the forwarded headers block
-        const fwdToMatch = body.match(/To:\s*<?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>?/i);
-        if (fwdToMatch && !fwdToMatch[1].toLowerCase().includes("rupayvouchers@gmail.com")) {
-          account = extractAccountName(fwdToMatch[1], "");
-        } else {
-          // If forwarded from personal email, fallback to forwarder's address
-          account = extractAccountName(fromHeader, "");
+        // 1. Extract Booking ID (prioritizing RUPS prefix)
+        const bookingIdMatch = subject.match(/\b(RUPS[A-Za-z0-9\-]+)\b/i) || 
+                               body.match(/\b(RUPS[A-Za-z0-9\-]+)\b/i) ||
+                               subject.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i) || 
+                               body.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i);
+        const bookingId = bookingIdMatch ? bookingIdMatch[1].trim() : "";
+        if (!bookingId) {
+          // No booking ID found, skip non-redemption emails
+          continue;
         }
-      } else {
-        account = extractAccountName(toHeader, body);
+
+        // 2. Extract original recipient account
+        let account = extractAccountName(toHeader, body, fromHeader);
+        if (!account) account = "vibhavoswal9";
+
+        // 3. Extract Brand, Amount, Date
+        const brand = extractBrand(subject, body);
+        const amount = extractAmount(body);
+        const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
+
+        // 4. Extract Voucher Code candidate
+        const rawCode = extractField(body, "Coupon Code") || 
+                        extractField(body, "Voucher Code") || 
+                        extractField(body, "Code") || "";
+        const cleanCode = rawCode.replace(/['"]/g, "").trim();
+
+        // 5. Binary Real-Code Check:
+        // A genuine code is a single clean alphanumeric/hexanumeric string (6-25 chars) with NO spaces,
+        // and is not the booking ID itself. Any delay message ("will be sent...", "delay...", "NA", "-") is rejected as a code.
+        const isDeliveredCode = /^[A-Za-z0-9]{6,25}$/.test(cleanCode) && 
+                                !cleanCode.toUpperCase().startsWith("RUPS");
+
+        // 6. Extract PIN if present
+        const pin = extractField(body, "Coupon Pin") || 
+                    extractField(body, "PIN") || 
+                    extractField(body, "Voucher Pin") || 
+                    extractField(body, "Card Pin") || "";
+        const cleanPin = pin ? pin.replace(/['"]/g, "").trim() : "";
+
+        // 7. Route based on Code Presence:
+        if (!isDeliveredCode) {
+          // ==========================================
+          // STAGE 1: Acknowledgement Email
+          // ==========================================
+          // A. Start 24h cooldown timer on this account immediately
+          updateCooldownTab(ss, account);
+
+          // B. Record directly into Brand Tab as "PENDING"
+          recordPendingRedemption(ss, {
+            bookingId: bookingId,
+            brand: brand,
+            amount: amount,
+            account: account,
+            dateOfIssue: dateOfIssue
+          });
+        } else {
+          // ==========================================
+          // STAGE 2: Voucher Code Delivery Email
+          // ==========================================
+          // Search Google Sheet for Booking ID (RUPS...) and fulfill in the SAME row!
+          fulfillVoucherCode(ss, {
+            bookingId: bookingId,
+            brand: brand,
+            code: cleanCode,
+            pin: cleanPin,
+            amount: amount,
+            dateOfIssue: dateOfIssue,
+            account: account
+          });
+        }
+
+        msg.markRead();
       }
-      if (!account) account = "vibhavoswal9";
-
-      // 3. Extract Booking ID, Brand, Amount, Date
-      const bookingIdMatch = subject.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i) || body.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i);
-      const bookingId = bookingIdMatch ? bookingIdMatch[1].trim() : "";
-      const brand = extractBrand(subject, body);
-      const amount = extractAmount(body);
-      const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
-
-      // 4. Extract Coupon Code and PIN
-      const couponCode = extractField(body, "Coupon Code") || extractField(body, "Voucher Code") || extractField(body, "Code");
-      const pin = extractField(body, "Coupon Pin") || extractField(body, "PIN") || extractField(body, "Voucher Pin") || extractField(body, "Card Pin") || "";
-
-      const isPending = !couponCode || 
-                        /will be sent/i.test(couponCode) || 
-                        /blank/i.test(couponCode) || 
-                        couponCode.toUpperCase() === "NA";
-
-      if (isPending) {
-        // STAGE 1: Acknowledgment Email
-        // 1. Start the 24h cooldown timer on this account
-        updateCooldownTab(ss, account);
-
-        // 2. Put into "Unassigned Queue" for rapid 1-tap card assignment in the app
-        queueUnassignedRedemption(ss, {
-          bookingId: bookingId,
-          brand: brand,
-          amount: amount,
-          account: account,
-          dateOfIssue: dateOfIssue
-        });
-      } else {
-        // STAGE 2: Code Delivery (24-48 hours later)
-        // Find by Booking ID and slot the code into the correct Brand Tab with IST Timestamp
-        fulfillVoucherCode(ss, {
-          bookingId: bookingId,
-          brand: brand,
-          code: couponCode,
-          pin: pin,
-          amount: amount,
-          dateOfIssue: dateOfIssue,
-          account: account
-        });
-      }
-
-      msg.markRead();
     }
+
+    SpreadsheetApp.flush();
+  } catch(err) {
+    console.error("Error in processRupayEmails:", err);
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
   }
 }
 
 /**
- * Extracts sender email and drops '@gmail.com' -> e.g. "vibhavoswal9"
+ * Extracts account username (e.g. "vibhavoswal9") handling forwarded headers with display names
  */
-function extractAccountName(toHeader, body) {
-  let email = toHeader.toLowerCase().trim();
-  const angle = email.match(/<([^>]+)>/);
-  if (angle) email = angle[1];
+function extractAccountName(toHeader, body, fromHeader) {
+  // 1. Nested "To: <email>" inside forwarded block (handles names before email)
+  const fwdToMatch = (body || "").match(/To:\s*(?:[^<@\r\n]+<)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>?/i);
+  if (fwdToMatch && !fwdToMatch[1].toLowerCase().includes("rupayvouchers@gmail.com")) {
+    return fwdToMatch[1].toLowerCase().replace(/@.*$/, "").trim();
+  }
 
-  if (email.includes("rupayvouchers@gmail.com")) {
-    const fwdMatch = body.match(/To:\s*<?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})>?/i);
-    if (fwdMatch && !fwdMatch[1].includes("rupayvouchers@gmail.com")) {
-      email = fwdMatch[1].toLowerCase().trim();
+  // 2. From header if forwarded from personal account
+  if (fromHeader && !fromHeader.toLowerCase().includes("rupay@truztee.com") && !fromHeader.toLowerCase().includes("google.com")) {
+    const fromMatch = fromHeader.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    if (fromMatch && !fromMatch[1].toLowerCase().includes("rupayvouchers@gmail.com")) {
+      return fromMatch[1].toLowerCase().replace(/@.*$/, "").trim();
     }
   }
 
-  return email.replace(/@.*$/, "").trim();
+  // 3. Direct To header
+  if (toHeader) {
+    const toMatch = toHeader.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    if (toMatch && !toMatch[1].toLowerCase().includes("rupayvouchers@gmail.com")) {
+      return toMatch[1].toLowerCase().replace(/@.*$/, "").trim();
+    }
+  }
+
+  return "vibhavoswal9";
 }
 
 function extractField(body, fieldName) {
-  const re = new RegExp(fieldName + ":\\s*([^\n\r]+)", "i");
+  const re = new RegExp("\\b" + fieldName + "\\s*[:#-]?\\s*([^\n\r<]+)", "i");
   const m = body.match(re);
   return m ? m[1].trim() : null;
 }
@@ -163,6 +197,7 @@ function extractBrand(subject, body) {
   if (combined.includes("taxspanner")) return "TaxSpanner";
   if (combined.includes("decathlon")) return "Decathlon";
   if (combined.includes("tattva")) return "TattvaSpa";
+  if (combined.includes("times prime") || combined.includes("timesprime") || combined.includes("tpace")) return "TimesPrime";
 
   return "Other";
 }
@@ -173,40 +208,11 @@ function extractAmount(body) {
 }
 
 /**
- * 2. UNASSIGNED QUEUE TAB (With IST Timestamp)
+ * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN BRAND TAB
  */
-function queueUnassignedRedemption(ss, data) {
-  let sheet = ss.getSheetByName("⚡ Unassigned");
-  if (!sheet) {
-    sheet = ss.insertSheet("⚡ Unassigned", 0);
-    sheet.appendRow(["Booking ID", "Brand", "Value", "Account", "Date of Issue", "Assigned Card", "Created Timestamp (IST)"]);
-    sheet.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#FEF3C7");
-    sheet.setFrozenRows(1);
-  }
-
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === data.bookingId) return;
-  }
-
-  sheet.appendRow([
-    data.bookingId,
-    data.brand,
-    data.amount,
-    data.account,
-    data.dateOfIssue,
-    "NEEDS_ASSIGNMENT",
-    formatISTTimestamp(new Date()) // Separate IST Timestamp Column
-  ]);
-}
-
-/**
- * 3. BRAND TAB FULFILLMENT (Standard 10 Columns)
- */
-function fulfillVoucherCode(ss, data) {
+function recordPendingRedemption(ss, data) {
   const brand = data.brand;
   let sheet = ss.getSheetByName(brand);
-
   if (!sheet) {
     sheet = ss.insertSheet(brand);
     sheet.appendRow(UNIFIED_BRAND_HEADERS);
@@ -214,9 +220,50 @@ function fulfillVoucherCode(ss, data) {
     sheet.setFrozenRows(1);
   }
 
+  // Idempotency: Does this Booking ID already exist in this brand sheet?
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1] === data.bookingId) {
+    if (String(rows[i][1]).trim() === data.bookingId) {
+      // Already recorded, don't duplicate
+      return;
+    }
+  }
+
+  const nextNum = rows.length;
+  const rowData = [
+    nextNum,                               // Col 1: #
+    data.bookingId,                        // Col 2: Booking ID (RUPS...)
+    "PENDING",                             // Col 3: Code
+    "",                                    // Col 4: PIN
+    data.amount || 500,                    // Col 5: Value
+    data.dateOfIssue,                      // Col 6: Date of Issue
+    data.account,                          // Col 7: Account
+    "Unassigned",                          // Col 8: Card
+    "PENDING",                             // Col 9: Status
+    formatISTTimestamp(new Date()),        // Col 10: Appended Timestamp (IST)
+    true                                   // Col 11: Display in UI
+  ];
+  sheet.appendRow(rowData);
+}
+
+/**
+ * 3. STAGE 2: BRAND TAB FULFILLMENT BY BOOKING ID (IN SAME ROW)
+ */
+function fulfillVoucherCode(ss, data) {
+  const brand = data.brand;
+  let sheet = ss.getSheetByName(brand);
+  if (!sheet) {
+    sheet = ss.insertSheet(brand);
+    sheet.appendRow(UNIFIED_BRAND_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+    sheet.setFrozenRows(1);
+  }
+
+  // 1. Search the target brand sheet first by Booking ID (RUPS...)
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][1]).trim() === data.bookingId) {
+      // MATCH FOUND: Populate Code & PIN and flip Status to ACTIVE in the EXACT SAME ROW!
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
       if (data.pin) {
         sheet.getRange(i + 1, 4).setValue(`'${data.pin}`);
@@ -228,19 +275,41 @@ function fulfillVoucherCode(ss, data) {
     }
   }
 
+  // 2. Global fallback search: What if brand detection differed slightly (e.g. Other vs Uber)?
+  const allSheets = ss.getSheets();
+  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  for (const s of allSheets) {
+    if (systemTabs.has(s.getName()) || s.getName() === brand) continue;
+    const sRows = s.getDataRange().getValues();
+    for (let i = 1; i < sRows.length; i++) {
+      if (String(sRows[i][1]).trim() === data.bookingId) {
+        s.getRange(i + 1, 3).setValue(`'${data.code}`);
+        if (data.pin) {
+          s.getRange(i + 1, 4).setValue(`'${data.pin}`);
+        }
+        s.getRange(i + 1, 9).setValue("ACTIVE");
+        s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+        s.getRange(i + 1, 11).setValue(true);
+        return;
+      }
+    }
+  }
+
+  // 3. Fallback: If not found in any sheet (e.g. ack email was missed or instant code delivery)
+  // Append as a new ACTIVE row in the Brand tab
   const nextNum = rows.length;
   const rowData = [
-    nextNum,
-    data.bookingId,
-    `'${data.code}`,
-    data.pin ? `'${data.pin}` : "",
-    data.amount || 500,
-    data.dateOfIssue,
-    data.account,
-    "Unassigned",
-    "ACTIVE",
-    formatISTTimestamp(new Date()),
-    true
+    nextNum,                               // Col 1: #
+    data.bookingId,                        // Col 2: Booking ID
+    `'${data.code}`,                       // Col 3: Code
+    data.pin ? `'${data.pin}` : "",        // Col 4: PIN
+    data.amount || 500,                    // Col 5: Value
+    data.dateOfIssue,                      // Col 6: Date of Issue
+    data.account,                          // Col 7: Account
+    "Unassigned",                          // Col 8: Card
+    "ACTIVE",                              // Col 9: Status
+    formatISTTimestamp(new Date()),        // Col 10: Appended Timestamp (IST)
+    true                                   // Col 11: Display in UI
   ];
   sheet.appendRow(rowData);
 }
