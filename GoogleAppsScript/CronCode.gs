@@ -1016,6 +1016,70 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 11. Verify Master Passcode (24-Hour Session TTL)
+    if (data.action === "VERIFY_PASSCODE") {
+      const entered = String(data.passcode || "").trim();
+      const scriptProps = PropertiesService.getScriptProperties();
+      const masterPasscode = scriptProps.getProperty("VAULT_MASTER_PASSCODE");
+
+      if (entered === masterPasscode) {
+        const sessionDurationMs = 24 * 60 * 60 * 1000; // 24 Hours TTL
+        const expiresAt = Date.now() + sessionDurationMs;
+        const rawToken = Utilities.computeHmacSha256Signature(expiresAt + ":" + VAULT_AUTH_KEY, masterPasscode);
+        const sessionToken = rawToken.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
+
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          expiresAt: expiresAt,
+          sessionToken: sessionToken
+        })).setMimeType(ContentService.MimeType.JSON);
+      } else {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "Incorrect passcode. Please try again."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
+    // 12. Change Master Passcode in Cloud Properties
+    if (data.action === "CHANGE_PASSCODE") {
+      const current = String(data.currentPasscode || "").trim();
+      const next = String(data.newPasscode || "").trim();
+      const scriptProps = PropertiesService.getScriptProperties();
+      const masterPasscode = scriptProps.getProperty("VAULT_MASTER_PASSCODE");
+
+      if (current !== masterPasscode) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "Current passcode is incorrect."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      if (!/^\d{6}$/.test(next)) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: false,
+          error: "New passcode must be exactly 6 digits."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      scriptProps.setProperty("VAULT_MASTER_PASSCODE", next);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        message: "Passcode updated successfully in cloud properties."
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 13. Direct Setup / Override of Passcode in Cloud Properties
+    if (data.action === "SET_PASSCODE") {
+      const code = String(data.passcode || "").trim();
+      if (/^\d{6}$/.test(code)) {
+        PropertiesService.getScriptProperties().setProperty("VAULT_MASTER_PASSCODE", code);
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          message: "Passcode configured in ScriptProperties."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
   }
