@@ -36,6 +36,13 @@ const UNIFIED_COOLDOWN_HEADERS = [
  *  - Stage 2 (Delivery Email): Detects RUPS booking ID & alphanumeric code -> finds row by RUPS ID and populates Code/PIN as "ACTIVE" in SAME row!
  */
 function processRupayEmails() {
+  // Guard: Only allow execution under the central hub account (rupayvouchers@gmail.com)
+  const effectiveUser = Session.getEffectiveUser().getEmail();
+  if (effectiveUser && effectiveUser !== "rupayvouchers@gmail.com") {
+    console.warn("processRupayEmails: Aborted. Running under " + effectiveUser + ", expected rupayvouchers@gmail.com");
+    return;
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(25000)) {
     console.warn("processRupayEmails: script is currently running in another thread, skipping.");
@@ -43,8 +50,8 @@ function processRupayEmails() {
   }
 
   try {
-    // Search unread emails OR recent Truztee/RUPS emails within last 2 days (idempotent by Booking ID)
-    const query = '(from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:") newer_than:2d';
+    // Search unread emails from Truztee or containing RUPS booking references
+    const query = 'is:unread (from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:")';
     const threads = GmailApp.search(query, 0, 25);
     if (!threads.length) return;
 
@@ -53,6 +60,8 @@ function processRupayEmails() {
     for (const thread of threads) {
       const messages = thread.getMessages();
       for (const msg of messages) {
+        if (!msg.isUnread()) continue;
+
         const subject = msg.getSubject() || "";
         const body = msg.getPlainBody() || "";
         const toHeader = msg.getTo() || "";
@@ -78,24 +87,44 @@ function processRupayEmails() {
         const amount = extractAmount(body);
         const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
 
-        // 4. Extract Voucher Code candidate
+        // 4. Extract Voucher Code & PIN candidates
         const rawCode = extractField(body, "Coupon Code") || 
                         extractField(body, "Voucher Code") || 
                         extractField(body, "Code") || "";
-        const cleanCode = rawCode.replace(/['"]/g, "").trim();
+        let cleanCode = rawCode.replace(/['"]/g, "").trim();
 
-        // 5. Binary Real-Code Check:
-        // A genuine code is a single clean alphanumeric/hexanumeric string (6-25 chars) with NO spaces,
-        // and is not the booking ID itself. Any delay message ("will be sent...", "delay...", "NA", "-") is rejected as a code.
-        const isDeliveredCode = /^[A-Za-z0-9]{6,25}$/.test(cleanCode) && 
-                                !cleanCode.toUpperCase().startsWith("RUPS");
-
-        // 6. Extract PIN if present
         const pin = extractField(body, "Coupon Pin") || 
                     extractField(body, "PIN") || 
                     extractField(body, "Voucher Pin") || 
                     extractField(body, "Card Pin") || "";
-        const cleanPin = pin ? pin.replace(/['"]/g, "").trim() : "";
+        let cleanPin = pin ? pin.replace(/['"]/g, "").trim() : "";
+
+        // Handle inline PIN patterns:
+        // Pattern A: "1001460102506580/pin:271127" or "1001460102506580 / PIN : 271127"
+        if (/\/pin\s*[:#-]?\s*/i.test(cleanCode)) {
+          const parts = cleanCode.split(/\/pin\s*[:#-]?\s*/i);
+          cleanCode = parts[0].trim();
+          if (!cleanPin && parts[1]) {
+            cleanPin = parts[1].trim();
+          }
+        } 
+        // Pattern B: "1001460102506580/271127" (code/pin numeric slash split)
+        else if (cleanCode.includes("/")) {
+          const parts = cleanCode.split("/");
+          if (parts.length === 2 && /^[A-Za-z0-9\-]{6,25}$/.test(parts[0].trim()) && /^[0-9]{3,8}$/.test(parts[1].trim())) {
+            cleanCode = parts[0].trim();
+            if (!cleanPin) {
+              cleanPin = parts[1].trim();
+            }
+          }
+        }
+
+        // 5. Binary Real-Code Check:
+        // A genuine code is 6-30 alphanumeric chars/hyphens, NO spaces, not starting with RUPS, and not a delay placeholder.
+        const isDelayPhrase = /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(cleanCode);
+        const isDeliveredCode = !isDelayPhrase && 
+                                /^[A-Za-z0-9\-]{6,30}$/.test(cleanCode) && 
+                                !cleanCode.toUpperCase().startsWith("RUPS");
 
         // 7. Route based on Code Presence:
         if (!isDeliveredCode) {
@@ -218,7 +247,19 @@ function recordPendingRedemption(ss, data) {
     sheet.setFrozenRows(1);
   }
 
-  // Global Idempotency: Does this Booking ID already exist in ANY brand sheet?
+  // 1. Check if Booking ID already exists in Redeemed tab (Col 3: Booking ID)
+  const rSheet = ss.getSheetByName("Redeemed");
+  if (rSheet) {
+    const rRows = rSheet.getDataRange().getValues();
+    for (let i = 1; i < rRows.length; i++) {
+      if (String(rRows[i][2]).trim() === data.bookingId) {
+        // Already redeemed, don't recreate!
+        return;
+      }
+    }
+  }
+
+  // 2. Global Idempotency: Does this Booking ID already exist in ANY brand sheet?
   const allSheets = ss.getSheets();
   const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
   for (const s of allSheets) {
@@ -529,6 +570,38 @@ function doGet(e) {
     if (e && e.parameter && e.parameter.dedup === "true") {
       const dedupReport = deduplicateBrandSheets(ss);
       return ContentService.createTextOutput(JSON.stringify({ success: true, dedupReport: dedupReport })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Purge spurious pending rows created during the 12:16 - 12:20 AM IST run
+    if (e && e.parameter && e.parameter.clean_spurious === "true") {
+      const removed = [];
+      const brandSheets = ss.getSheets();
+      const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+      for (const s of brandSheets) {
+        if (sysTabs.has(s.getName())) continue;
+        const sRows = s.getDataRange().getValues();
+        for (let i = sRows.length - 1; i >= 1; i--) {
+          const row = sRows[i];
+          const bookingId = String(row[1] || '').trim();
+          const code = String(row[2] || '').trim();
+          const dateOfIssue = String(row[5] || '').trim();
+          const status = String(row[8] || '').trim();
+          const timestamp = String(row[9] || '').trim();
+
+          const isSpurious = status === "PENDING" && 
+                             code === "PENDING" && 
+                             (timestamp.includes("19-Oct-2026 12:1") || dateOfIssue.includes("Oct 16 2026"));
+          
+          const isLegitimate = bookingId === "RUPS-BD5D6314" || bookingId === "RUPS-F172882B" || bookingId === "RUPS-70BBACDA";
+
+          if (isSpurious && !isLegitimate) {
+            removed.push({ brand: s.getName(), row: i + 1, bookingId: bookingId, account: row[6], date: dateOfIssue });
+            s.deleteRow(i + 1);
+          }
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, count: removed.length, removed: removed })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // Inspect recent inbox messages for debugging email forwarding and ingestion
