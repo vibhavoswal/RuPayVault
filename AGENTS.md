@@ -15,6 +15,7 @@
 ### 2. Floating Action Dock & Redemption Workflow
 - **Resting State**: 56px unified Interlock Master Combo FAB (equal-split WhatsApp + Double Tick).
 - **Expanded State**: Two 56px stacked circles (WhatsApp green circle on top, Double Tick emerald circle below) without text labels.
+- **Badge Visibility**: The selection count badge appears ONLY on the resting master bubble. When expanded into stacked circles and the cross button, the count badge disappears completely. After clicking the cross button, the count badge reappears on the master bubble.
 - **Exit Animation**: 700ms pure horizontal slide-through (`anim-swipe-horizontal-700` + `anim-collapse-700`) with 0° tilt/wobble.
 - **Select Mode Reset**: On redemption, the app immediately exits Select Mode and resets the dock to the resting Interlock FAB.
 - **Undo Toast**: Exactly 3.0-second countdown with reverse horizontal glide rollback (`anim-rollback-700`).

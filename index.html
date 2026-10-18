@@ -623,7 +623,6 @@
           <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
           </svg>
-          <span id="badge-menu-wa" class="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-amber-400 rounded-full border border-black shadow">0</span>
         </button>
 
         <!-- 2. Middle Circle: Redeem Double-Tick Button (56px x 56px) -->
@@ -632,7 +631,6 @@
             <path d="M7 12l4 4L20 6"></path>
             <path d="M2 12l4 4 2-2"></path>
           </svg>
-          <span id="badge-menu-redeem" class="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-white rounded-full border border-black shadow">0</span>
         </button>
       </div>
 
@@ -2761,15 +2759,25 @@
     function updateMasterTriggerIcon() {
       const slot = document.getElementById('master-icon-slot');
       const triggerBtn = document.getElementById('btn-master-trigger');
+      const badgeMaster = document.getElementById('badge-master-count');
       if (!slot || !triggerBtn) return;
       if (isMenuExpanded) {
         slot.innerHTML = CLOSE_ICON;
         triggerBtn.classList.remove('border-emerald-500/60');
         triggerBtn.classList.add('border-neutral-500', 'bg-neutral-800');
+        if (badgeMaster) badgeMaster.classList.add('hidden');
       } else {
         slot.innerHTML = INTERLOCK_COMBO_ICON;
         triggerBtn.classList.add('border-emerald-500/60');
         triggerBtn.classList.remove('border-neutral-500', 'bg-neutral-800');
+        if (badgeMaster) {
+          if (state.selectedIds.size > 0) {
+            badgeMaster.textContent = state.selectedIds.size;
+            badgeMaster.classList.remove('hidden');
+          } else {
+            badgeMaster.classList.add('hidden');
+          }
+        }
       }
     }
 
@@ -2830,19 +2838,15 @@
     function updateFloatingDock() {
       const count = state.selectedIds.size;
       const badgeMaster = document.getElementById('badge-master-count');
-      const badgeWA = document.getElementById('badge-menu-wa');
-      const badgeRedeem = document.getElementById('badge-menu-redeem');
 
       if (badgeMaster) {
-        if (count > 0) {
-          badgeMaster.textContent = count;
+        badgeMaster.textContent = count;
+        if (count > 0 && !isMenuExpanded) {
           badgeMaster.classList.remove('hidden');
         } else {
           badgeMaster.classList.add('hidden');
         }
       }
-      if (badgeWA) badgeWA.textContent = count;
-      if (badgeRedeem) badgeRedeem.textContent = count;
       updateMasterTriggerIcon();
     }
 
