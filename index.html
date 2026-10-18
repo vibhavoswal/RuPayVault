@@ -12,165 +12,177 @@
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     :root {
-      --bg-primary: #000000;
-      --bg-secondary: #1c1c1e;
-      --bg-tertiary: #2c2c2e;
-      --bg-grouped: #000000;
-      --bg-grouped-secondary: #1c1c1e;
-      --separator: rgba(84, 84, 88, 0.65);
+      --bg-primary: #141212;
+      --bg-secondary: #1c1819;
+      --bg-tertiary: #262223;
+      --bg-grouped: #141212;
+      --bg-grouped-secondary: #201c1d;
+      --separator: rgba(255, 255, 255, 0.12);
       --label-primary: #ffffff;
-      --label-secondary: rgba(235, 235, 245, 0.6);
-      --label-tertiary: rgba(235, 235, 245, 0.35);
+      --label-secondary: rgba(235, 235, 245, 0.65);
+      --label-tertiary: rgba(235, 235, 245, 0.4);
       --fill: rgba(120, 120, 128, 0.36);
       --fill-secondary: rgba(120, 120, 128, 0.32);
       --fill-quaternary: rgba(120, 120, 128, 0.18);
-      --system-blue: #0a84ff;
-      --system-green: #30d158;
-      --system-orange: #ff9f0a;
+      --system-blue: #0C8C46;
+      --system-green: #0C8C46;
+      --system-orange: #F47A21;
       --system-red: #ff453a;
-      --sidebar-bg: rgba(24, 24, 26, 0.95);
-      --toolbar-bg: rgba(28, 28, 30, 0.92);
-      --material-thick: rgba(28, 28, 30, 0.92);
+      --sidebar-bg: rgba(26, 23, 24, 0.96);
+      --toolbar-bg: rgba(28, 24, 25, 0.94);
+      --material-thick: rgba(28, 24, 25, 0.94);
+      /* RuPay Official Logo Palette */
+      --rupay-green: #0C8C46;
+      --rupay-green-hover: #0A753A;
+      --rupay-orange: #F47A21;
+      --rupay-charcoal: #241F20;
       /* Drawer & Unified Theme Variables */
-      --drawer-bg: rgba(20, 20, 23, 0.97);
-      --drawer-border: rgba(255, 255, 255, 0.15);
-      --theme-card-bg: #18181b;
-      --theme-card-subtle: #121215;
-      --theme-border: rgba(255, 255, 255, 0.12);
+      --drawer-bg: rgba(26, 23, 24, 0.98);
+      --drawer-border: rgba(12, 140, 70, 0.28);
+      --theme-card-bg: #201c1d;
+      --theme-card-subtle: #181516;
+      --theme-border: rgba(12, 140, 70, 0.28);
       --theme-text-main: #ffffff;
-      --theme-text-muted: #a1a1aa;
-      --theme-text-sub: #71717a;
+      --theme-text-muted: #9e9797;
+      --theme-text-sub: #7a7373;
     }
 
     [data-theme="light"], html.light {
-      --bg-primary: #ffffff;
-      --bg-secondary: #f2f2f7;
-      --bg-tertiary: #e5e5ea;
-      --bg-grouped: #f2f2f7;
+      --bg-primary: #f5f7f5;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e9ece9;
+      --bg-grouped: #f5f7f5;
       --bg-grouped-secondary: #ffffff;
-      --separator: rgba(60, 60, 67, 0.29);
-      --label-primary: #000000;
-      --label-secondary: rgba(60, 60, 67, 0.6);
-      --label-tertiary: rgba(60, 60, 67, 0.35);
-      --fill: rgba(120, 120, 128, 0.2);
-      --fill-secondary: rgba(120, 120, 128, 0.16);
+      --separator: rgba(60, 60, 67, 0.22);
+      --label-primary: #141212;
+      --label-secondary: rgba(60, 60, 67, 0.7);
+      --label-tertiary: rgba(60, 60, 67, 0.45);
+      --fill: rgba(120, 120, 128, 0.18);
+      --fill-secondary: rgba(120, 120, 128, 0.14);
       --fill-quaternary: rgba(120, 120, 128, 0.08);
-      --system-blue: #007aff;
-      --system-green: #34c759;
-      --system-orange: #ff9500;
+      --system-blue: #0C8C46;
+      --system-green: #0C8C46;
+      --system-orange: #F47A21;
       --system-red: #ff3b30;
-      --sidebar-bg: rgba(246, 246, 248, 0.95);
-      --toolbar-bg: rgba(246, 246, 248, 0.92);
-      --material-thick: rgba(246, 246, 248, 0.92);
+      --sidebar-bg: rgba(255, 255, 255, 0.96);
+      --toolbar-bg: rgba(255, 255, 255, 0.94);
+      --material-thick: rgba(255, 255, 255, 0.94);
+      /* RuPay Official Logo Palette */
+      --rupay-green: #0C8C46;
+      --rupay-green-hover: #0A753A;
+      --rupay-orange: #F47A21;
+      --rupay-charcoal: #241F20;
       /* Drawer & Unified Theme Variables */
-      --drawer-bg: rgba(255, 255, 255, 0.97);
-      --drawer-border: rgba(0, 0, 0, 0.12);
+      --drawer-bg: rgba(255, 255, 255, 0.98);
+      --drawer-border: rgba(12, 140, 70, 0.22);
       --theme-card-bg: #ffffff;
-      --theme-card-subtle: #f8fafc;
-      --theme-border: rgba(0, 0, 0, 0.1);
-      --theme-text-main: #09090b;
-      --theme-text-muted: #52525b;
-      --theme-text-sub: #71717a;
+      --theme-card-subtle: #f0f6f2;
+      --theme-border: rgba(12, 140, 70, 0.20);
+      --theme-text-main: #141212;
+      --theme-text-muted: #5e5959;
+      --theme-text-sub: #7a7373;
     }
 
-    /* Light Mode Clean Apple UI Styling */
+    /* Light Mode Clean RuPay UI Styling */
     [data-theme="light"] .mobile-view,
     html.light .mobile-view {
-      background-color: #f4f4f6 !important;
-      color: #09090b !important;
+      background-color: #f5f7f5 !important;
+      color: #141212 !important;
     }
     [data-theme="light"] .mobile-view header.safe-top-nav,
     html.light .mobile-view header.safe-top-nav {
       background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
     }
     [data-theme="light"] #mb-deck-selector,
     html.light #mb-deck-selector {
       background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
     }
-    [data-theme="light"] #mb-deck-selector button:not(.bg-gradient-to-r),
-    html.light #mb-deck-selector button:not(.bg-gradient-to-r) {
-      background-color: #f4f4f6 !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+    [data-theme="light"] #mb-deck-selector button:not(.bg-\[\#0C8C46\]):not(.bg-gradient-to-r),
+    html.light #mb-deck-selector button:not(.bg-\[\#0C8C46\]):not(.bg-gradient-to-r) {
+      background-color: #f5f7f5 !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
       color: #3f3f46 !important;
     }
     [data-theme="light"] .mobile-view .mx-3.my-2,
     html.light .mobile-view .mx-3.my-2 {
       background: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
     }
     [data-theme="light"] .mobile-view #mb-header-calc,
     html.light .mobile-view #mb-header-calc {
-      color: #b45309 !important;
+      color: #F47A21 !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"],
     html.light .mobile-view [id^="mb-card-"] {
       background: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+      border-color: rgba(12, 140, 70, 0.20) !important;
+      box-shadow: 0 3px 12px rgba(12, 140, 70, 0.06) !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"] .bg-neutral-800,
     html.light .mobile-view [id^="mb-card-"] .bg-neutral-800 {
-      background-color: #fef3c7 !important;
-      color: #92400e !important;
-      border-color: rgba(217, 119, 6, 0.25) !important;
+      background-color: #FFF3EC !important;
+      color: #F47A21 !important;
+      border-color: rgba(244, 122, 33, 0.3) !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"] .bg-black\/40,
     html.light .mobile-view [id^="mb-card-"] .bg-black\/40 {
-      background-color: #f8fafc !important;
-      border-color: rgba(0, 0, 0, 0.06) !important;
-      color: #64748b !important;
+      background-color: #f0f6f2 !important;
+      border-color: rgba(12, 140, 70, 0.12) !important;
+      color: #5e5959 !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"] .bg-black\/75,
     html.light .mobile-view [id^="mb-card-"] .bg-black\/75 {
-      background-color: #f1f5f9 !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+      background-color: #f0f6f2 !important;
+      border-color: rgba(12, 140, 70, 0.18) !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"] [id^="mb-code-"],
     html.light .mobile-view [id^="mb-card-"] [id^="mb-code-"] {
-      color: #0f172a !important;
+      color: #141212 !important;
     }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-\[\#F47A21\],
+    html.light .mobile-view [id^="mb-card-"] .text-\[\#F47A21\],
     [data-theme="light"] .mobile-view [id^="mb-card-"] .text-amber-300,
     html.light .mobile-view [id^="mb-card-"] .text-amber-300 {
-      color: #d97706 !important;
+      color: #F47A21 !important;
     }
-    [data-theme="light"] .mobile-view #mb-activity-filters-bar button:not(.bg-amber-400),
-    html.light .mobile-view #mb-activity-filters-bar button:not(.bg-amber-400),
+    [data-theme="light"] .mobile-view #mb-activity-filters-bar button:not(.bg-\[\#0C8C46\]):not(.bg-amber-400),
+    html.light .mobile-view #mb-activity-filters-bar button:not(.bg-\[\#0C8C46\]):not(.bg-amber-400),
     [data-theme="light"] .mobile-view #mb-btn-clear-trash,
     html.light .mobile-view #mb-btn-clear-trash,
     [data-theme="light"] .mobile-view #mb-btn-clear-redeemed-trash,
     html.light .mobile-view #mb-btn-clear-redeemed-trash {
       background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      color: #52525b !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #5e5959 !important;
     }
     [data-theme="light"] .mobile-view #mb-menu-btn,
     html.light .mobile-view #mb-menu-btn {
       background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      color: #18181b !important;
+      border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #141212 !important;
     }
     [data-theme="light"] .mobile-view #mb-sync-time,
     html.light .mobile-view #mb-sync-time {
-      color: #71717a !important;
+      color: #5e5959 !important;
     }
     [data-theme="light"] .mobile-view #mb-select-btn,
     html.light .mobile-view #mb-select-btn {
-      background-color: #fef3c7 !important;
-      color: #92400e !important;
-      border-color: rgba(217, 119, 6, 0.25) !important;
+      background-color: #FFF3EC !important;
+      color: #F47A21 !important;
+      border-color: rgba(244, 122, 33, 0.3) !important;
     }
     [data-theme="light"] .mobile-view #btn-master-trigger,
     html.light .mobile-view #btn-master-trigger {
       background: #ffffff !important;
-      color: #18181b !important;
-      border-color: #10b981 !important;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+      color: #141212 !important;
+      border-color: #0C8C46 !important;
+      box-shadow: 0 8px 25px rgba(12, 140, 70, 0.18) !important;
     }
     [data-theme="light"] .mobile-view #btn-master-trigger svg,
     html.light .mobile-view #btn-master-trigger svg {
-      stroke: #18181b !important;
+      stroke: #141212 !important;
     }
 
     * {
@@ -324,8 +336,8 @@
     <!-- Top Area: Status & Shield Icon -->
     <div class="w-full pt-8 flex flex-col items-center text-center space-y-3">
       <div class="relative">
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center shadow-[0_0_35px_rgba(251,191,36,0.15)]">
-          <svg class="w-10 h-10 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0C8C46]/25 to-[#0C8C46]/10 border border-[#0C8C46]/35 flex items-center justify-center shadow-[0_0_35px_rgba(12,140,70,0.2)]">
+          <svg class="w-10 h-10 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="3" ry="3"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
@@ -350,7 +362,7 @@
         <div id="pin-dot-5" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
       </div>
       
-      <p id="pin-feedback" class="text-[11px] text-amber-400/80 font-mono-apple h-4"></p>
+      <p id="pin-feedback" class="text-[11px] text-[#F47A21] font-mono-apple h-4"></p>
     </div>
 
     <!-- Center/Bottom Area: Keypad -->
@@ -358,25 +370,25 @@
       
       <!-- Circular 3x4 Keypad -->
       <div class="grid grid-cols-3 gap-3.5 justify-items-center">
-        <button onclick="pressPinDigit('1')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">1</button>
-        <button onclick="pressPinDigit('2')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">2</button>
-        <button onclick="pressPinDigit('3')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">3</button>
-        <button onclick="pressPinDigit('4')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">4</button>
-        <button onclick="pressPinDigit('5')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">5</button>
-        <button onclick="pressPinDigit('6')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">6</button>
-        <button onclick="pressPinDigit('7')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">7</button>
-        <button onclick="pressPinDigit('8')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">8</button>
-        <button onclick="pressPinDigit('9')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">9</button>
+        <button onclick="pressPinDigit('1')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">1</button>
+        <button onclick="pressPinDigit('2')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">2</button>
+        <button onclick="pressPinDigit('3')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">3</button>
+        <button onclick="pressPinDigit('4')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">4</button>
+        <button onclick="pressPinDigit('5')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">5</button>
+        <button onclick="pressPinDigit('6')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">6</button>
+        <button onclick="pressPinDigit('7')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">7</button>
+        <button onclick="pressPinDigit('8')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">8</button>
+        <button onclick="pressPinDigit('9')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">9</button>
         
-        <button onclick="clearPinDigits()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 flex items-center justify-center text-sm font-bold text-neutral-400 active:scale-90 transition-all shadow" title="Clear">C</button>
-        <button onclick="pressPinDigit('0')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">0</button>
-        <button onclick="pressPinBackspace()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-800 flex items-center justify-center text-neutral-400 active:scale-90 transition-all shadow" title="Delete">
+        <button onclick="clearPinDigits()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 flex items-center justify-center text-sm font-bold text-neutral-400 active:scale-90 transition-all shadow" title="Clear">C</button>
+        <button onclick="pressPinDigit('0')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">0</button>
+        <button onclick="pressPinBackspace()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 flex items-center justify-center text-neutral-400 active:scale-90 transition-all shadow" title="Delete">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l7-7h11a2 2 0 012 2v10a2 2 0 01-2 2H10l-7-7z"/></svg>
         </button>
       </div>
 
       <div class="pt-2 text-center">
-        <p class="text-[10px] text-neutral-500">24-Hour Authenticated Session &middot; <button onclick="openChangePinModal()" class="text-amber-400/80 hover:underline">Change Passcode</button></p>
+        <p class="text-[10px] text-neutral-500">24-Hour Authenticated Session &middot; <button onclick="openChangePinModal()" class="text-[#F47A21] hover:underline">Change Passcode</button></p>
       </div>
     </div>
   </div>
@@ -445,7 +457,7 @@
         <div class="flex items-center gap-2 font-mono-apple" style="font-size: 10px;">
           <span class="w-2 h-2 rounded-full inline-block" id="dt-sync-dot" style="background: var(--system-green);"></span>
           <span id="dt-sync-status">Live</span>
-          <button onclick="lockVaultManual()" class="ml-1 px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-amber-300 font-sans font-semibold text-[10px] active:scale-95 transition-all" title="Lock Vault">🔒 Lock</button>
+          <button onclick="lockVaultManual()" class="ml-1 px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] font-sans font-semibold text-[10px] active:scale-95 transition-all" title="Lock Vault">🔒 Lock</button>
         </div>
       </div>
     </aside>
@@ -534,7 +546,7 @@
         <!-- Desktop Activity Log Sub-Filters (Visible when Activity Log is active) -->
         <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center justify-between gap-2">
           <div class="flex items-center gap-2">
-            <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black">⚡ Ingested</button>
+            <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow">⚡ Ingested</button>
             <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📤 Shared</button>
           </div>
           <button id="dt-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Clear Visible Items">
@@ -662,14 +674,14 @@
       
       <div class="flex items-center gap-2">
         <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
-        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-amber-400 hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
+        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-[#0C8C46] hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
           <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
-        <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
+        <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
           🔒
         </button>
         <!-- ONLY ONE SELECT BUTTON AT THE TOP -->
-        <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-amber-300 border border-amber-400/30 hover:bg-neutral-700 active:scale-95 transition-all">
+        <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 hover:bg-neutral-700 active:scale-95 transition-all">
           Select
         </button>
       </div>
@@ -681,7 +693,7 @@
         <span class="text-sm text-emerald-400">✓</span>
         <span id="mb-undo-banner-text" class="truncate text-[11px] font-medium text-emerald-200">Voucher marked as Redeemed & moved to Sheet</span>
       </div>
-      <button id="mb-undo-banner-btn" onclick="triggerUndoLast()" class="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500 text-black font-bold text-[11px] hover:bg-emerald-400 active:scale-95 transition-all shadow">
+      <button id="mb-undo-banner-btn" onclick="triggerUndoLast()" class="shrink-0 px-2.5 py-1 rounded-lg bg-[#0C8C46] text-white font-bold text-[11px] hover:bg-emerald-600 active:scale-95 transition-all shadow">
         ↶ Undo (10s)
       </button>
     </div>
@@ -694,13 +706,13 @@
     <!-- Denomination Breakdown Banner (Single Line Compact) -->
     <div class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
       <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
-      <span id="mb-header-calc" class="font-bold text-amber-400 font-mono-apple pl-2 tracking-tight">Loading...</span>
+      <span id="mb-header-calc" class="font-bold text-[#F47A21] font-mono-apple pl-2 tracking-tight">Loading...</span>
     </div>
 
     <!-- Activity Log Sub-Filters (Visible ONLY when Activity Log tab is selected) -->
     <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex items-center justify-between gap-1.5 shrink-0">
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-400 text-black shadow transition-all">⚡ Ingested</button>
+        <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-[#0C8C46] text-white shadow transition-all">⚡ Ingested</button>
         <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📤 Shared</button>
       </div>
       <button id="mb-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-xl bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Clear Visible Items">
@@ -726,11 +738,11 @@
     <main class="flex-1 overflow-y-auto px-3.5 py-2 mobile-scroll-container space-y-3 pb-24">
       
       <!-- Four Fountains 30-Day Alert Banner -->
-      <div id="mb-ff-alert" class="hidden p-3 rounded-2xl border border-amber-500/30 bg-amber-950/20 text-xs text-amber-200 flex items-start gap-2">
+      <div id="mb-ff-alert" class="hidden p-3 rounded-2xl border border-[#F47A21]/30 bg-[#F47A21]/10 text-xs text-[#F47A21] flex items-start gap-2">
         <span class="text-base shrink-0 mt-0.5">⚠️</span>
         <div>
-          <strong class="font-semibold text-amber-100">Strict 30-Day Expiry:</strong>
-          <p class="text-[11px] text-amber-300/90 mt-0.5">Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.</p>
+          <strong class="font-semibold text-white">Strict 30-Day Expiry:</strong>
+          <p class="text-[11px] text-[#F47A21]/90 mt-0.5">Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.</p>
         </div>
       </div>
 
@@ -768,11 +780,11 @@
       </div>
 
       <!-- COLLAPSED MASTER BUTTON (56px x 56px) -->
-      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-emerald-500/60" title="Actions">
+      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80" title="Actions">
         <div id="master-icon-slot" class="flex items-center justify-center">
           <!-- Injected via JS -->
         </div>
-        <span id="badge-master-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-black bg-amber-400 rounded-full border-2 border-black shadow">0</span>
+        <span id="badge-master-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-white bg-[#F47A21] rounded-full border-2 border-black shadow">0</span>
       </button>
 
     </div>
@@ -892,26 +904,26 @@
   <div id="modal-change-pin" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);">
     <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl bg-neutral-900 border border-neutral-800 text-white">
       <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
-        <h3 class="text-sm font-bold text-amber-400">Change Master Passcode</h3>
+        <h3 class="text-sm font-bold text-[#F47A21]">Change Master Passcode</h3>
         <button onclick="closeChangePinModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
       </div>
       <div class="space-y-3">
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">Current 6-Digit Passcode</label>
-          <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter current 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+          <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter current 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
         </div>
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">New 6-Digit Passcode</label>
-          <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+          <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
         </div>
         <div>
           <label class="block text-[11px] text-neutral-400 mb-1">Confirm New Passcode</label>
-          <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-amber-400">
+          <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new 6-digit passcode" class="w-full px-3 py-2 rounded-xl bg-black border border-neutral-800 text-sm font-mono-apple text-white focus:outline-none focus:border-[#0C8C46]">
         </div>
       </div>
       <div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
         <button onclick="closeChangePinModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white">Cancel</button>
-        <button onclick="confirmChangePin()" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-black hover:bg-amber-300 shadow">Update Passcode</button>
+        <button onclick="confirmChangePin()" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] text-white hover:bg-[#0A753A] shadow">Update Passcode</button>
       </div>
     </div>
   </div>
@@ -931,13 +943,13 @@
         <!-- Header Profile -->
         <div class="flex items-center justify-between pb-3 border-b border-[var(--theme-border)]">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-base border border-amber-500/30">
+            <div class="w-9 h-9 rounded-2xl bg-emerald-500/20 text-[#0C8C46] flex items-center justify-center font-bold text-base border border-emerald-500/30">
               💎
             </div>
             <div>
               <h3 class="font-bold text-sm text-[var(--theme-text-main)]">RuPay Vault</h3>
-              <p class="text-[10px] text-emerald-400 font-mono-apple flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Live Connected
+              <p class="text-[10px] text-[#0C8C46] font-mono-apple flex items-center gap-1 font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#0C8C46]"></span> Live Connected
               </p>
             </div>
           </div>
@@ -950,7 +962,7 @@
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] overflow-hidden divide-y divide-[var(--theme-border)] shadow-sm">
             <a id="sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-3 flex items-center justify-between hover:bg-[var(--theme-card-subtle)] active:bg-emerald-500/10 transition-colors group">
               <div class="flex items-center gap-3">
-                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-[#0F9D58] flex items-center justify-center font-bold">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-[#0C8C46] flex items-center justify-center font-bold">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
                 </div>
                 <div>
@@ -958,7 +970,7 @@
                   <div id="drawer-sheet-count" class="text-[10px] text-[var(--theme-text-sub)]">Loading live data...</div>
                 </div>
               </div>
-              <span class="text-xs text-emerald-400 font-bold group-hover:translate-x-0.5 transition-transform">↗</span>
+              <span class="text-xs text-[#0C8C46] font-bold group-hover:translate-x-0.5 transition-transform">↗</span>
             </a>
           </div>
         </div>
@@ -969,10 +981,10 @@
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] p-2.5 shadow-sm space-y-2">
             <div class="flex items-center justify-between text-xs">
               <span class="text-[var(--theme-text-muted)] font-medium">Theme Style</span>
-              <span class="font-bold text-amber-400" id="drawer-theme-label">Dark</span>
+              <span class="font-bold text-[#F47A21]" id="drawer-theme-label">Dark</span>
             </div>
             <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)]">
-              <button onclick="setThemeMode(true)" id="drawer-btn-dark" class="py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-black shadow transition-all flex items-center justify-center gap-1">
+              <button onclick="setThemeMode(true)" id="drawer-btn-dark" class="py-1.5 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow transition-all flex items-center justify-center gap-1">
                 <span>🌙</span> Dark
               </button>
               <button onclick="setThemeMode(false)" id="drawer-btn-light" class="py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-muted)] transition-all flex items-center justify-center gap-1">
@@ -1006,7 +1018,7 @@
       <!-- Footer -->
       <div class="pt-3 border-t border-[var(--theme-border)] flex items-center justify-between text-xs">
         <span class="text-[10px] font-mono-apple text-[var(--theme-text-sub)]">Session 24h TTL</span>
-        <button onclick="closeNavDrawer(); lockVaultManual();" class="px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-amber-400/40 text-amber-300 font-bold active:scale-95 transition-all text-xs flex items-center gap-1">
+        <button onclick="closeNavDrawer(); lockVaultManual();" class="px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-[#F47A21]/40 text-[#F47A21] font-bold active:scale-95 transition-all text-xs flex items-center gap-1">
           <span>🔒</span> Lock Vault
         </button>
       </div>
@@ -1145,10 +1157,10 @@
         const dot = document.getElementById(`pin-dot-${i}`);
         if (dot) {
           if (i < len) {
-            dot.classList.add('bg-amber-400', 'border-amber-400', 'shadow-[0_0_12px_rgba(251,191,36,0.7)]');
+            dot.classList.add('bg-[#0C8C46]', 'border-[#0C8C46]', 'shadow-[0_0_12px_rgba(12,140,70,0.7)]');
             dot.classList.remove('border-neutral-600');
           } else {
-            dot.classList.remove('bg-amber-400', 'border-amber-400', 'shadow-[0_0_12px_rgba(251,191,36,0.7)]');
+            dot.classList.remove('bg-[#0C8C46]', 'border-[#0C8C46]', 'shadow-[0_0_12px_rgba(12,140,70,0.7)]');
             dot.classList.add('border-neutral-600');
           }
         }
@@ -1171,7 +1183,7 @@
         const dot = document.getElementById(`pin-dot-${i}`);
         if (dot) {
           dot.classList.remove('border-neutral-600');
-          dot.classList.add('bg-amber-400', 'border-amber-400');
+          dot.classList.add('bg-[#F47A21]', 'border-[#F47A21]');
         }
       }
 
@@ -1194,8 +1206,8 @@
           for (let i = 0; i < 6; i++) {
             const dot = document.getElementById(`pin-dot-${i}`);
             if (dot) {
-              dot.classList.remove('bg-amber-400', 'border-amber-400');
-              dot.classList.add('bg-emerald-400', 'border-emerald-400');
+              dot.classList.remove('bg-[#F47A21]', 'border-[#F47A21]');
+              dot.classList.add('bg-[#0C8C46]', 'border-[#0C8C46]');
             }
           }
           if (feedback) {
@@ -1227,7 +1239,7 @@
       for (let i = 0; i < 6; i++) {
         const dot = document.getElementById(`pin-dot-${i}`);
         if (dot) {
-          dot.classList.remove('bg-amber-400', 'border-amber-400');
+          dot.classList.remove('bg-[#F47A21]', 'border-[#F47A21]');
           dot.classList.add('bg-rose-500', 'border-rose-500');
         }
       }
@@ -1799,7 +1811,7 @@
         [dtBtn, mbBtn].forEach(btn => {
           if (btn) {
             if (f === filter) {
-              btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-amber-400 text-black shadow transition-all';
+              btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow transition-all';
             } else {
               btn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all';
             }
@@ -2122,12 +2134,12 @@
       const btnLight = document.getElementById('drawer-btn-light');
       if (btnDark) {
         btnDark.className = state.isDark
-          ? 'py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-black shadow transition-all flex items-center justify-center gap-1'
+          ? 'py-1.5 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow transition-all flex items-center justify-center gap-1'
           : 'py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-muted)] transition-all flex items-center justify-center gap-1';
       }
       if (btnLight) {
         btnLight.className = !state.isDark
-          ? 'py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-black shadow transition-all flex items-center justify-center gap-1'
+          ? 'py-1.5 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow transition-all flex items-center justify-center gap-1'
           : 'py-1.5 rounded-lg text-xs font-medium text-[var(--theme-text-muted)] transition-all flex items-center justify-center gap-1';
       }
 
@@ -2240,7 +2252,7 @@
       const mbSyncTime = document.getElementById('mb-sync-time');
       if (mbSyncTime) {
         mbSyncTime.textContent = 'Syncing now...';
-        mbSyncTime.classList.add('text-amber-400');
+        mbSyncTime.classList.add('text-[#F47A21]');
         mbSyncTime.classList.remove('text-neutral-400');
       }
       if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing now...';
@@ -2358,7 +2370,7 @@
         localStorage.setItem('rupay_sync_time', timeStr);
         if (mbSyncTime) {
           mbSyncTime.textContent = `Synced at ${timeStr}`;
-          mbSyncTime.classList.remove('text-amber-400');
+          mbSyncTime.classList.remove('text-[#F47A21]');
           mbSyncTime.classList.add('text-neutral-400');
         }
 
@@ -2376,7 +2388,7 @@
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         if (mbSyncTime) {
           mbSyncTime.textContent = `Synced at ${timeStr} (cached)`;
-          mbSyncTime.classList.remove('text-amber-400');
+          mbSyncTime.classList.remove('text-[#F47A21]');
           mbSyncTime.classList.add('text-neutral-400');
         }
       } finally {
@@ -2581,13 +2593,13 @@
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadge = '';
-          if (isShared) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">📤 SHARED</span>`;
-          else if (isIngested) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40">⚡ INGESTED</span>`;
+          if (isShared) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30">📤 SHARED</span>`;
+          else if (isIngested) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/40">⚡ INGESTED</span>`;
 
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40">
               <td class="p-3 text-center">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-amber-400">
+                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" class="rounded accent-[#0C8C46]">
               </td>
               <td class="p-3">
                 <div class="font-bold text-sm">${vBrandName}</div>
@@ -2595,10 +2607,10 @@
               </td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
-                  <span class="font-mono-apple font-bold text-blue-400">${act.code}</span>
-                  <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700" title="Copy code">Copy</button>
+                  <span class="font-mono-apple font-bold text-white">${act.code}</span>
+                  <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" title="Copy code">Copy</button>
                 </div>
-                ${act.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${act.pin}</div>` : ''}
+                ${act.pin ? `<div class="font-mono-apple text-xs text-[#F47A21] font-bold mt-0.5">PIN: ${act.pin}</div>` : ''}
               </td>
               <td class="p-3 text-xs" style="color: var(--label-secondary);">
                 <span class="px-2 py-0.5 rounded-full bg-black/60 border border-neutral-800 text-neutral-300 text-[11px] font-mono-apple inline-block">
@@ -2635,20 +2647,20 @@
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadgeHtml = '';
-          if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold">📤 SHARED</span>`;
-          else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-[10px] font-bold">⚡ INGESTED</span>`;
+          if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-bold">📤 SHARED</span>`;
+          else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#0C8C46]/20 border border-[#0C8C46]/40 text-[#0C8C46] text-[10px] font-bold">⚡ INGESTED</span>`;
 
           if (isIngested) {
             return `
               <div id="mb-card-${act.id}"
                    data-code="${act.code}"
                    onclick="handleCardClick('${act.id}')"
-                   class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]" style="max-height: 250px;">
+                   class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]" style="max-height: 250px;">
                 <!-- Header Row -->
                 <div class="flex items-center justify-between text-xs pointer-events-none">
                   <div class="flex items-center gap-2">
-                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
-                    <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
+                    <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 text-[11px] font-bold">
                       ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
                     </span>
                   </div>
@@ -2670,11 +2682,11 @@
                     ${act.pin ? `
                       <div class="flex items-center gap-2 pt-0.5">
                         <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                        <span class="font-mono-apple text-sm font-bold text-amber-300">${act.pin}</span>
+                        <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${act.pin}</span>
                       </div>
                     ` : ''}
                   </div>
-                  <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+                  <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
                     Copy
                   </button>
                 </div>
@@ -2686,12 +2698,12 @@
             <div id="mb-card-${act.id}"
                  data-code="${act.code}"
                  onclick="handleCardClick('${act.id}')"
-                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]">
+                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]">
               <!-- Header Row -->
               <div class="flex items-center justify-between text-xs pointer-events-none">
                 <div class="flex items-center gap-2">
-                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
-                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
+                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 text-[11px] font-bold">
                     ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
                   </span>
                 </div>
@@ -2704,7 +2716,7 @@
               </div>
 
               <!-- Embossed Code Box -->
-              <div onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all pointer-events-auto">
+              <div onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-[#0C8C46]/40 active:scale-[0.99] transition-all pointer-events-auto">
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
@@ -2713,11 +2725,11 @@
                   ${act.pin ? `
                     <div class="flex items-center gap-2 pt-0.5">
                       <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                      <span class="font-mono-apple text-sm font-bold text-amber-300">${act.pin}</span>
+                      <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${act.pin}</span>
                     </div>
                   ` : ''}
                 </div>
-                <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+                <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
                   Copy
                 </button>
               </div>
@@ -2735,7 +2747,7 @@
           `;
         }).join('') : `
           <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
-            <div class="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
+            <div class="w-12 h-12 mx-auto rounded-full bg-[#0C8C46]/10 border border-[#0C8C46]/20 flex items-center justify-center text-[#0C8C46] text-xl font-bold">
               ⚡
             </div>
             <h4 class="font-bold text-sm text-neutral-200">No activity recorded yet</h4>
@@ -2772,7 +2784,7 @@
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 opacity-75">
               <td class="p-3 text-center">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('redeemed-${r.code}')" class="rounded accent-amber-400">` : `<span class="text-xs font-mono-apple text-neutral-400">#${i + 1}</span>`}
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('redeemed-${r.code}')" class="rounded accent-[#0C8C46]">` : `<span class="text-xs font-mono-apple text-neutral-400">#${i + 1}</span>`}
               </td>
               <td class="p-3">
                 <div class="font-bold text-sm text-neutral-300">${vBrandName}</div>
@@ -2793,7 +2805,7 @@
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">✓ REDEEMED</span>
               </td>
               <td class="p-3 text-right">
-                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="text-xs font-semibold text-amber-300 hover:underline">↶ Restore</button>
+                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="text-xs font-semibold text-[#F47A21] hover:underline">↶ Restore</button>
               </td>
             </tr>
           `;
@@ -2808,11 +2820,11 @@
             <div id="mb-card-redeemed-${r.code}"
                  data-code="${r.code}"
                  onclick="handleCardClick('redeemed-${r.code}')"
-                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85 cursor-pointer select-none active:scale-[0.99]">
+                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85 cursor-pointer select-none active:scale-[0.99]">
               <!-- Top Row: Brand, Value, Status -->
               <div class="flex items-center justify-between text-xs pointer-events-none">
                 <div class="flex items-center gap-2">
-                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
+                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
                   <div>
                     <span class="font-bold text-sm text-white">${vBrandName}</span>
                     ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
@@ -2848,7 +2860,7 @@
                   <span>⏱ ${r.redeemedTimestampIST || 'Recent'}</span>
                   ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${r.originalTab}</span>` : ''}
                 </div>
-                <button onclick="event.stopPropagation(); undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-amber-200 hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
+                <button onclick="event.stopPropagation(); undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-[#F47A21]/80 hover:border-[#F47A21]/40 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
                   <span>↶</span> Restore to Vault
                 </button>
               </div>
@@ -2904,7 +2916,7 @@
         return `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
           <td class="p-3 text-center">
-            <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-blue-500">
+            <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-[#0C8C46]">
           </td>
           <td class="p-3">
             <div class="font-bold text-sm">${vBrandName}</div>
@@ -2912,16 +2924,16 @@
           </td>
           <td class="p-3">
             <div class="flex items-center gap-2">
-              <span class="font-mono-apple font-bold ${v.status === 'USED' ? 'line-through text-neutral-400' : 'text-blue-400'}">${v.code}</span>
-              <button onclick="copyToClipboard('${v.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700" title="Copy code">Copy</button>
+              <span class="font-mono-apple font-bold ${v.status === 'USED' ? 'line-through text-neutral-400' : 'text-white'}">${v.code}</span>
+              <button onclick="copyToClipboard('${v.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" title="Copy code">Copy</button>
             </div>
-            ${v.pin ? `<div class="font-mono-apple text-xs text-amber-300 mt-0.5">PIN: ${v.pin}</div>` : ''}
+            ${v.pin ? `<div class="font-mono-apple text-xs text-[#F47A21] font-bold mt-0.5">PIN: ${v.pin}</div>` : ''}
           </td>
           <td class="p-3 text-xs" style="color: var(--label-secondary);">
-            ${v.redeemedOn ? `<span class="text-amber-300 font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
+            ${v.redeemedOn ? `<span class="text-[#F47A21] font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
           <td class="p-3">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-emerald-400 bg-emerald-950/60'}">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30'}">
               ${v.status}
             </span>
           </td>
@@ -2944,16 +2956,16 @@
           <div id="mb-card-${v.id}" 
                data-code="${v.code}" 
                onclick="handleCardClick('${v.id}')" 
-               class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
+               class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
             <!-- Top Row: Checkbox (visible ONLY in select mode), PASS #, Status -->
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
-                <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
+                <span class="font-mono-apple font-bold text-[#F47A21]/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
               <div class="flex items-center gap-1.5">
-                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-500/30 text-amber-300 text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-amber-300/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'}">
+                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-[#F47A21]/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/30'}">
                   ${v.status}
                 </span>
               </div>
@@ -2969,11 +2981,11 @@
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                    <span class="font-mono-apple text-sm font-bold text-amber-300">${v.pin}</span>
+                    <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${v.pin}</span>
                   </div>
                 ` : ''}
               </div>
-              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-black hover:brightness-110 active:scale-95 shadow-md transition-all">
+              <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
                 Copy
               </button>
             </div>
@@ -3038,9 +3050,9 @@
         else if (item.key === 'Redeemed') countLabel = `${count} redeemed`;
 
         return `
-          <button id="deck-btn-${item.key}" onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-gradient-to-r from-amber-500 to-amber-700 text-black shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
+          <button id="deck-btn-${item.key}" onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-[#0C8C46] text-white shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
             <div class="truncate max-w-[125px]">${item.name}</div>
-            <div class="text-[10px] ${isSel ? 'text-black/85 font-semibold' : 'text-neutral-400'} font-normal mt-0.5">
+            <div class="text-[10px] ${isSel ? 'text-white/90 font-medium' : 'text-neutral-400'} font-normal mt-0.5">
               ${countLabel}
             </div>
           </button>
@@ -3405,15 +3417,15 @@
         if (dtBtn) dtBtn.textContent = 'Done';
         if (mbBtn) {
           mbBtn.textContent = 'Done';
-          mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
-          mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
+          mbBtn.classList.remove('bg-neutral-800', 'text-[#F47A21]');
+          mbBtn.classList.add('bg-[#F47A21]', 'text-white', 'shadow-md');
         }
       } else {
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
           mbBtn.textContent = 'Select';
-          mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
-          mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
+          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
+          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
         }
         state.selectedIds.clear();
         collapseActionMenu();
@@ -3430,8 +3442,8 @@
         if (dtBtn) dtBtn.textContent = 'Done';
         if (mbBtn) {
           mbBtn.textContent = 'Done';
-          mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
-          mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
+          mbBtn.classList.remove('bg-neutral-800', 'text-[#F47A21]');
+          mbBtn.classList.add('bg-[#F47A21]', 'text-white', 'shadow-md');
         }
       }
       toggleSelectVoucher(id);
@@ -3795,8 +3807,8 @@
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
           mbBtn.textContent = 'Select';
-          mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
-          mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
+          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
+          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
         }
 
         renderDeckSelector();
