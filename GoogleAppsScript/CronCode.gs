@@ -374,7 +374,7 @@ function getOrInitSharedActivitySheet(ss) {
  */
 function migrateSheetsToUnifiedSchema(ss) {
   const sheets = ss.getSheets();
-  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity"]);
+  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
   
   // 1. Ensure master "Redeemed" tab exists with 12 columns
   let redeemedSheet = ss.getSheetByName("Redeemed");
@@ -444,195 +444,177 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // One-off migration trigger via GET if requested
-  if (e && e.parameter && e.parameter.migrate === "true") {
-    try {
-      const migRes = migrateSheetsToUnifiedSchema(ss);
-      return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: "Migration error: " + err.message })).setMimeType(ContentService.MimeType.JSON);
+    // One-off migration trigger via GET if requested
+    if (e && e.parameter && e.parameter.migrate === "true") {
+      try {
+        const migRes = migrateSheetsToUnifiedSchema(ss);
+        return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
+      } catch(err) {
+        return ContentService.createTextOutput(JSON.stringify({ error: "Migration error: " + err.message })).setMimeType(ContentService.MimeType.JSON);
+      }
     }
-  }
 
-  // Clear test timestamps on historical vouchers (e.g. from undo testing)
-  if (e && e.parameter && e.parameter.clean_test_timestamps === "true") {
-    const brandsToClean = ["CultFit", "TattvaSpa"];
-    const cleaned = [];
-    brandsToClean.forEach(bName => {
-      const sh = ss.getSheetByName(bName);
-      if (sh) {
-        const data = sh.getDataRange().getValues();
-        for (let i = 1; i < data.length; i++) {
-          if (data[i][9]) { // Column J
-            sh.getRange(i + 1, 10).setValue(""); // clear cell
-            cleaned.push({ brand: bName, code: data[i][2], clearedTimestamp: data[i][9] });
+    // Clear test timestamps on historical vouchers (e.g. from undo testing)
+    if (e && e.parameter && e.parameter.clean_test_timestamps === "true") {
+      const brandsToClean = ["CultFit", "TattvaSpa"];
+      const cleaned = [];
+      brandsToClean.forEach(bName => {
+        const sh = ss.getSheetByName(bName);
+        if (sh) {
+          const data = sh.getDataRange().getValues();
+          for (let i = 1; i < data.length; i++) {
+            if (data[i][9]) { // Column J
+              sh.getRange(i + 1, 10).setValue(""); // clear cell
+              cleaned.push({ brand: bName, code: data[i][2], clearedTimestamp: data[i][9] });
+            }
           }
         }
-      }
-    });
-    return ContentService.createTextOutput(JSON.stringify({ success: true, cleaned: cleaned })).setMimeType(ContentService.MimeType.JSON);
-  }
-
-  // ON-DEMAND REAL-TIME EMAIL INGESTION
-  if (!e || !e.parameter || e.parameter.ingest !== "false") {
-    try {
-      processRupayEmails();
-    } catch (err) {
-      console.warn("On-demand email ingestion error:", err.message);
-    }
-  }
-
-  const sheets = ss.getSheets();
-  const result = {
-    sheetUrl: ss.getUrl(),
-    unassigned: [],
-    cooldowns: [],
-    vouchers: [],
-    redeemed: [],
-    cards: [],
-    shared: []
-  };
-
-  for (const sheet of sheets) {
-    const name = sheet.getName();
-    const rows = sheet.getDataRange().getValues();
-    if (rows.length <= 1) continue;
-
-    if (name === "⚡ Unassigned") {
-      for (let i = 1; i < rows.length; i++) {
-        result.unassigned.push({
-          bookingId: rows[i][0],
-          brand: rows[i][1],
-          amount: rows[i][2],
-          account: rows[i][3],
-          dateOfIssue: rows[i][4]
-        });
-      }
-    } else if (name === "⏱ Cooldowns") {
-      for (let i = 1; i < rows.length; i++) {
-        if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
-        result.cooldowns.push({
-          account: String(rows[i][0] || ''),
-          lastRedeemed: rows[i][1] ? String(rows[i][1]) : '',
-          status: rows[i][2] ? String(rows[i][2]) : 'READY',
-          lastUpdated: rows[i][3] ? String(rows[i][3]) : ''
-        });
-      }
-    } else if (name === "Cards") {
-      for (let i = 1; i < rows.length; i++) {
-        if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
-        result.cards.push({
-          id: String(rows[i][0] || ''),
-          bank: String(rows[i][1] || ''),
-          type: String(rows[i][2] || ''),
-          bin: String(rows[i][3] || ''),
-          last4: String(rows[i][4] || ''),
-          nick: String(rows[i][5] || ''),
-          status: String(rows[i][6] || 'active').toLowerCase(),
-          claimed: Number(rows[i][7]) || 0,
-          total: Number(rows[i][8]) || 5,
-          blockedDate: rows[i][9] ? String(rows[i][9]) : '',
-          notes: rows[i][10] ? String(rows[i][10]) : '',
-          lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
-        });
-      }
-    } else if (name === "Shared_Activity") {
-      for (let i = 1; i < rows.length; i++) {
-        if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
-        const status = String(rows[i][6] || 'SHARED').trim().toUpperCase();
-        if (status === "DISMISSED") continue;
-        result.shared.push({
-          code: String(rows[i][1] || ''),
-          brand: String(rows[i][2] || ''),
-          amount: Number(rows[i][3]) || 0,
-          pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
-          sharedAt: String(rows[i][5] || ''),
-          status: status,
-          platform: String(rows[i][7] || 'WhatsApp')
-        });
-      }
-    } else if (name === "Redeemed") {
-      // 12-Column Unified Redeemed Archive
-      for (let i = 1; i < rows.length; i++) {
-        if (!rows[i][3] || String(rows[i][3]).trim() === "") continue;
-        result.redeemed.push({
-          brand: String(rows[i][1] || ''),
-          bookingId: String(rows[i][2] || ''),
-          code: String(rows[i][3] || ''),
-          pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
-          amount: Number(rows[i][5]) || 0,
-          dateOfIssue: rows[i][6] ? String(rows[i][6]) : '',
-          account: rows[i][7] ? String(rows[i][7]) : '',
-          card: rows[i][8] ? String(rows[i][8]) : '',
-          status: "REDEEMED",
-          redeemedTimestampIST: rows[i][10] ? String(rows[i][10]) : '',
-          originalTab: String(rows[i][11] || rows[i][1] || '')
-        });
-      }
-    } else {
-      // Uniform 10-Column Brand Tabs
-      for (let i = 1; i < rows.length; i++) {
-        if (!rows[i][2] || String(rows[i][2]).trim() === "") continue;
-        result.vouchers.push({
-          brand: name,
-          bookingId: String(rows[i][1] || ''),
-          code: String(rows[i][2] || ''),
-          pin: rows[i][3] && String(rows[i][3]).trim() !== '' && String(rows[i][3]).trim() !== 'null' ? String(rows[i][3]).trim() : null,
-          amount: Number(rows[i][4]) || 0,
-          dateOfIssue: rows[i][5] ? String(rows[i][5]) : '',
-          account: rows[i][6] ? String(rows[i][6]) : '',
-          card: rows[i][7] ? String(rows[i][7]) : '',
-          status: rows[i][8] ? String(rows[i][8]) : 'ACTIVE',
-          timestampIST: rows[i][9] ? String(rows[i][9]) : null
-        });
-      }
-    }
-  }
-
-  // Ensure persistent tabs exist and are populated if missing
-  if (!result.cards.length) {
-    const cSheet = getOrInitCardsSheet(ss);
-    const cRows = cSheet.getDataRange().getValues();
-    for (let i = 1; i < cRows.length; i++) {
-      if (!cRows[i][0] || String(cRows[i][0]).trim() === "") continue;
-      result.cards.push({
-        id: String(cRows[i][0] || ''),
-        bank: String(cRows[i][1] || ''),
-        type: String(cRows[i][2] || ''),
-        bin: String(cRows[i][3] || ''),
-        last4: String(cRows[i][4] || ''),
-        nick: String(cRows[i][5] || ''),
-        status: String(cRows[i][6] || 'active').toLowerCase(),
-        claimed: Number(cRows[i][7]) || 0,
-        total: Number(cRows[i][8]) || 5,
-        blockedDate: cRows[i][9] ? String(cRows[i][9]) : '',
-        notes: cRows[i][10] ? String(cRows[i][10]) : '',
-        lastUpdated: cRows[i][11] ? String(cRows[i][11]) : ''
       });
+      return ContentService.createTextOutput(JSON.stringify({ success: true, cleaned: cleaned })).setMimeType(ContentService.MimeType.JSON);
     }
-  }
 
-  if (!result.cooldowns.length) {
-    const cdSheet = getOrInitCooldownsSheet(ss);
-    const cdRows = cdSheet.getDataRange().getValues();
-    for (let i = 1; i < cdRows.length; i++) {
-      if (!cdRows[i][0] || String(cdRows[i][0]).trim() === "") continue;
-      result.cooldowns.push({
-        account: String(cdRows[i][0] || ''),
-        lastRedeemed: cdRows[i][1] ? String(cdRows[i][1]) : '',
-        status: cdRows[i][2] ? String(cdRows[i][2]) : 'READY',
-        lastUpdated: cdRows[i][3] ? String(cdRows[i][3]) : ''
-      });
+    // ON-DEMAND REAL-TIME EMAIL INGESTION
+    if (!e || !e.parameter || e.parameter.ingest !== "false") {
+      try {
+        processRupayEmails();
+      } catch (err) {
+        console.warn("On-demand email ingestion error:", err.message);
+      }
     }
-  }
 
-  if (!ss.getSheetByName("Shared_Activity")) {
-    getOrInitSharedActivitySheet(ss);
-  }
+    // Ensure persistent system tabs exist if missing
+    if (!ss.getSheetByName("Cards")) {
+      getOrInitCardsSheet(ss);
+    }
+    if (!ss.getSheetByName("⏱ Cooldowns")) {
+      getOrInitCooldownsSheet(ss);
+    }
+    if (!ss.getSheetByName("Shared_Activity")) {
+      getOrInitSharedActivitySheet(ss);
+    }
 
-  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+    const sheets = ss.getSheets();
+    const result = {
+      sheetUrl: ss.getUrl(),
+      unassigned: [],
+      cooldowns: [],
+      vouchers: [],
+      redeemed: [],
+      cards: [],
+      shared: []
+    };
+
+    for (const sheet of sheets) {
+      const name = sheet.getName();
+      const rows = sheet.getDataRange().getValues();
+      if (rows.length <= 1) continue;
+
+      if (name === "⚡ Unassigned") {
+        for (let i = 1; i < rows.length; i++) {
+          result.unassigned.push({
+            bookingId: rows[i][0],
+            brand: rows[i][1],
+            amount: rows[i][2],
+            account: rows[i][3],
+            dateOfIssue: rows[i][4]
+          });
+        }
+      } else if (name === "⏱ Cooldowns") {
+        for (let i = 1; i < rows.length; i++) {
+          if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+          result.cooldowns.push({
+            account: String(rows[i][0] || ''),
+            lastRedeemed: rows[i][1] ? String(rows[i][1]) : '',
+            status: rows[i][2] ? String(rows[i][2]) : 'READY',
+            lastUpdated: rows[i][3] ? String(rows[i][3]) : ''
+          });
+        }
+      } else if (name === "Cards") {
+        for (let i = 1; i < rows.length; i++) {
+          if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+          result.cards.push({
+            id: String(rows[i][0] || ''),
+            bank: String(rows[i][1] || ''),
+            type: String(rows[i][2] || ''),
+            bin: String(rows[i][3] || ''),
+            last4: String(rows[i][4] || ''),
+            nick: String(rows[i][5] || ''),
+            status: String(rows[i][6] || 'active').toLowerCase(),
+            claimed: Number(rows[i][7]) || 0,
+            total: Number(rows[i][8]) || 5,
+            blockedDate: rows[i][9] ? String(rows[i][9]) : '',
+            notes: rows[i][10] ? String(rows[i][10]) : '',
+            lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
+          });
+        }
+      } else if (name === "Shared_Activity") {
+        for (let i = 1; i < rows.length; i++) {
+          if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
+          const status = String(rows[i][6] || 'SHARED').trim().toUpperCase();
+          if (status === "DISMISSED") continue;
+          result.shared.push({
+            code: String(rows[i][1] || ''),
+            brand: String(rows[i][2] || ''),
+            amount: Number(rows[i][3]) || 0,
+            pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
+            sharedAt: String(rows[i][5] || ''),
+            status: status,
+            platform: String(rows[i][7] || 'WhatsApp')
+          });
+        }
+      } else if (name === "Redeemed") {
+        // 12-Column Unified Redeemed Archive
+        for (let i = 1; i < rows.length; i++) {
+          if (!rows[i][3] || String(rows[i][3]).trim() === "") continue;
+          result.redeemed.push({
+            brand: String(rows[i][1] || ''),
+            bookingId: String(rows[i][2] || ''),
+            code: String(rows[i][3] || ''),
+            pin: rows[i][4] && String(rows[i][4]).trim() !== '' && String(rows[i][4]).trim() !== 'null' ? String(rows[i][4]).trim() : null,
+            amount: Number(rows[i][5]) || 0,
+            dateOfIssue: rows[i][6] ? String(rows[i][6]) : '',
+            account: rows[i][7] ? String(rows[i][7]) : '',
+            card: rows[i][8] ? String(rows[i][8]) : '',
+            status: "REDEEMED",
+            redeemedTimestampIST: rows[i][10] ? String(rows[i][10]) : '',
+            originalTab: String(rows[i][11] || rows[i][1] || '')
+          });
+        }
+      } else {
+        // Uniform 10-Column Brand Tabs
+        for (let i = 1; i < rows.length; i++) {
+          if (!rows[i][2] || String(rows[i][2]).trim() === "") continue;
+          result.vouchers.push({
+            brand: name,
+            bookingId: String(rows[i][1] || ''),
+            code: String(rows[i][2] || ''),
+            pin: rows[i][3] && String(rows[i][3]).trim() !== '' && String(rows[i][3]).trim() !== 'null' ? String(rows[i][3]).trim() : null,
+            amount: Number(rows[i][4]) || 0,
+            dateOfIssue: rows[i][5] ? String(rows[i][5]) : '',
+            account: rows[i][6] ? String(rows[i][6]) : '',
+            card: rows[i][7] ? String(rows[i][7]) : '',
+            status: rows[i][8] ? String(rows[i][8]) : 'ACTIVE',
+            timestampIST: rows[i][9] ? String(rows[i][9]) : null
+          });
+        }
+      }
+    }
+
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      error: "doGet error: " + err.message,
+      vouchers: [],
+      cooldowns: [],
+      unassigned: [],
+      redeemed: [],
+      cards: [],
+      shared: []
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function doPost(e) {
