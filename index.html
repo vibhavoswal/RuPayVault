@@ -1603,7 +1603,32 @@
     let sharedActivity = (JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]'))
       .filter(s => s.code !== 'RD-TECH-1002931');
     saveSharedActivity();
-    let redeemedList = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
+    let redeemedList = (JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]'))
+      .filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
+    saveRedeemedList();
+
+    function isVoucherRedeemed(v) {
+      if (!v) return false;
+      const vCode = (typeof v === 'string' ? v : (v.code || '')).trim();
+      const vBookId = (typeof v === 'object' && v.bookingId ? v.bookingId : '').trim();
+
+      if (vCode && vCode.toUpperCase() !== 'PENDING' && vCode !== '-') {
+        if (redeemedList.some(r => {
+          const rc = (r.code || '').trim();
+          return rc && rc.toUpperCase() !== 'PENDING' && rc !== '-' && rc === vCode;
+        })) return true;
+      }
+
+      if (vBookId && vBookId !== '-' && !vBookId.startsWith('#')) {
+        if (redeemedList.some(r => {
+          const rbid = (r.bookingId || '').trim();
+          return rbid && rbid !== '-' && !rbid.startsWith('#') && rbid === vBookId;
+        })) return true;
+      }
+
+      return false;
+    }
+
     let undoState = {
       timer: null,
       secondsLeft: 3,
@@ -1680,7 +1705,11 @@
     }
 
     async function markVoucherAsRedeemed(code, brand) {
-      if (redeemedList.some(r => r.code === code)) {
+      if (!code || String(code).trim().toUpperCase() === 'PENDING' || String(code).trim() === '-') {
+        showToast('Pending vouchers cannot be redeemed yet');
+        return;
+      }
+      if (isVoucherRedeemed(code)) {
         showToast('Already marked as redeemed');
         return;
       }
@@ -1989,7 +2018,7 @@
           if (activityFilter === 'shared') {
             const visibleShared = sharedActivity.filter(s =>
               s.displayInUI !== false &&
-              !redeemedList.some(r => r.code === s.code) &&
+              !isVoucherRedeemed(s) &&
               (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
               (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
             );
@@ -1997,7 +2026,7 @@
           } else {
             const visibleIngested = state.vouchers.filter(v =>
               v.displayInUI !== false &&
-              !redeemedList.some(r => r.code === v.code) &&
+              !isVoucherRedeemed(v) &&
               v.timestampIST &&
               (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
             );
@@ -2043,7 +2072,7 @@
           context = 'shared';
           const visibleShared = sharedActivity.filter(s =>
             s.displayInUI !== false &&
-            !redeemedList.some(r => r.code === s.code) &&
+            !isVoucherRedeemed(s) &&
             (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
             (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
           );
@@ -2064,7 +2093,7 @@
           context = 'ingested';
           const visibleIngested = state.vouchers.filter(v =>
             v.displayInUI !== false &&
-            !redeemedList.some(r => r.code === v.code) &&
+            !isVoucherRedeemed(v) &&
             v.timestampIST &&
             (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
           );
@@ -2144,14 +2173,14 @@
         const nowMs = Date.now();
         const ingestedCount = state.vouchers.filter(v =>
           v.displayInUI !== false &&
-          !redeemedList.some(r => r.code === v.code) &&
+          !isVoucherRedeemed(v) &&
           v.timestampIST &&
           (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
         ).length;
 
         const sharedCount = sharedActivity.filter(s =>
           s.displayInUI !== false &&
-          !redeemedList.some(r => r.code === s.code) &&
+          !isVoucherRedeemed(s) &&
           (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
           (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
         ).length;
@@ -2418,10 +2447,19 @@
         
         if (data.vouchers && data.vouchers.length) {
           // Defensive deduplication: ensure each voucher code only appears once in state.vouchers
+          // For PENDING vouchers where code is not yet generated, deduplicate by bookingId instead
           const seenCodes = new Set();
+          const seenBookingIds = new Set();
           state.vouchers = data.vouchers.filter(v => {
             const c = (v.code || '').trim();
-            if (!c || c === '-') return true;
+            const bid = (v.bookingId || '').trim();
+            if (!c || c === '-' || c.toUpperCase() === 'PENDING') {
+              if (bid && bid !== '-' && !bid.startsWith('#')) {
+                if (seenBookingIds.has(bid)) return false;
+                seenBookingIds.add(bid);
+              }
+              return true;
+            }
             if (seenCodes.has(c)) return false;
             seenCodes.add(c);
             return true;
@@ -2464,14 +2502,15 @@
         if (data.redeemed && Array.isArray(data.redeemed)) {
           redeemedList = data.redeemed.map(r => ({
             code: r.code,
+            bookingId: r.bookingId || '',
             brand: r.brand || r.originalTab || 'Voucher',
             amount: Number(r.amount) || 0,
             pin: r.pin || '',
             redeemedTimestampIST: r.redeemedTimestampIST || '',
             originalTab: r.originalTab || r.brand || '',
             displayInUI: r.displayInUI !== false && String(r.displayInUI).toLowerCase() !== 'false'
-          }));
-          sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
+          })).filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
+          sharedActivity = sharedActivity.filter(s => !isVoucherRedeemed(s));
           saveSharedActivity();
           saveRedeemedList();
         }
@@ -2503,7 +2542,7 @@
             timestampMs: parseTimestamp(s.sharedAt) || Date.now(),
             displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
           }));
-          sharedActivity = sharedActivity.filter(s => !redeemedList.some(r => r.code === s.code));
+          sharedActivity = sharedActivity.filter(s => !isVoucherRedeemed(s));
           saveSharedActivity();
         }
 
@@ -2683,7 +2722,7 @@
         // 1. Ingested from Gmail / Active Vault (strictly within 7 days, valid timestampIST, displayInUI !== false, exclude redeemed)
         state.vouchers.filter(v => {
           if (v.displayInUI === false) return false;
-          if (redeemedList.some(r => r.code === v.code)) return false;
+          if (isVoucherRedeemed(v)) return false;
           if (!v.timestampIST || String(v.timestampIST).trim() === '' || String(v.timestampIST).trim() === 'null') return false;
           const timeMs = parseTimestamp(v.timestampIST);
           return timeMs > 0 && (nowMs - timeMs) <= SEVEN_DAYS_MS;
@@ -2691,6 +2730,7 @@
           allActivities.push({
             type: 'INGESTED',
             id: v.id,
+            bookingId: v.bookingId || '',
             code: v.code,
             brand: v.brand,
             amount: v.amount,
@@ -2705,7 +2745,7 @@
         // 2. Shared Activity (strictly within 7 days, displayInUI !== false, exclude redeemed)
         sharedActivity.filter(s => {
           if (s.displayInUI === false) return false;
-          if (redeemedList.some(r => r.code === s.code)) return false;
+          if (isVoucherRedeemed(s)) return false;
           const timeMs = s.timestampMs || parseTimestamp(s.sharedAt);
           return timeMs > 0 && (nowMs - timeMs) <= SEVEN_DAYS_MS;
         }).forEach(s => {
@@ -2750,11 +2790,19 @@
           const vBrandName = getBrandDisplayName(act.brand);
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
+          const isPending = act.status === 'PENDING' || act.code === 'PENDING';
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadge = '';
-          if (isShared) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30">📤 SHARED</span>`;
-          else if (isIngested) typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/40">⚡ INGESTED</span>`;
+          if (isShared) {
+            typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30">📤 SHARED</span>`;
+          } else if (isIngested) {
+            if (isPending) {
+              typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">⏳ PENDING</span>`;
+            } else {
+              typeBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/40">⚡ INGESTED</span>`;
+            }
+          }
 
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40">
@@ -2767,8 +2815,12 @@
               </td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
-                  <span class="font-mono-apple font-bold text-white">${act.code}</span>
-                  <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" title="Copy code">Copy</button>
+                  ${isPending ? `
+                    <span class="text-amber-400 font-semibold text-xs">Pending Delivery (24-48h)</span>
+                  ` : `
+                    <span class="font-mono-apple font-bold text-white">${act.code}</span>
+                    <button onclick="copyToClipboard('${act.code}')" class="text-xs px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300" title="Copy code">Copy</button>
+                  `}
                 </div>
                 ${act.pin ? `<div class="font-mono-apple text-xs text-[#F47A21] font-bold mt-0.5">PIN: ${act.pin}</div>` : ''}
               </td>
@@ -2784,6 +2836,8 @@
                 ${isShared ? `
                   <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">Mark Redeemed</button>
                   <button onclick="dismissSharedActivity('${act.code}')" class="text-xs font-medium text-neutral-400 hover:text-white">Dismiss</button>
+                ` : isPending ? `
+                  <span class="text-xs text-amber-400/90 font-medium mr-3">Awaiting Delivery</span>
                 ` : `
                   <button onclick="shareSingle('${act.code}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">WhatsApp</button>
                   <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-medium text-neutral-300 hover:text-white">Redeem</button>
@@ -2803,12 +2857,20 @@
         document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
+          const isPending = act.status === 'PENDING' || act.code === 'PENDING';
           const brandDisplay = getBrandDisplayName(act.brand);
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let typeBadgeHtml = '';
-          if (isShared) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-bold">📤 SHARED</span>`;
-          else if (isIngested) typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#0C8C46]/20 border border-[#0C8C46]/40 text-[#0C8C46] text-[10px] font-bold">⚡ INGESTED</span>`;
+          if (isShared) {
+            typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-bold">📤 SHARED</span>`;
+          } else if (isIngested) {
+            if (isPending) {
+              typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-bold">⏳ PENDING</span>`;
+            } else {
+              typeBadgeHtml = `<span class="px-2 py-0.5 rounded-full bg-[#0C8C46]/20 border border-[#0C8C46]/40 text-[#0C8C46] text-[10px] font-bold">⚡ INGESTED</span>`;
+            }
+          }
 
           if (isIngested) {
             return `
@@ -2837,7 +2899,7 @@
                   <div class="space-y-0.5">
                     <div class="flex items-center gap-2">
                       <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                      <span id="mb-code-${act.id}" class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
+                      <span id="mb-code-${act.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${isPending ? 'text-amber-400 text-xs font-semibold' : ''}">${isPending ? 'Pending Delivery (24-48h)' : act.code}</span>
                     </div>
                     ${act.pin ? `
                       <div class="flex items-center gap-2 pt-0.5">
@@ -2846,9 +2908,15 @@
                       </div>
                     ` : ''}
                   </div>
-                  <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
-                    Copy
-                  </button>
+                  ${isPending ? `
+                    <span class="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                      Awaiting Delivery
+                    </span>
+                  ` : `
+                    <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
+                      Copy
+                    </button>
+                  `}
                 </div>
               </div>
             `;
@@ -3043,15 +3111,22 @@
         return;
       }
 
-      // Normal Brand Tab Feed (deduplicated by voucher code)
+      // Normal Brand Tab Feed (deduplicated by voucher code, or bookingId for pending)
       const renderedCodes = new Set();
+      const renderedBookings = new Set();
       let vs = state.vouchers.filter(v => {
         if (normalizeBrandKey(v.brand) !== normActiveBrand) return false;
         const c = (v.code || '').trim();
-        if (c && c !== '-') {
-          if (renderedCodes.has(c)) return false;
-          renderedCodes.add(c);
+        const bid = (v.bookingId || '').trim();
+        if (!c || c === '-' || c.toUpperCase() === 'PENDING') {
+          if (bid && bid !== '-' && !bid.startsWith('#')) {
+            if (renderedBookings.has(bid)) return false;
+            renderedBookings.add(bid);
+          }
+          return true;
         }
+        if (renderedCodes.has(c)) return false;
+        renderedCodes.add(c);
         return true;
       });
       if (state.searchQuery) {
@@ -3198,7 +3273,7 @@
       const counts = {};
       const nowMs = Date.now();
       state.vouchers.forEach(v => {
-        if (!redeemedList.some(r => r.code === v.code)) {
+        if (!isVoucherRedeemed(v)) {
           const k = normalizeBrandKey(v.brand);
           counts[k] = (counts[k] || 0) + 1;
         }
@@ -3206,14 +3281,14 @@
 
       const activeIngested7d = state.vouchers.filter(v =>
         v.displayInUI !== false &&
-        !redeemedList.some(r => r.code === v.code) &&
+        !isVoucherRedeemed(v) &&
         v.timestampIST &&
         (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
       ).length;
 
       const activeShared7d = sharedActivity.filter(s =>
         s.displayInUI !== false &&
-        !redeemedList.some(r => r.code === s.code) &&
+        !isVoucherRedeemed(s) &&
         (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
         (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
       ).length;
@@ -3244,8 +3319,8 @@
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let vs;
       if (normKey === 'ActivityLog') {
-        vs = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code) && v.status !== 'USED');
-        if (!vs.length) vs = state.vouchers.filter(v => !redeemedList.some(r => r.code === v.code));
+        vs = state.vouchers.filter(v => !isVoucherRedeemed(v) && v.status !== 'USED');
+        if (!vs.length) vs = state.vouchers.filter(v => !isVoucherRedeemed(v));
       } else {
         vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
         if (!vs.length) vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
@@ -3635,14 +3710,14 @@
         const nowMs = Date.now();
         brandVouchers = state.vouchers.filter(v =>
           v.displayInUI !== false &&
-          !redeemedList.some(r => r.code === v.code) &&
+          !isVoucherRedeemed(v) &&
           v.timestampIST &&
           (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS &&
           v.status !== 'USED'
         );
         const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v =>
           v.displayInUI !== false &&
-          !redeemedList.some(r => r.code === v.code) &&
+          !isVoucherRedeemed(v) &&
           v.timestampIST &&
           (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
         );
@@ -3922,6 +3997,12 @@
         return;
       }
 
+      const pendingTargets = targetVouchers.filter(v => v.status === 'PENDING' || (v.code || '').toUpperCase() === 'PENDING');
+      if (pendingTargets.length > 0) {
+        showToast("Cannot redeem pending vouchers awaiting code delivery");
+        return;
+      }
+
       collapseActionMenu();
 
       // Phase 1 (0ms): Strikethrough laser across code and highlight card border
@@ -3957,9 +4038,10 @@
         targetVouchers.forEach(v => {
           v.status = 'USED';
           sharedActivity = sharedActivity.filter(s => s.code !== v.code);
-          if (!redeemedList.some(r => r.code === v.code)) {
+          if (!isVoucherRedeemed(v)) {
             redeemedList.unshift({
               code: v.code,
+              bookingId: v.bookingId || '',
               brand: v.brand,
               amount: v.amount || 0,
               pin: v.pin || '',
