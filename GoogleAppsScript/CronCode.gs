@@ -43,8 +43,8 @@ function processRupayEmails() {
   }
 
   try {
-    // Search unread emails from Truztee or containing RUPS booking references
-    const query = 'is:unread (from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:")';
+    // Search unread emails OR recent Truztee/RUPS emails within last 2 days (idempotent by Booking ID)
+    const query = '(from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:") newer_than:2d';
     const threads = GmailApp.search(query, 0, 25);
     if (!threads.length) return;
 
@@ -53,8 +53,6 @@ function processRupayEmails() {
     for (const thread of threads) {
       const messages = thread.getMessages();
       for (const msg of messages) {
-        if (!msg.isUnread()) continue;
-
         const subject = msg.getSubject() || "";
         const body = msg.getPlainBody() || "";
         const toHeader = msg.getTo() || "";
@@ -220,14 +218,21 @@ function recordPendingRedemption(ss, data) {
     sheet.setFrozenRows(1);
   }
 
-  // Idempotency: Does this Booking ID already exist in this brand sheet?
-  const rows = sheet.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][1]).trim() === data.bookingId) {
-      // Already recorded, don't duplicate
-      return;
+  // Global Idempotency: Does this Booking ID already exist in ANY brand sheet?
+  const allSheets = ss.getSheets();
+  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  for (const s of allSheets) {
+    if (systemTabs.has(s.getName())) continue;
+    const sRows = s.getDataRange().getValues();
+    for (let i = 1; i < sRows.length; i++) {
+      if (String(sRows[i][1]).trim() === data.bookingId) {
+        // Already recorded, don't duplicate
+        return;
+      }
     }
   }
+
+  const rows = sheet.getDataRange().getValues();
 
   const nextNum = rows.length;
   const rowData = [
@@ -609,6 +614,7 @@ function doGet(e) {
             to: m.getTo(),
             date: m.getDate(),
             isUnread: m.isUnread(),
+            raw: m.getRawContent().substring(0, 600),
             snippet: m.getPlainBody().substring(0, 300)
           });
         });
