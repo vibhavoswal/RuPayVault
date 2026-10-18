@@ -116,8 +116,73 @@
       20%, 60% { transform: translateX(-9px); }
       40%, 80% { transform: translateX(9px); }
     }
-    .pin-shake {
-      animation: pinShake 0.35s ease-in-out;
+    /* Pure Horizontal Slide Through (0deg rotation, 700ms Soft Spring) */
+    .anim-swipe-horizontal-700 {
+      will-change: transform, opacity;
+      transform: translate3d(130%, 0, 0) !important;
+      opacity: 0 !important;
+      transition: transform 0.68s cubic-bezier(0.2, 0.9, 0.25, 1), 
+                  opacity 0.54s cubic-bezier(0.3, 0, 0.2, 1) !important;
+    }
+
+    /* Silky Continuous Height Collapse */
+    .anim-collapse-700 {
+      will-change: max-height, margin, padding, opacity;
+      max-height: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      opacity: 0 !important;
+      overflow: hidden !important;
+      transition: max-height 0.46s cubic-bezier(0.25, 1, 0.4, 1), 
+                  margin 0.46s cubic-bezier(0.25, 1, 0.4, 1), 
+                  padding 0.46s cubic-bezier(0.25, 1, 0.4, 1), 
+                  opacity 0.26s ease !important;
+    }
+
+    /* Smooth Pure Horizontal Reverse-Glide Rollback on Undo */
+    .anim-rollback-700 {
+      animation: rollback700 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes rollback700 {
+      0% { opacity: 0; transform: translate3d(60px, 0, 0); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    /* Strikethrough Laser Draw Across Code */
+    .strikethrough-laser {
+      position: relative;
+    }
+    .strikethrough-laser::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -2px;
+      right: -2px;
+      height: 2px;
+      background: linear-gradient(90deg, #ff453a, #ff9f0a);
+      border-radius: 2px;
+      transform-origin: left;
+      animation: laserDraw 0.26s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+      box-shadow: 0 0 10px rgba(255, 69, 58, 0.7);
+    }
+    @keyframes laserDraw {
+      0% { transform: scaleX(0); }
+      100% { transform: scaleX(1); }
+    }
+
+    /* Staggered Spring Pop for Stack Circles */
+    .spring-pop-item-1 {
+      animation: springPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.04s forwards;
+    }
+    .spring-pop-item-2 {
+      animation: springPop 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) 0.10s forwards;
+    }
+    @keyframes springPop {
+      0% { opacity: 0; transform: translate3d(0, 30px, 0) scale(0.4); }
+      75% { transform: translate3d(0, -3px, 0) scale(1.06); }
+      100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
 
     /* Auto Responsive Breakpoint */
@@ -545,24 +610,40 @@
       <div id="mb-view-matrix" class="hidden"></div>
     </main>
 
-    <!-- Hovering Action Dock: Visible ONLY when Select mode is active -->
-    <div id="mb-hover-actions" class="hidden fixed right-4 z-40 items-center gap-2.5" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
-      <!-- Mark Redeemed FAB -->
-      <button id="mb-hover-redeem" onclick="batchMarkAsRedeemed()" class="relative h-13 px-4 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_8px_25px_rgba(16,185,129,0.45)] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all border border-emerald-400/30 font-bold text-xs" title="Mark Selected as Redeemed">
-        <svg class="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        <span>Redeem</span>
-        <span id="mb-hover-redeem-badge" class="hidden min-w-[20px] h-[20px] px-1.5 flex items-center justify-center text-[10.5px] font-black text-black bg-white rounded-full shadow">0</span>
+    <!-- Backdrop scrim when Stack Circles expand -->
+    <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200"></div>
+
+    <!-- Expandable Stack Circles Dock (56px FAB) -->
+    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-end transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
+      
+      <!-- EXPANDED STATE: STACK CIRCLES (NO LITERAL TEXT) -->
+      <div id="menu-expanded" class="hidden flex-col items-center gap-3 mb-3">
+        <!-- 1. Top Circle: WhatsApp Button (56px x 56px) -->
+        <button onclick="triggerWhatsAppShare()" class="spring-pop-item-2 relative w-14 h-14 rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgba(37,211,102,0.6)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-white/30" title="Share via WhatsApp">
+          <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+          </svg>
+          <span id="badge-menu-wa" class="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-amber-400 rounded-full border border-black shadow">0</span>
+        </button>
+
+        <!-- 2. Middle Circle: Redeem Double-Tick Button (56px x 56px) -->
+        <button onclick="batchMarkAsRedeemed()" class="spring-pop-item-1 relative w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 text-white shadow-[0_8px_30px_rgba(16,185,129,0.6)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-emerald-300/40" title="Mark Selected as Redeemed">
+          <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 12l4 4L20 6"></path>
+            <path d="M2 12l4 4 2-2"></path>
+          </svg>
+          <span id="badge-menu-redeem" class="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-white rounded-full border border-black shadow">0</span>
+        </button>
+      </div>
+
+      <!-- COLLAPSED MASTER BUTTON (56px x 56px) -->
+      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-emerald-500/60" title="Actions">
+        <div id="master-icon-slot" class="flex items-center justify-center">
+          <!-- Injected via JS -->
+        </div>
+        <span id="badge-master-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-black bg-amber-400 rounded-full border-2 border-black shadow">0</span>
       </button>
 
-      <!-- WhatsApp FAB -->
-      <button id="mb-hover-whatsapp" onclick="shareSelectedWithShareSheet()" class="relative w-13 h-13 rounded-full bg-[#25D366] text-white shadow-[0_8px_25px_rgba(37,211,102,0.45)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-white/25" title="Share Selected via WhatsApp">
-        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
-        </svg>
-        <span id="mb-hover-badge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10.5px] font-black text-black bg-amber-400 rounded-full border border-black shadow">0</span>
-      </button>
     </div>
   </div>
 
@@ -1206,7 +1287,7 @@
       .filter(s => s.code !== 'RD-TECH-1002931');
     saveSharedActivity();
     let redeemedList = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
-    let undoState = { timer: null, secondsLeft: 10, code: null, brand: null };
+    let undoState = { timer: null, secondsLeft: 3, code: null, brand: null };
 
     function saveSharedActivity() {
       try {
@@ -1362,6 +1443,12 @@
       renderDeckSelector();
       renderVault();
 
+      // Horizontal rollback animation for restored cards
+      targetCodes.forEach(c => {
+        const cardEl = document.querySelector(`[data-code="${c}"]`);
+        if (cardEl) cardEl.classList.add('anim-rollback-700');
+      });
+
       try {
         await fetch(API_ENDPOINT, {
           method: 'POST',
@@ -1381,7 +1468,7 @@
       if (undoState.timer) clearInterval(undoState.timer);
       undoState.code = code;
       undoState.brand = brand;
-      undoState.secondsLeft = 10;
+      undoState.secondsLeft = 3;
 
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
@@ -1604,6 +1691,12 @@
       if (mbDock) {
         mbDock.classList.toggle('hidden', tab !== 'vault');
       }
+
+      const floatingDock = document.getElementById('floating-dock-container');
+      if (floatingDock) {
+        floatingDock.classList.toggle('hidden', tab !== 'vault');
+      }
+      collapseActionMenu();
 
       renderAll();
     }
@@ -2278,11 +2371,14 @@
         const vBrandName = getBrandDisplayName(v.brand);
 
         return `
-          <div class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 space-y-3 shadow-xl relative overflow-hidden transition-all ${isChecked ? 'ring-2 ring-amber-400 bg-amber-950/20' : ''} ${v.status === 'USED' ? 'opacity-40' : ''}">
-            <!-- Top Row: Checkbox, PASS #, Status -->
-            <div class="flex items-center justify-between text-xs">
+          <div id="mb-card-${v.id}" 
+               data-code="${v.code}" 
+               onclick="handleCardClick('${v.id}')" 
+               class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-amber-400/90 ring-2 ring-amber-400/50 bg-amber-950/25' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
+            <!-- Top Row: Checkbox (visible ONLY in select mode), PASS #, Status -->
+            <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded accent-amber-400 cursor-pointer">` : ''}
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-amber-400 pointer-events-none">` : ''}
                 <span class="font-mono-apple font-bold text-amber-400/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
               <div class="flex items-center gap-1.5">
@@ -2293,12 +2389,12 @@
               </div>
             </div>
 
-            <!-- Embossed Monospace Code Box (Tap anywhere to copy) -->
-            <div onclick="copyToClipboard('${v.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-amber-500/40 active:scale-[0.99] transition-all">
+            <!-- Embossed Monospace Code Box (Tap anywhere on card to select, or tap button to copy) -->
+            <div class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between pointer-events-auto">
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
+                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ''}">${v.code}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
@@ -2315,23 +2411,7 @@
         `;
       }).join('') : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
 
-      // Update badge on floating action dock (WhatsApp FAB & Redeem FAB)
-      const fabBadge = document.getElementById('mb-hover-badge');
-      const redeemBadge = document.getElementById('mb-hover-redeem-badge');
-      if (state.selectedIds.size > 0) {
-        if (fabBadge) {
-          fabBadge.textContent = state.selectedIds.size;
-          fabBadge.classList.remove('hidden');
-        }
-        if (redeemBadge) {
-          redeemBadge.textContent = state.selectedIds.size;
-          redeemBadge.classList.remove('hidden');
-        }
-      } else {
-        if (fabBadge) fabBadge.classList.add('hidden');
-        if (redeemBadge) redeemBadge.classList.add('hidden');
-      }
-
+      updateFloatingDock();
       renderDeckSelector();
     }
 
@@ -2608,11 +2688,124 @@
     }
 
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
+    // Finalized Interlock Master Combo Icon SVG (WhatsApp + Double-Tick Tokens)
+    const INTERLOCK_COMBO_ICON = `
+      <div class="relative w-10 h-8 flex items-center justify-center pointer-events-none">
+        <div class="w-6 h-6 rounded-full bg-[#25D366] flex items-center justify-center shadow-md">
+          <svg class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+          </svg>
+        </div>
+        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 border-2 border-neutral-900 flex items-center justify-center -ml-2 shadow-md">
+          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 12l4 4L20 6"></path>
+            <path d="M2 12l4 4 2-2"></path>
+          </svg>
+        </div>
+      </div>
+    `;
+
+    const CLOSE_ICON = `
+      <svg class="w-6 h-6 text-neutral-300 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    `;
+
+    let isMenuExpanded = false;
+
+    function updateMasterTriggerIcon() {
+      const slot = document.getElementById('master-icon-slot');
+      const triggerBtn = document.getElementById('btn-master-trigger');
+      if (!slot || !triggerBtn) return;
+      if (isMenuExpanded) {
+        slot.innerHTML = CLOSE_ICON;
+        triggerBtn.classList.remove('border-emerald-500/60');
+        triggerBtn.classList.add('border-neutral-500', 'bg-neutral-800');
+      } else {
+        slot.innerHTML = INTERLOCK_COMBO_ICON;
+        triggerBtn.classList.add('border-emerald-500/60');
+        triggerBtn.classList.remove('border-neutral-500', 'bg-neutral-800');
+      }
+    }
+
+    function toggleActionMenu() {
+      isMenuExpanded = !isMenuExpanded;
+      const menuEl = document.getElementById('menu-expanded');
+      const backdrop = document.getElementById('capsule-backdrop');
+      if (menuEl) {
+        if (isMenuExpanded) {
+          menuEl.classList.remove('hidden');
+          menuEl.classList.add('flex');
+        } else {
+          menuEl.classList.add('hidden');
+          menuEl.classList.remove('flex');
+        }
+      }
+      if (backdrop) {
+        if (isMenuExpanded) backdrop.classList.remove('hidden');
+        else backdrop.classList.add('hidden');
+      }
+      updateMasterTriggerIcon();
+    }
+
+    function collapseActionMenu() {
+      isMenuExpanded = false;
+      const menuEl = document.getElementById('menu-expanded');
+      const backdrop = document.getElementById('capsule-backdrop');
+      if (menuEl) {
+        menuEl.classList.add('hidden');
+        menuEl.classList.remove('flex');
+      }
+      if (backdrop) backdrop.classList.add('hidden');
+      updateMasterTriggerIcon();
+    }
+
+    function handleMasterFabClick() {
+      if (isMenuExpanded) {
+        collapseActionMenu();
+        return;
+      }
+      if (state.selectedIds.size > 0) {
+        toggleActionMenu();
+      } else {
+        if (!state.isSelectMode) {
+          toggleSelectMode();
+          showToast('Select mode activated: tap cards to select');
+        } else {
+          showToast('Tap any card to select for WhatsApp or Redeem');
+        }
+      }
+    }
+
+    function triggerWhatsAppShare() {
+      collapseActionMenu();
+      shareSelectedWithShareSheet();
+    }
+
+    function updateFloatingDock() {
+      const count = state.selectedIds.size;
+      const badgeMaster = document.getElementById('badge-master-count');
+      const badgeWA = document.getElementById('badge-menu-wa');
+      const badgeRedeem = document.getElementById('badge-menu-redeem');
+
+      if (badgeMaster) {
+        if (count > 0) {
+          badgeMaster.textContent = count;
+          badgeMaster.classList.remove('hidden');
+        } else {
+          badgeMaster.classList.add('hidden');
+        }
+      }
+      if (badgeWA) badgeWA.textContent = count;
+      if (badgeRedeem) badgeRedeem.textContent = count;
+      updateMasterTriggerIcon();
+    }
+
     function toggleSelectMode() {
       state.isSelectMode = !state.isSelectMode;
       const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
       const dtBtn = document.getElementById('dt-select-btn');
-      const actionsDock = document.getElementById('mb-hover-actions') || document.getElementById('mb-hover-whatsapp');
 
       if (state.isSelectMode) {
         if (dtBtn) dtBtn.textContent = 'Done';
@@ -2621,10 +2814,6 @@
           mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
           mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
         }
-        if (actionsDock) {
-          actionsDock.classList.remove('hidden');
-          actionsDock.classList.add('flex');
-        }
       } else {
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
@@ -2632,13 +2821,26 @@
           mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
           mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
         }
-        if (actionsDock) {
-          actionsDock.classList.add('hidden');
-          actionsDock.classList.remove('flex');
-        }
         state.selectedIds.clear();
+        collapseActionMenu();
       }
       renderVault();
+      updateFloatingDock();
+    }
+
+    function handleCardClick(id) {
+      if (!state.isSelectMode) {
+        state.isSelectMode = true;
+        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const dtBtn = document.getElementById('dt-select-btn');
+        if (dtBtn) dtBtn.textContent = 'Done';
+        if (mbBtn) {
+          mbBtn.textContent = 'Done';
+          mbBtn.classList.remove('bg-neutral-800', 'text-amber-300');
+          mbBtn.classList.add('bg-amber-400', 'text-black', 'shadow-md');
+        }
+      }
+      toggleSelectVoucher(id);
     }
 
     function shareSelectedWithShareSheet() {
@@ -2727,6 +2929,7 @@
     function toggleSelectVoucher(id) {
       state.selectedIds.has(id) ? state.selectedIds.delete(id) : state.selectedIds.add(id);
       renderVault();
+      updateFloatingDock();
     }
 
     function toggleSelectAllRows(checked) {
@@ -2922,50 +3125,97 @@
         return;
       }
 
-      const timeStr = nowIST();
+      collapseActionMenu();
 
-      const movedCodes = [];
-      const byBrand = {};
-      targetVouchers.forEach(v => {
-        v.status = 'USED';
-        sharedActivity = sharedActivity.filter(s => s.code !== v.code);
-        if (!redeemedList.some(r => r.code === v.code)) {
-          redeemedList.unshift({
-            code: v.code,
-            brand: v.brand,
-            amount: v.amount || 0,
-            pin: v.pin || '',
-            redeemedTimestampIST: timeStr,
-            originalTab: v.brand
-          });
-        }
-        movedCodes.push(v.code);
-        (byBrand[v.brand] = byBrand[v.brand] || []).push(v.code);
+      // Phase 1 (0ms): Strikethrough laser across code and highlight card border
+      toRedeem.forEach(id => {
+        const codeEl = document.getElementById(`mb-code-${id}`);
+        if (codeEl) codeEl.classList.add('strikethrough-laser');
+        const cardEl = document.getElementById(`mb-card-${id}`);
+        if (cardEl) cardEl.style.borderColor = 'rgba(16, 185, 129, 0.7)';
       });
 
-      saveSharedActivity();
-      saveRedeemedList();
+      // Phase 2 (140ms): Pure horizontal slide through (0deg tilt, pure X-axis)
+      setTimeout(() => {
+        toRedeem.forEach(id => {
+          const cardEl = document.getElementById(`mb-card-${id}`);
+          if (cardEl) cardEl.classList.add('anim-swipe-horizontal-700');
+        });
+      }, 140);
 
-      state.selectedIds.clear();
-      showUndoToast(movedCodes.join(', '), targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`);
-      renderDeckSelector();
-      renderVault();
+      // Phase 3 (340ms): Smooth continuous height collapse
+      setTimeout(() => {
+        toRedeem.forEach(id => {
+          const cardEl = document.getElementById(`mb-card-${id}`);
+          if (cardEl) cardEl.classList.add('anim-collapse-700');
+        });
+      }, 340);
 
-      try {
-        await Promise.all(Object.entries(byBrand).map(([brand, codes]) =>
-          fetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify({
-              auth: VAULT_AUTH_KEY,
-              action: 'MOVE_TO_REDEEMED',
-              brand: brand,
-              codes: codes
+      // Phase 4 (760ms): Remove from active vault, exit select mode, update tabs, and show 3s undo
+      setTimeout(async () => {
+        const timeStr = nowIST();
+        const movedCodes = [];
+        const byBrand = {};
+
+        targetVouchers.forEach(v => {
+          v.status = 'USED';
+          sharedActivity = sharedActivity.filter(s => s.code !== v.code);
+          if (!redeemedList.some(r => r.code === v.code)) {
+            redeemedList.unshift({
+              code: v.code,
+              brand: v.brand,
+              amount: v.amount || 0,
+              pin: v.pin || '',
+              redeemedTimestampIST: timeStr,
+              originalTab: v.brand
+            });
+          }
+          movedCodes.push(v.code);
+          (byBrand[v.brand] = byBrand[v.brand] || []).push(v.code);
+        });
+
+        // Instantly move redeemed vouchers out of active vouchers list so they don't linger
+        state.vouchers = state.vouchers.filter(v => !movedCodes.includes(v.code));
+
+        saveSharedActivity();
+        saveRedeemedList();
+
+        state.selectedIds.clear();
+
+        // REQUIREMENT: Exit Select Mode & show back the Interlock master combo icon
+        state.isSelectMode = false;
+        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const dtBtn = document.getElementById('dt-select-btn');
+        if (dtBtn) dtBtn.textContent = 'Select Multiple';
+        if (mbBtn) {
+          mbBtn.textContent = 'Select';
+          mbBtn.classList.add('bg-neutral-800', 'text-amber-300');
+          mbBtn.classList.remove('bg-amber-400', 'text-black', 'shadow-md');
+        }
+
+        renderDeckSelector();
+        renderVault();
+        updateFloatingDock();
+        updateMasterTriggerIcon();
+
+        showUndoToast(movedCodes.join(', '), targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`);
+
+        try {
+          await Promise.all(Object.entries(byBrand).map(([brand, codes]) =>
+            fetch(API_ENDPOINT, {
+              method: 'POST',
+              body: JSON.stringify({
+                auth: VAULT_AUTH_KEY,
+                action: 'MOVE_TO_REDEEMED',
+                brand: brand,
+                codes: codes
+              })
             })
-          })
-        ));
-      } catch(e) {
-        console.warn('Backend batch move error:', e);
-      }
+          ));
+        } catch(e) {
+          console.warn('Backend batch move error:', e);
+        }
+      }, 760);
     }
 
     function resetAccountTimer(accId) {
@@ -3073,6 +3323,9 @@
         const mbSyncTime = document.getElementById('mb-sync-time');
         if (mbSyncTime) mbSyncTime.textContent = `Synced at ${savedTime}`;
       }
+
+      updateMasterTriggerIcon();
+      updateFloatingDock();
 
       setTab('vault');
 
