@@ -7,7 +7,6 @@
 const SENDER_EMAIL = "rupay@truztee.com";
 const IST_TIMEZONE = "Asia/Kolkata";
 const AUTHORIZED_USER = "vibhavoswal3@gmail.com";
-const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4"; // Legacy fallback during migration
 
 // Standard Unified Column Schemas
 const UNIFIED_BRAND_HEADERS = [
@@ -59,11 +58,6 @@ function generateSessionToken(email) {
 
 function validateAuth(providedToken) {
   if (!providedToken) return { valid: false, error: "Unauthorized: Missing authentication token." };
-
-  // Legacy fallback during cutover window
-  if (providedToken === VAULT_AUTH_KEY) {
-    return { valid: true, user: AUTHORIZED_USER, expiry: Date.now() + 86400000 };
-  }
 
   const parts = String(providedToken).trim().split(".");
   if (parts.length !== 2) {
@@ -667,7 +661,7 @@ function migrateSheetsToUnifiedSchema(ss) {
  * 7. REST API (GET / POST)
  */
 function doGet(e) {
-  // SECURITY CHECK: Enforce 24-Hour HMAC Session Token or Vault Auth Key
+  // SECURITY CHECK: Enforce 24-Hour HMAC Session Token
   const providedAuth = (e && e.parameter) ? (e.parameter.token || e.parameter.auth || e.parameter.key || "") : "";
   const authCheck = validateAuth(providedAuth);
   if (!authCheck.valid) {
@@ -966,7 +960,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Protected actions: Validate session token or legacy key
+    // Protected actions: Validate 24-Hour HMAC Session Token
     const providedAuth = data.token || data.auth || (e.parameter ? (e.parameter.token || e.parameter.auth || e.parameter.key) : "") || "";
     const authCheck = validateAuth(providedAuth);
     if (!authCheck.valid) {
