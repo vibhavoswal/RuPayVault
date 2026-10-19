@@ -109,6 +109,93 @@ function validateAuth(providedToken) {
  *  - Stage 1 (Ack Email): Detects RUPS booking ID, delay/pending message -> records in Brand Tab as "PENDING" & starts 24h cooldown
  *  - Stage 2 (Delivery Email): Detects RUPS booking ID & alphanumeric code -> finds row by RUPS ID and populates Code/PIN as "ACTIVE" in SAME row!
  */
+/**
+ * Unified, simplified parser for RuPay voucher emails.
+ * Triggered on emails containing "RUPS-" in subject or body.
+ */
+function parseRupayVoucherEmail(msg) {
+  const subject = msg.getSubject() || "";
+  const body = msg.getPlainBody() || "";
+
+  // 1. Guard: Must contain RUPS- booking reference
+  const bidMatch = subject.match(/\b(RUPS-[A-Za-z0-9]+)\b/i) || body.match(/\b(RUPS-[A-Za-z0-9]+)\b/i);
+  if (!bidMatch) return null;
+  const bookingId = bidMatch[1].toUpperCase();
+
+  // 2. Extract Brand (prefer from subject "...for <Brand> Voucher", fallback to extractBrand)
+  let brand = extractBrand(subject, body);
+  const brandSubjectMatch = subject.match(/for\s+(.*?)\s+Voucher/i);
+  if (brandSubjectMatch && brandSubjectMatch[1].trim()) {
+    brand = brandSubjectMatch[1].trim();
+  }
+
+  // 3. Extract Amount, Date, Account
+  const amount = extractAmount(body);
+  const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
+  const account = extractAccountName(msg.getTo(), body, msg.getFrom()) || "vibhavoswal9";
+
+  // 4. Extract Raw Coupon Code Line
+  const codeLineMatch = body.match(/(?:Coupon|Voucher)\s*Code\s*[:#-]?\s*([^\r\n<]+)/i) ||
+                        body.match(/\bCode\s*[:#-]?\s*([^\r\n<]+)/i);
+  let rawVal = codeLineMatch ? codeLineMatch[1] : "";
+  // Strip markdown (*, _, `, quotes) and surrounding whitespace
+  rawVal = rawVal.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+
+  // 5. Binary Check: Is it a delay placeholder or a real code?
+  const isDelay = !rawVal || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
+  if (isDelay) {
+    return {
+      bookingId: bookingId,
+      brand: brand,
+      amount: amount,
+      dateOfIssue: dateOfIssue,
+      account: account,
+      code: "PENDING",
+      pin: "",
+      status: "PENDING",
+      isDelivered: false
+    };
+  }
+
+  // 6. Real Code Delivered: Parse Code and PIN
+  let code = rawVal;
+  let pin = "";
+
+  // Check Pattern A: "1001460106351200/pin:126601" or "1001460106351200 / PIN : 126601"
+  if (/\/pin\s*[:#-]?\s*\d+/i.test(code)) {
+    const m = code.match(/^(.*?)\/pin\s*[:#-]?\s*(\d{3,8})/i);
+    if (m) {
+      code = m[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+      pin = m[2].trim();
+    }
+  } 
+  // Check Pattern B: "1001460106351200/126601" (code/pin numeric slash split)
+  else if (/^[A-Za-z0-9\-]+\/\d{3,8}$/.test(code)) {
+    const parts = code.split("/");
+    code = parts[0].trim();
+    pin = parts[1].trim();
+  } 
+  // Check Separate Line: "PIN: 123456" or "Coupon PIN: 123456"
+  else {
+    const pinMatch = body.match(/(?:Coupon|Card|Voucher)?\s*PIN\s*[:#-]+\s*(\d{3,8})\b/i);
+    if (pinMatch) {
+      pin = pinMatch[1].trim();
+    }
+  }
+
+  return {
+    bookingId: bookingId,
+    brand: brand,
+    amount: amount,
+    dateOfIssue: dateOfIssue,
+    account: account,
+    code: code,
+    pin: pin,
+    status: "ACTIVE",
+    isDelivered: true
+  };
+}
+
 function processRupayEmails() {
   // Guard: Only allow execution under the central hub account (rupayvouchers@gmail.com)
   const effectiveUser = Session.getEffectiveUser().getEmail();
@@ -124,8 +211,8 @@ function processRupayEmails() {
   }
 
   try {
-    // Search unread emails from Truztee or containing RUPS booking references
-    const query = 'is:unread (from:rupay@truztee.com OR "rupay@truztee.com" OR "RUPS" OR subject:"Fwd:" OR subject:"Fw:")';
+    // Search unread emails with RUPS reference
+    const query = 'is:unread ("RUPS-" OR subject:"RUPS-" OR from:rupay@truztee.com OR "rupay@truztee.com")';
     const threads = GmailApp.search(query, 0, 25);
     if (!threads.length) return;
 
@@ -136,107 +223,41 @@ function processRupayEmails() {
       for (const msg of messages) {
         if (!msg.isUnread()) continue;
 
-        const subject = msg.getSubject() || "";
-        const body = msg.getPlainBody() || "";
-        const toHeader = msg.getTo() || "";
-        const fromHeader = msg.getFrom() || "";
-
-        // 1. Extract Booking ID (prioritizing RUPS prefix)
-        const bookingIdMatch = subject.match(/\b(RUPS[A-Za-z0-9\-]+)\b/i) || 
-                               body.match(/\b(RUPS[A-Za-z0-9\-]+)\b/i) ||
-                               subject.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i) || 
-                               body.match(/Booking ID:\s*([A-Za-z0-9\-]+)/i);
-        const bookingId = bookingIdMatch ? bookingIdMatch[1].trim() : "";
-        if (!bookingId) {
-          // No booking ID found, skip non-redemption emails
+        const parsed = parseRupayVoucherEmail(msg);
+        if (!parsed) {
+          // Mark non-voucher email as read so it doesn't get processed on every cron cycle
+          msg.markRead();
           continue;
         }
 
-        // 2. Extract original recipient account
-        let account = extractAccountName(toHeader, body, fromHeader);
-        if (!account) account = "vibhavoswal9";
-
-        // 3. Extract Brand, Amount, Date
-        const brand = extractBrand(subject, body);
-        const amount = extractAmount(body);
-        const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
-
-        // 4. Extract Voucher Code & PIN candidates
-        const rawCode = extractField(body, "Coupon Code") || 
-                        extractField(body, "Voucher Code") || 
-                        extractField(body, "Code") || "";
-        let cleanCode = rawCode.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-
-        const pin = extractField(body, "Coupon Pin") || 
-                    extractField(body, "PIN") || 
-                    extractField(body, "Voucher Pin") || 
-                    extractField(body, "Card Pin") || "";
-        let cleanPin = pin ? pin.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
-        if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
-          cleanPin = "";
-        }
-
-        // Handle inline PIN patterns:
-        // Pattern A: "1001460102506580/pin:271127" or "1001460102506580 / PIN : 271127"
-        if (/\/pin\s*[:#-]?\s*/i.test(cleanCode)) {
-          const parts = cleanCode.split(/\/pin\s*[:#-]?\s*/i);
-          cleanCode = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-          if (!cleanPin && parts[1]) {
-            cleanPin = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-            if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
-              cleanPin = "";
-            }
-          }
-        } 
-        // Pattern B: "1001460102506580/271127" (code/pin numeric slash split)
-        else if (cleanCode.includes("/")) {
-          const parts = cleanCode.split("/");
-          if (parts.length === 2) {
-            const cPart = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-            const pPart = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-            if (/^[A-Za-z0-9\-]{6,25}$/.test(cPart) && /^[0-9]{3,8}$/.test(pPart)) {
-              cleanCode = cPart;
-              cleanPin = pPart;
-            }
-          }
-        }
-
-        // 5. Binary Real-Code Check:
-        // A genuine code is 6-30 alphanumeric chars/hyphens, NO spaces, not starting with RUPS, and not a delay placeholder.
-        const isDelayPhrase = /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(cleanCode);
-        const isDeliveredCode = !isDelayPhrase && 
-                                /^[A-Za-z0-9\-]{6,30}$/.test(cleanCode) && 
-                                !cleanCode.toUpperCase().startsWith("RUPS");
-
-        // 7. Route based on Code Presence:
-        if (!isDeliveredCode) {
+        if (!parsed.isDelivered) {
           // ==========================================
           // STAGE 1: Acknowledgement Email
           // ==========================================
-          // A. Start 24h cooldown timer on this account immediately
-          updateCooldownTab(ss, account);
-
-          // B. Record directly into Brand Tab as "PENDING"
+          // A. Record directly into Brand Tab as "PENDING"
           recordPendingRedemption(ss, {
-            bookingId: bookingId,
-            brand: brand,
-            amount: amount,
-            account: account,
-            dateOfIssue: dateOfIssue
+            bookingId: parsed.bookingId,
+            brand: parsed.brand,
+            amount: parsed.amount,
+            account: parsed.account,
+            dateOfIssue: parsed.dateOfIssue
           });
+
+          // B. Start 24h cooldown timer on this account immediately after row is recorded
+          updateCooldownTab(ss, parsed.account);
         } else {
           // ==========================================
           // STAGE 2: Voucher Code Delivery Email
           // ==========================================
           // Search Google Sheet for Booking ID (RUPS...) and fulfill in the SAME row!
           fulfillVoucherCode(ss, {
-            bookingId: bookingId,
-            brand: brand,
-            code: cleanCode,
-            pin: cleanPin,
-            amount: amount,
-            dateOfIssue: dateOfIssue,
-            account: account
+            bookingId: parsed.bookingId,
+            brand: parsed.brand,
+            code: parsed.code,
+            pin: parsed.pin,
+            amount: parsed.amount,
+            dateOfIssue: parsed.dateOfIssue,
+            account: parsed.account
           });
         }
 
@@ -477,53 +498,14 @@ function reconcilePendingVouchers(ss) {
           for (const t of threads) {
             const msgs = t.getMessages();
             for (const m of msgs) {
-              const body = m.getPlainBody() || '';
-              const rawCode = extractField(body, "Coupon Code") || 
-                              extractField(body, "Voucher Code") || 
-                              extractField(body, "Code") || "";
-              let cleanCode = rawCode ? rawCode.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
-              const pin = extractField(body, "Coupon Pin") || 
-                          extractField(body, "PIN") || 
-                          extractField(body, "Voucher Pin") || 
-                          extractField(body, "Card Pin") || "";
-              let cleanPin = pin ? pin.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
-              if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
-                cleanPin = "";
-              }
-
-              if (/\/pin\s*[:#-]?\s*/i.test(cleanCode)) {
-                const parts = cleanCode.split(/\/pin\s*[:#-]?\s*/i);
-                cleanCode = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-                if (!cleanPin && parts[1]) {
-                  cleanPin = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-                  if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
-                    cleanPin = "";
-                  }
-                }
-              } else if (cleanCode.includes("/")) {
-                const parts = cleanCode.split("/");
-                if (parts.length === 2) {
-                  const cPart = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-                  const pPart = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
-                  if (/^[A-Za-z0-9\-]{6,25}$/.test(cPart) && /^[0-9]{3,8}$/.test(pPart)) {
-                    cleanCode = cPart;
-                    cleanPin = pPart;
-                  }
-                }
-              }
-
-              const isDelayPhrase = /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(cleanCode);
-              const isDeliveredCode = !isDelayPhrase && 
-                                      /^[A-Za-z0-9\-]{6,30}$/.test(cleanCode) && 
-                                      !cleanCode.toUpperCase().startsWith("RUPS");
-
-              if (isDeliveredCode) {
-                s.getRange(i + 1, 3).setValue(`'${cleanCode}`);
-                s.getRange(i + 1, 4).setValue(cleanPin ? `'${cleanPin}` : "");
+              const parsed = parseRupayVoucherEmail(m);
+              if (parsed && parsed.isDelivered) {
+                s.getRange(i + 1, 3).setValue(`'${parsed.code}`);
+                s.getRange(i + 1, 4).setValue(parsed.pin ? `'${parsed.pin}` : "");
                 s.getRange(i + 1, 9).setValue("ACTIVE");
                 s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
                 s.getRange(i + 1, 11).setValue(true);
-                reconciled.push({ bookingId: bid, brand: s.getName(), code: cleanCode, pin: cleanPin });
+                reconciled.push({ bookingId: bid, brand: s.getName(), code: parsed.code, pin: parsed.pin });
                 break;
               }
             }
@@ -713,37 +695,7 @@ function doGet(e) {
 
 
 
-    // Purge spurious pending rows created during the 12:16 - 12:20 AM IST run
-    if (e && e.parameter && e.parameter.clean_spurious === "true") {
-      const removed = [];
-      const brandSheets = ss.getSheets();
-      const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
-      for (const s of brandSheets) {
-        if (sysTabs.has(s.getName())) continue;
-        const sRows = s.getDataRange().getValues();
-        for (let i = sRows.length - 1; i >= 1; i--) {
-          const row = sRows[i];
-          const bookingId = String(row[1] || '').trim();
-          const code = String(row[2] || '').trim();
-          const dateOfIssue = String(row[5] || '').trim();
-          const status = String(row[8] || '').trim();
-          const timestamp = String(row[9] || '').trim();
 
-          const isSpurious = status === "PENDING" && 
-                             code === "PENDING" && 
-                             (timestamp.includes("19-Oct-2026 12:1") || dateOfIssue.includes("Oct 16 2026"));
-          
-          const isLegitimate = bookingId === "RUPS-BD5D6314" || bookingId === "RUPS-F172882B" || bookingId === "RUPS-70BBACDA";
-
-          if (isSpurious && !isLegitimate) {
-            removed.push({ brand: s.getName(), row: i + 1, bookingId: bookingId, account: row[6], date: dateOfIssue });
-            s.deleteRow(i + 1);
-          }
-        }
-      }
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, count: removed.length, removed: removed })).setMimeType(ContentService.MimeType.JSON);
-    }
 
     // Inspect recent inbox messages for debugging email forwarding and ingestion
     if (e && e.parameter && e.parameter.debug_inbox === "true") {
@@ -1023,11 +975,20 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 1. Run Migration on Demand
-    if (data.action === "MIGRATE_UNIFIED_SCHEMA") {
-      const migRes = migrateSheetsToUnifiedSchema(ss);
-      return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
+    // Acquire script lock for mutating actions to avoid concurrent write collisions
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(15000)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: "Server is processing another request. Please retry in a moment."
+      })).setMimeType(ContentService.MimeType.JSON);
     }
+
+    try {
+      // 1. Run Migration on Demand
+      if (data.action === "MIGRATE_UNIFIED_SCHEMA") {
+        const migRes = migrateSheetsToUnifiedSchema(ss);
+        return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
+      }
 
 
     // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
@@ -1069,7 +1030,9 @@ function doPost(e) {
           if (directSheet && directSheet.getName() !== "Redeemed") {
             const vals = directSheet.getDataRange().getValues();
             for (let i = 1; i < vals.length; i++) {
-              if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
+              const isCodeMatch = String(vals[i][2]).trim() === codeVal;
+              const isBookingMatch = /^RUPS/i.test(codeVal) && String(vals[i][1]).trim() === codeVal;
+              if (isCodeMatch || isBookingMatch) {
                 targetSheet = directSheet;
                 matchingRowIndices.push(i + 1);
                 if (!rowData) rowData = vals[i];
@@ -1086,7 +1049,9 @@ function doPost(e) {
             if (systemTabs.has(sName)) continue;
             const vals = s.getDataRange().getValues();
             for (let i = 1; i < vals.length; i++) {
-              if (String(vals[i][2]).trim() === codeVal || String(vals[i][1]).trim() === codeVal) {
+              const isCodeMatch = String(vals[i][2]).trim() === codeVal;
+              const isBookingMatch = /^RUPS/i.test(codeVal) && String(vals[i][1]).trim() === codeVal;
+              if (isCodeMatch || isBookingMatch) {
                 targetSheet = s;
                 matchingRowIndices.push(i + 1);
                 if (!rowData) rowData = vals[i];
@@ -1463,6 +1428,11 @@ function doPost(e) {
       const type = String(data.type || "INGESTED").toUpperCase();
       const rawCodes = data.codes || (data.code ? [data.code] : []);
       const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      if (codes.size === 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Cannot clear activity: No voucher codes specified."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
       const updated = [];
 
       if (type === "SHARED") {
@@ -1471,7 +1441,7 @@ function doPost(e) {
           const vals = sh.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowCode = String(vals[i][1] || "").trim();
-            if (codes.size === 0 || codes.has(rowCode)) {
+            if (codes.has(rowCode)) {
               sh.getRange(i + 1, 9).setValue(false); // Col 9: Display in UI
               sh.getRange(i + 1, 7).setValue("DISMISSED");
               updated.push(rowCode);
@@ -1487,7 +1457,7 @@ function doPost(e) {
           const vals = sheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowCode = String(vals[i][2] || "").trim();
-            if (codes.size === 0 || codes.has(rowCode)) {
+            if (codes.has(rowCode)) {
               sheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
               updated.push(rowCode);
             }
@@ -1508,6 +1478,11 @@ function doPost(e) {
     if (data.action === "CLEAR_REDEEMED") {
       const rawCodes = data.codes || (data.code ? [data.code] : []);
       const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      if (codes.size === 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Cannot clear redeemed: No voucher codes specified."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
       const updated = [];
 
       const rSheet = ss.getSheetByName("Redeemed");
@@ -1515,7 +1490,7 @@ function doPost(e) {
         const vals = rSheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
           const rowCode = String(vals[i][3] || "").trim();
-          if (codes.size === 0 || codes.has(rowCode)) {
+          if (codes.has(rowCode)) {
             rSheet.getRange(i + 1, 14).setValue(false); // Col 14: Display in UI
             updated.push(rowCode);
           }
@@ -1528,6 +1503,9 @@ function doPost(e) {
         clearedCount: updated.length,
         clearedCodes: updated
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+    } finally {
+      try { lock.releaseLock(); } catch(e) {}
     }
 
   } catch(err) {
