@@ -1695,23 +1695,12 @@
     function isVoucherRedeemed(v) {
       if (!v) return false;
       const vCode = (typeof v === 'string' ? v : (v.code || '')).trim();
-      const vBookId = (typeof v === 'object' && v.bookingId ? v.bookingId : '').trim();
+      if (!vCode || vCode.toUpperCase() === 'PENDING' || vCode === '-') return false;
 
-      if (vCode && vCode.toUpperCase() !== 'PENDING' && vCode !== '-') {
-        if (redeemedList.some(r => {
-          const rc = (r.code || '').trim();
-          return rc && rc.toUpperCase() !== 'PENDING' && rc !== '-' && rc === vCode;
-        })) return true;
-      }
-
-      if (vBookId && vBookId !== '-' && !vBookId.startsWith('#')) {
-        if (redeemedList.some(r => {
-          const rbid = (r.bookingId || '').trim();
-          return rbid && rbid !== '-' && !rbid.startsWith('#') && rbid === vBookId;
-        })) return true;
-      }
-
-      return false;
+      return redeemedList.some(r => {
+        const rc = (r.code || '').trim();
+        return rc && rc.toUpperCase() !== 'PENDING' && rc !== '-' && rc === vCode;
+      });
     }
 
     let undoState = {
@@ -2284,7 +2273,7 @@
       }
 
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
-      const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
+      const vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.displayInUI !== false && !isVoucherRedeemed(v));
       const count = vs.length;
       const denom = b.denom || (vs.length ? vs[0].amount : 0);
       const total = count * denom;
@@ -3195,6 +3184,7 @@
       const renderedBookings = new Set();
       let vs = state.vouchers.filter(v => {
         if (normalizeBrandKey(v.brand) !== normActiveBrand) return false;
+        if (v.displayInUI === false || isVoucherRedeemed(v)) return false;
         const c = (v.code || '').trim();
         const bid = (v.bookingId || '').trim();
         if (!c || c === '-' || c.toUpperCase() === 'PENDING') {
@@ -3352,7 +3342,7 @@
       const counts = {};
       const nowMs = Date.now();
       state.vouchers.forEach(v => {
-        if (!isVoucherRedeemed(v)) {
+        if (v.displayInUI !== false && !isVoucherRedeemed(v)) {
           const k = normalizeBrandKey(v.brand);
           counts[k] = (counts[k] || 0) + 1;
         }
