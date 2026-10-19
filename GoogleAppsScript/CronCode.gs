@@ -335,22 +335,16 @@ function processRupayEmails() {
     // 0. Auto-consolidate any rogue tabs created previously
     consolidateRogueTabs(ss);
 
-    // Search unread emails with RUPS reference
-    const query = 'is:unread ("RUPS-" OR subject:"RUPS-" OR from:rupay@truztee.com OR "rupay@truztee.com")';
+    // Search emails from the last 30 minutes with RUPS reference (read and unread)
+    const query = 'newer_than:30m ("RUPS-" OR subject:"RUPS-" OR from:rupay@truztee.com OR "rupay@truztee.com")';
     const threads = GmailApp.search(query, 0, 25);
     if (!threads.length) return;
 
     for (const thread of threads) {
       const messages = thread.getMessages();
       for (const msg of messages) {
-        if (!msg.isUnread()) continue;
-
         const parsed = parseRupayVoucherEmail(msg);
-        if (!parsed) {
-          // Mark non-voucher email as read so it doesn't get processed on every cron cycle
-          msg.markRead();
-          continue;
-        }
+        if (!parsed) continue;
 
         if (!parsed.isDelivered) {
           // ==========================================
@@ -382,8 +376,6 @@ function processRupayEmails() {
             account: parsed.account
           });
         }
-
-        msg.markRead();
       }
     }
 
