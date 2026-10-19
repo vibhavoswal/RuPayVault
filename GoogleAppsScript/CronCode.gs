@@ -165,30 +165,38 @@ function processRupayEmails() {
         const rawCode = extractField(body, "Coupon Code") || 
                         extractField(body, "Voucher Code") || 
                         extractField(body, "Code") || "";
-        let cleanCode = rawCode.replace(/['"]/g, "").trim();
+        let cleanCode = rawCode.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
 
         const pin = extractField(body, "Coupon Pin") || 
                     extractField(body, "PIN") || 
                     extractField(body, "Voucher Pin") || 
                     extractField(body, "Card Pin") || "";
-        let cleanPin = pin ? pin.replace(/['"]/g, "").trim() : "";
+        let cleanPin = pin ? pin.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
+        if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
+          cleanPin = "";
+        }
 
         // Handle inline PIN patterns:
         // Pattern A: "1001460102506580/pin:271127" or "1001460102506580 / PIN : 271127"
         if (/\/pin\s*[:#-]?\s*/i.test(cleanCode)) {
           const parts = cleanCode.split(/\/pin\s*[:#-]?\s*/i);
-          cleanCode = parts[0].trim();
+          cleanCode = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
           if (!cleanPin && parts[1]) {
-            cleanPin = parts[1].trim();
+            cleanPin = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+            if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
+              cleanPin = "";
+            }
           }
         } 
         // Pattern B: "1001460102506580/271127" (code/pin numeric slash split)
         else if (cleanCode.includes("/")) {
           const parts = cleanCode.split("/");
-          if (parts.length === 2 && /^[A-Za-z0-9\-]{6,25}$/.test(parts[0].trim()) && /^[0-9]{3,8}$/.test(parts[1].trim())) {
-            cleanCode = parts[0].trim();
-            if (!cleanPin) {
-              cleanPin = parts[1].trim();
+          if (parts.length === 2) {
+            const cPart = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+            const pPart = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+            if (/^[A-Za-z0-9\-]{6,25}$/.test(cPart) && /^[0-9]{3,8}$/.test(pPart)) {
+              cleanCode = cPart;
+              cleanPin = pPart;
             }
           }
         }
@@ -236,6 +244,9 @@ function processRupayEmails() {
       }
     }
 
+    // Auto-reconcile any pending vouchers whose delivery emails arrived
+    reconcilePendingVouchers(ss);
+
     SpreadsheetApp.flush();
   } catch(err) {
     console.error("Error in processRupayEmails:", err);
@@ -274,9 +285,15 @@ function extractAccountName(toHeader, body, fromHeader) {
 }
 
 function extractField(body, fieldName) {
-  const re = new RegExp("\\b" + fieldName + "\\s*[:#-]?\\s*([^\n\r<]+)", "i");
+  // If searching for generic "PIN", require a delimiter ([:#-]) to avoid matching phrases like "pin codes"
+  const delimiterPattern = fieldName.toUpperCase() === "PIN" ? "\\s*[:#-]+\\s*" : "\\s*[:#-]?\\s*";
+  const re = new RegExp("\\b" + fieldName + delimiterPattern + "([^\n\r<]+)", "i");
   const m = body.match(re);
-  return m ? m[1].trim() : null;
+  if (!m) return null;
+  let val = m[1].trim();
+  // Strip wrapping markdown characters (*bold*, _italic_, `code`, quotes)
+  val = val.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+  return val;
 }
 
 function extractBrand(subject, body) {
@@ -385,9 +402,7 @@ function fulfillVoucherCode(ss, data) {
     if (String(rows[i][1]).trim() === data.bookingId) {
       // MATCH FOUND: Populate Code & PIN and flip Status to ACTIVE in the EXACT SAME ROW!
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
-      if (data.pin) {
-        sheet.getRange(i + 1, 4).setValue(`'${data.pin}`);
-      }
+      sheet.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
       sheet.getRange(i + 1, 9).setValue("ACTIVE");
       sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
       sheet.getRange(i + 1, 11).setValue(true);
@@ -404,9 +419,7 @@ function fulfillVoucherCode(ss, data) {
     for (let i = 1; i < sRows.length; i++) {
       if (String(sRows[i][1]).trim() === data.bookingId) {
         s.getRange(i + 1, 3).setValue(`'${data.code}`);
-        if (data.pin) {
-          s.getRange(i + 1, 4).setValue(`'${data.pin}`);
-        }
+        s.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
         s.getRange(i + 1, 9).setValue("ACTIVE");
         s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
         s.getRange(i + 1, 11).setValue(true);
@@ -434,6 +447,100 @@ function fulfillVoucherCode(ss, data) {
   sheet.appendRow(rowData);
 }
 
+/**
+ * 4. STAGE 2 RECONCILER: AUTO-HEAL PENDING VOUCHERS
+ * Scans all brand tabs for PENDING RUPS bookings, queries Gmail for delivery emails
+ * (even if previously marked read), and fulfills them automatically in the same row.
+ */
+function reconcilePendingVouchers(ss) {
+  const brandSheets = ss.getSheets();
+  const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  const reconciled = [];
+
+  for (const s of brandSheets) {
+    if (sysTabs.has(s.getName())) continue;
+    const sRows = s.getDataRange().getValues();
+    for (let i = 1; i < sRows.length; i++) {
+      const bid = String(sRows[i][1] || '').trim();
+      const code = String(sRows[i][2] || '').trim();
+      const currentPin = String(sRows[i][3] || '').trim();
+      const status = String(sRows[i][8] || '').trim();
+
+      // Clean up any non-numeric spurious PINs in the sheet immediately
+      if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
+        s.getRange(i + 1, 4).setValue("");
+      }
+
+      if ((status === 'PENDING' || code === 'PENDING') && /^RUPS/i.test(bid)) {
+        try {
+          const threads = GmailApp.search(bid, 0, 3);
+          for (const t of threads) {
+            const msgs = t.getMessages();
+            for (const m of msgs) {
+              const body = m.getPlainBody() || '';
+              const rawCode = extractField(body, "Coupon Code") || 
+                              extractField(body, "Voucher Code") || 
+                              extractField(body, "Code") || "";
+              let cleanCode = rawCode ? rawCode.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
+              const pin = extractField(body, "Coupon Pin") || 
+                          extractField(body, "PIN") || 
+                          extractField(body, "Voucher Pin") || 
+                          extractField(body, "Card Pin") || "";
+              let cleanPin = pin ? pin.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim() : "";
+              if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
+                cleanPin = "";
+              }
+
+              if (/\/pin\s*[:#-]?\s*/i.test(cleanCode)) {
+                const parts = cleanCode.split(/\/pin\s*[:#-]?\s*/i);
+                cleanCode = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+                if (!cleanPin && parts[1]) {
+                  cleanPin = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+                  if (cleanPin && !/^\d{3,8}$/.test(cleanPin)) {
+                    cleanPin = "";
+                  }
+                }
+              } else if (cleanCode.includes("/")) {
+                const parts = cleanCode.split("/");
+                if (parts.length === 2) {
+                  const cPart = parts[0].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+                  const pPart = parts[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+                  if (/^[A-Za-z0-9\-]{6,25}$/.test(cPart) && /^[0-9]{3,8}$/.test(pPart)) {
+                    cleanCode = cPart;
+                    cleanPin = pPart;
+                  }
+                }
+              }
+
+              const isDelayPhrase = /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(cleanCode);
+              const isDeliveredCode = !isDelayPhrase && 
+                                      /^[A-Za-z0-9\-]{6,30}$/.test(cleanCode) && 
+                                      !cleanCode.toUpperCase().startsWith("RUPS");
+
+              if (isDeliveredCode) {
+                s.getRange(i + 1, 3).setValue(`'${cleanCode}`);
+                s.getRange(i + 1, 4).setValue(cleanPin ? `'${cleanPin}` : "");
+                s.getRange(i + 1, 9).setValue("ACTIVE");
+                s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+                s.getRange(i + 1, 11).setValue(true);
+                reconciled.push({ bookingId: bid, brand: s.getName(), code: cleanCode, pin: cleanPin });
+                break;
+              }
+            }
+            if (reconciled.some(r => r.bookingId === bid)) break;
+          }
+        } catch (e) {
+          console.warn("Reconcile error for " + bid + ": " + e.message);
+        }
+      }
+    }
+  }
+
+  if (reconciled.length > 0) {
+    SpreadsheetApp.flush();
+  }
+  return reconciled;
+}
 
 /**
  * 5. PERSISTENT SYSTEM SHEETS INITIALIZATION & COOLDOWN ENGINE
@@ -665,10 +772,21 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ON-DEMAND REAL-TIME EMAIL INGESTION
+    // Trigger on-demand reconciliation of pending vouchers
+    if (e && e.parameter && e.parameter.reconcile === "true") {
+      const rec = reconcilePendingVouchers(ss);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        count: rec.length,
+        reconciled: rec
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ON-DEMAND REAL-TIME EMAIL INGESTION & AUTO-HEALING RECONCILER
     if (!e || !e.parameter || e.parameter.ingest !== "false") {
       try {
         processRupayEmails();
+        reconcilePendingVouchers(ss);
       } catch (err) {
         console.warn("On-demand email ingestion error:", err.message);
       }
