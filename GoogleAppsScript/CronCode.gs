@@ -29,6 +29,48 @@ const UNIFIED_COOLDOWN_HEADERS = [
   "Account ID", "Last Redemption Time (IST)", "Status", "Last Updated (IST)"
 ];
 
+const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
+
+function getSpreadsheet() {
+  return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+const CANONICAL_BRAND_TABS = new Set([
+  "Lakme", "FourFountains", "Kalyan", "Myntra", "BigBasket", "Reliance",
+  "Apollo", "AmazonPrime", "CultFit", "TimesPrime", "TattvaSpa", "TaxSpanner",
+  "Thyrocare", "Uber", "Decathlon"
+]);
+
+function getTargetBrandSheet(ss, brand) {
+  const canonicalBrand = extractBrand(brand, "");
+  const targetName = canonicalBrand !== "Other" ? canonicalBrand : (brand || "⚡ Unassigned");
+
+  if (CANONICAL_BRAND_TABS.has(targetName)) {
+    let sheet = ss.getSheetByName(targetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(targetName);
+      sheet.appendRow(UNIFIED_BRAND_HEADERS);
+      sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+      sheet.setFrozenRows(1);
+    }
+    return sheet;
+  }
+
+  // Check if sheet exists
+  let existing = ss.getSheetByName(targetName);
+  if (existing) return existing;
+
+  // Fallback to ⚡ Unassigned
+  let unassigned = ss.getSheetByName("⚡ Unassigned");
+  if (!unassigned) {
+    unassigned = ss.insertSheet("⚡ Unassigned");
+    unassigned.appendRow(UNIFIED_BRAND_HEADERS);
+    unassigned.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#FEF3C7");
+    unassigned.setFrozenRows(1);
+  }
+  return unassigned;
+}
+
 /**
  * 0. AUTHENTICATION & 24-HOUR HMAC SESSION ENGINE (Restricted to vibhavoswal3@gmail.com)
  */
@@ -116,11 +158,13 @@ function parseRupayVoucherEmail(msg) {
   if (!bidMatch) return null;
   const bookingId = bidMatch[1].toUpperCase();
 
-  // 2. Extract Brand (prefer from subject "...for <Brand> Voucher", fallback to extractBrand)
+  // 2. Extract Brand (normalized to canonical sheet names)
   let brand = extractBrand(subject, body);
-  const brandSubjectMatch = subject.match(/for\s+(.*?)\s+Voucher/i);
-  if (brandSubjectMatch && brandSubjectMatch[1].trim()) {
-    brand = brandSubjectMatch[1].trim();
+  if (brand === "Other") {
+    const brandSubjectMatch = subject.match(/for\s+(.*?)\s+Voucher/i);
+    if (brandSubjectMatch && brandSubjectMatch[1].trim()) {
+      brand = extractBrand(brandSubjectMatch[1].trim(), "");
+    }
   }
 
   // 3. Extract Amount, Date, Account
@@ -128,10 +172,19 @@ function parseRupayVoucherEmail(msg) {
   const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
   const account = extractAccountName(msg.getTo(), body, msg.getFrom()) || "vibhavoswal9";
 
-  // 4. Extract Raw Coupon Code Line
+  // 4. Extract Raw Coupon Code Line (handles same-line and multi-line table values)
+  let rawVal = "";
   const codeLineMatch = body.match(/(?:Coupon|Voucher)\s*Code\s*[:#-]?\s*([^\r\n<]+)/i) ||
                         body.match(/\bCode\s*[:#-]?\s*([^\r\n<]+)/i);
-  let rawVal = codeLineMatch ? codeLineMatch[1] : "";
+  if (codeLineMatch && codeLineMatch[1].trim()) {
+    rawVal = codeLineMatch[1].trim();
+  } else {
+    // Multi-line table fallback: "Coupon Code\n100146..."
+    const multiMatch = body.match(/(?:Coupon|Voucher)\s*Code[\s\r\n:=#-]+([A-Za-z0-9\/\-_:.]+)/i);
+    if (multiMatch && multiMatch[1].trim()) {
+      rawVal = multiMatch[1].trim();
+    }
+  }
   // Strip markdown (*, _, `, quotes) and surrounding whitespace
   rawVal = rawVal.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
 
@@ -190,6 +243,76 @@ function parseRupayVoucherEmail(msg) {
   };
 }
 
+/**
+ * Auto-consolidate any rogue tabs created by literal subject brand strings into canonical tabs.
+ */
+function consolidateRogueTabs(ss) {
+  if (!ss) ss = getSpreadsheet();
+
+  const mappings = [
+    { rogue: "Kalyan Jewellery", canonical: "Kalyan" },
+    { rogue: "Kalyan Jewellers", canonical: "Kalyan" },
+    { rogue: "Prime Video", canonical: "AmazonPrime" },
+    { rogue: "Lakme Salon", canonical: "Lakme" },
+    { rogue: "Reliance Digital", canonical: "Reliance" },
+    { rogue: "Four Fountains", canonical: "FourFountains" },
+    { rogue: "Big Basket", canonical: "BigBasket" },
+    { rogue: "Apollo Pharmacy", canonical: "Apollo" },
+    { rogue: "Cult.fit", canonical: "CultFit" },
+    { rogue: "Cult.fit Elite", canonical: "CultFit" },
+    { rogue: "Times Prime", canonical: "TimesPrime" }
+  ];
+
+  const moved = [];
+
+  mappings.forEach(m => {
+    const rSheet = ss.getSheetByName(m.rogue);
+    if (!rSheet) return;
+
+    let cSheet = ss.getSheetByName(m.canonical);
+    if (!cSheet) {
+      cSheet = ss.insertSheet(m.canonical);
+      cSheet.appendRow(UNIFIED_BRAND_HEADERS);
+      cSheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+      cSheet.setFrozenRows(1);
+    }
+
+    const rRows = rSheet.getDataRange().getValues();
+    const cRows = cSheet.getDataRange().getValues();
+    const existingBids = new Set(cRows.slice(1).map(r => String(r[1] || '').trim()).filter(Boolean));
+    const existingCodes = new Set(cRows.slice(1).map(r => String(r[2] || '').trim()).filter(Boolean));
+
+    for (let i = 1; i < rRows.length; i++) {
+      const row = rRows[i];
+      const bid = String(row[1] || '').trim();
+      const code = String(row[2] || '').trim();
+
+      if (!bid && !code) continue;
+
+      if (!existingBids.has(bid) && (!code || !existingCodes.has(code))) {
+        const nextNum = cSheet.getLastRow();
+        const newRow = [...row];
+        newRow[0] = nextNum; // update #
+        cSheet.appendRow(newRow);
+        moved.push({ from: m.rogue, to: m.canonical, bid: bid });
+      }
+    }
+
+    // Delete rogue sheet safely
+    try {
+      ss.deleteSheet(rSheet);
+      console.log("Successfully merged and deleted rogue sheet: " + m.rogue);
+    } catch (e) {
+      console.warn("Could not delete rogue sheet " + m.rogue + ": " + e.message);
+    }
+  });
+
+  if (moved.length > 0) {
+    SpreadsheetApp.flush();
+  }
+  return moved;
+}
+
 function processRupayEmails() {
   // Guard: Only allow execution under the central hub account (rupayvouchers@gmail.com)
   const effectiveUser = Session.getEffectiveUser().getEmail();
@@ -205,12 +328,15 @@ function processRupayEmails() {
   }
 
   try {
+    const ss = getSpreadsheet();
+
+    // 0. Auto-consolidate any rogue tabs created previously
+    consolidateRogueTabs(ss);
+
     // Search unread emails with RUPS reference
     const query = 'is:unread ("RUPS-" OR subject:"RUPS-" OR from:rupay@truztee.com OR "rupay@truztee.com")';
     const threads = GmailApp.search(query, 0, 25);
     if (!threads.length) return;
-
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
 
     for (const thread of threads) {
       const messages = thread.getMessages();
@@ -312,11 +438,11 @@ function extractField(body, fieldName) {
 }
 
 function extractBrand(subject, body) {
-  const fullText = subject + "\n" + body;
-  const provider = extractField(body, "Service Provider") || "";
+  const fullText = (subject || "") + "\n" + (body || "");
+  const provider = extractField(body || "", "Service Provider") || "";
   const combined = (provider + " " + fullText).toLowerCase();
 
-  if (combined.includes("four fountains")) return "FourFountains";
+  if (combined.includes("four fountains") || combined.includes("fourfountains")) return "FourFountains";
   if (combined.includes("lakme") || combined.includes("lakmé")) return "Lakme";
   if (combined.includes("uber")) return "Uber";
   if (combined.includes("kalyan")) return "Kalyan";
@@ -326,7 +452,7 @@ function extractBrand(subject, body) {
   if (combined.includes("big basket") || combined.includes("bigbasket")) return "BigBasket";
   if (combined.includes("thyrocare") || combined.includes("health check")) return "Thyrocare";
   if (combined.includes("cult")) return "CultFit";
-  if (combined.includes("amazon")) return "AmazonPrime";
+  if (combined.includes("amazon") || combined.includes("prime video") || combined.includes("primevideo")) return "AmazonPrime";
   if (combined.includes("taxspanner")) return "TaxSpanner";
   if (combined.includes("decathlon")) return "Decathlon";
   if (combined.includes("tattva")) return "TattvaSpa";
@@ -344,14 +470,7 @@ function extractAmount(body) {
  * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN BRAND TAB
  */
 function recordPendingRedemption(ss, data) {
-  const brand = data.brand;
-  let sheet = ss.getSheetByName(brand);
-  if (!sheet) {
-    sheet = ss.insertSheet(brand);
-    sheet.appendRow(UNIFIED_BRAND_HEADERS);
-    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-    sheet.setFrozenRows(1);
-  }
+  let sheet = getTargetBrandSheet(ss, data.brand);
 
   // 1. Check if Booking ID already exists in Redeemed tab (Col 3: Booking ID)
   const rSheet = ss.getSheetByName("Redeemed");
@@ -402,14 +521,7 @@ function recordPendingRedemption(ss, data) {
  * 3. STAGE 2: BRAND TAB FULFILLMENT BY BOOKING ID (IN SAME ROW)
  */
 function fulfillVoucherCode(ss, data) {
-  const brand = data.brand;
-  let sheet = ss.getSheetByName(brand);
-  if (!sheet) {
-    sheet = ss.insertSheet(brand);
-    sheet.appendRow(UNIFIED_BRAND_HEADERS);
-    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-    sheet.setFrozenRows(1);
-  }
+  let sheet = getTargetBrandSheet(ss, data.brand);
 
   // 1. Search the target brand sheet first by Booking ID (RUPS...)
   const rows = sheet.getDataRange().getValues();
@@ -493,7 +605,7 @@ function reconcilePendingVouchers(ss) {
             const msgs = t.getMessages();
             for (const m of msgs) {
               const parsed = parseRupayVoucherEmail(m);
-              if (parsed && parsed.isDelivered) {
+              if (parsed && parsed.isDelivered && parsed.bookingId === bid) {
                 s.getRange(i + 1, 3).setValue(`'${parsed.code}`);
                 s.getRange(i + 1, 4).setValue(parsed.pin ? `'${parsed.pin}` : "");
                 s.getRange(i + 1, 9).setValue("ACTIVE");
@@ -675,7 +787,7 @@ function doGet(e) {
   }
 
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const ss = getSpreadsheet();
 
     // One-off migration trigger via GET if requested
     if (e && e.parameter && e.parameter.migrate === "true") {
@@ -877,7 +989,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   try {
     const data = JSON.parse(e.postData.contents);
 
