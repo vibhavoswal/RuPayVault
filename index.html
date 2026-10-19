@@ -1188,12 +1188,13 @@
       return !!(token && expiry && (expiry - Date.now() > 30000));
     }
 
-    // Derive AES-GCM Key for local encrypted cache
-    async function deriveKeyFromSeed(seed, saltBytes) {
+    // Derive AES-GCM Key in memory for local encrypted cache from session token and salt
+    async function deriveKeyFromSession(sessionSecret, saltBytes) {
+      if (!sessionSecret) return null;
       const enc = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
-        enc.encode(seed),
+        enc.encode(sessionSecret),
         { name: "PBKDF2" },
         false,
         ["deriveKey"]
@@ -1477,7 +1478,7 @@
           }
 
           setTimeout(async () => {
-            await unlockVaultDirect();
+            await unlockVaultDirect(String(data.token));
 
             // Replay queued mutation if mid-operation re-auth
             if (securityState.pendingMutation) {
@@ -1603,7 +1604,7 @@
     }
 
     // Unlock Vault and Hydrate
-    async function unlockVaultDirect() {
+    async function unlockVaultDirect(providedSecret = null) {
       securityState.isUnlocked = true;
       securityState.enteredPin = '';
       updatePinDotsUI();
@@ -1612,7 +1613,7 @@
       const subtitle = document.getElementById('lock-subtitle');
       if (subtitle) subtitle.textContent = 'Access restricted to vibhavoswal3@gmail.com';
 
-      // Initialize cryptoKey for local cache
+      // Initialize cryptoKey in memory from verified session token and salt
       let salt = localStorage.getItem('rupay_vault_salt');
       if (!salt) {
         const sBytes = crypto.getRandomValues(new Uint8Array(16));
@@ -1620,12 +1621,16 @@
         localStorage.setItem('rupay_vault_salt', salt);
       }
       const saltBytes = new Uint8Array(JSON.parse(salt));
-      let devSeed = localStorage.getItem('rupay_vault_dev_seed');
-      if (!devSeed) {
-        devSeed = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
-        localStorage.setItem('rupay_vault_dev_seed', devSeed);
+
+      // Remove legacy permanent dev seed from localStorage if present
+      localStorage.removeItem('rupay_vault_dev_seed');
+
+      const sessionSecret = providedSecret || getSessionToken();
+      if (sessionSecret) {
+        securityState.cryptoKey = await deriveKeyFromSession(sessionSecret, saltBytes);
+      } else {
+        securityState.cryptoKey = null;
       }
-      securityState.cryptoKey = await deriveKeyFromSeed(devSeed, saltBytes);
 
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) lockEl.classList.add('hidden');
@@ -4339,10 +4344,11 @@
     setInterval(renderCooldowns, 15000);
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Clean up legacy plaintext caches if present
+      // Clean up legacy plaintext caches & dev seed if present
       localStorage.removeItem('rupay_cards_cache');
       localStorage.removeItem('rupay_accounts_cache');
       localStorage.removeItem('rupay_vouchers_cache');
+      localStorage.removeItem('rupay_vault_dev_seed');
 
       // 0a. Restore cached theme
       try {
@@ -4389,7 +4395,7 @@
 
       // 4. Initialize security: Check 24-Hour session
       if (isSessionValid()) {
-        await unlockVaultDirect();
+        await unlockVaultDirect(getSessionToken());
       } else {
         lockVault();
       }
