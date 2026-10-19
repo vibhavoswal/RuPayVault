@@ -689,14 +689,14 @@
           </div>
         </div>
 
-        <!-- Desktop 10-Second Undo Banner -->
+        <!-- Desktop 3-Second Undo Banner -->
         <div id="dt-undo-banner" class="hidden px-8 py-2.5 bg-emerald-950/90 border-b border-emerald-500/40 flex items-center justify-between text-xs text-white">
           <div class="flex items-center gap-2">
             <span class="text-emerald-400 font-bold">✓</span>
             <span id="dt-undo-banner-text" class="text-emerald-200">Voucher marked as Redeemed and moved to Sheet</span>
           </div>
           <button id="dt-undo-banner-btn" onclick="triggerUndoLast()" class="px-3 py-1 rounded-lg bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 active:scale-95 transition-all">
-            ↶ Undo (10s)
+            ↶ Undo (3s)
           </button>
         </div>
 
@@ -851,7 +851,7 @@
         <span id="mb-undo-banner-text" class="truncate text-[11px] font-medium text-emerald-200">Voucher marked as Redeemed & moved to Sheet</span>
       </div>
       <button id="mb-undo-banner-btn" onclick="triggerUndoLast()" class="shrink-0 px-2.5 py-1 rounded-lg bg-[#0C8C46] text-white font-bold text-[11px] hover:bg-emerald-600 active:scale-95 transition-all shadow">
-        ↶ Undo (10s)
+        ↶ Undo (3s)
       </button>
     </div>
 
@@ -1506,6 +1506,7 @@
       try {
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
+          keepalive: !!options.keepalive,
           body: JSON.stringify({
             token: token,
             action: action,
@@ -1709,6 +1710,7 @@
       actionType: null, // 'redeem' | 'clear'
       code: null,
       brand: null,
+      pendingRedeem: null, // { byBrand: { [brand]: [codes] }, codes: [...], brandName: string, isCommitted: boolean }
       clearedItems: null // { context: 'ingested' | 'shared' | 'redeemed', targets: [...] }
     };
 
@@ -1784,12 +1786,14 @@
       let foundAmount = 0;
       let foundPin = '';
       let sheetBrand = brand || '';
+      let bookingId = '';
 
       const v = state.vouchers.find(x => x.code === code);
       if (v) {
         v.status = 'USED';
         foundAmount = v.amount || foundAmount;
         foundPin = v.pin || foundPin;
+        bookingId = v.bookingId || '';
         if (v.brand) sheetBrand = v.brand;
       }
 
@@ -1797,6 +1801,7 @@
 
       redeemedList.unshift({
         code: code,
+        bookingId: bookingId,
         brand: sheetBrand,
         amount: foundAmount,
         pin: foundPin,
@@ -1805,33 +1810,35 @@
       });
       saveRedeemedList();
 
-      showUndoToast(code, getBrandDisplayName(sheetBrand));
-      renderDeckSelector();
-      renderVault();
-
-      const rollbackRedeem = () => {
-        const target = state.vouchers.find(x => x.code === code);
-        if (target) target.status = 'ACTIVE';
-        redeemedList = redeemedList.filter(r => r.code !== code);
-        saveRedeemedList();
-        renderDeckSelector();
-        renderVault();
-        showToast('Redemption reverted');
+      const summaryLabel = getBrandDisplayName(sheetBrand);
+      const pendingRedeem = {
+        byBrand: { [sheetBrand]: [code] },
+        codes: [code],
+        brandName: summaryLabel,
+        isCommitted: false
       };
 
-      try {
-        await apiFetch('MOVE_TO_REDEEMED', {
-          brand: sheetBrand,
-          code: code,
-          codes: [code]
-        }, { rollback: rollbackRedeem });
-      } catch(e) {
-        console.warn('Backend move error:', e);
-      }
+      showUndoToast(code, summaryLabel, pendingRedeem);
+      renderDeckSelector();
+      renderVault();
     }
 
     async function undoRedemption(code, brand) {
       const targetCodes = (code || '').split(',').map(c => c.trim()).filter(Boolean);
+      if (!targetCodes.length) return;
+
+      // Check if this undo corresponds to an uncommitted deferred redemption
+      let isUncommitted = false;
+      if (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted) {
+        const pendingSet = new Set(undoState.pendingRedeem.codes || []);
+        if (targetCodes.some(c => pendingSet.has(c))) {
+          isUncommitted = true;
+          undoState.pendingRedeem = null;
+        }
+      }
+
+      hideUndoToast();
+
       targetCodes.forEach(c => {
         const matches = state.vouchers.filter(x => x.code === c);
         if (matches.length > 0) {
@@ -1865,7 +1872,6 @@
       });
       saveRedeemedList();
 
-      hideUndoToast();
       showToast('Voucher restored to active vault');
       renderDeckSelector();
       renderVault();
@@ -1875,6 +1881,11 @@
         const cardEl = document.querySelector(`[data-code="${c}"]`);
         if (cardEl) cardEl.classList.add('anim-rollback-700');
       });
+
+      // If the redemption was deferred and never sent to backend, stop here! Zero network requests.
+      if (isUncommitted) {
+        return;
+      }
 
       const rollbackUndo = () => {
         targetCodes.forEach(c => {
@@ -1896,15 +1907,18 @@
       }
     }
 
-    function showUndoToast(code, brand) {
+    function showUndoToast(code, brand, pendingRedeem = null) {
       if (undoState.timer) {
         if (undoState.actionType === 'clear' && undoState.clearedItems) {
           commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
+        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
+          commitRedeemToBackend(undoState.pendingRedeem);
         }
         clearInterval(undoState.timer);
       }
       undoState.actionType = 'redeem';
       undoState.clearedItems = null;
+      undoState.pendingRedeem = pendingRedeem;
       undoState.code = code;
       undoState.brand = brand;
       undoState.secondsLeft = 3;
@@ -1928,6 +1942,10 @@
           undoState.timer = null;
           if (dtBanner) dtBanner.classList.add('hidden');
           if (mbBanner) mbBanner.classList.add('hidden');
+          if (undoState.pendingRedeem) {
+            commitRedeemToBackend(undoState.pendingRedeem);
+            undoState.pendingRedeem = null;
+          }
           undoState.actionType = null;
         } else {
           const t = `↶ Undo (${undoState.secondsLeft}s)`;
@@ -1941,11 +1959,14 @@
       if (undoState.timer) {
         if (undoState.actionType === 'clear' && undoState.clearedItems) {
           commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
+        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
+          commitRedeemToBackend(undoState.pendingRedeem);
         }
         clearInterval(undoState.timer);
       }
 
       undoState.actionType = 'clear';
+      undoState.pendingRedeem = null;
       undoState.clearedItems = { context, targets };
       undoState.secondsLeft = 3;
 
@@ -1999,7 +2020,7 @@
       updateClearTrashBadges();
     }
 
-    async function commitClearToBackend(context, targets) {
+    async function commitClearToBackend(context, targets, options = {}) {
       const codes = (targets || []).map(t => t.code).filter(Boolean);
       if (!codes.length) return;
       try {
@@ -2007,18 +2028,18 @@
           await apiFetch('CLEAR_ACTIVITY', {
             type: 'INGESTED',
             codes: codes
-          });
+          }, { keepalive: !!options.keepalive });
           await saveEncryptedVouchers(state.vouchers);
         } else if (context === 'shared') {
           await apiFetch('CLEAR_ACTIVITY', {
             type: 'SHARED',
             codes: codes
-          });
+          }, { keepalive: !!options.keepalive });
           saveSharedActivity();
         } else if (context === 'redeemed') {
           await apiFetch('CLEAR_REDEEMED', {
             codes: codes
-          });
+          }, { keepalive: !!options.keepalive });
           saveRedeemedList();
         }
       } catch(e) {
@@ -2029,6 +2050,7 @@
     function hideUndoToast() {
       if (undoState.timer) clearInterval(undoState.timer);
       undoState.timer = null;
+      undoState.actionType = null;
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
       if (dtBanner) dtBanner.classList.add('hidden');
@@ -2042,6 +2064,32 @@
         undoRedemption(undoState.code, undoState.brand);
       }
     }
+
+    async function commitRedeemToBackend(pending, options = {}) {
+      if (!pending || !pending.byBrand || pending.isCommitted) return;
+      pending.isCommitted = true;
+      try {
+        await Promise.all(Object.entries(pending.byBrand).map(([brand, codes]) =>
+          apiFetch('MOVE_TO_REDEEMED', {
+            brand: brand,
+            codes: codes
+          }, { silent: true, keepalive: !!options.keepalive })
+        ));
+      } catch (e) {
+        console.warn('Deferred backend redeem error:', e);
+      }
+    }
+
+    // Flush any pending deferred commits on page unload
+    window.addEventListener('beforeunload', () => {
+      if (undoState.timer) {
+        if (undoState.actionType === 'clear' && undoState.clearedItems) {
+          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets, { keepalive: true });
+        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
+          commitRedeemToBackend(undoState.pendingRedeem, { keepalive: true });
+        }
+      }
+    });
 
     function setActivityFilter(filter) {
       activityFilter = filter;
@@ -2542,6 +2590,9 @@
               redeemedOn = String(v.dateOfIssue).trim();
             }
 
+            const vCode = (v.code || '').trim();
+            const isPendingRedeem = !!(undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted && undoState.pendingRedeem.codes?.includes(vCode));
+
             return {
               id: 'v-' + i,
               bookingId: v.bookingId || ('#' + (i + 1)),
@@ -2556,7 +2607,7 @@
               redeemedOn: redeemedOn,
               timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
               displayInUI: v.displayInUI !== false && String(v.displayInUI).toLowerCase() !== 'false',
-              status: (v.status || 'ACTIVE').toUpperCase()
+              status: isPendingRedeem ? 'USED' : (v.status || 'ACTIVE').toUpperCase()
             };
           });
 
@@ -2568,7 +2619,7 @@
         }
 
         if (data.redeemed && Array.isArray(data.redeemed)) {
-          redeemedList = data.redeemed.map(r => ({
+          const remoteRedeemed = data.redeemed.map(r => ({
             code: r.code,
             bookingId: r.bookingId || '',
             brand: r.brand || r.originalTab || 'Voucher',
@@ -2578,6 +2629,18 @@
             originalTab: r.originalTab || r.brand || '',
             displayInUI: r.displayInUI !== false && String(r.displayInUI).toLowerCase() !== 'false'
           })).filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
+
+          // Preserve uncommitted pending redemptions across background sync
+          if (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted) {
+            const pendingCodes = new Set(undoState.pendingRedeem.codes || []);
+            redeemedList.filter(r => pendingCodes.has(r.code)).forEach(lp => {
+              if (!remoteRedeemed.some(r => r.code === lp.code)) {
+                remoteRedeemed.unshift(lp);
+              }
+            });
+          }
+
+          redeemedList = remoteRedeemed;
           sharedActivity = sharedActivity.filter(s => !isVoucherRedeemed(s));
           saveSharedActivity();
           saveRedeemedList();
@@ -3255,7 +3318,7 @@
               <span class="text-xs text-amber-400/90 font-medium mr-3">Awaiting Code</span>
             ` : `
               <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
-              <button onclick="markVoucherAsRedeemed('${v.code}', '${v.brand}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
+              <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
             `}
           </td>
         </tr>
@@ -4131,30 +4194,16 @@
         updateFloatingDock();
         updateMasterTriggerIcon();
 
-        showUndoToast(movedCodes.join(', '), targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`);
+        const summaryLabel = targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`;
 
-        const rollbackBatch = () => {
-          targetVouchers.forEach(v => {
-            const cur = state.vouchers.find(x => x.code === v.code);
-            if (cur) cur.status = 'ACTIVE';
-            redeemedList = redeemedList.filter(r => r.code !== v.code);
-          });
-          saveRedeemedList();
-          renderDeckSelector();
-          renderVault();
-          showToast('Batch redemption reverted');
+        const pendingRedeem = {
+          byBrand: byBrand,
+          codes: movedCodes,
+          brandName: summaryLabel,
+          isCommitted: false
         };
 
-        try {
-          await Promise.all(Object.entries(byBrand).map(([brand, codes]) =>
-            apiFetch('MOVE_TO_REDEEMED', {
-              brand: brand,
-              codes: codes
-            }, { rollback: rollbackBatch })
-          ));
-        } catch(e) {
-          console.warn('Backend batch move error:', e);
-        }
+        showUndoToast(movedCodes.join(', '), summaryLabel, pendingRedeem);
       }, 760);
     }
 
