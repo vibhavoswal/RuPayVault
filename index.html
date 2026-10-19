@@ -1877,13 +1877,23 @@
       let foundPin = '';
       let sheetBrand = brand || '';
       let bookingId = '';
+      let account = '';
+      let card = '';
+      let dateOfIssue = '';
+      let expiry = '';
+      let timestampIST = '';
 
       const v = state.vouchers.find(x => x.code === code);
       if (v) {
         v.status = 'USED';
         foundAmount = v.amount || foundAmount;
         foundPin = v.pin || foundPin;
-        bookingId = v.bookingId || '';
+        bookingId = (v ? v.bookingId : '') || '';
+        account = (v ? v.account : '') || '';
+        card = (v ? v.card : '') || '';
+        dateOfIssue = (v ? v.dateOfIssue : '') || '';
+        expiry = (v ? v.expiry : '') || '';
+        timestampIST = (v ? v.timestampIST : '') || '';
         if (v.brand) sheetBrand = v.brand;
       }
 
@@ -1891,10 +1901,15 @@
 
       redeemedList.unshift({
         code: code,
-        bookingId: bookingId,
+        bookingId: (v ? v.bookingId : '') || bookingId || '',
         brand: sheetBrand,
         amount: foundAmount,
         pin: foundPin,
+        account: account,
+        card: card,
+        dateOfIssue: dateOfIssue,
+        expiry: expiry,
+        timestampIST: timestampIST,
         redeemedTimestampIST: timeStr,
         originalTab: sheetBrand
       });
@@ -1951,9 +1966,10 @@
               pin: r.pin || null,
               account: r.account || '-',
               card: r.card || 'RuPay Select',
-              expiry: '31 Dec 2026',
+              dateOfIssue: r.dateOfIssue || '',
+              expiry: r.expiry || '31 Dec 2026',
               redeemedOn: null,
-              timestampIST: null,
+              timestampIST: r.timestampIST || null,
               status: 'ACTIVE'
             });
           }
@@ -2694,6 +2710,11 @@
             brand: r.brand || r.originalTab || 'Voucher',
             amount: Number(r.amount) || 0,
             pin: r.pin || '',
+            account: r.account || '',
+            card: r.card || '',
+            dateOfIssue: r.dateOfIssue || '',
+            expiry: r.expiry || '31 Dec 2026',
+            timestampIST: r.timestampIST || '',
             redeemedTimestampIST: r.redeemedTimestampIST || '',
             originalTab: r.originalTab || r.brand || '',
             displayInUI: r.displayInUI !== false && String(r.displayInUI).toLowerCase() !== 'false'
@@ -4230,10 +4251,15 @@
           if (!isVoucherRedeemed(v)) {
             redeemedList.unshift({
               code: v.code,
-              bookingId: v.bookingId || '',
+              bookingId: (v ? v.bookingId : '') || '',
               brand: v.brand,
               amount: v.amount || 0,
               pin: v.pin || '',
+              account: (v ? v.account : '') || '',
+              card: (v ? v.card : '') || '',
+              dateOfIssue: (v ? v.dateOfIssue : '') || '',
+              expiry: (v ? v.expiry : '') || '',
+              timestampIST: (v ? v.timestampIST : '') || '',
               redeemedTimestampIST: timeStr,
               originalTab: v.brand
             });
