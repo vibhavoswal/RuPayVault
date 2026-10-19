@@ -1268,6 +1268,71 @@
       }
     }
 
+    // Save cards to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedCards(cards) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify(cards || []);
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_cards_encrypted_cache', JSON.stringify(encrypted));
+        localStorage.removeItem('rupay_cards_cache'); // Clear legacy plaintext cache
+      } catch (err) {
+        console.warn("Failed to save encrypted cards cache:", err);
+      }
+    }
+
+    // Load and decrypt cards from cache
+    async function loadEncryptedCards() {
+      try {
+        const cached = localStorage.getItem('rupay_cards_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const cards = JSON.parse(decryptedJson);
+        return Array.isArray(cards) ? cards : null;
+      } catch (err) {
+        console.warn("Encrypted cards cache decryption failed:", err);
+        return null;
+      }
+    }
+
+    // Save accounts to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedAccounts(accounts) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify((accounts || []).map(a => ({
+          id: a.id,
+          lastRedeemed: a.lastRedeemed ? (a.lastRedeemed instanceof Date ? a.lastRedeemed.toISOString() : a.lastRedeemed) : new Date().toISOString()
+        })));
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_accounts_encrypted_cache', JSON.stringify(encrypted));
+        localStorage.removeItem('rupay_accounts_cache'); // Clear legacy plaintext cache
+      } catch (err) {
+        console.warn("Failed to save encrypted accounts cache:", err);
+      }
+    }
+
+    // Load and decrypt accounts from cache
+    async function loadEncryptedAccounts() {
+      try {
+        const cached = localStorage.getItem('rupay_accounts_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const accounts = JSON.parse(decryptedJson);
+        if (Array.isArray(accounts)) {
+          return accounts.map(a => ({
+            id: a.id,
+            lastRedeemed: new Date(a.lastRedeemed || Date.now())
+          }));
+        }
+        return null;
+      } catch (err) {
+        console.warn("Encrypted accounts cache decryption failed:", err);
+        return null;
+      }
+    }
+
     /* --- EMAIL OTP REQUEST & COOLDOWN --- */
     async function requestOtp() {
       const btn = document.getElementById('btn-request-otp');
@@ -1565,27 +1630,47 @@
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) lockEl.classList.add('hidden');
 
-      const decryptedVouchers = await loadEncryptedVouchers();
+      const [decryptedVouchers, decryptedCards, decryptedAccounts] = await Promise.all([
+        loadEncryptedVouchers(),
+        loadEncryptedCards(),
+        loadEncryptedAccounts()
+      ]);
+
       if (decryptedVouchers && decryptedVouchers.length) {
         state.vouchers = decryptedVouchers;
-        renderAll();
+      }
+      if (decryptedCards && decryptedCards.length) {
+        state.cards = decryptedCards;
+      }
+      if (decryptedAccounts && decryptedAccounts.length) {
+        state.accounts = decryptedAccounts;
       }
 
+      renderAll();
       syncWithGoogleSheets();
     }
 
     // Lock Vault and Wipe Memory
-    function lockVault() {
+    async function lockVault() {
       securityState.isUnlocked = false;
       securityState.enteredPin = '';
       updatePinDotsUI();
 
-      if (state.vouchers && state.vouchers.length) {
-        saveEncryptedVouchers(state.vouchers);
+      try {
+        await Promise.all([
+          state.vouchers && state.vouchers.length ? saveEncryptedVouchers(state.vouchers) : Promise.resolve(),
+          state.cards && state.cards.length ? saveEncryptedCards(state.cards) : Promise.resolve(),
+          state.accounts && state.accounts.length ? saveEncryptedAccounts(state.accounts) : Promise.resolve()
+        ]);
+      } catch (e) {
+        console.warn('Error saving encrypted cache on lock:', e);
       }
 
       state.vouchers = [];
+      state.cards = [];
+      state.accounts = [];
       state.selectedIds.clear();
+      securityState.cryptoKey = null;
 
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) lockEl.classList.remove('hidden');
@@ -1594,10 +1679,10 @@
     }
 
     // Explicit User Lock (Invalidates 24-Hour Session)
-    function lockVaultManual() {
+    async function lockVaultManual() {
       localStorage.removeItem('rupay_session_token');
       localStorage.removeItem('rupay_session_expiry');
-      lockVault();
+      await lockVault();
       showToast('Vault locked & session terminated');
     }
 
@@ -2358,29 +2443,8 @@
       activeFilterBrand: 'ActivityLog',
       targetCardToBlock: null,
       pendingShareVoucher: null,
-
-      accounts: [
-        { id: 'vibhavoswal9', lastRedeemed: new Date(Date.now() - 25 * 3600 * 1000) },
-        { id: 'karthikrathod2067', lastRedeemed: new Date(Date.now() - 19.5 * 3600 * 1000) },
-        { id: 'vibhavoswal2', lastRedeemed: new Date(Date.now() - 4 * 3600 * 1000) },
-        { id: 'nikhildsouza369', lastRedeemed: new Date(Date.now() - 26 * 3600 * 1000) },
-        { id: 'arunaoswal3', lastRedeemed: new Date(Date.now() - 8 * 3600 * 1000) },
-        { id: 'madhuribhalekar369', lastRedeemed: new Date(Date.now() - 24.5 * 3600 * 1000) }
-      ],
-
-      cards: [
-        { id: 'c1', bank: 'PNB', type: 'PNB Imperial RSDC', bin: '65249710', last4: '9102', nick: 'PNB Imperial Primary', status: 'active', claimed: 3, total: 6 },
-        { id: 'c2', bank: 'Bank of Baroda', type: 'BoB Bhoomi RSDC', bin: '652505', last4: '3314', nick: 'Vibhav BoB DC', status: 'active', claimed: 2, total: 5 },
-        { id: 'c3', bank: 'Canara Bank', type: 'Canara RSDC', bin: '652550', last4: '7828', nick: 'Canara DC 7828', status: 'active', claimed: 2, total: 5 },
-        { id: 'c4', bank: 'Jana SFB', type: 'Jana SFB RSDC', bin: '652520', last4: '7891', nick: 'Jana SFB DC', status: 'active', claimed: 3, total: 5 },
-        { id: 'c5', bank: 'Canara Bank', type: 'Canara Select CC', bin: '653020', last4: '1109', nick: 'Canara CC Primary', status: 'active', claimed: 1, total: 2 },
-        
-        // Blocked cards (reverse chronological)
-        { id: 'cx1', bank: 'PNB', type: 'PNB Imperial RSDC', bin: '65249710', last4: '4821', nick: 'PNB Imperial (Old)', status: 'blocked', blockedDate: '2026-10-14', notes: 'Q3 quotas exhausted' },
-        { id: 'cx2', bank: 'Canara Bank', type: 'Canara RSDC', bin: '652550', last4: '1120', nick: 'Canara DC 1 (Old)', status: 'blocked', blockedDate: '2026-09-28', notes: 'Blocked via mobile app' },
-        { id: 'cx3', bank: 'Bank of Baroda', type: 'BoB Bhoomi RSDC', bin: '652505', last4: '2091', nick: 'Smiti BoB DC', status: 'blocked', blockedDate: '2026-08-15', notes: 'Reissued new card number' }
-      ],
-
+      accounts: [],
+      cards: [],
       vouchers: []
     };
 
@@ -2660,7 +2724,7 @@
             blockedDate: c.blockedDate || '',
             notes: c.notes || ''
           }));
-          try { localStorage.setItem('rupay_cards_cache', JSON.stringify(state.cards)); } catch(e) {}
+          await saveEncryptedCards(state.cards);
         }
 
         if (data.shared && Array.isArray(data.shared)) {
@@ -2685,7 +2749,7 @@
               lastRedeemed: parsedMs ? new Date(parsedMs) : new Date(c.lastRedeemed || Date.now())
             };
           });
-          try { localStorage.setItem('rupay_accounts_cache', JSON.stringify(state.accounts.map(a => ({ id: a.id, lastRedeemed: a.lastRedeemed.toISOString() })))); } catch(e) {}
+          await saveEncryptedAccounts(state.accounts);
         }
 
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
@@ -3592,6 +3656,7 @@
       };
 
       state.cards.push(newCard);
+      saveEncryptedCards(state.cards);
       closeAddCardModal();
       showToast('Card added: ' + nick);
       renderCards();
@@ -3611,6 +3676,7 @@
         return;
       }
       card.claimed += 1;
+      saveEncryptedCards(state.cards);
       showToast(`Logged claim for ${card.nick} (${card.claimed}/${card.total})`);
       renderCards();
 
@@ -3646,6 +3712,7 @@
       state.targetCardToBlock.status = 'blocked';
       state.targetCardToBlock.blockedDate = d;
       state.targetCardToBlock.notes = n;
+      saveEncryptedCards(state.cards);
       closeBlockModal();
       showToast('Card moved to Blocked archive');
       renderAll();
@@ -4213,6 +4280,7 @@
         a.lastRedeemed = new Date();
         showToast('24h timer restarted for ' + accId);
         renderCooldowns();
+        saveEncryptedAccounts(state.accounts);
 
         // Cloud Persistence: ⏱ Cooldowns tab in Google Sheets
         apiFetch('RESET_COOLDOWN', {
@@ -4271,19 +4339,10 @@
     setInterval(renderCooldowns, 15000);
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 0. Restore cached cards and accounts from localStorage (shown while sync runs)
-      try {
-        const cachedCards = JSON.parse(localStorage.getItem('rupay_cards_cache') || 'null');
-        if (cachedCards && Array.isArray(cachedCards) && cachedCards.length) {
-          state.cards = cachedCards;
-        }
-      } catch(e) {}
-      try {
-        const cachedAccounts = JSON.parse(localStorage.getItem('rupay_accounts_cache') || 'null');
-        if (cachedAccounts && Array.isArray(cachedAccounts) && cachedAccounts.length) {
-          state.accounts = cachedAccounts.map(a => ({ id: a.id, lastRedeemed: new Date(a.lastRedeemed) }));
-        }
-      } catch(e) {}
+      // Clean up legacy plaintext caches if present
+      localStorage.removeItem('rupay_cards_cache');
+      localStorage.removeItem('rupay_accounts_cache');
+      localStorage.removeItem('rupay_vouchers_cache');
 
       // 0a. Restore cached theme
       try {
