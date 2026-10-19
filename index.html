@@ -736,8 +736,14 @@
         <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex flex-col gap-2">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-              <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow">⚡ Ingested</button>
-              <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700">📤 Shared</button>
+              <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all">
+                <span>⚡ Ingested</span>
+                <span id="dt-parent-count-ingested" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-emerald-200 font-bold">0</span>
+              </button>
+              <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 flex items-center gap-1.5 transition-all">
+                <span>📤 Shared</span>
+                <span id="dt-parent-count-shared" class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300 font-bold">0</span>
+              </button>
             </div>
             <button id="dt-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Clear Visible Items">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -915,14 +921,21 @@
       <span id="mb-header-calc" class="font-bold text-[#F47A21] font-mono-apple pl-2 tracking-tight">Loading...</span>
     </div>
 
-    <!-- Activity Log Sub-Filters (Visible ONLY when Activity Log tab is selected) -->
-    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex flex-col gap-2 shrink-0">
+    <!-- Activity Log Sub-Filters (Variation 5A: 2-Tier Nested Hierarchy) -->
+    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex flex-col gap-1.5 shrink-0">
+      <!-- Tier 1: Primary Tabs (⚡ Ingested vs 📤 Shared) + Clear Button -->
       <div class="flex items-center justify-between gap-1.5">
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-[#0C8C46] text-white shadow transition-all">⚡ Ingested</button>
-          <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="px-2.5 py-1 rounded-lg text-[10.5px] font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all">📤 Shared</button>
+        <div class="flex-1 grid grid-cols-2 p-0.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs">
+          <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow">
+            <span>⚡ Ingested</span>
+            <span id="mb-parent-count-ingested" class="px-1.5 py-0.2 rounded-full text-[9.5px] bg-black/40 text-emerald-200 font-bold">0</span>
+          </button>
+          <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+            <span>📤 Shared</span>
+            <span id="mb-parent-count-shared" class="px-1.5 py-0.2 rounded-full text-[9.5px] bg-neutral-800 text-neutral-300 font-bold">0</span>
+          </button>
         </div>
-        <button id="mb-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-xl bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Clear Visible Items">
+        <button id="mb-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-2 rounded-xl bg-neutral-900 hover:bg-rose-500/15 border border-neutral-800 hover:border-rose-500/40 text-neutral-400 hover:text-rose-300 active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Clear Visible Items">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
@@ -930,19 +943,20 @@
         </button>
       </div>
 
-      <!-- Mobile Ingested Sub-Filters (Strictly Untagged vs Tagged) -->
-      <div id="mb-ingested-subfilters" class="flex items-center justify-between bg-black/40 p-1.5 rounded-xl border border-neutral-800/80">
+      <!-- Tier 2: Ingested Sub-Filters (Strictly Untagged vs Tagged) - Hidden when Shared is selected -->
+      <div id="mb-ingested-subfilters" class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-black/50 border border-neutral-800/80">
         <div class="flex items-center gap-1.5 text-xs">
-          <button onclick="setIngestFilter('untagged')" id="mb-subfilter-untagged" class="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
+          <span class="text-[10px] text-neutral-400 font-mono-apple mr-0.5">Filter Ingested:</span>
+          <button onclick="setIngestFilter('untagged')" id="mb-subfilter-untagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
             <span>⚠️ Untagged</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-black font-black" id="mb-sub-count-untagged">0</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-black font-black" id="mb-sub-count-untagged">0</span>
           </button>
-          <button onclick="setIngestFilter('tagged')" id="mb-subfilter-tagged" class="px-3 py-1.5 rounded-lg text-[11px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
+          <button onclick="setIngestFilter('tagged')" id="mb-subfilter-tagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
             <span>💳 Tagged</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-emerald-400 font-bold" id="mb-sub-count-tagged">0</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-neutral-800 text-emerald-400 font-bold" id="mb-sub-count-tagged">0</span>
           </button>
         </div>
-        <div class="text-[10px] text-neutral-400" id="mb-select-hint">
+        <div class="text-[10px] text-neutral-500 font-mono-apple" id="mb-select-hint">
           Tap card to select
         </div>
       </div>
@@ -1197,6 +1211,45 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- VOUCHER DETAIL iOS BOTTOM SHEET MODAL (Material SVG ℹ️) -->
+  <!-- ======================================================== -->
+  <div id="voucher-detail-backdrop" onclick="closeVoucherDetailSheet()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-opacity duration-200"></div>
+  <div id="voucher-detail-sheet" class="hidden fixed bottom-0 left-0 right-0 max-h-[85%] z-50 p-3 sm:p-4 transition-transform duration-250 ease-out flex justify-center pointer-events-none">
+    <div class="w-full max-w-lg bg-[#181617] border border-neutral-700/80 rounded-3xl p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-3.5 pointer-events-auto backdrop-blur-2xl">
+      <!-- Drag handle -->
+      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1"></div>
+      
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800">
+        <div class="flex items-center gap-2.5">
+          <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </span>
+          <div>
+            <span id="vdetail-category" class="text-[10px] font-mono-apple text-[#F47A21] font-bold uppercase tracking-wider">INGESTED VOUCHER</span>
+            <h4 id="vdetail-title" class="text-sm font-bold text-white">Voucher Details</h4>
+          </div>
+        </div>
+        <button onclick="closeVoucherDetailSheet()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center text-xs transition-colors">✕</button>
+      </div>
+
+      <!-- Rich Details Grid -->
+      <div id="vdetail-content" class="space-y-2 text-xs">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- Sheet Actions Footer -->
+      <div id="vdetail-footer" class="pt-2 flex gap-2">
+        <!-- Injected via JS -->
+      </div>
     </div>
   </div>
 
@@ -1918,6 +1971,164 @@
       return `${get('day')}-${get('month')}-${get('year')} ${get('hour')}:${get('minute')}:${get('second')} ${dp} IST`;
     }
 
+    // Relative human-friendly time helper (e.g. "14h ago", "1d ago")
+    function formatRelativeTime(ts) {
+      if (!ts) return 'Recent';
+      const ms = parseTimestamp(ts);
+      if (!ms) return String(ts);
+      const diffSec = Math.floor((Date.now() - ms) / 1000);
+      if (diffSec < 60) return 'Just now';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      const diffDay = Math.floor(diffHr / 24);
+      if (diffDay < 7) return `${diffDay}d ago`;
+      return `${Math.floor(diffDay / 7)}w ago`;
+    }
+
+    /* --- VOUCHER DETAIL iOS BOTTOM SHEET (MATERIAL SVG ℹ️) --- */
+    function openVoucherDetailSheet(id) {
+      let act = state.vouchers.find(v => v.id === id || v.code === id);
+      let isShared = false;
+      if (!act) {
+        const s = sharedActivity.find(x => x.code === id || ('shared-' + x.code) === id);
+        if (s) {
+          act = {
+            id: 'shared-' + s.code,
+            code: s.code,
+            brand: s.brand || 'Voucher',
+            amount: s.amount || 0,
+            pin: s.pin || '',
+            account: '-',
+            card: 'Shared',
+            timestampStr: s.sharedAt,
+            timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
+            status: 'SHARED',
+            bookingId: ''
+          };
+          isShared = true;
+        }
+      } else {
+        isShared = act.status === 'SHARED';
+      }
+
+      if (!act) return;
+
+      const brandDisplay = getBrandDisplayName(act.brand);
+      const isTagged = isCardTagged(act.card);
+      const isPending = act.status === 'PENDING' || act.code === 'PENDING';
+      const timeStr = act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
+      const relTime = formatRelativeTime(timeStr);
+
+      const catEl = document.getElementById('vdetail-category');
+      if (catEl) catEl.textContent = isShared ? 'SHARED ACTIVITY ARCHIVE' : `INGESTED VOUCHER (${isTagged ? 'TAGGED' : 'UNTAGGED'})`;
+
+      const titleEl = document.getElementById('vdetail-title');
+      if (titleEl) titleEl.textContent = `${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}`;
+
+      const contentEl = document.getElementById('vdetail-content');
+      if (contentEl) {
+        contentEl.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-black/60 border border-neutral-800 space-y-2.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Activity Category:</span>
+              <span class="font-bold ${isShared ? 'text-[#F47A21]' : 'text-emerald-400'}">
+                ${isShared ? '📤 WhatsApp Shared Activity' : '⚡ Ingested from Gmail'}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Timestamp:</span>
+              <span class="font-mono-apple font-bold text-white text-[11px]">${timeStr || 'Recent'}</span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Relative Time:</span>
+              <span class="text-[#F47A21] font-semibold">${relTime}</span>
+            </div>
+
+            ${act.bookingId ? `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-neutral-400">Booking Reference:</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-mono-apple text-neutral-200">${act.bookingId}</span>
+                  <button onclick="copyToClipboard('${act.bookingId}')" class="px-1.5 py-0.5 rounded bg-neutral-800 text-[10px] text-neutral-300 hover:text-white active:scale-95 transition-all">Copy</button>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Account Tag:</span>
+              <span class="font-mono-apple text-blue-400 font-bold">@${act.account || '-'}</span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">${isShared ? 'Platform:' : 'Payment Card:'}</span>
+              <span class="font-mono-apple ${isShared ? 'text-[#F47A21]' : (isTagged ? 'text-emerald-400' : 'text-amber-400')} font-bold">
+                ${isShared ? 'WhatsApp' : (isTagged ? act.card : '⚠️ Untagged')}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Fulfillment Status:</span>
+              <span class="font-bold ${isPending ? 'text-amber-400' : 'text-emerald-400'}">
+                ${isPending ? '⏳ Delivery Pending (24-48h)' : '✓ Active & Usable'}
+              </span>
+            </div>
+
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-neutral-400">Cloud Sync Origin:</span>
+              <span class="text-neutral-400 text-[11px] font-mono-apple">${isShared ? 'Shared Activity Tab' : 'Gmail Sync (CronCode.gs)'}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      const footerEl = document.getElementById('vdetail-footer');
+      if (footerEl) {
+        if (isShared) {
+          footerEl.innerHTML = `
+            <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}'); closeVoucherDetailSheet();" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95">
+              ✓ Mark as Redeemed
+            </button>
+            <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-all active:scale-95">
+              Dismiss
+            </button>
+          `;
+        } else {
+          footerEl.innerHTML = `
+            ${!isTagged ? `
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95">
+                🏷️ Tag Payment Card
+              </button>
+            ` : ''}
+            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all active:scale-95">
+              📤 WhatsApp
+            </button>
+            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}');" class="py-2.5 px-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95">
+              ✓ Redeem
+            </button>
+            <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
+              Done
+            </button>
+          `;
+        }
+      }
+
+      const backdrop = document.getElementById('voucher-detail-backdrop');
+      const sheet = document.getElementById('voucher-detail-sheet');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (sheet) sheet.classList.remove('hidden');
+    }
+
+    function closeVoucherDetailSheet() {
+      const backdrop = document.getElementById('voucher-detail-backdrop');
+      const sheet = document.getElementById('voucher-detail-sheet');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (sheet) sheet.classList.add('hidden');
+    }
+
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     let activityFilter = 'added';
@@ -2386,15 +2597,20 @@
       ['added', 'shared'].forEach(f => {
         const dtBtn = document.getElementById(`dt-btn-filter-${f}`);
         const mbBtn = document.getElementById(`mb-btn-filter-${f}`);
-        [dtBtn, mbBtn].forEach(btn => {
-          if (btn) {
-            if (f === filter) {
-              btn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow transition-all';
-            } else {
-              btn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 transition-all';
-            }
+        if (dtBtn) {
+          if (f === filter) {
+            dtBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
+          } else {
+            dtBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 flex items-center gap-1.5 transition-all';
           }
-        });
+        }
+        if (mbBtn) {
+          if (f === filter) {
+            mbBtn.className = 'py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow';
+          } else {
+            mbBtn.className = 'py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+          }
+        }
       });
 
       const isIngested = filter === 'added';
@@ -3190,12 +3406,18 @@
         const ingestedAll = allActivities.filter(a => a.type === 'INGESTED');
         const untaggedCount = ingestedAll.filter(a => !isCardTagged(a.card)).length;
         const taggedCount = ingestedAll.filter(a => isCardTagged(a.card)).length;
+        const sharedAll = allActivities.filter(a => a.type === 'SHARED');
+        const sharedCount = sharedAll.length;
 
         ['mb', 'dt'].forEach(prefix => {
           const uCnt = document.getElementById(`${prefix}-sub-count-untagged`);
           const tCnt = document.getElementById(`${prefix}-sub-count-tagged`);
+          const pIngested = document.getElementById(`${prefix}-parent-count-ingested`);
+          const pShared = document.getElementById(`${prefix}-parent-count-shared`);
           if (uCnt) uCnt.textContent = untaggedCount;
           if (tCnt) tCnt.textContent = taggedCount;
+          if (pIngested) pIngested.textContent = ingestedAll.length;
+          if (pShared) pShared.textContent = sharedCount;
         });
 
         // Sub-filter: strictly 'added' (INGESTED) or 'shared' (SHARED)
@@ -3298,7 +3520,7 @@
           </tr>
         `;
 
-        // Mobile VIP Wallet Cards for Activity Log
+        // Mobile VIP Wallet Cards for Activity Log (High-Touch Micro Cards)
         document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
@@ -3311,53 +3533,44 @@
               <div id="mb-card-${act.id}"
                    data-code="${act.code}"
                    onclick="handleCardClick('${act.id}')"
-                   class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]">
-                <!-- Header Row: Brand, Account Tag, and Card Tag (if tagged) -->
-                <div class="flex items-center justify-between text-xs pointer-events-none">
-                  <div class="flex items-center gap-2">
-                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
-                    <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 text-[11px] font-bold">
-                      ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
-                    </span>
-                    <!-- Prominent Account Tag -->
-                    <span class="px-2 py-0.5 rounded-md font-mono-apple text-[11px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                      <span>👤</span> &lt;${act.account || '-'}&gt;
-                    </span>
-                  </div>
+                   class="rounded-xl bg-neutral-900/90 border ${isChecked ? 'border-[#0C8C46] ring-1 ring-[#0C8C46] bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} flex items-center justify-between overflow-hidden shadow-sm transition-all duration-150 cursor-pointer select-none active:scale-[0.99]">
+                
+                <!-- Left Cell: Tap anywhere on code to Copy (or card click for selection) -->
+                <div onclick="${isPending || state.isSelectMode ? '' : `event.stopPropagation(); copyToClipboard('${act.code}')`}"
+                     class="flex-1 p-2.5 flex items-center gap-2 truncate cursor-pointer hover:bg-neutral-800/40 active:bg-neutral-800/70 transition-colors">
+                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none shrink-0">` : ''}
+                  
+                  <div class="truncate">
+                    <!-- Top line: Brand + Amount + Account Tag + Card Tag (if tagged) -->
+                    <div class="flex items-center gap-1.5 text-xs truncate">
+                      <span class="font-bold text-white truncate">${brandDisplay}</span>
+                      ${act.amount > 0 ? `<span class="text-emerald-400 font-semibold text-[10.5px] shrink-0">₹${act.amount.toLocaleString()}</span>` : ''}
+                      ${act.account && act.account !== '-' ? `<span class="text-[9.5px] font-mono-apple text-blue-400 bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20 shrink-0">@${act.account}</span>` : ''}
+                      ${isTaggedView ? `<span class="text-[9px] px-1.5 py-0.2 rounded bg-neutral-800 text-neutral-300 font-mono-apple shrink-0">💳 ${act.card}</span>` : ''}
+                    </div>
 
-                  <!-- Right Side: Show Card Tag in Tagged view, or clean timestamp in Untagged -->
-                  <div>
-                    ${isTaggedView ? `
-                      <span class="px-2.5 py-1 rounded-lg text-xs font-mono-apple font-bold bg-[#0C8C46]/20 border border-[#0C8C46]/50 text-emerald-300 flex items-center gap-1 shadow-sm">
-                        <span>💳</span> ${act.card}
-                      </span>
-                    ` : `
-                      <span class="text-[10px] font-mono-apple text-neutral-400">
-                        ${act.timestampStr || 'Recent'}
-                      </span>
-                    `}
+                    <!-- Bottom line: Monospace Code + Tap to Copy hint -->
+                    <div class="font-mono-apple text-xs font-bold text-neutral-200 mt-0.5 truncate flex items-center gap-2">
+                      <span id="mb-code-${act.id}">${isPending ? '<span class="text-amber-400 text-[10.5px] font-medium">⏳ Pending Delivery (24-48h)</span>' : act.code}</span>
+                      ${act.pin ? `<span class="text-[#F47A21] text-[10.5px] font-bold">PIN: ${act.pin}</span>` : ''}
+                      ${!isPending ? `<span class="text-[8.5px] px-1 rounded bg-black/60 text-neutral-400 font-sans border border-neutral-800">Tap to copy</span>` : ''}
+                    </div>
                   </div>
                 </div>
 
-                <!-- Embossed Code Box (No redundant pending or untagged badges) -->
-                <div class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between pointer-events-auto">
-                  <div class="space-y-0.5">
-                    <div class="flex items-center gap-2">
-                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                      <span id="mb-code-${act.id}" class="font-mono-apple text-sm font-bold ${isPending ? 'text-amber-400 text-xs font-semibold' : 'text-white'}">${isPending ? 'Pending Delivery (24-48h)' : act.code}</span>
-                      ${act.pin ? `<span class="text-xs text-[#F47A21] font-mono-apple font-bold ml-2">PIN: ${act.pin}</span>` : ''}
-                    </div>
-                    <div class="text-[10px] font-mono-apple text-neutral-400">
-                      REF: ${act.bookingId}${isTaggedView ? ` &bull; ${act.timestampStr || ''}` : ''}
-                    </div>
-                  </div>
-
-                  ${!isPending && !isTaggedView ? `
-                    <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
-                      Copy
-                    </button>
-                  ` : ''}
+                <!-- Right Cell: Modern Google Material Design SVG (i) Button -->
+                <div class="p-2 pl-0 shrink-0 flex items-center gap-1 pointer-events-auto">
+                  <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
+                          class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-sm"
+                          title="View voucher details">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  </button>
                 </div>
+
               </div>
             `;
           }
@@ -3366,51 +3579,48 @@
             <div id="mb-card-${act.id}"
                  data-code="${act.code}"
                  onclick="handleCardClick('${act.id}')"
-                 class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99]">
-              <!-- Header Row -->
-              <div class="flex items-center justify-between text-xs pointer-events-none">
-                <div class="flex items-center gap-2">
-                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
-                  <span class="px-2.5 py-0.5 rounded-lg bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 text-[11px] font-bold">
-                    ${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}
-                  </span>
-                </div>
-                <span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-bold">📤 SHARED</span>
-              </div>
-
-              <!-- Timestamp Row -->
-              <div class="flex items-center justify-between text-[10px] font-mono-apple text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-neutral-800/80 pointer-events-none">
-                <span class="truncate">⏱ Shared: ${act.timestampStr || 'Recent'}</span>
-              </div>
-
-              <!-- Embossed Code Box -->
-              <div onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-[#0C8C46]/40 active:scale-[0.99] transition-all pointer-events-auto">
-                <div class="space-y-0.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                    <span id="mb-code-${act.id}" class="font-mono-apple text-base font-bold text-white tracking-wider">${act.code}</span>
+                 class="rounded-xl bg-neutral-900/90 border ${isChecked ? 'border-[#0C8C46] ring-1 ring-[#0C8C46] bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} flex items-center justify-between overflow-hidden shadow-sm transition-all duration-150 cursor-pointer select-none active:scale-[0.99]">
+              
+              <div onclick="${state.isSelectMode ? '' : `event.stopPropagation(); copyToClipboard('${act.code}')`}"
+                   class="flex-1 p-2.5 flex items-center gap-2 truncate cursor-pointer hover:bg-neutral-800/40 active:bg-neutral-800/70 transition-colors">
+                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none shrink-0">` : ''}
+                
+                <div class="truncate">
+                  <div class="flex items-center gap-1.5 text-xs truncate">
+                    <span class="font-bold text-white truncate">${brandDisplay}</span>
+                    ${act.amount > 0 ? `<span class="text-emerald-400 font-semibold text-[10.5px] shrink-0">₹${act.amount.toLocaleString()}</span>` : ''}
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30 font-bold shrink-0">📤 SHARED</span>
                   </div>
-                  ${act.pin ? `
-                    <div class="flex items-center gap-2 pt-0.5">
-                      <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                      <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${act.pin}</span>
-                    </div>
-                  ` : ''}
+
+                  <div class="font-mono-apple text-xs font-bold text-neutral-200 mt-0.5 truncate flex items-center gap-2">
+                    <span id="mb-code-${act.id}">${act.code}</span>
+                    ${act.pin ? `<span class="text-[#F47A21] text-[10.5px] font-bold">PIN: ${act.pin}</span>` : ''}
+                    <span class="text-[8.5px] px-1 rounded bg-black/60 text-neutral-400 font-sans border border-neutral-800">Tap to copy</span>
+                  </div>
                 </div>
-                <button onclick="event.stopPropagation(); copyToClipboard('${act.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
-                  Copy
+              </div>
+
+              <div class="p-2 pl-0 shrink-0 flex items-center gap-1.5 pointer-events-auto">
+                <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')"
+                        class="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 active:scale-95 transition-all">
+                  ✓ Redeem
+                </button>
+                <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')"
+                        class="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 active:scale-90 transition-all text-xs"
+                        title="Dismiss">
+                  ✕
+                </button>
+                <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
+                        class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-sm"
+                        title="View voucher details">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
                 </button>
               </div>
 
-              <!-- Action Buttons Row -->
-              <div class="flex items-center gap-2 pt-0.5 pointer-events-auto">
-                <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                  <span>✓</span> Mark as Redeemed
-                </button>
-                <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')" class="py-1.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 active:scale-95 transition-all text-xs font-semibold flex items-center justify-center gap-1" title="Remove from activity log">
-                  <span>✕</span> Dismiss
-                </button>
-              </div>
             </div>
           `;
         }).join('') : `
