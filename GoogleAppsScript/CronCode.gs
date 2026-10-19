@@ -56,11 +56,7 @@ function getTargetBrandSheet(ss, brand) {
     return sheet;
   }
 
-  // Check if sheet exists
-  let existing = ss.getSheetByName(targetName);
-  if (existing) return existing;
-
-  // Fallback to ⚡ Unassigned
+  // Strict Whitelist: If brand is not a recognized canonical tab, route to ⚡ Unassigned (Never create new tabs)
   let unassigned = ss.getSheetByName("⚡ Unassigned");
   if (!unassigned) {
     unassigned = ss.insertSheet("⚡ Unassigned");
@@ -222,11 +218,17 @@ function parseRupayVoucherEmail(msg) {
     code = parts[0].trim();
     pin = parts[1].trim();
   } 
-  // Check Separate Line: "PIN: 123456" or "Coupon PIN: 123456"
+  // Check Separate Line or trailing inline: "PIN: 123456" or "Coupon PIN: 123456"
   else {
-    const pinMatch = body.match(/(?:Coupon|Card|Voucher)?\s*PIN\s*[:#-]+\s*(\d{3,8})\b/i);
-    if (pinMatch) {
-      pin = pinMatch[1].trim();
+    const inlinePinMatch = code.match(/^(.*?)(?:[\s/]+(?:Coupon|Card|Voucher)?\s*PIN\s*[:#-]?\s*(\d{3,8}))$/i);
+    if (inlinePinMatch) {
+      code = inlinePinMatch[1].replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+      pin = inlinePinMatch[2].trim();
+    } else {
+      const pinMatch = body.match(/(?:Coupon|Card|Voucher)?\s*PIN\s*[:#-]+\s*(\d{3,8})\b/i);
+      if (pinMatch) {
+        pin = pinMatch[1].trim();
+      }
     }
   }
 
@@ -462,8 +464,10 @@ function extractBrand(subject, body) {
 }
 
 function extractAmount(body) {
-  const m = body.match(/INR\s*([0-9,]+)/i) || body.match(/Rs\.?\s*([0-9,]+)/i);
-  return m ? parseInt(m[1].replace(/,/g, "")) : 500;
+  if (!body) return 500;
+  const m = body.match(/(?:INR|Rs\.?|₹)\s*([0-9,]+)/i) ||
+            body.match(/(?:Value|Amount|Worth)\s*[:#-]?\s*(?:INR|Rs\.?|₹)?\s*([0-9,]+)/i);
+  return m ? parseInt(m[1].replace(/,/g, ""), 10) : 500;
 }
 
 /**
@@ -530,6 +534,9 @@ function fulfillVoucherCode(ss, data) {
       // MATCH FOUND: Populate Code & PIN and flip Status to ACTIVE in the EXACT SAME ROW!
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
       sheet.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
+      if (data.amount && Number(data.amount) > 0) {
+        sheet.getRange(i + 1, 5).setValue(Number(data.amount));
+      }
       sheet.getRange(i + 1, 9).setValue("ACTIVE");
       sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
       sheet.getRange(i + 1, 11).setValue(true);
@@ -537,16 +544,19 @@ function fulfillVoucherCode(ss, data) {
     }
   }
 
-  // 2. Global fallback search: What if brand detection differed slightly (e.g. Other vs Uber)?
+  // 2. Global fallback search: What if brand detection differed slightly (e.g. Unassigned vs Kalyan)?
   const allSheets = ss.getSheets();
-  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
   for (const s of allSheets) {
-    if (systemTabs.has(s.getName()) || s.getName() === brand) continue;
+    if (systemTabs.has(s.getName()) || s.getName() === sheet.getName()) continue;
     const sRows = s.getDataRange().getValues();
     for (let i = 1; i < sRows.length; i++) {
       if (String(sRows[i][1]).trim() === data.bookingId) {
         s.getRange(i + 1, 3).setValue(`'${data.code}`);
         s.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
+        if (data.amount && Number(data.amount) > 0) {
+          s.getRange(i + 1, 5).setValue(Number(data.amount));
+        }
         s.getRange(i + 1, 9).setValue("ACTIVE");
         s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
         s.getRange(i + 1, 11).setValue(true);
@@ -581,7 +591,7 @@ function fulfillVoucherCode(ss, data) {
  */
 function reconcilePendingVouchers(ss) {
   const brandSheets = ss.getSheets();
-  const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
   const reconciled = [];
 
   for (const s of brandSheets) {
@@ -593,14 +603,15 @@ function reconcilePendingVouchers(ss) {
       const currentPin = String(sRows[i][3] || '').trim();
       const status = String(sRows[i][8] || '').trim();
 
-      // Clean up any non-numeric spurious PINs in the sheet immediately
-      if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
-        s.getRange(i + 1, 4).setValue("");
-      }
-
       if ((status === 'PENDING' || code === 'PENDING') && /^RUPS/i.test(bid)) {
+        // Clean up any non-numeric spurious PINs in pending row immediately
+        if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
+          s.getRange(i + 1, 4).setValue("");
+        }
+
         try {
-          const threads = GmailApp.search(bid, 0, 3);
+          // Exact phrase search in quotes to avoid hyphen '-' being treated as negation in Gmail search
+          const threads = GmailApp.search('"' + bid + '"', 0, 3);
           for (const t of threads) {
             const msgs = t.getMessages();
             for (const m of msgs) {
@@ -608,6 +619,9 @@ function reconcilePendingVouchers(ss) {
               if (parsed && parsed.isDelivered && parsed.bookingId === bid) {
                 s.getRange(i + 1, 3).setValue(`'${parsed.code}`);
                 s.getRange(i + 1, 4).setValue(parsed.pin ? `'${parsed.pin}` : "");
+                if (parsed.amount && Number(parsed.amount) > 0) {
+                  s.getRange(i + 1, 5).setValue(Number(parsed.amount));
+                }
                 s.getRange(i + 1, 9).setValue("ACTIVE");
                 s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
                 s.getRange(i + 1, 11).setValue(true);
@@ -844,7 +858,6 @@ function doGet(e) {
     if (!e || !e.parameter || e.parameter.ingest !== "false") {
       try {
         processRupayEmails();
-        reconcilePendingVouchers(ss);
       } catch (err) {
         console.warn("On-demand email ingestion error:", err.message);
       }
@@ -879,13 +892,23 @@ function doGet(e) {
 
       if (name === "⚡ Unassigned") {
         for (let i = 1; i < rows.length; i++) {
-          result.unassigned.push({
-            bookingId: rows[i][0],
-            brand: rows[i][1],
-            amount: rows[i][2],
-            account: rows[i][3],
-            dateOfIssue: rows[i][4]
-          });
+          if (!rows[i][1] && !rows[i][2]) continue;
+          const isDisp = rows[i].length > 10 ? (rows[i][10] !== false && String(rows[i][10]).toUpperCase() !== 'FALSE') : true;
+          const uEntry = {
+            brand: "⚡ Unassigned",
+            bookingId: String(rows[i][1] || ''),
+            code: String(rows[i][2] || ''),
+            pin: rows[i][3] && String(rows[i][3]).trim() !== '' && String(rows[i][3]).trim() !== 'null' ? String(rows[i][3]).trim() : null,
+            amount: Number(rows[i][4]) || 0,
+            dateOfIssue: rows[i][5] ? String(rows[i][5]) : '',
+            account: rows[i][6] ? String(rows[i][6]) : '',
+            card: rows[i][7] ? String(rows[i][7]) : '',
+            status: rows[i][8] ? String(rows[i][8]) : 'PENDING',
+            timestampIST: rows[i][9] ? String(rows[i][9]) : null,
+            displayInUI: isDisp
+          };
+          result.unassigned.push(uEntry);
+          result.vouchers.push(uEntry);
         }
       } else if (name === "⏱ Cooldowns") {
         for (let i = 1; i < rows.length; i++) {
@@ -1562,10 +1585,11 @@ function doPost(e) {
           if (systemSheets.has(sheet.getName())) continue;
           const vals = sheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
+            const rowBid = String(vals[i][1] || "").trim();
             const rowCode = String(vals[i][2] || "").trim();
-            if (codes.has(rowCode)) {
+            if (codes.has(rowCode) || codes.has(rowBid)) {
               sheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
-              updated.push(rowCode);
+              updated.push(rowCode || rowBid);
             }
           }
         }
@@ -1595,10 +1619,11 @@ function doPost(e) {
       if (rSheet) {
         const vals = rSheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
+          const rowBid = String(vals[i][2] || "").trim();
           const rowCode = String(vals[i][3] || "").trim();
-          if (codes.has(rowCode)) {
+          if (codes.has(rowCode) || codes.has(rowBid)) {
             rSheet.getRange(i + 1, 14).setValue(false); // Col 14: Display in UI
-            updated.push(rowCode);
+            updated.push(rowCode || rowBid);
           }
         }
       }
