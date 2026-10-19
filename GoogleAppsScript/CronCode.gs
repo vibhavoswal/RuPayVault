@@ -6,7 +6,8 @@
 
 const SENDER_EMAIL = "rupay@truztee.com";
 const IST_TIMEZONE = "Asia/Kolkata";
-const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
+const AUTHORIZED_USER = "vibhavoswal3@gmail.com";
+const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4"; // Legacy fallback during migration
 
 // Standard Unified Column Schemas
 const UNIFIED_BRAND_HEADERS = [
@@ -28,6 +29,79 @@ const UNIFIED_SHARED_HEADERS = [
 const UNIFIED_COOLDOWN_HEADERS = [
   "Account ID", "Last Redemption Time (IST)", "Status", "Last Updated (IST)"
 ];
+
+/**
+ * 0. AUTHENTICATION & 24-HOUR HMAC SESSION ENGINE (Restricted to vibhavoswal3@gmail.com)
+ */
+function getOrCreateHmacSecret() {
+  const props = PropertiesService.getScriptProperties();
+  let secret = props.getProperty("JWT_HMAC_SECRET");
+  if (!secret) {
+    secret = Utilities.getUuid() + "-" + Utilities.getUuid() + "-" + Utilities.getUuid();
+    props.setProperty("JWT_HMAC_SECRET", secret);
+  }
+  return secret;
+}
+
+function generateSessionToken(email) {
+  const now = Date.now();
+  const expiry = now + (24 * 60 * 60 * 1000); // Strict 24-Hour Sliding Window
+  const secret = getOrCreateHmacSecret();
+  const payloadStr = email + ":" + now + ":" + expiry;
+  const payloadB64 = Utilities.base64Encode(payloadStr);
+  const signatureBytes = Utilities.computeHmacSha256Signature(payloadB64, secret);
+  const signatureB64 = Utilities.base64Encode(signatureBytes);
+  return {
+    token: payloadB64 + "." + signatureB64,
+    expiry: expiry
+  };
+}
+
+function validateAuth(providedToken) {
+  if (!providedToken) return { valid: false, error: "Unauthorized: Missing authentication token." };
+
+  // Legacy fallback during cutover window
+  if (providedToken === VAULT_AUTH_KEY) {
+    return { valid: true, user: AUTHORIZED_USER, expiry: Date.now() + 86400000 };
+  }
+
+  const parts = String(providedToken).trim().split(".");
+  if (parts.length !== 2) {
+    return { valid: false, error: "Unauthorized: Malformed session token." };
+  }
+
+  const payloadB64 = parts[0];
+  const providedSignature = parts[1];
+  const secret = getOrCreateHmacSecret();
+  const expectedSigBytes = Utilities.computeHmacSha256Signature(payloadB64, secret);
+  const expectedSignature = Utilities.base64Encode(expectedSigBytes);
+
+  if (providedSignature !== expectedSignature) {
+    return { valid: false, error: "Unauthorized: Invalid session signature." };
+  }
+
+  let payloadStr = "";
+  try {
+    const decodedBytes = Utilities.base64Decode(payloadB64);
+    payloadStr = Utilities.newBlob(decodedBytes).getDataAsString();
+  } catch (e) {
+    return { valid: false, error: "Unauthorized: Invalid session encoding." };
+  }
+
+  const segments = payloadStr.split(":");
+  const email = segments[0];
+  const expiry = Number(segments[2]);
+
+  if (!email || email.toLowerCase().trim() !== AUTHORIZED_USER) {
+    return { valid: false, error: "Unauthorized: User mismatch." };
+  }
+
+  if (!expiry || Date.now() > expiry) {
+    return { valid: false, error: "Session expired. Please re-authenticate with OTP." };
+  }
+
+  return { valid: true, user: email, expiry: expiry };
+}
 
 /**
  * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
@@ -504,11 +578,12 @@ function migrateSheetsToUnifiedSchema(ss) {
  * 7. REST API (GET / POST)
  */
 function doGet(e) {
-  // SECURITY CHECK: Enforce Vault Auth Token
-  const providedAuth = (e && e.parameter) ? (e.parameter.auth || e.parameter.key || e.parameter.token || "") : "";
-  if (providedAuth !== VAULT_AUTH_KEY) {
+  // SECURITY CHECK: Enforce 24-Hour HMAC Session Token or Vault Auth Key
+  const providedAuth = (e && e.parameter) ? (e.parameter.token || e.parameter.auth || e.parameter.key || "") : "";
+  const authCheck = validateAuth(providedAuth);
+  if (!authCheck.valid) {
     return ContentService.createTextOutput(JSON.stringify({
-      error: "Unauthorized: Invalid or missing vault authentication token.",
+      error: authCheck.error,
       vouchers: [],
       cooldowns: [],
       unassigned: [],
@@ -741,10 +816,92 @@ function doPost(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   try {
     const data = JSON.parse(e.postData.contents);
-    const providedAuth = data.auth || data.token || (e.parameter ? (e.parameter.auth || e.parameter.key) : "") || "";
-    if (providedAuth !== VAULT_AUTH_KEY) {
+
+    // 0A. Request Email OTP (strictly to vibhavoswal3@gmail.com)
+    if (data.action === "REQUEST_OTP") {
+      const cache = CacheService.getScriptCache();
+      
+      // 1. Rate Limit Cooldown: 60s
+      if (cache.get("OTP_COOLDOWN")) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Rate limit: Please wait 60 seconds before requesting another code."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // 2. Rate Limit Hourly: max 5 per hour
+      const hourlyCountStr = cache.get("OTP_HOURLY_COUNT");
+      const hourlyCount = hourlyCountStr ? parseInt(hourlyCountStr, 10) : 0;
+      if (hourlyCount >= 5) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Rate limit: Maximum 5 verification codes per hour reached. Please try again later."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // 3. Generate 6-digit OTP
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      
+      // 4. Store in CacheService: 10 min TTL (600 seconds)
+      cache.put("VAULT_ACTIVE_OTP", otp, 600);
+      cache.put("OTP_COOLDOWN", "true", 60); // 60s lock
+      cache.put("OTP_HOURLY_COUNT", String(hourlyCount + 1), 3600); // 1 hr window
+
+      // 5. Send Email via GmailApp
+      try {
+        GmailApp.sendEmail(
+          AUTHORIZED_USER,
+          "🔐 RuPayVault Login Code: " + otp,
+          "Hello Vibhav,\n\n" +
+          "Your RuPayVault one-time login verification code is:\n\n" +
+          "      " + otp + "\n\n" +
+          "This code will expire in 10 minutes.\n" +
+          "If you did not request this login code, please verify your account security.\n\n" +
+          "— RuPayVault Security"
+        );
+      } catch (err) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Failed to send email: " + err.message
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       return ContentService.createTextOutput(JSON.stringify({
-        error: "Unauthorized: Invalid or missing vault authentication token."
+        success: true,
+        message: "Verification code sent to " + AUTHORIZED_USER,
+        cooldownSeconds: 60
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 0B. Verify OTP and issue 24-hour Session Token
+    if (data.action === "VERIFY_OTP") {
+      const cache = CacheService.getScriptCache();
+      const storedOtp = cache.get("VAULT_ACTIVE_OTP");
+      const enteredOtp = String(data.otp || "").trim();
+
+      if (!storedOtp || !enteredOtp || storedOtp !== enteredOtp) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Invalid or expired verification code."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Burn OTP on successful use
+      cache.remove("VAULT_ACTIVE_OTP");
+
+      // Generate 24-hour session token
+      const session = generateSessionToken(AUTHORIZED_USER);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        token: session.token,
+        expiry: session.expiry,
+        user: AUTHORIZED_USER
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Protected actions: Validate session token or legacy key
+    const providedAuth = data.token || data.auth || (e.parameter ? (e.parameter.token || e.parameter.auth || e.parameter.key) : "") || "";
+    const authCheck = validateAuth(providedAuth);
+    if (!authCheck.valid) {
+      return ContentService.createTextOutput(JSON.stringify({
+        error: authCheck.error
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -1183,71 +1340,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 11. Verify Master Passcode (24-Hour Session TTL)
-    if (data.action === "VERIFY_PASSCODE") {
-      const entered = String(data.passcode || "").trim();
-      const scriptProps = PropertiesService.getScriptProperties();
-      const masterPasscode = scriptProps.getProperty("VAULT_MASTER_PASSCODE");
-
-      if (entered === masterPasscode) {
-        const sessionDurationMs = 24 * 60 * 60 * 1000; // 24 Hours TTL
-        const expiresAt = Date.now() + sessionDurationMs;
-        const rawToken = Utilities.computeHmacSha256Signature(expiresAt + ":" + VAULT_AUTH_KEY, masterPasscode);
-        const sessionToken = rawToken.map(b => (b < 0 ? b + 256 : b).toString(16).padStart(2, '0')).join('');
-
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          expiresAt: expiresAt,
-          sessionToken: sessionToken
-        })).setMimeType(ContentService.MimeType.JSON);
-      } else {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Incorrect passcode. Please try again."
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-    }
-
-    // 12. Change Master Passcode in Cloud Properties
-    if (data.action === "CHANGE_PASSCODE") {
-      const current = String(data.currentPasscode || "").trim();
-      const next = String(data.newPasscode || "").trim();
-      const scriptProps = PropertiesService.getScriptProperties();
-      const masterPasscode = scriptProps.getProperty("VAULT_MASTER_PASSCODE");
-
-      if (current !== masterPasscode) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "Current passcode is incorrect."
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-      if (!/^\d{6}$/.test(next)) {
-        return ContentService.createTextOutput(JSON.stringify({
-          success: false,
-          error: "New passcode must be exactly 6 digits."
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      scriptProps.setProperty("VAULT_MASTER_PASSCODE", next);
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        message: "Passcode updated successfully in cloud properties."
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // 13. Direct Setup / Override of Passcode in Cloud Properties
-    if (data.action === "SET_PASSCODE") {
-      const code = String(data.passcode || "").trim();
-      if (/^\d{6}$/.test(code)) {
-        PropertiesService.getScriptProperties().setProperty("VAULT_MASTER_PASSCODE", code);
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          message: "Passcode configured in ScriptProperties."
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-    }
-
-    // 14. Clear Activity Log Items (sets Display in UI = FALSE in brand tabs or Shared_Activity)
+    // 11. Clear Activity Log Items (sets Display in UI = FALSE in brand tabs or Shared_Activity)
     if (data.action === "CLEAR_ACTIVITY") {
       const type = String(data.type || "INGESTED").toUpperCase();
       const rawCodes = data.codes || (data.code ? [data.code] : []);

@@ -476,7 +476,7 @@
 <body class="flex flex-col h-full w-full select-none">
 
   <!-- ======================================================== -->
-  <!-- 0. 6-DIGIT MASTER PASSCODE LOCK SCREEN (24h TTL Session) -->
+  <!-- 0. EMAIL OTP AUTH LOCK SCREEN (24h TTL Session - vibhavoswal3@gmail.com) -->
   <!-- ======================================================== -->
   <div id="vault-lock-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-between p-6 bg-gradient-to-b from-[#0f0f14] via-[#09090c] to-[#040406] text-white select-none">
     
@@ -496,11 +496,21 @@
 
       <div>
         <h1 class="text-xl font-bold tracking-tight text-neutral-100">RuPay Select Vault</h1>
-        <p id="lock-subtitle" class="text-xs text-neutral-400 mt-1 font-medium">Enter 6-digit Master Passcode</p>
+        <p id="lock-subtitle" class="text-xs text-neutral-400 mt-1 font-medium">Access restricted to vibhavoswal3@gmail.com</p>
       </div>
 
+      <!-- Request OTP Button / Resend countdown -->
+      <div class="pt-1">
+        <button id="btn-request-otp" onclick="requestOtp()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0C8C46] hover:bg-[#0A753A] text-white transition-all shadow-lg active:scale-95 flex items-center gap-2">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          <span id="btn-request-otp-text">Send Verification Code</span>
+        </button>
+      </div>
+
+      <button id="btn-cancel-reauth" onclick="cancelPendingReauth()" class="hidden text-xs text-rose-400 hover:text-rose-300 underline pt-1">Cancel action &amp; revert</button>
+
       <!-- 6 PIN Dots -->
-      <div id="pin-dots-container" class="flex items-center gap-3.5 pt-3">
+      <div id="pin-dots-container" class="flex items-center gap-3.5 pt-2">
         <div id="pin-dot-0" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
         <div id="pin-dot-1" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
         <div id="pin-dot-2" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
@@ -535,7 +545,7 @@
       </div>
 
       <div class="pt-2 text-center">
-        <p class="text-[10px] text-neutral-500">24-Hour Authenticated Session &middot; <button onclick="openChangePinModal()" class="text-[#F47A21] hover:underline">Change Passcode</button></p>
+        <p class="text-[10px] text-neutral-500">24-Hour Authenticated Session &middot; vibhavoswal3@gmail.com</p>
       </div>
     </div>
   </div>
@@ -1045,35 +1055,7 @@
     </div>
   </div>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: CHANGE MASTER PASSCODE                            -->
-  <!-- ======================================================== -->
-  <div id="modal-change-pin" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(12px);">
-    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-      <div class="flex items-center justify-between pb-2" style="border-bottom: 0.5px solid var(--separator);">
-        <h3 class="text-sm font-bold text-[#F47A21]">Change Master Passcode</h3>
-        <button onclick="closeChangePinModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">Current 6-Digit Passcode</label>
-          <input type="password" id="input-curr-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter current 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-        </div>
-        <div>
-          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">New 6-Digit Passcode</label>
-          <input type="password" id="input-new-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Enter new 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-        </div>
-        <div>
-          <label class="block text-[11px] mb-1" style="color: var(--label-secondary);">Confirm New Passcode</label>
-          <input type="password" id="input-confirm-pin" maxlength="6" pattern="[0-9]*" inputmode="numeric" placeholder="Confirm new 6-digit passcode" class="w-full px-3 py-2 rounded-xl text-sm font-mono-apple focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-2 pt-2" style="border-top: 0.5px solid var(--separator);">
-        <button onclick="closeChangePinModal()" class="px-3.5 py-1.5 rounded-xl text-xs font-medium" style="color: var(--label-secondary);">Cancel</button>
-        <button onclick="confirmChangePin()" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] text-white hover:bg-[#0A753A] shadow">Update Passcode</button>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Notification Toast -->
   <div id="toast" class="fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
@@ -1179,20 +1161,31 @@
   <script>
     const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbxhdhzl1DpHnvGXYV0KaENylb6hUw-s_hzo39nsSf37dxwnSnuh-OPrWLlvSJvfvwpwZw/exec";
     const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing";
-    const VAULT_AUTH_KEY = "rupay_vault_auth_sec_8f93e2a1c0d4";
-
-    /* --- SECURITY & 24-HOUR CLOUD PASSCODE SESSION ENGINE --- */
+    /* --- SECURITY & 24-HOUR EMAIL OTP SESSION ENGINE (vibhavoswal3@gmail.com) --- */
     const securityState = {
       isUnlocked: false,
       enteredPin: '',
-      cryptoKey: null
+      cryptoKey: null,
+      otpCooldownTimer: null,
+      pendingMutation: null // { action, payload, options, resolve, reject }
     };
+
+    function getSessionToken() {
+      return localStorage.getItem('rupay_session_token') || '';
+    }
 
     // Check if 24-Hour session is active and not expired
     function isSessionValid() {
       const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
-      const token = localStorage.getItem('rupay_session_token');
+      const token = getSessionToken();
       return !!(token && expiry && Date.now() < expiry);
+    }
+
+    // Pre-flight check: Usable if valid and has at least 30 seconds remaining
+    function isTokenUsable() {
+      const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
+      const token = getSessionToken();
+      return !!(token && expiry && (expiry - Date.now() > 30000));
     }
 
     // Derive AES-GCM Key for local encrypted cache
@@ -1275,7 +1268,66 @@
       }
     }
 
-    // Passcode Keypad Handlers
+    /* --- EMAIL OTP REQUEST & COOLDOWN --- */
+    async function requestOtp() {
+      const btn = document.getElementById('btn-request-otp');
+      const btnText = document.getElementById('btn-request-otp-text');
+      const feedback = document.getElementById('pin-feedback');
+      const subtitle = document.getElementById('lock-subtitle');
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = 'Sending code...';
+      if (feedback) feedback.textContent = '';
+
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'REQUEST_OTP' })
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          showToast('Verification code sent to email');
+          if (subtitle) subtitle.textContent = 'Code sent! Enter 6-digit OTP from email.';
+          startOtpCooldown(data.cooldownSeconds || 60);
+        } else {
+          if (feedback) feedback.textContent = data?.error || 'Failed to send code.';
+          if (data?.error && data.error.includes('wait')) {
+            startOtpCooldown(60);
+          } else {
+            if (btn) btn.disabled = false;
+            if (btnText) btnText.textContent = 'Send Verification Code';
+          }
+        }
+      } catch (err) {
+        if (feedback) feedback.textContent = 'Network error. Please try again.';
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.textContent = 'Send Verification Code';
+      }
+    }
+
+    function startOtpCooldown(seconds) {
+      const btn = document.getElementById('btn-request-otp');
+      const btnText = document.getElementById('btn-request-otp-text');
+      if (securityState.otpCooldownTimer) clearInterval(securityState.otpCooldownTimer);
+
+      let remaining = seconds;
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.textContent = `Resend Code (${remaining}s)`;
+
+      securityState.otpCooldownTimer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(securityState.otpCooldownTimer);
+          securityState.otpCooldownTimer = null;
+          if (btn) btn.disabled = false;
+          if (btnText) btnText.textContent = 'Resend Code';
+        } else {
+          if (btnText) btnText.textContent = `Resend Code (${remaining}s)`;
+        }
+      }, 1000);
+    }
+
+    /* --- OTP KEYPAD & VERIFICATION --- */
     function pressPinDigit(digit) {
       if (securityState.enteredPin.length >= 6) return;
       securityState.enteredPin += digit;
@@ -1316,16 +1368,15 @@
       if (feedback && !feedback.dataset.loading) feedback.textContent = '';
     }
 
-    // Verify Passcode via Google Apps Script Backend (Zero Plaintext Secrets)
+    // Verify OTP with Server & Issue 24-Hour Session Token
     async function verifyEnteredPin() {
       const entered = securityState.enteredPin;
       const feedback = document.getElementById('pin-feedback');
       if (feedback) {
         feedback.dataset.loading = 'true';
-        feedback.textContent = 'Verifying passcode with cloud...';
+        feedback.textContent = 'Verifying code with server...';
       }
 
-      // Highlight dots while checking
       for (let i = 0; i < 6; i++) {
         const dot = document.getElementById(`pin-dot-${i}`);
         if (dot) {
@@ -1338,17 +1389,15 @@
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
           body: JSON.stringify({
-            auth: VAULT_AUTH_KEY,
-            action: 'VERIFY_PASSCODE',
-            passcode: entered
+            action: 'VERIFY_OTP',
+            otp: entered
           })
         });
         const data = await res.json();
 
-        if (data && data.success) {
-          // Store 24-hour persistent session
-          localStorage.setItem('rupay_session_expiry', String(data.expiresAt));
-          localStorage.setItem('rupay_session_token', String(data.sessionToken));
+        if (data && data.success && data.token) {
+          localStorage.setItem('rupay_session_token', String(data.token));
+          localStorage.setItem('rupay_session_expiry', String(data.expiry));
 
           for (let i = 0; i < 6; i++) {
             const dot = document.getElementById(`pin-dot-${i}`);
@@ -1364,19 +1413,29 @@
 
           setTimeout(async () => {
             await unlockVaultDirect();
-            showToast('Vault Unlocked · 24-Hour Session Active');
-          }, 200);
+
+            // Replay queued mutation if mid-operation re-auth
+            if (securityState.pendingMutation) {
+              const pending = securityState.pendingMutation;
+              securityState.pendingMutation = null;
+              document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
+              showToast('Re-authenticated · Replaying action...');
+              try {
+                const replayRes = await apiFetch(pending.action, pending.payload, pending.options);
+                pending.resolve(replayRes);
+              } catch (err) {
+                pending.reject(err);
+              }
+            } else {
+              showToast('Vault Unlocked · 24-Hour Session Active');
+            }
+          }, 250);
         } else {
-          handlePinFailure(data?.error || 'Incorrect passcode. Please try again.');
+          handlePinFailure(data?.error || 'Invalid or expired verification code.');
         }
       } catch (err) {
-        console.error('Passcode verification error:', err);
-        if (isSessionValid()) {
-          await unlockVaultDirect();
-          showToast('Vault Unlocked (Session Valid)');
-        } else {
-          handlePinFailure('Connection error. Please try again.');
-        }
+        console.error('OTP verification error:', err);
+        handlePinFailure('Connection error. Please try again.');
       }
     }
 
@@ -1393,7 +1452,7 @@
       const feedback = document.getElementById('pin-feedback');
       if (feedback) {
         delete feedback.dataset.loading;
-        feedback.textContent = msg || 'Incorrect passcode. Try again.';
+        feedback.textContent = msg || 'Invalid code. Try again.';
       }
 
       setTimeout(() => {
@@ -1403,11 +1462,89 @@
       }, 600);
     }
 
+    /* --- RE-AUTH & MUTATION AUTO-REPLAY / ROLLBACK --- */
+    function promptReauth(action, payload, options, resolve, reject) {
+      securityState.pendingMutation = { action, payload, options, resolve, reject };
+
+      const lockEl = document.getElementById('vault-lock-screen');
+      if (lockEl) lockEl.classList.remove('hidden');
+
+      const subtitle = document.getElementById('lock-subtitle');
+      if (subtitle) subtitle.textContent = 'Session expired. Enter OTP to complete action.';
+
+      const cancelBtn = document.getElementById('btn-cancel-reauth');
+      if (cancelBtn) cancelBtn.classList.remove('hidden');
+
+      clearPinDigits();
+      requestOtp(); // Automatically request a code on mid-operation expiry
+    }
+
+    function cancelPendingReauth() {
+      if (securityState.pendingMutation) {
+        const { options, reject } = securityState.pendingMutation;
+        securityState.pendingMutation = null;
+        if (options && typeof options.rollback === 'function') {
+          try { options.rollback(); } catch(e) { console.error('Rollback error:', e); }
+        }
+        reject(new Error('Operation cancelled by user'));
+      }
+      document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
+      const subtitle = document.getElementById('lock-subtitle');
+      if (subtitle) subtitle.textContent = 'Access restricted to vibhavoswal3@gmail.com';
+      clearPinDigits();
+    }
+
+    /* --- UNIFIED API CLIENT WITH PRE-FLIGHT GUARD & AUTO-REPLAY --- */
+    async function apiFetch(action, payload = {}, options = {}) {
+      if (!isTokenUsable()) {
+        return new Promise((resolve, reject) => {
+          promptReauth(action, payload, options, resolve, reject);
+        });
+      }
+
+      const token = getSessionToken();
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            token: token,
+            action: action,
+            ...payload
+          })
+        });
+        const data = await res.json();
+        if (data && data.error) {
+          if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
+            return new Promise((resolve, reject) => {
+              promptReauth(action, payload, options, resolve, reject);
+            });
+          }
+          if (!options.silent) {
+            showToast(data.error);
+          }
+          throw new Error(data.error);
+        }
+        return data;
+      } catch (err) {
+        if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
+          throw err;
+        }
+        if (!options.silent) {
+          console.warn(`API call ${action} failed:`, err);
+        }
+        throw err;
+      }
+    }
+
     // Unlock Vault and Hydrate
     async function unlockVaultDirect() {
       securityState.isUnlocked = true;
       securityState.enteredPin = '';
       updatePinDotsUI();
+
+      document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
+      const subtitle = document.getElementById('lock-subtitle');
+      if (subtitle) subtitle.textContent = 'Access restricted to vibhavoswal3@gmail.com';
 
       // Initialize cryptoKey for local cache
       let salt = localStorage.getItem('rupay_vault_salt');
@@ -1461,58 +1598,6 @@
       localStorage.removeItem('rupay_session_expiry');
       lockVault();
       showToast('Vault locked & session terminated');
-    }
-
-    // Change Passcode Modal Handlers
-    function openChangePinModal() {
-      document.getElementById('input-curr-pin').value = '';
-      document.getElementById('input-new-pin').value = '';
-      document.getElementById('input-confirm-pin').value = '';
-      document.getElementById('modal-change-pin').classList.remove('hidden');
-    }
-    function closeChangePinModal() {
-      document.getElementById('modal-change-pin').classList.add('hidden');
-    }
-    async function confirmChangePin() {
-      const curr = document.getElementById('input-curr-pin').value.trim();
-      const n1 = document.getElementById('input-new-pin').value.trim();
-      const n2 = document.getElementById('input-confirm-pin').value.trim();
-
-      if (!/^\d{6}$/.test(curr)) {
-        showToast('Current passcode must be 6 digits');
-        return;
-      }
-      if (!/^\d{6}$/.test(n1)) {
-        showToast('New passcode must be exactly 6 digits');
-        return;
-      }
-      if (n1 !== n2) {
-        showToast('New passcodes do not match');
-        return;
-      }
-
-      showToast('Updating passcode in cloud...');
-
-      try {
-        const res = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          body: JSON.stringify({
-            auth: VAULT_AUTH_KEY,
-            action: 'CHANGE_PASSCODE',
-            currentPasscode: curr,
-            newPasscode: n1
-          })
-        });
-        const data = await res.json();
-        if (data && data.success) {
-          closeChangePinModal();
-          showToast('Master Passcode updated successfully in cloud!');
-        } else {
-          showToast(data?.error || 'Failed to update passcode');
-        }
-      } catch(e) {
-        showToast('Network error updating passcode');
-      }
     }
 
     // STRICT USER ORDER & CONFIGURATION
@@ -1672,18 +1757,13 @@
       renderVault();
 
       // Cloud Persistence: Shared_Activity tab in Google Sheets
-      fetch(API_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify({
-          auth: VAULT_AUTH_KEY,
-          action: 'LOG_SHARED',
-          code: code,
-          brand: entry.brand,
-          amount: entry.amount,
-          pin: entry.pin,
-          platform: platform
-        })
-      }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
+      apiFetch('LOG_SHARED', {
+        code: code,
+        brand: entry.brand,
+        amount: entry.amount,
+        pin: entry.pin,
+        platform: platform
+      }, { silent: true }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
     }
 
     function dismissSharedActivity(code) {
@@ -1694,13 +1774,8 @@
       renderVault();
 
       // Cloud Persistence: Shared_Activity tab in Google Sheets
-      fetch(API_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify({
-          auth: VAULT_AUTH_KEY,
-          action: 'DISMISS_SHARED',
-          code: code
-        })
+      apiFetch('DISMISS_SHARED', {
+        code: code
       }).catch(err => console.warn('Background sync error (DISMISS_SHARED):', err));
     }
 
@@ -1745,17 +1820,22 @@
       renderDeckSelector();
       renderVault();
 
+      const rollbackRedeem = () => {
+        const target = state.vouchers.find(x => x.code === code);
+        if (target) target.status = 'ACTIVE';
+        redeemedList = redeemedList.filter(r => r.code !== code);
+        saveRedeemedList();
+        renderDeckSelector();
+        renderVault();
+        showToast('Redemption reverted');
+      };
+
       try {
-        await fetch(API_ENDPOINT, {
-          method: 'POST',
-          body: JSON.stringify({
-            auth: VAULT_AUTH_KEY,
-            action: 'MOVE_TO_REDEEMED',
-            brand: sheetBrand,
-            code: code,
-            codes: [code]
-          })
-        });
+        await apiFetch('MOVE_TO_REDEEMED', {
+          brand: sheetBrand,
+          code: code,
+          codes: [code]
+        }, { rollback: rollbackRedeem });
       } catch(e) {
         console.warn('Backend move error:', e);
       }
@@ -1807,16 +1887,21 @@
         if (cardEl) cardEl.classList.add('anim-rollback-700');
       });
 
-      try {
-        await fetch(API_ENDPOINT, {
-          method: 'POST',
-          body: JSON.stringify({
-            auth: VAULT_AUTH_KEY,
-            action: 'UNDO_REDEEM',
-            code: targetCodes[0],
-            codes: targetCodes
-          })
+      const rollbackUndo = () => {
+        targetCodes.forEach(c => {
+          const v = state.vouchers.find(x => x.code === c);
+          if (v) v.status = 'USED';
         });
+        renderDeckSelector();
+        renderVault();
+        showToast('Undo reverted');
+      };
+
+      try {
+        await apiFetch('UNDO_REDEEM', {
+          code: targetCodes[0],
+          codes: targetCodes
+        }, { rollback: rollbackUndo });
       } catch(e) {
         console.warn('Backend undo error:', e);
       }
@@ -1930,35 +2015,20 @@
       if (!codes.length) return;
       try {
         if (context === 'ingested') {
-          await fetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify({
-              auth: VAULT_AUTH_KEY,
-              action: 'CLEAR_ACTIVITY',
-              type: 'INGESTED',
-              codes: codes
-            })
+          await apiFetch('CLEAR_ACTIVITY', {
+            type: 'INGESTED',
+            codes: codes
           });
           await saveEncryptedVouchers(state.vouchers);
         } else if (context === 'shared') {
-          await fetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify({
-              auth: VAULT_AUTH_KEY,
-              action: 'CLEAR_ACTIVITY',
-              type: 'SHARED',
-              codes: codes
-            })
+          await apiFetch('CLEAR_ACTIVITY', {
+            type: 'SHARED',
+            codes: codes
           });
           saveSharedActivity();
         } else if (context === 'redeemed') {
-          await fetch(API_ENDPOINT, {
-            method: 'POST',
-            body: JSON.stringify({
-              auth: VAULT_AUTH_KEY,
-              action: 'CLEAR_REDEEMED',
-              codes: codes
-            })
+          await apiFetch('CLEAR_REDEEMED', {
+            codes: codes
           });
           saveRedeemedList();
         }
@@ -2441,11 +2511,20 @@
       if (spinner) spinner.classList.add('animate-spin');
       
       try {
-        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'auth=' + encodeURIComponent(VAULT_AUTH_KEY) + '&ingest=true';
+        const token = getSessionToken();
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) + '&ingest=true';
         const res = await fetch(syncUrl);
         const data = await res.json();
         
-        if (data.vouchers && data.vouchers.length) {
+        if (data && data.error) {
+          if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
+            lockVault();
+            showToast('Session expired. Please enter OTP to re-authenticate.');
+            return;
+          }
+        }
+
+        if (Array.isArray(data.vouchers)) {
           // Defensive deduplication: ensure each voucher code only appears once in state.vouchers
           // For PENDING vouchers where code is not yet generated, deduplicate by bookingId instead
           const seenCodes = new Set();
@@ -3465,13 +3544,8 @@
       renderCards();
 
       // Cloud Persistence: Cards tab in Google Sheets
-      fetch(API_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify({
-          auth: VAULT_AUTH_KEY,
-          action: 'SAVE_CARD',
-          card: newCard
-        })
+      apiFetch('SAVE_CARD', {
+        card: newCard
       }).catch(err => console.warn('Background sync error (SAVE_CARD):', err));
     }
 
@@ -3488,14 +3562,9 @@
       renderCards();
 
       // Cloud Persistence: Cards tab in Google Sheets
-      fetch(API_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify({
-          auth: VAULT_AUTH_KEY,
-          action: 'UPDATE_CARD_QUOTA',
-          id: cardId,
-          claimed: card.claimed
-        })
+      apiFetch('UPDATE_CARD_QUOTA', {
+        id: cardId,
+        claimed: card.claimed
       }).catch(err => console.warn('Background sync error (UPDATE_CARD_QUOTA):', err));
     }
 
@@ -3529,15 +3598,10 @@
       renderAll();
 
       // Cloud Persistence: Cards tab in Google Sheets
-      fetch(API_ENDPOINT, {
-        method: 'POST',
-        body: JSON.stringify({
-          auth: VAULT_AUTH_KEY,
-          action: 'BLOCK_CARD',
-          id: targetId,
-          blockedDate: d,
-          notes: n
-        })
+      apiFetch('BLOCK_CARD', {
+        id: targetId,
+        blockedDate: d,
+        notes: n
       }).catch(err => console.warn('Background sync error (BLOCK_CARD):', err));
     }
 
@@ -4079,17 +4143,24 @@
 
         showUndoToast(movedCodes.join(', '), targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`);
 
+        const rollbackBatch = () => {
+          targetVouchers.forEach(v => {
+            const cur = state.vouchers.find(x => x.code === v.code);
+            if (cur) cur.status = 'ACTIVE';
+            redeemedList = redeemedList.filter(r => r.code !== v.code);
+          });
+          saveRedeemedList();
+          renderDeckSelector();
+          renderVault();
+          showToast('Batch redemption reverted');
+        };
+
         try {
           await Promise.all(Object.entries(byBrand).map(([brand, codes]) =>
-            fetch(API_ENDPOINT, {
-              method: 'POST',
-              body: JSON.stringify({
-                auth: VAULT_AUTH_KEY,
-                action: 'MOVE_TO_REDEEMED',
-                brand: brand,
-                codes: codes
-              })
-            })
+            apiFetch('MOVE_TO_REDEEMED', {
+              brand: brand,
+              codes: codes
+            }, { rollback: rollbackBatch })
           ));
         } catch(e) {
           console.warn('Backend batch move error:', e);
@@ -4105,13 +4176,8 @@
         renderCooldowns();
 
         // Cloud Persistence: ⏱ Cooldowns tab in Google Sheets
-        fetch(API_ENDPOINT, {
-          method: 'POST',
-          body: JSON.stringify({
-            auth: VAULT_AUTH_KEY,
-            action: 'RESET_COOLDOWN',
-            account: accId
-          })
+        apiFetch('RESET_COOLDOWN', {
+          account: accId
         }).catch(err => console.warn('Background sync error (RESET_COOLDOWN):', err));
       }
     }
