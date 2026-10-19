@@ -184,6 +184,8 @@ function parseRupayVoucherEmail(msg) {
   // Strip markdown (*, _, `, quotes) and surrounding whitespace
   rawVal = rawVal.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
 
+  const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
+
   // 5. Binary Check: Is it a delay placeholder or a real code?
   const isDelay = !rawVal || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
   if (isDelay) {
@@ -196,6 +198,7 @@ function parseRupayVoucherEmail(msg) {
       code: "PENDING",
       pin: "",
       status: "PENDING",
+      receivedDate: receivedDate,
       isDelivered: false
     };
   }
@@ -241,6 +244,7 @@ function parseRupayVoucherEmail(msg) {
     code: code,
     pin: pin,
     status: "ACTIVE",
+    receivedDate: receivedDate,
     isDelivered: true
   };
 }
@@ -356,7 +360,8 @@ function processRupayEmails() {
             brand: parsed.brand,
             amount: parsed.amount,
             account: parsed.account,
-            dateOfIssue: parsed.dateOfIssue
+            dateOfIssue: parsed.dateOfIssue,
+            receivedDate: parsed.receivedDate
           });
 
           // B. Start 24h cooldown timer on this account immediately after row is recorded
@@ -373,7 +378,8 @@ function processRupayEmails() {
             pin: parsed.pin,
             amount: parsed.amount,
             dateOfIssue: parsed.dateOfIssue,
-            account: parsed.account
+            account: parsed.account,
+            receivedDate: parsed.receivedDate
           });
         }
       }
@@ -480,15 +486,15 @@ function recordPendingRedemption(ss, data) {
     }
   }
 
-  // 2. Global Idempotency: Does this Booking ID already exist in ANY brand sheet?
+  // 2. Global Idempotency: Does this Booking ID already exist in ANY brand sheet (including Unassigned)?
   const allSheets = ss.getSheets();
-  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
   for (const s of allSheets) {
     if (systemTabs.has(s.getName())) continue;
     const sRows = s.getDataRange().getValues();
     for (let i = 1; i < sRows.length; i++) {
       if (String(sRows[i][1]).trim() === data.bookingId) {
-        // Already recorded, don't duplicate
+        // Already recorded, keep initial ack timestamp intact and do not duplicate
         return;
       }
     }
@@ -498,17 +504,17 @@ function recordPendingRedemption(ss, data) {
 
   const nextNum = rows.length;
   const rowData = [
-    nextNum,                               // Col 1: #
-    data.bookingId,                        // Col 2: Booking ID (RUPS...)
-    "PENDING",                             // Col 3: Code
-    "",                                    // Col 4: PIN
-    data.amount || 500,                    // Col 5: Value
-    data.dateOfIssue,                      // Col 6: Date of Issue
-    data.account,                          // Col 7: Account
-    "Unassigned",                          // Col 8: Card
-    "PENDING",                             // Col 9: Status
-    formatISTTimestamp(new Date()),        // Col 10: Appended Timestamp (IST)
-    true                                   // Col 11: Display in UI
+    nextNum,                                             // Col 1: #
+    data.bookingId,                                      // Col 2: Booking ID (RUPS...)
+    "PENDING",                                           // Col 3: Code
+    "",                                                  // Col 4: PIN
+    data.amount || 500,                                  // Col 5: Value
+    data.dateOfIssue,                                    // Col 6: Date of Issue
+    data.account,                                        // Col 7: Account
+    "Unassigned",                                        // Col 8: Card
+    "PENDING",                                           // Col 9: Status
+    formatISTTimestamp(data.receivedDate || new Date()), // Col 10: Appended Timestamp (IST) - Immutable for Stage 1
+    true                                                 // Col 11: Display in UI
   ];
   sheet.appendRow(rowData);
 }
@@ -523,14 +529,22 @@ function fulfillVoucherCode(ss, data) {
   const rows = sheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][1]).trim() === data.bookingId) {
-      // MATCH FOUND: Populate Code & PIN and flip Status to ACTIVE in the EXACT SAME ROW!
+      const currentCode = String(rows[i][2] || '').trim();
+      const currentStatus = String(rows[i][8] || '').trim().toUpperCase();
+
+      // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
+      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING") {
+        return; // No-op, do not re-stamp
+      }
+
+      // MATCH FOUND: Transition from PENDING to ACTIVE and replace timestamp ONCE with delivery email arrival time
       sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
       sheet.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
       if (data.amount && Number(data.amount) > 0) {
         sheet.getRange(i + 1, 5).setValue(Number(data.amount));
       }
       sheet.getRange(i + 1, 9).setValue("ACTIVE");
-      sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+      sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(data.receivedDate || new Date()));
       sheet.getRange(i + 1, 11).setValue(true);
       return;
     }
@@ -544,13 +558,21 @@ function fulfillVoucherCode(ss, data) {
     const sRows = s.getDataRange().getValues();
     for (let i = 1; i < sRows.length; i++) {
       if (String(sRows[i][1]).trim() === data.bookingId) {
+        const currentCode = String(sRows[i][2] || '').trim();
+        const currentStatus = String(sRows[i][8] || '').trim().toUpperCase();
+
+        // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
+        if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING") {
+          return; // No-op, do not re-stamp
+        }
+
         s.getRange(i + 1, 3).setValue(`'${data.code}`);
         s.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
         if (data.amount && Number(data.amount) > 0) {
           s.getRange(i + 1, 5).setValue(Number(data.amount));
         }
         s.getRange(i + 1, 9).setValue("ACTIVE");
-        s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+        s.getRange(i + 1, 10).setValue(formatISTTimestamp(data.receivedDate || new Date()));
         s.getRange(i + 1, 11).setValue(true);
         return;
       }
@@ -561,17 +583,17 @@ function fulfillVoucherCode(ss, data) {
   // Append as a new ACTIVE row in the Brand tab
   const nextNum = rows.length;
   const rowData = [
-    nextNum,                               // Col 1: #
-    data.bookingId,                        // Col 2: Booking ID
-    `'${data.code}`,                       // Col 3: Code
-    data.pin ? `'${data.pin}` : "",        // Col 4: PIN
-    data.amount || 500,                    // Col 5: Value
-    data.dateOfIssue,                      // Col 6: Date of Issue
-    data.account,                          // Col 7: Account
-    "Unassigned",                          // Col 8: Card
-    "ACTIVE",                              // Col 9: Status
-    formatISTTimestamp(new Date()),        // Col 10: Appended Timestamp (IST)
-    true                                   // Col 11: Display in UI
+    nextNum,                                             // Col 1: #
+    data.bookingId,                                      // Col 2: Booking ID
+    `'${data.code}`,                                     // Col 3: Code
+    data.pin ? `'${data.pin}` : "",                      // Col 4: PIN
+    data.amount || 500,                                  // Col 5: Value
+    data.dateOfIssue,                                    // Col 6: Date of Issue
+    data.account,                                        // Col 7: Account
+    "Unassigned",                                        // Col 8: Card
+    "ACTIVE",                                            // Col 9: Status
+    formatISTTimestamp(data.receivedDate || new Date()), // Col 10: Appended Timestamp (IST) - Permanently immutable
+    true                                                 // Col 11: Display in UI
   ];
   sheet.appendRow(rowData);
 }
@@ -615,7 +637,7 @@ function reconcilePendingVouchers(ss) {
                   s.getRange(i + 1, 5).setValue(Number(parsed.amount));
                 }
                 s.getRange(i + 1, 9).setValue("ACTIVE");
-                s.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date()));
+                s.getRange(i + 1, 10).setValue(formatISTTimestamp(parsed.receivedDate || m.getDate()));
                 s.getRange(i + 1, 11).setValue(true);
                 reconciled.push({ bookingId: bid, brand: s.getName(), code: parsed.code, pin: parsed.pin });
                 break;
@@ -1471,7 +1493,6 @@ function doPost(e) {
           const rowCode = String(vals[i][2] || "").trim();
           if (codes.has(rowCode) || codes.has(rowBid)) {
             sheet.getRange(i + 1, 8).setValue(cardTag); // Col 8: Card
-            sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date())); // Col 10: Timestamp
             updated.push({ brand: sheet.getName(), bookingId: rowBid, code: rowCode, card: cardTag });
           }
         }
