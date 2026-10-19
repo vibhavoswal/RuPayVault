@@ -1448,6 +1448,46 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 7B. Tag Payment Card on Ingested Vouchers
+    if (data.action === "TAG_CARD") {
+      const cardTag = String(data.cardTag || data.card || "").trim();
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      if (!cardTag || codes.size === 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Missing cardTag or voucher codes."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const updated = [];
+      const sheets = ss.getSheets();
+      const systemSheets = new Set(["⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
+
+      for (const sheet of sheets) {
+        if (systemSheets.has(sheet.getName())) continue;
+        const vals = sheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const rowBid = String(vals[i][1] || "").trim();
+          const rowCode = String(vals[i][2] || "").trim();
+          if (codes.has(rowCode) || codes.has(rowBid)) {
+            sheet.getRange(i + 1, 8).setValue(cardTag); // Col 8: Card
+            sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(new Date())); // Col 10: Timestamp
+            updated.push({ brand: sheet.getName(), bookingId: rowBid, code: rowCode, card: cardTag });
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "TAG_CARD",
+        cardTag: cardTag,
+        updatedCount: updated.length,
+        updated: updated
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // 8. Log Shared Activity
     if (data.action === "LOG_SHARED") {
       const sSheet = getOrInitSharedActivitySheet(ss);
