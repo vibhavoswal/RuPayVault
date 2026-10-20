@@ -1901,7 +1901,7 @@
       clearPinDigits();
     }
 
-    /* --- UNIFIED API CLIENT WITH PRE-FLIGHT GUARD & AUTO-REPLAY --- */
+    /* --- UNIFIED API CLIENT WITH PRE-FLIGHT GUARD, AUTO-REPLAY & TRANSIENT RETRY --- */
     async function apiFetch(action, payload = {}, options = {}) {
       if (!isTokenUsable()) {
         return new Promise((resolve, reject) => {
@@ -1909,39 +1909,55 @@
         });
       }
 
-      const token = getSessionToken();
-      try {
-        const res = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          keepalive: !!options.keepalive,
-          body: JSON.stringify({
-            token: token,
-            action: action,
-            ...payload
-          })
-        });
-        const data = await res.json();
-        if (data && data.error) {
-          if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
-            return new Promise((resolve, reject) => {
-              promptReauth(action, payload, options, resolve, reject);
-            });
+      const maxAttempts = options.retries !== undefined ? options.retries : 2;
+      let lastErr = null;
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const token = getSessionToken();
+        try {
+          const res = await fetch(API_ENDPOINT, {
+            method: 'POST',
+            keepalive: !!options.keepalive,
+            body: JSON.stringify({
+              token: token,
+              action: action,
+              ...payload
+            })
+          });
+          const data = await res.json();
+          if (data && data.error) {
+            if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
+              return new Promise((resolve, reject) => {
+                promptReauth(action, payload, options, resolve, reject);
+              });
+            }
+            // Retry on transient lock contention
+            if (data.error.includes('Server is processing another request') && attempt < maxAttempts) {
+              await new Promise(r => setTimeout(r, 1200));
+              continue;
+            }
+            if (!options.silent) {
+              showToast(data.error);
+            }
+            throw new Error(data.error);
+          }
+          return data;
+        } catch (err) {
+          lastErr = err;
+          if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
+            throw err;
+          }
+          if (attempt < maxAttempts) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
           }
           if (!options.silent) {
-            showToast(data.error);
+            console.warn(`API call ${action} failed:`, err);
           }
-          throw new Error(data.error);
-        }
-        return data;
-      } catch (err) {
-        if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
           throw err;
         }
-        if (!options.silent) {
-          console.warn(`API call ${action} failed:`, err);
-        }
-        throw err;
       }
+      throw lastErr;
     }
 
     // Unlock Vault and Hydrate
@@ -2443,6 +2459,11 @@
       }
       if (isVoucherRedeemed(code)) {
         showToast('Already marked as redeemed');
+        return;
+      }
+      // Strict state machine guard: Vouchers in staging MUST be approved to brand tab first
+      if (state.staging && state.staging.some(s => s.code === code || s.bookingId === code)) {
+        showToast("Voucher is in staging. Approve to brand tab before redeeming.");
         return;
       }
 

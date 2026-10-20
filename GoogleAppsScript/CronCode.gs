@@ -1287,7 +1287,7 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify(setupRes)).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching)
+      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
       if (data.action === "APPROVE_STAGING") {
         let newSheet = ss.getSheetByName("New");
         if (!newSheet) {
@@ -1331,26 +1331,47 @@ function doPost(e) {
 
             // Target Brand Sheet
             const brandSheet = getTargetBrandSheet(ss, targetBrand);
-            const brandNextNum = brandSheet.getLastRow();
 
-            // Append Columns 1-11 to Brand Sheet
-            const brandRow = [
-              brandNextNum,
-              row[1], // Booking ID
-              `'${row[2]}`, // Code
-              row[3] ? `'${row[3]}` : "", // PIN
-              row[4] || 500, // Value
-              row[5] || "", // Date of Issue
-              row[6] || "", // Account
-              row[7] || "Unassigned", // Card
-              "ACTIVE", // Status
-              row[9] || formatISTTimestamp(new Date()), // Appended Timestamp (IST)
-              row[10] !== false && String(row[10]).toLowerCase() !== 'false' // Display in UI
-            ];
-            brandSheet.appendRow(brandRow);
+            // IDEMPOTENCY CHECK (Strictly on Booking ID):
+            // Check if this Booking ID already exists in the destination Brand tab
+            let existingBrandRowIndex = -1;
+            if (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#')) {
+              const brandVals = brandSheet.getDataRange().getValues();
+              for (let b = 1; b < brandVals.length; b++) {
+                const existingBid = String(brandVals[b][1] || '').trim().toUpperCase();
+                if (existingBid === bIdUpper) {
+                  existingBrandRowIndex = b + 1;
+                  break;
+                }
+              }
+            }
 
-            rowsToDelete.push(r + 1); // 1-based index in "New"
-            approvedSummary.push({ bookingId: bId, brand: targetBrand, code: currentCode });
+            if (existingBrandRowIndex > 0) {
+              // Self-Healing Reconciliation: Already in brand tab!
+              // Do NOT append duplicate row. Ensure status is ACTIVE and UI display is true.
+              brandSheet.getRange(existingBrandRowIndex, 9).setValue("ACTIVE");
+              brandSheet.getRange(existingBrandRowIndex, 11).setValue(true);
+            } else {
+              // Not yet in brand tab: Append clean row
+              const brandNextNum = brandSheet.getLastRow();
+              const brandRow = [
+                brandNextNum,
+                row[1], // Booking ID
+                `'${row[2]}`, // Code
+                row[3] ? `'${row[3]}` : "", // PIN
+                row[4] || 500, // Value
+                row[5] || "", // Date of Issue
+                row[6] || "", // Account
+                row[7] || "Unassigned", // Card
+                "ACTIVE", // Status
+                row[9] || formatISTTimestamp(new Date()), // Appended Timestamp (IST)
+                row[10] !== false && String(row[10]).toLowerCase() !== 'false' // Display in UI
+              ];
+              brandSheet.appendRow(brandRow);
+            }
+
+            rowsToDelete.push(r + 1); // 1-based index in "New" (always delete from New)
+            approvedSummary.push({ bookingId: bId, brand: targetBrand, code: currentCode, alreadyExisted: existingBrandRowIndex > 0 });
           }
         }
 
@@ -1384,6 +1405,13 @@ function doPost(e) {
 
     // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
     if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
+      // Guard against illegal New -> Redeemed transition
+      if (data.brand === "New") {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Illegal transition: Vouchers in 'New' tab cannot be moved directly to Redeemed. Approve to brand tab first."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       let rSheet = ss.getSheetByName("Redeemed");
       if (!rSheet) {
         rSheet = ss.insertSheet("Redeemed");
@@ -1400,7 +1428,7 @@ function doPost(e) {
       }
 
       const moved = [];
-      const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+      const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
 
       // Pre-fetch Redeemed sheet codes to prevent duplicate entries in Redeemed tab
       const rVals = rSheet.getDataRange().getValues();
@@ -1418,7 +1446,7 @@ function doPost(e) {
         // 1. Try provided brand if present
         if (data.brand) {
           const directSheet = ss.getSheetByName(data.brand);
-          if (directSheet && directSheet.getName() !== "Redeemed") {
+          if (directSheet && directSheet.getName() !== "Redeemed" && directSheet.getName() !== "New") {
             const vals = directSheet.getDataRange().getValues();
             for (let i = 1; i < vals.length; i++) {
               const isCodeMatch = String(vals[i][2]).trim() === codeVal;
