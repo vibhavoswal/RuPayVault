@@ -1018,7 +1018,7 @@
     </div>
 
     <!-- Denomination Breakdown Banner (Single Line Compact) -->
-    <div class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
+    <div id="mb-denomination-banner" class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[10.5px] sm:text-xs shrink-0 shadow-md whitespace-nowrap overflow-hidden">
       <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
       <span id="mb-header-calc" class="font-bold text-[#F47A21] font-mono-apple pl-2 tracking-tight">Loading...</span>
     </div>
@@ -1061,9 +1061,6 @@
             <span>Tagged</span>
             <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-neutral-800 text-emerald-400 font-bold" id="mb-sub-count-tagged">0</span>
           </button>
-        </div>
-        <div class="text-[10px] text-neutral-500 font-mono-apple" id="mb-select-hint">
-          Tap card to select
         </div>
       </div>
     </div>
@@ -2930,12 +2927,14 @@
       const mbFilterBar = document.getElementById('mb-activity-filters-bar');
       const dtRedeemedBar = document.getElementById('dt-redeemed-bar');
       const mbRedeemedBar = document.getElementById('mb-redeemed-bar');
+      const mbDenomBanner = document.getElementById('mb-denomination-banner');
 
       if (normKey === 'ActivityLog') {
         if (dtFilterBar) dtFilterBar.classList.remove('hidden');
         if (mbFilterBar) mbFilterBar.classList.remove('hidden');
         if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
+        if (mbDenomBanner) mbDenomBanner.classList.add('hidden');
 
         const nowMs = Date.now();
         const ingestedCount = state.vouchers.filter(v =>
@@ -2964,6 +2963,7 @@
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
         if (dtRedeemedBar) dtRedeemedBar.classList.remove('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.remove('hidden');
+        if (mbDenomBanner) mbDenomBanner.classList.remove('hidden');
 
         const visibleRedeemed = redeemedList.filter(r => r.displayInUI !== false);
         const redeemedCount = visibleRedeemed.length;
@@ -2978,6 +2978,7 @@
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
         if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
+        if (mbDenomBanner) mbDenomBanner.classList.remove('hidden');
       }
 
       const b = BRAND_CONFIG.find(x => x.key === normKey) || { name: brandKey, denom: 0, tag: 'Voucher' };
@@ -3479,6 +3480,16 @@
 
       const mbHeaderCalc = document.getElementById('mb-header-calc');
       if (mbHeaderCalc) mbHeaderCalc.innerHTML = headerInfo.calc;
+
+      // Cumulative Denomination placard (Hidden in Activity Log)
+      const mbDenomBanner = document.getElementById('mb-denomination-banner');
+      if (mbDenomBanner) {
+        if (isActivityTab) {
+          mbDenomBanner.classList.add('hidden');
+        } else {
+          mbDenomBanner.classList.remove('hidden');
+        }
+      }
 
       // Four Fountains 30-Day Alert Banner
       const ffAlert = document.getElementById('mb-ff-alert');
