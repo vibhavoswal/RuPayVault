@@ -105,11 +105,6 @@ function generateSessionToken(email) {
 function validateAuth(providedToken) {
   if (!providedToken) return { valid: false, error: "Unauthorized: Missing authentication token." };
 
-  // Master setup key for admin migration
-  if (providedToken === "rupay_setup_new_2026") {
-    return { valid: true, user: AUTHORIZED_USER, expiry: Date.now() + 86400000 };
-  }
-
   const parts = String(providedToken).trim().split(".");
   if (parts.length !== 2) {
     return { valid: false, error: "Unauthorized: Malformed session token." };
@@ -725,195 +720,7 @@ function getOrInitSharedActivitySheet(ss) {
 }
 
 /**
- * 6. MIGRATION TO UNIFIED 10-COLUMN SCHEMA ACROSS ALL TABS
- */
-function migrateSheetsToUnifiedSchema(ss) {
-  const sheets = ss.getSheets();
-  const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
-  
-  // 1. Ensure master "Redeemed" tab exists with UNIFIED_REDEEMED_HEADERS (14 cols)
-  let redeemedSheet = ss.getSheetByName("Redeemed");
-  if (!redeemedSheet) {
-    redeemedSheet = ss.insertSheet("Redeemed");
-  }
-  redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setValues([UNIFIED_REDEEMED_HEADERS]);
-  redeemedSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-  redeemedSheet.setFrozenRows(1);
-
-  // 2. Ensure "Shared_Activity" tab has UNIFIED_SHARED_HEADERS (9 cols)
-  let sharedSheet = ss.getSheetByName("Shared_Activity");
-  if (sharedSheet) {
-    sharedSheet.getRange(1, 1, 1, UNIFIED_SHARED_HEADERS.length).setValues([UNIFIED_SHARED_HEADERS]);
-    sharedSheet.getRange(1, 1, 1, UNIFIED_SHARED_HEADERS.length).setFontWeight("bold").setBackground("#D1FAE5");
-    sharedSheet.setFrozenRows(1);
-  }
-
-  const report = [];
-  let totalMigratedVouchers = 0;
-
-  for (const sheet of sheets) {
-    const name = sheet.getName();
-    if (systemSheets.has(name) || name === "Redeemed") continue;
-
-    const lastCol = sheet.getLastColumn();
-    const lastRow = sheet.getLastRow();
-    if (lastRow < 1) continue;
-
-    const rawHeaders = sheet.getRange(1, 1, 1, Math.max(lastCol, 1)).getValues()[0];
-    const headers = rawHeaders.map(h => String(h).trim().toLowerCase());
-    
-    // Check if "PIN" column exists
-    const pinColIndex = headers.findIndex(h => h === "pin" || h === "coupon pin" || h === "voucher pin");
-
-    if (pinColIndex === -1) {
-      sheet.insertColumnBefore(4);
-      sheet.getRange(1, 4).setValue("PIN").setFontWeight("bold").setBackground("#F3F4F6");
-      report.push({ brand: name, status: "INSERTED_PIN_COLUMN", rows: lastRow - 1 });
-    } else {
-      report.push({ brand: name, status: "ALREADY_HAD_PIN_COLUMN", rows: lastRow - 1 });
-    }
-
-    totalMigratedVouchers += Math.max(0, lastRow - 1);
-
-    // Standardize row 1 headers to UNIFIED_BRAND_HEADERS (11 cols)
-    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setValues([UNIFIED_BRAND_HEADERS]);
-    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-    sheet.setFrozenRows(1);
-  }
-
-  return {
-    success: true,
-    totalVouchersInSheet: totalMigratedVouchers,
-    report: report,
-    migratedAt: formatISTTimestamp(new Date())
-  };
-}
-
-/**
- * 6B. SETUP "NEW" TAB AND MIGRATE EXISTING PENDING VOUCHERS
- */
-function setupNewTabAndMigratePending(ss) {
-  if (!ss) ss = getSpreadsheet();
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(30000);
-  try {
-    const EXCLUDED_TABS = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
-
-    // 1. Ensure master "New" tab exists
-    let newSheet = ss.getSheetByName("New");
-    if (!newSheet) {
-      newSheet = ss.insertSheet("New");
-      newSheet.appendRow(UNIFIED_NEW_HEADERS);
-      newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
-      newSheet.setFrozenRows(1);
-    } else if (newSheet.getLastRow() === 0) {
-      newSheet.appendRow(UNIFIED_NEW_HEADERS);
-      newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
-      newSheet.setFrozenRows(1);
-    }
-
-    // Existing booking IDs in New tab to prevent duplicates
-    const existingNewBookings = new Set();
-    const newSheetData = newSheet.getDataRange().getValues();
-    for (let i = 1; i < newSheetData.length; i++) {
-      const bId = String(newSheetData[i][1] || '').trim();
-      if (bId) existingNewBookings.add(bId);
-    }
-
-    const sheets = ss.getSheets();
-    const migratedSummary = [];
-    let totalMoved = 0;
-
-    for (const sheet of sheets) {
-      const sName = sheet.getName();
-      if (EXCLUDED_TABS.has(sName)) continue;
-
-      const data = sheet.getDataRange().getValues();
-      if (data.length <= 1) continue;
-
-      const rowsToDelete = [];
-      const movedBookings = [];
-
-      for (let r = 1; r < data.length; r++) {
-        const row = data[r];
-        const rowNum = r + 1; // 1-based index in Sheet
-
-        const bookingId = String(row[1] || '').trim();
-        const code = String(row[2] || '').trim();
-        const pin = String(row[3] || '').trim();
-        const value = row[4];
-        const dateOfIssue = row[5];
-        const account = row[6];
-        const card = row[7];
-        const status = String(row[8] || '').trim().toUpperCase();
-        const timestamp = row[9];
-        const displayInUI = (row[10] !== false && String(row[10]).toLowerCase() !== 'false');
-
-        // Identify pending vouchers
-        const isPending = (status === 'PENDING' || code.toUpperCase() === 'PENDING' || (!code && bookingId.toUpperCase().startsWith('RUPS')));
-
-        if (isPending) {
-          if (!existingNewBookings.has(bookingId)) {
-            const nextIdx = newSheet.getLastRow();
-            newSheet.appendRow([
-              nextIdx,
-              bookingId,
-              code || "PENDING",
-              pin ? `'${pin}` : "",
-              value || 500,
-              dateOfIssue || "",
-              account || "",
-              card || "Unassigned",
-              "PENDING",
-              timestamp || formatISTTimestamp(new Date()),
-              displayInUI,
-              sName // Target Brand (Col 12)
-            ]);
-            existingNewBookings.add(bookingId);
-          }
-          rowsToDelete.push(rowNum);
-          movedBookings.push(bookingId || `Row ${rowNum}`);
-          totalMoved++;
-        }
-      }
-
-      // Delete from bottom to top
-      if (rowsToDelete.length > 0) {
-        rowsToDelete.sort((a, b) => b - a);
-        for (const rIdx of rowsToDelete) {
-          sheet.deleteRow(rIdx);
-        }
-
-        // Renumber remaining rows in this brand sheet
-        const remaining = sheet.getLastRow();
-        if (remaining > 1) {
-          const numRange = sheet.getRange(2, 1, remaining - 1, 1);
-          const nums = [];
-          for (let n = 1; n < remaining; n++) {
-            nums.push([n]);
-          }
-          numRange.setValues(nums);
-        }
-
-        migratedSummary.push({ brand: sName, moved: rowsToDelete.length, bookingIds: movedBookings });
-      }
-    }
-
-    SpreadsheetApp.flush();
-    return {
-      success: true,
-      totalMoved: totalMoved,
-      details: migratedSummary,
-      executedAt: formatISTTimestamp(new Date())
-    };
-  } finally {
-    try { lock.releaseLock(); } catch(e) {}
-  }
-}
-
-/**
- * 7. REST API (GET / POST)
+ * 6. REST API (GET / POST)
  */
 function doGet(e) {
   // SECURITY CHECK: Enforce 24-Hour HMAC Session Token
@@ -931,57 +738,6 @@ function doGet(e) {
 
   try {
     const ss = getSpreadsheet();
-
-    // One-off migration trigger via GET if requested
-    if (e && e.parameter && e.parameter.migrate === "true") {
-      try {
-        const migRes = migrateSheetsToUnifiedSchema(ss);
-        return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
-      } catch(err) {
-        return ContentService.createTextOutput(JSON.stringify({ error: "Migration error: " + err.message })).setMimeType(ContentService.MimeType.JSON);
-      }
-    }
-
-    // Setup "New" Tab & migrate pending items trigger via GET if requested
-    if (e && e.parameter && (e.parameter.setupNew === "true" || e.parameter.action === "SETUP_NEW_TAB")) {
-      try {
-        const setupRes = setupNewTabAndMigratePending(ss);
-        return ContentService.createTextOutput(JSON.stringify(setupRes)).setMimeType(ContentService.MimeType.JSON);
-      } catch(err) {
-        return ContentService.createTextOutput(JSON.stringify({ error: "Setup error: " + err.message })).setMimeType(ContentService.MimeType.JSON);
-      }
-    }
-
-
-
-
-
-    // Inspect recent inbox messages for debugging email forwarding and ingestion
-    if (e && e.parameter && e.parameter.debug_inbox === "true") {
-      const q = (e && e.parameter && e.parameter.q) ? e.parameter.q : "";
-      const threads = q ? GmailApp.search(q, 0, 5) : GmailApp.getInboxThreads(0, 5);
-      const inboxList = [];
-      threads.forEach(t => {
-        t.getMessages().forEach(m => {
-          inboxList.push({
-            id: m.getId(),
-            subject: m.getSubject(),
-            from: m.getFrom(),
-            to: m.getTo(),
-            date: m.getDate(),
-            isUnread: m.isUnread(),
-            raw: m.getRawContent().substring(0, 600),
-            snippet: m.getPlainBody().substring(0, 300)
-          });
-        });
-      });
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        query: q,
-        count: inboxList.length,
-        messages: inboxList
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
 
     // Trigger on-demand reconciliation of pending vouchers
     if (e && e.parameter && e.parameter.reconcile === "true") {
@@ -1275,19 +1031,7 @@ function doPost(e) {
     }
 
     try {
-      // 1. Run Migration on Demand
-      if (data.action === "MIGRATE_UNIFIED_SCHEMA") {
-        const migRes = migrateSheetsToUnifiedSchema(ss);
-        return ContentService.createTextOutput(JSON.stringify(migRes)).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      // 1B. Setup "New" Tab and Migrate Pending items
-      if (data.action === "SETUP_NEW_TAB") {
-        const setupRes = setupNewTabAndMigratePending(ss);
-        return ContentService.createTextOutput(JSON.stringify(setupRes)).setMimeType(ContentService.MimeType.JSON);
-      }
-
-      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
+        // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
       if (data.action === "APPROVE_STAGING") {
         let newSheet = ss.getSheetByName("New");
         if (!newSheet) {

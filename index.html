@@ -3262,11 +3262,6 @@
         }
       });
 
-      const mbDock = document.getElementById('mb-bottom-dock');
-      if (mbDock) {
-        mbDock.classList.toggle('hidden', tab !== 'vault');
-      }
-
       const floatingDock = document.getElementById('floating-dock-container');
       if (floatingDock) {
         floatingDock.classList.toggle('hidden', tab !== 'vault');
@@ -3599,9 +3594,6 @@
       const bConfig = BRAND_CONFIG.find(x => x.key === normActiveBrand) || { name: state.activeFilterBrand, tag: 'Voucher' };
 
       // Update Header & Dock Cumulative Math
-      const mbBrandTitle = document.getElementById('mb-brand-title');
-      if (mbBrandTitle) mbBrandTitle.textContent = bConfig.name;
-
       const mbHeaderCalc = document.getElementById('mb-header-calc');
       if (mbHeaderCalc) mbHeaderCalc.innerHTML = headerInfo.calc;
 
@@ -3717,7 +3709,6 @@
         allActivities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
 
         if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = allActivities.length;
-        if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = allActivities.length;
 
         const isTaggedView = state.ingestFilter === 'tagged';
 
@@ -4101,7 +4092,6 @@
       }
 
       if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
-      if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = vs.length;
 
       const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
       const selSum = sel.reduce((a, v) => a + (v.amount || 0), 0);
@@ -4284,35 +4274,6 @@
           </button>
         `;
       }).join('');
-    }
-
-    /* --- BATCH WHATSAPP GENERATION FOR ACTIVE BRAND --- */
-    function copyCurrentBrandBatch() {
-      const normKey = normalizeBrandKey(state.activeFilterBrand);
-      let vs;
-      if (normKey === 'ActivityLog') {
-        if (activityFilter === 'shared') {
-          const nowMs = Date.now();
-          vs = sharedActivity.filter(s =>
-            s.displayInUI !== false &&
-            !isVoucherRedeemed(s) &&
-            (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
-            (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
-          );
-        } else {
-          vs = (state.staging || []).filter(s => s.displayInUI !== false && s.code && s.code.trim() !== '');
-        }
-      } else {
-        vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
-        if (!vs.length) vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
-      }
-      if (!vs.length) {
-        showToast("No vouchers in this category");
-        return;
-      }
-      const text = fmtWhatsApp(vs);
-      document.getElementById('share-preview-text').value = text;
-      document.getElementById('modal-share').classList.remove('hidden');
     }
 
     /* --- SYNC SEARCH AND BRAND FILTER --- */
@@ -4726,7 +4687,7 @@
       collapseActionMenu();
       if (state.isSelectMode) {
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const mbBtn = document.getElementById('mb-select-btn');
         const dtBtn = document.getElementById('dt-select-btn');
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
@@ -4894,7 +4855,7 @@
 
         // Exit select mode upon completion
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const mbBtn = document.getElementById('mb-select-btn');
         const dtBtn = document.getElementById('dt-select-btn');
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
@@ -4925,7 +4886,7 @@
 
     function toggleSelectMode() {
       state.isSelectMode = !state.isSelectMode;
-      const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+      const mbBtn = document.getElementById('mb-select-btn');
       const dtBtn = document.getElementById('dt-select-btn');
 
       if (state.isSelectMode) {
@@ -5321,7 +5282,7 @@
 
         // REQUIREMENT: Exit Select Mode & show back the Interlock master combo icon
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const mbBtn = document.getElementById('mb-select-btn');
         const dtBtn = document.getElementById('dt-select-btn');
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
         if (mbBtn) {
