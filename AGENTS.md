@@ -23,3 +23,25 @@
 ### 3. Navigation & Default State
 - The app must **always default to ⚡ Activity Log on page load/reload**.
 - Deck selector must NOT show false-active glowing borders on unselected tabs.
+
+---
+
+## Strict Backend & Data Integrity Rules
+
+### 1. Booking ID is the Sole Canonical Identifier for Idempotency (STRICT)
+- **All idempotency and deduplication checks across Google Sheets tabs MUST be performed EXCLUSIVELY on Booking ID (`RUPS-...`).**
+- **NEVER use dual-identifier matching (matching on Voucher Code) for idempotency.**
+- **Reasoning**:
+  1. Voucher codes are absent or placeholder (`PENDING`) during initial acknowledgement and booking emails.
+  2. Voucher codes may carry markdown artifacts, prefix quotes (`'`), or formatting differences across stages.
+  3. The Booking ID (`RUPS-...`) is generated directly by RuPay/Truztee and is the permanent, unique primary key across the entire voucher lifecycle.
+- **Enforcement Scope**:
+  - `APPROVE_STAGING`: Inspect destination Brand tab strictly by Booking ID before appending. If found, mark `ACTIVE` and do not append a duplicate row.
+  - `recordPendingRedemption`: Inspect `Redeemed`, `"New"`, and Brand tabs strictly by Booking ID.
+  - `fulfillVoucherCode`: Match and heal rows strictly by Booking ID.
+  - Any future migration, reconciliation, or movement scripts must adhere to Booking ID-only matching for idempotency.
+
+### 2. Strict Voucher Lifecycle Transition Invariant
+- Canonical flow: `"New"` (Staging) $\rightarrow$ Brand Tab (Active Vault) $\rightarrow$ `"Redeemed"` (Archive).
+- **Direct `"New"` $\rightarrow$ `"Redeemed"` transition is STRICTLY FORBIDDEN** on both backend and frontend. Vouchers in staging MUST be approved to a brand tab first.
+- `"New"` tab is a system staging buffer and must always remain in `systemTabs` to isolate it from redemption scans.

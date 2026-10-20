@@ -477,13 +477,12 @@ function extractAmount(body) {
 }
 
 /**
- * Helper to inspect canonical brand tabs for an existing Booking ID or Voucher Code.
- * Prevents re-staging or duplicate ingestion of vouchers already approved to Brand tabs.
+ * Helper to inspect canonical brand tabs for an existing Booking ID.
+ * Strict Invariant: Idempotency checks are performed EXCLUSIVELY on Booking ID (RUPS-...).
  */
-function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
-  if (!bookingId && !code) return null;
-  const bUpper = bookingId ? String(bookingId).trim().toUpperCase() : '';
-  const cUpper = code ? String(code).trim().toUpperCase() : '';
+function findRowInBrandTabs(ss, bookingId, targetBrand) {
+  if (!bookingId || bookingId === '-' || bookingId.startsWith('#')) return null;
+  const bUpper = String(bookingId).trim().toUpperCase();
 
   // 1. Direct check in targetBrand first if valid canonical sheet
   if (targetBrand && targetBrand !== "New" && targetBrand !== "Redeemed") {
@@ -492,10 +491,7 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
       const vals = sheet.getDataRange().getValues();
       for (let i = 1; i < vals.length; i++) {
         const rowBid = String(vals[i][1] || '').trim().toUpperCase();
-        const rowCode = String(vals[i][2] || '').trim().toUpperCase();
-        const isBidMatch = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && (rowBid === bUpper);
-        const isCodeMatch = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && (rowCode === cUpper);
-        if (isBidMatch || isCodeMatch) {
+        if (rowBid === bUpper) {
           return { sheet: sheet, rowIndex: i + 1, rowData: vals[i] };
         }
       }
@@ -511,10 +507,7 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
     const vals = s.getDataRange().getValues();
     for (let i = 1; i < vals.length; i++) {
       const rowBid = String(vals[i][1] || '').trim().toUpperCase();
-      const rowCode = String(vals[i][2] || '').trim().toUpperCase();
-      const isBidMatch = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && (rowBid === bUpper);
-      const isCodeMatch = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && (rowCode === cUpper);
-      if (isBidMatch || isCodeMatch) {
+      if (rowBid === bUpper) {
         return { sheet: s, rowIndex: i + 1, rowData: vals[i] };
       }
     }
@@ -629,19 +622,19 @@ function fulfillVoucherCode(ss, data) {
   const canonicalBrand = extractBrand(data.brand, "");
   const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
 
-  // Check if already in Redeemed tab
+  // Check if already in Redeemed tab strictly by Booking ID
   const rSheet = ss.getSheetByName("Redeemed");
   if (rSheet) {
     const rRows = rSheet.getDataRange().getValues();
     for (let i = 1; i < rRows.length; i++) {
-      if (String(rRows[i][2]).trim() === data.bookingId || (data.code && String(rRows[i][3]).trim() === data.code)) {
+      if (String(rRows[i][2]).trim() === data.bookingId) {
         return;
       }
     }
   }
 
-  // Check if already in a canonical Brand tab
-  const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand, data.code);
+  // Check if already in a canonical Brand tab strictly by Booking ID
+  const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
   if (existingBrandMatch) {
     // If it exists in the brand tab but code or pin wasn't populated yet, heal it in place!
     const row = existingBrandMatch.rowData;
@@ -1156,16 +1149,13 @@ function doPost(e) {
             // Target Brand Sheet
             const brandSheet = getTargetBrandSheet(ss, targetBrand);
 
-            // IDEMPOTENCY CHECK (Booking ID and Code):
-            // Check if this Booking ID or Voucher Code already exists in the destination Brand tab
+            // IDEMPOTENCY CHECK (Strictly on Booking ID):
+            // Check if this Booking ID already exists in the destination Brand tab
             let existingBrandRowIndex = -1;
             const brandVals = brandSheet.getDataRange().getValues();
             for (let b = 1; b < brandVals.length; b++) {
               const existingBid = String(brandVals[b][1] || '').trim().toUpperCase();
-              const existingCode = String(brandVals[b][2] || '').trim().toUpperCase();
-              const isBidMatch = (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#')) && (existingBid === bIdUpper);
-              const isCodeMatch = (codeUpper && codeUpper !== 'PENDING' && codeUpper !== '-') && (existingCode === codeUpper);
-              if (isBidMatch || isCodeMatch) {
+              if (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#') && (existingBid === bIdUpper)) {
                 existingBrandRowIndex = b + 1;
                 break;
               }
