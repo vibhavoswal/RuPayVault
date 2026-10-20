@@ -1268,7 +1268,7 @@ function doPost(e) {
 
     // Acquire script lock for mutating actions to avoid concurrent write collisions
     const lock = LockService.getScriptLock();
-    if (!lock.tryLock(15000)) {
+    if (!lock.tryLock(30000)) {
       return ContentService.createTextOutput(JSON.stringify({
         error: "Server is processing another request. Please retry in a moment."
       })).setMimeType(ContentService.MimeType.JSON);
@@ -1287,7 +1287,7 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify(setupRes)).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs
+      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching)
       if (data.action === "APPROVE_STAGING") {
         let newSheet = ss.getSheetByName("New");
         if (!newSheet) {
@@ -1295,10 +1295,15 @@ function doPost(e) {
         }
 
         const rawBookingIds = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
-        const targetBookingIds = new Set(Array.from(new Set(Array.isArray(rawBookingIds) ? rawBookingIds.map(b => String(b).trim()).filter(Boolean) : [])));
+        const rawCodes = data.codes || (data.code ? [data.code] : []);
+        const combinedIds = (Array.isArray(rawBookingIds) ? rawBookingIds : [rawBookingIds])
+          .concat(Array.isArray(rawCodes) ? rawCodes : [rawCodes])
+          .map(b => String(b || '').trim().toUpperCase())
+          .filter(Boolean);
+        const targetIds = new Set(combinedIds);
 
-        if (targetBookingIds.size === 0) {
-          return ContentService.createTextOutput(JSON.stringify({ error: 'No booking IDs provided for approval' })).setMimeType(ContentService.MimeType.JSON);
+        if (targetIds.size === 0) {
+          return ContentService.createTextOutput(JSON.stringify({ error: 'No booking IDs or codes provided for approval' })).setMimeType(ContentService.MimeType.JSON);
         }
 
         const dataRows = newSheet.getDataRange().getValues();
@@ -1308,16 +1313,19 @@ function doPost(e) {
         for (let r = 1; r < dataRows.length; r++) {
           const row = dataRows[r];
           const bId = String(row[1] || '').trim();
+          const currentCode = String(row[2] || '').trim();
+          const bIdUpper = bId.toUpperCase();
+          const codeUpper = currentCode.toUpperCase();
 
-          if (targetBookingIds.has(bId)) {
-            const currentCode = String(row[2] || '').trim();
+          // Dual-Identifier Matching: Match by Booking ID (Col 2) OR Code (Col 3)
+          if (targetIds.has(bIdUpper) || targetIds.has(codeUpper)) {
             const currentStatus = String(row[8] || '').trim().toUpperCase();
             const targetBrand = String(row[11] || '⚡ Unassigned').trim();
 
             // HARD CONDITION GUARD: Only fulfilled (ACTIVE, real code) vouchers can be approved!
             if (currentStatus !== 'ACTIVE' || currentCode === 'PENDING' || !currentCode) {
               return ContentService.createTextOutput(JSON.stringify({
-                error: `Cannot approve unfulfilled voucher ${bId}. Code must arrive before approval.`
+                error: `Cannot approve unfulfilled voucher ${bId || currentCode}. Code must arrive before approval.`
               })).setMimeType(ContentService.MimeType.JSON);
             }
 

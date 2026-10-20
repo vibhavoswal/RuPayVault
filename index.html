@@ -3274,7 +3274,7 @@
       
       try {
         const token = getSessionToken();
-        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) + '&ingest=true';
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) + '&ingest=false';
         const res = await fetch(syncUrl);
         const data = await res.json();
         
@@ -4653,7 +4653,7 @@
       }
     }
 
-    /* --- BATCH APPROVE STAGED GREEN VOUCHERS TO BRAND TABS --- */
+    /* --- BATCH APPROVE STAGED GREEN VOUCHERS TO BRAND TABS (TRANSACTIONAL & RESILIENT) --- */
     async function executeApproveSelectedStaging() {
       const selectedStaging = (state.staging || []).filter(s =>
         state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
@@ -4666,7 +4666,11 @@
         return;
       }
 
+      // Snapshot prior state for transactional rollback
+      const prevStaging = [...state.staging];
+      const prevVouchers = [...state.vouchers];
       const bookingIds = selectedStaging.map(s => s.bookingId).filter(Boolean);
+      const codes = selectedStaging.map(s => s.code).filter(Boolean);
       const approvedCount = selectedStaging.length;
 
       // 1. Optimistic UI: Add to state.vouchers with isRecent = true
@@ -4693,7 +4697,8 @@
 
       // 2. Remove from state.staging (Inbox Zero)
       const bookingIdSet = new Set(bookingIds);
-      state.staging = state.staging.filter(s => !bookingIdSet.has(s.bookingId));
+      const codeSet = new Set(codes);
+      state.staging = state.staging.filter(s => !bookingIdSet.has(s.bookingId) && !codeSet.has(s.code));
 
       // 3. Clear selection and exit Select Mode
       state.selectedIds.clear();
@@ -4712,28 +4717,36 @@
 
       renderVault();
       updateFloatingDock();
-      saveEncryptedStaging(state.staging);
-      saveEncryptedVouchers(state.vouchers);
       showToast(`✓ Approved ${approvedCount} voucher${approvedCount > 1 ? 's' : ''} to brand tab!`);
 
-      // 4. Background Sync: POST action APPROVE_STAGING
+      // Transactional rollback callback if backend rejects or network fails
+      const rollback = () => {
+        state.staging = prevStaging;
+        state.vouchers = prevVouchers;
+        renderVault();
+        updateFloatingDock();
+        saveEncryptedStaging(state.staging);
+        saveEncryptedVouchers(state.vouchers);
+        showToast('Approval reverted: Server did not confirm');
+      };
+
+      // 4. Background Sync: Unified apiFetch with auto-reauth replay & dual-identifier matching
       try {
-        const token = getSessionToken();
-        const res = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          body: JSON.stringify({
-            token: token,
-            auth: VAULT_AUTH_KEY,
-            action: 'APPROVE_STAGING',
-            bookingIds: bookingIds
-          })
-        });
-        const resData = await res.json();
-        if (resData.error) {
-          console.warn('Backend approval error:', resData.error);
+        const res = await apiFetch('APPROVE_STAGING', {
+          bookingIds: bookingIds,
+          codes: codes
+        }, { rollback: rollback });
+
+        if (!res || !res.success) {
+          throw new Error(res?.error || 'Server approval failed');
         }
+
+        // Commit encrypted caches on confirmed success
+        await saveEncryptedStaging(state.staging);
+        await saveEncryptedVouchers(state.vouchers);
       } catch (err) {
-        console.warn('Network error during staging approval:', err);
+        console.warn('Backend staging approval failed:', err);
+        rollback();
       }
     }
 
