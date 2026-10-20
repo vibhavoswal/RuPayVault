@@ -482,10 +482,17 @@ function extractAmount(body) {
 }
 
 /**
- * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN BRAND TAB
+ * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN "NEW" TAB
  */
 function recordPendingRedemption(ss, data) {
-  let sheet = getTargetBrandSheet(ss, data.brand);
+  // Ensure "New" tab exists with standard 12-column schema
+  let newSheet = ss.getSheetByName("New");
+  if (!newSheet) {
+    newSheet = ss.insertSheet("New");
+    newSheet.appendRow(UNIFIED_NEW_HEADERS);
+    newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+    newSheet.setFrozenRows(1);
+  }
 
   // 1. Check if Booking ID already exists in Redeemed tab (Col 3: Booking ID)
   const rSheet = ss.getSheetByName("Redeemed");
@@ -499,47 +506,52 @@ function recordPendingRedemption(ss, data) {
     }
   }
 
-  // 2. Global Idempotency: Does this Booking ID already exist in ANY brand sheet (including Unassigned)?
-  const allSheets = ss.getSheets();
-  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
-  for (const s of allSheets) {
-    if (systemTabs.has(s.getName())) continue;
-    const sRows = s.getDataRange().getValues();
-    for (let i = 1; i < sRows.length; i++) {
-      if (String(sRows[i][1]).trim() === data.bookingId) {
-        // Already recorded, keep initial ack timestamp intact and do not duplicate
-        return;
-      }
+  // 2. Global Idempotency: Does this Booking ID already exist in "New" tab?
+  const newRows = newSheet.getDataRange().getValues();
+  for (let i = 1; i < newRows.length; i++) {
+    if (String(newRows[i][1]).trim() === data.bookingId) {
+      // Already recorded in staging, keep initial ack timestamp intact and do not duplicate
+      return;
     }
   }
 
-  const rows = sheet.getDataRange().getValues();
+  // 3. Determine canonical target brand (Col 12)
+  const canonicalBrand = extractBrand(data.brand, "");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
 
-  const nextNum = rows.length;
+  const nextNum = newSheet.getLastRow();
   const rowData = [
     nextNum,                                             // Col 1: #
     data.bookingId,                                      // Col 2: Booking ID (RUPS...)
     "PENDING",                                           // Col 3: Code
     "",                                                  // Col 4: PIN
     data.amount || 500,                                  // Col 5: Value
-    data.dateOfIssue,                                    // Col 6: Date of Issue
-    data.account,                                        // Col 7: Account
+    data.dateOfIssue || "",                              // Col 6: Date of Issue
+    data.account || "",                                  // Col 7: Account
     "Unassigned",                                        // Col 8: Card
     "PENDING",                                           // Col 9: Status
     formatISTTimestamp(data.receivedDate || new Date()), // Col 10: Appended Timestamp (IST) - Immutable for Stage 1
-    true                                                 // Col 11: Display in UI
+    true,                                                // Col 11: Display in UI
+    targetBrand                                          // Col 12: Target Brand
   ];
-  sheet.appendRow(rowData);
+  newSheet.appendRow(rowData);
 }
 
 /**
- * 3. STAGE 2: BRAND TAB FULFILLMENT BY BOOKING ID (IN SAME ROW)
+ * 3. STAGE 2: DIRECT "NEW" TAB FULFILLMENT BY BOOKING ID (IN SAME ROW)
+ * Searches strictly inside the "New" tab. Hard Invariant ensures pending vouchers never enter brand tabs.
  */
 function fulfillVoucherCode(ss, data) {
-  let sheet = getTargetBrandSheet(ss, data.brand);
+  let newSheet = ss.getSheetByName("New");
+  if (!newSheet) {
+    newSheet = ss.insertSheet("New");
+    newSheet.appendRow(UNIFIED_NEW_HEADERS);
+    newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+    newSheet.setFrozenRows(1);
+  }
 
-  // 1. Search the target brand sheet first by Booking ID (RUPS...)
-  const rows = sheet.getDataRange().getValues();
+  // Search "New" tab by Booking ID (RUPS...)
+  const rows = newSheet.getDataRange().getValues();
   for (let i = 1; i < rows.length; i++) {
     if (String(rows[i][1]).trim() === data.bookingId) {
       const currentCode = String(rows[i][2] || '').trim();
@@ -550,117 +562,85 @@ function fulfillVoucherCode(ss, data) {
         return; // No-op, do not re-stamp
       }
 
-      // MATCH FOUND: Transition from PENDING to ACTIVE and replace timestamp ONCE with delivery email arrival time
-      sheet.getRange(i + 1, 3).setValue(`'${data.code}`);
-      sheet.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
+      // MATCH FOUND: Transition from PENDING to ACTIVE and update timestamp with delivery email arrival time
+      newSheet.getRange(i + 1, 3).setValue(`'${data.code}`);
+      newSheet.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
       if (data.amount && Number(data.amount) > 0) {
-        sheet.getRange(i + 1, 5).setValue(Number(data.amount));
+        newSheet.getRange(i + 1, 5).setValue(Number(data.amount));
       }
-      sheet.getRange(i + 1, 9).setValue("ACTIVE");
-      sheet.getRange(i + 1, 10).setValue(formatISTTimestamp(data.receivedDate || new Date()));
-      sheet.getRange(i + 1, 11).setValue(true);
+      newSheet.getRange(i + 1, 9).setValue("ACTIVE");
+      newSheet.getRange(i + 1, 10).setValue(formatISTTimestamp(data.receivedDate || new Date()));
+      newSheet.getRange(i + 1, 11).setValue(true);
       return;
     }
   }
 
-  // 2. Global fallback search: What if brand detection differed slightly (e.g. Unassigned vs Kalyan)?
-  const allSheets = ss.getSheets();
-  const systemTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
-  for (const s of allSheets) {
-    if (systemTabs.has(s.getName()) || s.getName() === sheet.getName()) continue;
-    const sRows = s.getDataRange().getValues();
-    for (let i = 1; i < sRows.length; i++) {
-      if (String(sRows[i][1]).trim() === data.bookingId) {
-        const currentCode = String(sRows[i][2] || '').trim();
-        const currentStatus = String(sRows[i][8] || '').trim().toUpperCase();
-
-        // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
-        if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING") {
-          return; // No-op, do not re-stamp
-        }
-
-        s.getRange(i + 1, 3).setValue(`'${data.code}`);
-        s.getRange(i + 1, 4).setValue(data.pin ? `'${data.pin}` : "");
-        if (data.amount && Number(data.amount) > 0) {
-          s.getRange(i + 1, 5).setValue(Number(data.amount));
-        }
-        s.getRange(i + 1, 9).setValue("ACTIVE");
-        s.getRange(i + 1, 10).setValue(formatISTTimestamp(data.receivedDate || new Date()));
-        s.getRange(i + 1, 11).setValue(true);
-        return;
-      }
-    }
-  }
-
-  // 3. Fallback: If not found in any sheet (e.g. ack email was missed or instant code delivery)
-  // Append as a new ACTIVE row in the Brand tab
-  const nextNum = rows.length;
+  // Fallback: If Stage 1 email was missed and delivery email arrived directly,
+  // append as an ACTIVE row in "New" tab so user can review and approve it.
+  const canonicalBrand = extractBrand(data.brand, "");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+  const nextNum = newSheet.getLastRow();
   const rowData = [
     nextNum,                                             // Col 1: #
     data.bookingId,                                      // Col 2: Booking ID
     `'${data.code}`,                                     // Col 3: Code
     data.pin ? `'${data.pin}` : "",                      // Col 4: PIN
     data.amount || 500,                                  // Col 5: Value
-    data.dateOfIssue,                                    // Col 6: Date of Issue
-    data.account,                                        // Col 7: Account
+    data.dateOfIssue || "",                              // Col 6: Date of Issue
+    data.account || "",                                  // Col 7: Account
     "Unassigned",                                        // Col 8: Card
     "ACTIVE",                                            // Col 9: Status
-    formatISTTimestamp(data.receivedDate || new Date()), // Col 10: Appended Timestamp (IST) - Permanently immutable
-    true                                                 // Col 11: Display in UI
+    formatISTTimestamp(data.receivedDate || new Date()), // Col 10: Appended Timestamp (IST)
+    true,                                                // Col 11: Display in UI
+    targetBrand                                          // Col 12: Target Brand
   ];
-  sheet.appendRow(rowData);
+  newSheet.appendRow(rowData);
 }
 
 /**
- * 4. STAGE 2 RECONCILER: AUTO-HEAL PENDING VOUCHERS
- * Scans all brand tabs for PENDING RUPS bookings, queries Gmail for delivery emails
- * (even if previously marked read), and fulfills them automatically in the same row.
+ * 4. STAGE 2 RECONCILER: AUTO-HEAL PENDING VOUCHERS IN "NEW" TAB
  */
 function reconcilePendingVouchers(ss) {
-  const brandSheets = ss.getSheets();
-  const sysTabs = new Set(["Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
+  const newSheet = ss.getSheetByName("New");
+  if (!newSheet) return [];
+
+  const sRows = newSheet.getDataRange().getValues();
   const reconciled = [];
 
-  for (const s of brandSheets) {
-    if (sysTabs.has(s.getName())) continue;
-    const sRows = s.getDataRange().getValues();
-    for (let i = 1; i < sRows.length; i++) {
-      const bid = String(sRows[i][1] || '').trim();
-      const code = String(sRows[i][2] || '').trim();
-      const currentPin = String(sRows[i][3] || '').trim();
-      const status = String(sRows[i][8] || '').trim();
+  for (let i = 1; i < sRows.length; i++) {
+    const bid = String(sRows[i][1] || '').trim();
+    const code = String(sRows[i][2] || '').trim();
+    const currentPin = String(sRows[i][3] || '').trim();
+    const status = String(sRows[i][8] || '').trim();
 
-      if ((status === 'PENDING' || code === 'PENDING') && /^RUPS/i.test(bid)) {
-        // Clean up any non-numeric spurious PINs in pending row immediately
-        if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
-          s.getRange(i + 1, 4).setValue("");
-        }
+    if ((status === 'PENDING' || code === 'PENDING') && /^RUPS/i.test(bid)) {
+      if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
+        newSheet.getRange(i + 1, 4).setValue("");
+      }
 
-        try {
-          // Exact phrase search in quotes to avoid hyphen '-' being treated as negation in Gmail search
-          const threads = GmailApp.search('"' + bid + '"', 0, 3);
-          for (const t of threads) {
-            const msgs = t.getMessages();
-            for (const m of msgs) {
-              const parsed = parseRupayVoucherEmail(m);
-              if (parsed && parsed.isDelivered && parsed.bookingId === bid) {
-                s.getRange(i + 1, 3).setValue(`'${parsed.code}`);
-                s.getRange(i + 1, 4).setValue(parsed.pin ? `'${parsed.pin}` : "");
-                if (parsed.amount && Number(parsed.amount) > 0) {
-                  s.getRange(i + 1, 5).setValue(Number(parsed.amount));
-                }
-                s.getRange(i + 1, 9).setValue("ACTIVE");
-                s.getRange(i + 1, 10).setValue(formatISTTimestamp(parsed.receivedDate || m.getDate()));
-                s.getRange(i + 1, 11).setValue(true);
-                reconciled.push({ bookingId: bid, brand: s.getName(), code: parsed.code, pin: parsed.pin });
-                break;
+      try {
+        const threads = GmailApp.search('"' + bid + '"', 0, 3);
+        for (const t of threads) {
+          const msgs = t.getMessages();
+          for (const m of msgs) {
+            const parsed = parseRupayVoucherEmail(m);
+            if (parsed && parsed.isDelivered && parsed.bookingId === bid) {
+              newSheet.getRange(i + 1, 3).setValue(`'${parsed.code}`);
+              newSheet.getRange(i + 1, 4).setValue(parsed.pin ? `'${parsed.pin}` : "");
+              if (parsed.amount && Number(parsed.amount) > 0) {
+                newSheet.getRange(i + 1, 5).setValue(Number(parsed.amount));
               }
+              newSheet.getRange(i + 1, 9).setValue("ACTIVE");
+              newSheet.getRange(i + 1, 10).setValue(formatISTTimestamp(parsed.receivedDate || m.getDate()));
+              newSheet.getRange(i + 1, 11).setValue(true);
+              reconciled.push({ bookingId: bid, code: parsed.code, pin: parsed.pin });
+              break;
             }
-            if (reconciled.some(r => r.bookingId === bid)) break;
           }
-        } catch (e) {
-          console.warn("Reconcile error for " + bid + ": " + e.message);
+          if (reconciled.some(r => r.bookingId === bid)) break;
         }
+      } catch (e) {
+        console.warn("Reconcile error for " + bid + ": " + e.message);
       }
     }
   }
@@ -1307,6 +1287,92 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify(setupRes)).setMimeType(ContentService.MimeType.JSON);
       }
 
+      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs
+      if (data.action === "APPROVE_STAGING") {
+        let newSheet = ss.getSheetByName("New");
+        if (!newSheet) {
+          return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        const rawBookingIds = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
+        const targetBookingIds = new Set(Array.from(new Set(Array.isArray(rawBookingIds) ? rawBookingIds.map(b => String(b).trim()).filter(Boolean) : [])));
+
+        if (targetBookingIds.size === 0) {
+          return ContentService.createTextOutput(JSON.stringify({ error: 'No booking IDs provided for approval' })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        const dataRows = newSheet.getDataRange().getValues();
+        const rowsToDelete = [];
+        const approvedSummary = [];
+
+        for (let r = 1; r < dataRows.length; r++) {
+          const row = dataRows[r];
+          const bId = String(row[1] || '').trim();
+
+          if (targetBookingIds.has(bId)) {
+            const currentCode = String(row[2] || '').trim();
+            const currentStatus = String(row[8] || '').trim().toUpperCase();
+            const targetBrand = String(row[11] || '⚡ Unassigned').trim();
+
+            // HARD CONDITION GUARD: Only fulfilled (ACTIVE, real code) vouchers can be approved!
+            if (currentStatus !== 'ACTIVE' || currentCode === 'PENDING' || !currentCode) {
+              return ContentService.createTextOutput(JSON.stringify({
+                error: `Cannot approve unfulfilled voucher ${bId}. Code must arrive before approval.`
+              })).setMimeType(ContentService.MimeType.JSON);
+            }
+
+            // Target Brand Sheet
+            const brandSheet = getTargetBrandSheet(ss, targetBrand);
+            const brandNextNum = brandSheet.getLastRow();
+
+            // Append Columns 1-11 to Brand Sheet
+            const brandRow = [
+              brandNextNum,
+              row[1], // Booking ID
+              `'${row[2]}`, // Code
+              row[3] ? `'${row[3]}` : "", // PIN
+              row[4] || 500, // Value
+              row[5] || "", // Date of Issue
+              row[6] || "", // Account
+              row[7] || "Unassigned", // Card
+              "ACTIVE", // Status
+              row[9] || formatISTTimestamp(new Date()), // Appended Timestamp (IST)
+              row[10] !== false && String(row[10]).toLowerCase() !== 'false' // Display in UI
+            ];
+            brandSheet.appendRow(brandRow);
+
+            rowsToDelete.push(r + 1); // 1-based index in "New"
+            approvedSummary.push({ bookingId: bId, brand: targetBrand, code: currentCode });
+          }
+        }
+
+        // Bottom-up deletion from "New" tab
+        if (rowsToDelete.length > 0) {
+          rowsToDelete.sort((a, b) => b - a);
+          for (const rIdx of rowsToDelete) {
+            newSheet.deleteRow(rIdx);
+          }
+
+          // Renumber remaining rows in "New"
+          const remaining = newSheet.getLastRow();
+          if (remaining > 1) {
+            const numRange = newSheet.getRange(2, 1, remaining - 1, 1);
+            const nums = [];
+            for (let n = 1; n < remaining; n++) {
+              nums.push([n]);
+            }
+            numRange.setValues(nums);
+          }
+        }
+
+        SpreadsheetApp.flush();
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          approvedCount: approvedSummary.length,
+          approved: approvedSummary
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
 
     // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
     if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
@@ -1805,9 +1871,21 @@ function doPost(e) {
           }
         }
       } else {
-        // INGESTED: Search in Brand tabs
+        // INGESTED: Search in "New" Tab first, then Brand tabs
+        const newSheet = ss.getSheetByName("New");
+        if (newSheet) {
+          const vals = newSheet.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowBid = String(vals[i][1] || "").trim();
+            const rowCode = String(vals[i][2] || "").trim();
+            if (codes.has(rowCode) || codes.has(rowBid)) {
+              newSheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
+              updated.push(rowCode || rowBid);
+            }
+          }
+        }
         const sheets = ss.getSheets();
-        const systemSheets = new Set(["⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
+        const systemSheets = new Set(["New", "⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
         for (const sheet of sheets) {
           if (systemSheets.has(sheet.getName())) continue;
           const vals = sheet.getDataRange().getValues();

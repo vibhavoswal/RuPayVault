@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RuPayVault — Staging & Strict Green-Only Approval Prototypes</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* System fonts only for CSP compliance */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 4px;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes slide-up {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-enter {
+      animation: slide-up 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 antialiased min-h-screen flex flex-col p-3 md:p-6 select-none transition-colors duration-200">
+
+  <!-- TOP BAR: Controls & Mode Switcher -->
+  <header class="max-w-5xl mx-auto w-full mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600/30 text-indigo-400 border border-indigo-500/30 font-bold text-sm">
+          ⚡
+        </span>
+        <h1 class="text-xl font-bold tracking-tight text-white">Staging & Approval Interactive Prototypes</h1>
+      </div>
+      <p class="text-xs text-slate-400 mt-0.5">Explore 3 variations of the "New" Tab lifecycle, Hard-Condition Approval Guard, and 72h Royal Blue Arrival</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- Variation Selector Pills -->
+      <div class="inline-flex bg-slate-800 p-1 rounded-xl border border-slate-700/60 text-xs font-medium">
+        <button onclick="setVariation(1)" id="var-btn-1" class="px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow-sm font-semibold">
+          Var 1: Strict Guard Bar
+        </button>
+        <button onclick="setVariation(2)" id="var-btn-2" class="px-3 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white">
+          Var 2: Drawer Action
+        </button>
+        <button onclick="setVariation(3)" id="var-btn-3" class="px-3 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white">
+          Var 3: Live Dual-Zone
+        </button>
+      </div>
+
+      <!-- Reset Simulation -->
+      <button onclick="resetSimulation()" title="Reset state to initial test vouchers" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs flex items-center gap-1.5 transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Reset
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN PROTOTYPE CONTAINER -->
+  <main class="max-w-5xl mx-auto w-full flex-1 flex flex-col">
+
+    <!-- VARIATION DESCRIPTION BANNER -->
+    <div id="variation-banner" class="mb-5 p-3.5 rounded-xl border bg-slate-800/80 border-slate-700/80 text-xs text-slate-300 flex items-start gap-3">
+      <div class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 mt-0.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div class="flex-1">
+        <div class="font-semibold text-white mb-0.5" id="banner-title">Variation 1: Dynamic Smart Action Bar (Multi-Select Strict Guard)</div>
+        <p id="banner-desc" class="text-slate-400 leading-relaxed">
+          Pending (Red) items have disabled approval states. The floating bar dynamically informs you if any selected voucher is still awaiting delivery, locking the Approve button until only Green (Delivered) vouchers are checked.
+        </p>
+      </div>
+    </div>
+
+    <!-- DUAL COLUMN LAYOUT: Staging (Ingested) vs Vault (Brand Tab) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+
+      <!-- LEFT: STAGING QUEUE ("New" Tab Ingested Feed) -->
+      <section class="lg:col-span-7 bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 flex flex-col shadow-xl backdrop-blur-sm">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h2 class="font-bold text-sm tracking-wide uppercase text-slate-200">⚡ Ingested Staging ("New" Tab)</h2>
+            <span id="staging-badge-count" class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-700 text-slate-300">5 items</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="selectOnlyGreen()" class="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg transition">
+              Select Green Only
+            </button>
+            <button onclick="toggleSelectAll()" id="select-all-btn" class="text-[11px] font-medium text-slate-400 hover:text-white bg-slate-700/50 px-2 py-1 rounded-lg transition">
+              Select All
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Sub-bar (Tagged vs Untagged) -->
+        <div class="flex items-center gap-2 mb-3">
+          <button onclick="setFilterSubTab('all')" id="subtab-all" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-600 text-white">All (5)</button>
+          <button onclick="setFilterSubTab('green')" id="subtab-green" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white bg-slate-800/80">Delivered / Green (2)</button>
+          <button onclick="setFilterSubTab('red')" id="subtab-red" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white bg-slate-800/80">Pending / Red (3)</button>
+        </div>
+
+        <!-- Placards List (Inbox Zero Feed) -->
+        <div id="staging-list" class="space-y-2.5 overflow-y-auto max-h-[500px] custom-scrollbar pr-1">
+          <!-- Populated dynamically by renderStagingList() -->
+        </div>
+
+        <!-- Empty State (Inbox Zero) -->
+        <div id="staging-empty-state" class="hidden py-12 flex flex-col items-center justify-center text-center">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-900/30 border border-emerald-800/50 flex items-center justify-center text-emerald-400 text-xl mb-3">
+            ✓
+          </div>
+          <div class="text-sm font-semibold text-white">Inbox Zero Achieved</div>
+          <p class="text-xs text-slate-400 mt-1 max-w-xs">All arrived vouchers have been approved into their respective brand tabs. No pending items remain.</p>
+        </div>
+
+      </section>
+
+      <!-- RIGHT: BRAND TAB VAULT PREVIEW (Destination Tabs) -->
+      <section class="lg:col-span-5 bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 flex flex-col shadow-xl">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🏷️</span>
+            <h2 class="font-bold text-sm tracking-wide uppercase text-slate-200">Spendable Brand Tabs</h2>
+          </div>
+          <!-- Brand Tab Selector -->
+          <select id="brand-selector" onchange="renderBrandTab()" class="text-xs bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="Thyrocare">Thyrocare</option>
+            <option value="Lakme">Lakme</option>
+            <option value="AmazonPrime">AmazonPrime</option>
+            <option value="Kalyan">Kalyan</option>
+          </select>
+        </div>
+
+        <!-- Brand Tab Stats & Denomination Banner (Zero Pollution Guarantee) -->
+        <div class="bg-gradient-to-r from-slate-900 to-slate-850 p-3.5 rounded-xl border border-slate-700/70 mb-4 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Cumulative Denomination</div>
+            <div id="brand-denom-total" class="text-xl font-extrabold text-emerald-400 mt-0.5">₹1,500</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Spendable Vouchers</div>
+            <div id="brand-voucher-count" class="text-sm font-bold text-white mt-0.5">3 Active (0 Pending)</div>
+          </div>
+        </div>
+
+        <!-- Informational Note about 72h Royal Blue Tint -->
+        <div class="text-[11px] text-blue-300/80 bg-blue-950/30 border border-blue-800/40 rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+          <span>Vouchers approved within the last 72 hours display a <strong>Royal Blue accent stripe</strong> and soft blue tint.</span>
+        </div>
+
+        <!-- Brand Cards Carousel / Stack -->
+        <div id="brand-cards-list" class="space-y-2.5 overflow-y-auto max-h-[400px] custom-scrollbar pr-1">
+          <!-- Populated dynamically by renderBrandTab() -->
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- FLOATING SELECTION BAR (Strict Guard Multi-Select) -->
+    <div id="floating-bar" class="fixed bottom-5 left-1/2 -translate-x-1/2 w-[92%] max-w-xl bg-slate-900/95 border border-slate-700 p-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 z-40 transition-all duration-200 translate-y-24 opacity-0 pointer-events-none">
+      
+      <!-- Selection Info & Guard State -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span id="bar-count-badge" class="px-2 py-0.5 rounded-full bg-indigo-600/40 text-indigo-300 text-xs font-bold border border-indigo-500/40 flex-shrink-0">
+          0 Selected
+        </span>
+        <div id="bar-guard-message" class="text-xs truncate text-slate-300">
+          Select items to approve
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="clearSelection()" class="px-3 py-1.5 rounded-xl text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          Clear
+        </button>
+
+        <button id="bar-approve-btn" onclick="executeBatchApprove()" class="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span id="bar-approve-text">Approve to Brand Tab</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- MATERIAL DETAIL SHEET (i) DRAWER -->
+    <div id="sheet-overlay" onclick="closeDetailSheet()" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden opacity-0 transition-opacity duration-200"></div>
+
+    <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-slate-900 border-t border-slate-700/80 rounded-t-3xl p-5 shadow-2xl z-50 hidden flex flex-col max-h-[85vh]">
+      <!-- Sheet Handle -->
+      <div class="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-4"></div>
+
+      <!-- Sheet Header -->
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="sheet-brand-name" class="text-lg font-bold text-white">Brand Name</span>
+            <span id="sheet-status-badge" class="px-2 py-0.5 rounded-full text-xs font-semibold">Status</span>
+          </div>
+          <div id="sheet-subhead" class="text-xs text-slate-400 mt-0.5">Booking ID & IST Timestamps</div>
+        </div>
+
+        <button onclick="closeDetailSheet()" class="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Sheet Content Body -->
+      <div class="space-y-3.5 flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
+        
+        <!-- Voucher Code Box (Delivered vs Awaiting) -->
+        <div id="sheet-code-container" class="p-3.5 rounded-xl border flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium" id="sheet-code-label">Voucher Code</div>
+            <div class="text-base font-mono font-bold tracking-wider mt-0.5" id="sheet-code-value">Awaiting Delivery</div>
+          </div>
+          <button id="sheet-copy-code-btn" onclick="copySheetCode()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+            Copy
+          </button>
+        </div>
+
+        <!-- PIN Box (if applicable) -->
+        <div id="sheet-pin-container" class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">Security PIN</div>
+            <div class="text-sm font-mono font-bold text-white mt-0.5" id="sheet-pin-value">-</div>
+          </div>
+          <button id="sheet-copy-combo-btn" onclick="copySheetCodeAndPin()" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1">
+            Copy Code + PIN
+          </button>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-2 gap-2.5 text-xs">
+          <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] uppercase">Denomination</span>
+            <span id="sheet-amount" class="text-white font-bold text-sm">₹500</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] uppercase">Target Brand Tab</span>
+            <span id="sheet-target-tab" class="text-white font-semibold">Thyrocare</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] uppercase">Account</span>
+            <span id="sheet-account" class="text-white font-mono">user1@gmail.com</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-800/40 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] uppercase">Arrival Timestamp (IST)</span>
+            <span id="sheet-timestamp" class="text-slate-300 text-[11px]">20-Oct 04:15 AM</span>
+          </div>
+        </div>
+
+        <!-- Hard Condition Guard Warning in Sheet -->
+        <div id="sheet-guard-warning" class="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-xs text-rose-300 flex items-center gap-2.5">
+          <svg class="w-4 h-4 flex-shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <div>
+            <strong>Approval Locked:</strong> This voucher is awaiting fulfillment. Only delivered green vouchers can be moved to brand tabs.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sheet Footer Actions -->
+      <div class="pt-3 border-t border-slate-800 flex items-center gap-2">
+        <button onclick="closeDetailSheet()" class="w-1/3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+          Close
+        </button>
+        <button id="sheet-approve-action-btn" onclick="approveFromDetailSheet()" class="w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 disabled:cursor-not-allowed">
+          ✓ Approve to Brand Tab
+        </button>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 text-white border border-slate-700 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+      <span id="toast-icon">✓</span>
+      <span id="toast-msg">Notification text</span>
+    </div>
+
+    <!-- 3-SECOND FLOATING UNDO SNACKBAR -->
+    <div id="undo-snackbar" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white border border-slate-700 px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center justify-between gap-4 z-50 opacity-0 pointer-events-none transition-all duration-200 w-[90%] max-w-md">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="undo-text" class="truncate font-medium">Approved to brand tab</span>
+      </div>
+      <button onclick="undoLastApproval()" class="text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-wider text-[11px] px-2 py-1 rounded-md hover:bg-slate-800 transition">
+        Undo
+      </button>
+    </div>
+
+  </main>
+
+  <script>
+    /* ======================================================================
+       SIMULATION STATE (100% Client-Side Interactive Prototype)
+       ====================================================================== */
+    const INITIAL_STAGING = [
+      {
+        id: 's-1',
+        bookingId: 'RUPS-BD5D6314',
+        brand: 'Thyrocare',
+        amount: 500,
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        user: '@smitioswal',
+        timeAgo: '14h ago',
+        timestampIST: '19-Oct-2026 04:12:00 PM IST',
+        targetBrand: 'Thyrocare'
+      },
+      {
+        id: 's-2',
+        bookingId: 'RUPS-70BBACDA',
+        brand: 'Thyrocare',
+        amount: 500,
+        status: 'ACTIVE',
+        code: 'THYRO-984219',
+        pin: '4432',
+        user: '@smitioswal',
+        timeAgo: '2h ago',
+        timestampIST: '20-Oct-2026 04:02:15 AM IST',
+        targetBrand: 'Thyrocare'
+      },
+      {
+        id: 's-3',
+        bookingId: 'RUPS-DB700CCD',
+        brand: 'Lakme',
+        amount: 500,
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        user: '@vibhavoswal',
+        timeAgo: '18h ago',
+        timestampIST: '19-Oct-2026 12:30:00 PM IST',
+        targetBrand: 'Lakme'
+      },
+      {
+        id: 's-4',
+        bookingId: 'RUPS-34AB2FE3',
+        brand: 'AmazonPrime',
+        amount: 500,
+        status: 'ACTIVE',
+        code: 'PRIME-A77610',
+        pin: null,
+        user: '@vibhavoswal',
+        timeAgo: '1h ago',
+        timestampIST: '20-Oct-2026 05:01:00 AM IST',
+        targetBrand: 'AmazonPrime'
+      },
+      {
+        id: 's-5',
+        bookingId: 'RUPS-CDC69FA6',
+        brand: 'Kalyan',
+        amount: 500,
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        user: '@smitioswal',
+        timeAgo: '22h ago',
+        timestampIST: '19-Oct-2026 08:15:00 AM IST',
+        targetBrand: 'Kalyan'
+      }
+    ];
+
+    const INITIAL_BRAND_VOUCHERS = {
+      Thyrocare: [
+        { id: 'v-th-1', code: 'THYRO-882190', pin: '9921', amount: 500, timestampIST: '15-Oct-2026 10:00:00 AM IST', isRecent: false },
+        { id: 'v-th-2', code: 'THYRO-771822', pin: '1102', amount: 500, timestampIST: '16-Oct-2026 11:30:00 AM IST', isRecent: false },
+        { id: 'v-th-3', code: 'THYRO-662991', pin: '4452', amount: 500, timestampIST: '17-Oct-2026 04:15:00 PM IST', isRecent: false }
+      ],
+      Lakme: [
+        { id: 'v-lk-1', code: 'LAKME-339182', pin: null, amount: 500, timestampIST: '14-Oct-2026 09:20:00 AM IST', isRecent: false },
+        { id: 'v-lk-2', code: 'LAKME-118274', pin: null, amount: 500, timestampIST: '16-Oct-2026 02:40:00 PM IST', isRecent: false }
+      ],
+      AmazonPrime: [
+        { id: 'v-ap-1', code: 'PRIME-991823', pin: null, amount: 500, timestampIST: '12-Oct-2026 06:15:00 PM IST', isRecent: false }
+      ],
+      Kalyan: [
+        { id: 'v-kl-1', code: 'KALYAN-551029', pin: '8839', amount: 500, timestampIST: '18-Oct-2026 01:10:00 PM IST', isRecent: false }
+      ]
+    };
+
+    let state = {
+      currentVariation: 1, // 1: Strict Guard Bar, 2: Drawer Action, 3: Dual-Zone Live
+      staging: JSON.parse(JSON.stringify(INITIAL_STAGING)),
+      brandVouchers: JSON.parse(JSON.stringify(INITIAL_BRAND_VOUCHERS)),
+      selectedIds: new Set(),
+      activeFilterSubTab: 'all', // all, green, red
+      selectedBrandTab: 'Thyrocare',
+      activeDetailVoucher: null,
+      lastApprovedBatch: null,
+      undoTimeout: null
+    };
+
+    /* ======================================================================
+       VARIATION CONTROLLER
+       ====================================================================== */
+    function setVariation(varNum) {
+      state.currentVariation = varNum;
+      
+      // Update Tab Buttons
+      [1, 2, 3].forEach(n => {
+        const btn = document.getElementById(`var-btn-${n}`);
+        if (n === varNum) {
+          btn.className = "px-3 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow-sm font-semibold";
+        } else {
+          btn.className = "px-3 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white";
+        }
+      });
+
+      // Update Banner Descriptions
+      const bannerTitle = document.getElementById('banner-title');
+      const bannerDesc = document.getElementById('banner-desc');
+
+      if (varNum === 1) {
+        bannerTitle.textContent = "Variation 1: Dynamic Smart Action Bar (Multi-Select Strict Guard)";
+        bannerDesc.textContent = "Selection checkboxes are enabled on all cards, but the floating bottom bar dynamically detects pending items. If any red card is included, the Approve button locks with clear feedback. Only green vouchers can trigger batch approval.";
+      } else if (varNum === 2) {
+        bannerTitle.textContent = "Variation 2: Single-Card Drawer Approval (Mobile Sheet Flow)";
+        bannerDesc.textContent = "Tapping any card directly slides up the Material Detail Sheet. For Red cards, the Approve button is explicitly disabled with an amber warning. For Green cards, a prominent emerald '✓ Approve to Brand Tab' moves it immediately into the vault.";
+      } else if (varNum === 3) {
+        bannerTitle.textContent = "Variation 3: Real-Time Dual-Zone Transfer (Direct Visual Hand-off)";
+        bannerDesc.textContent = "Demonstrates the physical migration in real-time: Watch the card vanish from the Ingested Staging queue and instantly appear in the Spendable Brand Tab on the right, stamped with the 72-hour Royal Blue stripe!";
+      }
+
+      renderStagingList();
+      updateFloatingBar();
+    }
+
+    function resetSimulation() {
+      state.staging = JSON.parse(JSON.stringify(INITIAL_STAGING));
+      state.brandVouchers = JSON.parse(JSON.stringify(INITIAL_BRAND_VOUCHERS));
+      state.selectedIds.clear();
+      hideUndoSnackbar();
+      renderStagingList();
+      renderBrandTab();
+      updateFloatingBar();
+      showToast("State reset to initial 5 test vouchers", "🔄");
+    }
+
+    /* ======================================================================
+       RENDERING: STAGING QUEUE (3-LINE PLACARDS)
+       ====================================================================== */
+    function renderStagingList() {
+      const container = document.getElementById('staging-list');
+      const emptyState = document.getElementById('staging-empty-state');
+      const countBadge = document.getElementById('staging-badge-count');
+
+      // Filter subtab
+      let items = state.staging;
+      if (state.activeFilterSubTab === 'green') items = items.filter(v => v.status === 'ACTIVE');
+      if (state.activeFilterSubTab === 'red') items = items.filter(v => v.status === 'PENDING');
+
+      countBadge.textContent = `${state.staging.length} items`;
+
+      if (state.staging.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = items.map(v => {
+        const isGreen = v.status === 'ACTIVE';
+        const isChecked = state.selectedIds.has(v.id);
+
+        // Styling based on Delivered (Green) vs Pending (Red)
+        const bgClass = isGreen
+          ? "bg-emerald-950/20 hover:bg-emerald-950/30 border-emerald-800/40 text-emerald-100"
+          : "bg-rose-950/20 hover:bg-rose-950/30 border-rose-800/40 text-rose-100";
+
+        const badgePill = isGreen
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-700/60">Delivered</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-900/60 text-rose-300 border border-rose-700/60">Pending</span>';
+
+        return `
+          <div class="relative group p-3 rounded-xl border transition-all duration-150 flex items-center justify-between gap-3 ${bgClass} ${isChecked ? 'ring-2 ring-indigo-500 bg-indigo-950/30' : ''}">
+            
+            <!-- Checkbox & Main Info -->
+            <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" onclick="handleCardClick('${v.id}')">
+              
+              <!-- Checkbox -->
+              <input type="checkbox" 
+                     ${isChecked ? 'checked' : ''} 
+                     onclick="event.stopPropagation(); toggleSelect('${v.id}')"
+                     class="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700 focus:ring-indigo-500 cursor-pointer">
+
+              <!-- 3-Line Placard Body -->
+              <div class="min-w-0 flex-1">
+                <!-- Line 1: Brand Name & Status Pill -->
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-sm text-white truncate">${v.brand}</span>
+                  ${badgePill}
+                </div>
+
+                <!-- Line 2: RUPS Number + Copy Button -->
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="font-mono text-xs text-slate-300 font-semibold tracking-wide">${v.bookingId}</span>
+                  <button onclick="event.stopPropagation(); copyText('${v.bookingId}', 'Booking ID copied')" class="text-[11px] font-medium text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-700 px-1.5 py-0.5 rounded transition">
+                    Copy
+                  </button>
+                  ${isGreen && v.code !== 'PENDING' ? `<span class="text-[10px] text-emerald-400 font-mono bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800/40">Code Ready</span>` : ''}
+                </div>
+
+                <!-- Line 3: User & Timestamp -->
+                <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 truncate">
+                  <span>${v.user}</span>
+                  <span>·</span>
+                  <span>${v.timeAgo}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detail (i) Button -->
+            <button onclick="openDetailSheet('${v.id}')" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/60 transition flex-shrink-0" title="View Voucher Details">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ======================================================================
+       SELECTION & HARD CONDITION GUARD ENGINE
+       ====================================================================== */
+    function handleCardClick(id) {
+      if (state.currentVariation === 2) {
+        // Variation 2 opens detail sheet directly on card tap
+        openDetailSheet(id);
+      } else {
+        // Variation 1 & 3 toggle checkbox selection
+        toggleSelect(id);
+      }
+    }
+
+    function toggleSelect(id) {
+      if (state.selectedIds.has(id)) {
+        state.selectedIds.delete(id);
+      } else {
+        state.selectedIds.add(id);
+      }
+      renderStagingList();
+      updateFloatingBar();
+    }
+
+    function selectOnlyGreen() {
+      state.selectedIds.clear();
+      state.staging.filter(v => v.status === 'ACTIVE').forEach(v => state.selectedIds.add(v.id));
+      renderStagingList();
+      updateFloatingBar();
+      showToast("Selected all delivered (green) vouchers", "✓");
+    }
+
+    function toggleSelectAll() {
+      if (state.selectedIds.size === state.staging.length) {
+        state.selectedIds.clear();
+      } else {
+        state.staging.forEach(v => state.selectedIds.add(v.id));
+      }
+      renderStagingList();
+      updateFloatingBar();
+    }
+
+    function clearSelection() {
+      state.selectedIds.clear();
+      renderStagingList();
+      updateFloatingBar();
+    }
+
+    function setFilterSubTab(sub) {
+      state.activeFilterSubTab = sub;
+      ['all', 'green', 'red'].forEach(s => {
+        const btn = document.getElementById(`subtab-${s}`);
+        if (s === sub) {
+          btn.className = "px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-600 text-white";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 hover:text-white bg-slate-800/80";
+        }
+      });
+      renderStagingList();
+    }
+
+    /* ======================================================================
+       DYNAMIC FLOATING BAR WITH HARD INVARIANT
+       ====================================================================== */
+    function updateFloatingBar() {
+      const bar = document.getElementById('floating-bar');
+      const countBadge = document.getElementById('bar-count-badge');
+      const guardMsg = document.getElementById('bar-guard-message');
+      const approveBtn = document.getElementById('bar-approve-btn');
+      const approveText = document.getElementById('bar-approve-text');
+
+      const count = state.selectedIds.size;
+
+      if (count === 0) {
+        bar.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        return;
+      }
+
+      // Show bar
+      bar.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+      countBadge.textContent = `${count} Selected`;
+
+      // Check for presence of any PENDING (Red) vouchers
+      const selectedVouchers = state.staging.filter(v => state.selectedIds.has(v.id));
+      const hasPending = selectedVouchers.some(v => v.status === 'PENDING' || v.code === 'PENDING');
+      const pendingCount = selectedVouchers.filter(v => v.status === 'PENDING' || v.code === 'PENDING').length;
+
+      if (hasPending) {
+        // HARD CONDITION LOCKED
+        guardMsg.innerHTML = `<span class="text-amber-400 font-semibold flex items-center gap-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m4-6V7a4 4 0 00-8 0v4h8z"/></svg> ${pendingCount} pending delivery — Approval Locked</span>`;
+        approveBtn.disabled = true;
+        approveBtn.className = "px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md bg-slate-700 text-slate-400 cursor-not-allowed opacity-60";
+        approveText.textContent = "Cannot Approve Pending";
+      } else {
+        // GREEN-ONLY APPROVAL UNLOCKED
+        guardMsg.innerHTML = `<span class="text-emerald-400 font-semibold flex items-center gap-1">All ${count} vouchers ready to approve</span>`;
+        approveBtn.disabled = false;
+        approveBtn.className = "px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition-all";
+        approveText.textContent = `✓ Approve ${count} to Brand Tab${count > 1 ? 's' : ''}`;
+      }
+    }
+
+    /* ======================================================================
+       BATCH APPROVAL EXECUTION
+       ====================================================================== */
+    function executeBatchApprove() {
+      const selectedVouchers = state.staging.filter(v => state.selectedIds.has(v.id));
+
+      // Redundant Safety Guard: Strict Verification
+      if (selectedVouchers.some(v => v.status === 'PENDING')) {
+        showToast("Error: Cannot approve pending vouchers!", "⚠️");
+        return;
+      }
+
+      // Store for Undo
+      state.lastApprovedBatch = JSON.parse(JSON.stringify(selectedVouchers));
+
+      // Move into Brand Tabs with isRecent = true (Triggers 72h Royal Blue Tint)
+      selectedVouchers.forEach(v => {
+        const brandTab = v.targetBrand || v.brand;
+        if (!state.brandVouchers[brandTab]) state.brandVouchers[brandTab] = [];
+
+        state.brandVouchers[brandTab].unshift({
+          id: 'v-' + v.id,
+          code: v.code,
+          pin: v.pin,
+          amount: v.amount,
+          timestampIST: v.timestampIST,
+          isRecent: true // 72-hour Royal Blue Flag
+        });
+      });
+
+      // Remove from staging
+      state.staging = state.staging.filter(v => !state.selectedIds.has(v.id));
+      state.selectedIds.clear();
+
+      renderStagingList();
+      renderBrandTab();
+      updateFloatingBar();
+
+      // Show Undo Snackbar
+      showUndoSnackbar(`${selectedVouchers.length} voucher(s) moved to Brand Tab with 72h Royal Blue Tint`);
+      showToast(`Approved ${selectedVouchers.length} voucher(s) to brand tabs`, "✓");
+    }
+
+    function showUndoSnackbar(text) {
+      const snack = document.getElementById('undo-snackbar');
+      document.getElementById('undo-text').textContent = text;
+      snack.classList.remove('opacity-0', 'pointer-events-none');
+      snack.classList.add('opacity-100');
+
+      if (state.undoTimeout) clearTimeout(state.undoTimeout);
+      state.undoTimeout = setTimeout(() => {
+        hideUndoSnackbar();
+      }, 5000);
+    }
+
+    function hideUndoSnackbar() {
+      const snack = document.getElementById('undo-snackbar');
+      snack.classList.remove('opacity-100');
+      snack.classList.add('opacity-0', 'pointer-events-none');
+      if (state.undoTimeout) clearTimeout(state.undoTimeout);
+    }
+
+    function undoLastApproval() {
+      if (!state.lastApprovedBatch || !state.lastApprovedBatch.length) return;
+
+      // Reverse: Remove from brand tabs and re-insert into staging
+      state.lastApprovedBatch.forEach(v => {
+        const brandTab = v.targetBrand || v.brand;
+        if (state.brandVouchers[brandTab]) {
+          state.brandVouchers[brandTab] = state.brandVouchers[brandTab].filter(x => x.code !== v.code);
+        }
+        state.staging.unshift(v);
+      });
+
+      state.lastApprovedBatch = null;
+      hideUndoSnackbar();
+      renderStagingList();
+      renderBrandTab();
+      showToast("Vouchers restored to Ingested Staging", "↩️");
+    }
+
+    /* ======================================================================
+       BRAND TAB VAULT PREVIEW (72-Hour Royal Blue Arrival Accent)
+       ====================================================================== */
+    function renderBrandTab() {
+      const brand = document.getElementById('brand-selector').value;
+      state.selectedBrandTab = brand;
+
+      const vouchers = state.brandVouchers[brand] || [];
+      const listContainer = document.getElementById('brand-cards-list');
+      const denomTotal = document.getElementById('brand-denom-total');
+      const countEl = document.getElementById('brand-voucher-count');
+
+      // Calculate Total Denomination
+      const totalAmount = vouchers.reduce((sum, v) => sum + (Number(v.amount) || 0), 0);
+      denomTotal.textContent = `₹${totalAmount.toLocaleString('en-IN')}`;
+      countEl.textContent = `${vouchers.length} Active (0 Pending)`;
+
+      if (vouchers.length === 0) {
+        listContainer.innerHTML = `
+          <div class="py-8 text-center text-xs text-slate-400">
+            No active vouchers in ${brand} yet.
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = vouchers.map(v => {
+        // 72-Hour Royal Blue Accent Stripe & Soft Tint logic
+        const isRecent = v.isRecent === true;
+        
+        const cardClass = isRecent
+          ? "border-l-4 border-l-blue-500 bg-blue-950/20 border-slate-700/80 shadow-md"
+          : "border-l-4 border-l-slate-600 bg-slate-900/60 border-slate-800";
+
+        const recentBadge = isRecent
+          ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-900/60 text-blue-300 border border-blue-700/50">New (72h)</span>'
+          : '';
+
+        return `
+          <div class="p-3 rounded-xl border transition-all ${cardClass} flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-white">${brand} Voucher</span>
+                <span class="text-xs font-extrabold text-emerald-400">₹${v.amount}</span>
+                ${recentBadge}
+              </div>
+
+              <!-- Code & PIN -->
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono text-xs font-semibold text-slate-300">${v.code}</span>
+                <button onclick="copyText('${v.code}', 'Voucher code copied')" class="text-[10px] text-slate-400 hover:text-white bg-slate-800 px-1.5 py-0.5 rounded">
+                  Copy
+                </button>
+                ${v.pin ? `<span class="text-[11px] font-mono text-slate-400">PIN: <strong class="text-slate-200">${v.pin}</strong></span>` : ''}
+              </div>
+
+              <div class="text-[10px] text-slate-400 mt-1">
+                Spendable · Arrived ${v.timestampIST ? v.timestampIST.split(' ')[0] : 'Recently'}
+              </div>
+            </div>
+
+            <div class="text-emerald-400 text-xs font-semibold px-2 py-1 rounded-md bg-emerald-950/40 border border-emerald-800/40">
+              Active
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ======================================================================
+       DETAIL SHEET (i) DRAWER CONTROLLER
+       ====================================================================== */
+    function openDetailSheet(id) {
+      const v = state.staging.find(x => x.id === id);
+      if (!v) return;
+      state.activeDetailVoucher = v;
+
+      document.getElementById('sheet-brand-name').textContent = v.brand;
+      document.getElementById('sheet-subhead').textContent = `${v.bookingId} · ${v.timeAgo}`;
+      document.getElementById('sheet-amount').textContent = `₹${v.amount}`;
+      document.getElementById('sheet-target-tab').textContent = v.targetBrand || v.brand;
+      document.getElementById('sheet-account').textContent = v.user;
+      document.getElementById('sheet-timestamp').textContent = v.timestampIST;
+
+      const isGreen = v.status === 'ACTIVE';
+      const statusBadge = document.getElementById('sheet-status-badge');
+      const codeContainer = document.getElementById('sheet-code-container');
+      const codeLabel = document.getElementById('sheet-code-label');
+      const codeValue = document.getElementById('sheet-code-value');
+      const copyCodeBtn = document.getElementById('sheet-copy-code-btn');
+      const pinContainer = document.getElementById('sheet-pin-container');
+      const guardWarning = document.getElementById('sheet-guard-warning');
+      const approveBtn = document.getElementById('sheet-approve-action-btn');
+
+      if (isGreen) {
+        // DELIVERED GREEN STATE
+        statusBadge.textContent = "Delivered & Ready";
+        statusBadge.className = "px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/60";
+
+        codeContainer.className = "p-3.5 rounded-xl border border-emerald-800/50 bg-emerald-950/20 flex items-center justify-between";
+        codeLabel.textContent = "Actual Voucher Code";
+        codeValue.textContent = v.code;
+        codeValue.className = "text-base font-mono font-bold tracking-wider text-emerald-300 mt-0.5";
+        copyCodeBtn.classList.remove('hidden');
+
+        if (v.pin) {
+          pinContainer.classList.remove('hidden');
+          document.getElementById('sheet-pin-value').textContent = v.pin;
+        } else {
+          pinContainer.classList.add('hidden');
+        }
+
+        // Hide warning and ENABLE Approve Button
+        guardWarning.classList.add('hidden');
+        approveBtn.disabled = false;
+        approveBtn.className = "w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer";
+        approveBtn.innerHTML = `✓ Approve to ${v.targetBrand || v.brand} Tab`;
+      } else {
+        // PENDING RED STATE (LOCKED)
+        statusBadge.textContent = "Awaiting Delivery";
+        statusBadge.className = "px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-900/60 text-rose-300 border border-rose-700/60";
+
+        codeContainer.className = "p-3.5 rounded-xl border border-rose-800/50 bg-rose-950/20 flex items-center justify-between";
+        codeLabel.textContent = "Voucher Code Status";
+        codeValue.textContent = "Awaiting Delivery";
+        codeValue.className = "text-sm font-semibold text-rose-300 mt-0.5";
+        copyCodeBtn.classList.add('hidden');
+        pinContainer.classList.add('hidden');
+
+        // Show warning and DISABLE Approve Button
+        guardWarning.classList.remove('hidden');
+        approveBtn.disabled = true;
+        approveBtn.className = "w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 bg-slate-800 text-slate-500 cursor-not-allowed opacity-60";
+        approveBtn.innerHTML = `🔒 Approval Locked`;
+      }
+
+      // Open sheet with animation
+      const overlay = document.getElementById('sheet-overlay');
+      const sheet = document.getElementById('detail-sheet');
+      overlay.classList.remove('hidden');
+      sheet.classList.remove('hidden');
+      sheet.classList.add('sheet-enter');
+      setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+    }
+
+    function closeDetailSheet() {
+      const overlay = document.getElementById('sheet-overlay');
+      const sheet = document.getElementById('detail-sheet');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        sheet.classList.add('hidden');
+        sheet.classList.remove('sheet-enter');
+        state.activeDetailVoucher = null;
+      }, 200);
+    }
+
+    function approveFromDetailSheet() {
+      if (!state.activeDetailVoucher || state.activeDetailVoucher.status !== 'ACTIVE') return;
+
+      const v = state.activeDetailVoucher;
+      state.selectedIds.clear();
+      state.selectedIds.add(v.id);
+      closeDetailSheet();
+      executeBatchApprove();
+    }
+
+    function copySheetCode() {
+      if (!state.activeDetailVoucher || state.activeDetailVoucher.status !== 'ACTIVE') return;
+      copyText(state.activeDetailVoucher.code, "Voucher code copied");
+    }
+
+    function copySheetCodeAndPin() {
+      if (!state.activeDetailVoucher || state.activeDetailVoucher.status !== 'ACTIVE') return;
+      const v = state.activeDetailVoucher;
+      const text = v.pin ? `${v.code} | PIN: ${v.pin}` : v.code;
+      copyText(text, "Voucher code & PIN copied together");
+    }
+
+    /* ======================================================================
+       UTILITY: CLIPBOARD & TOAST
+       ====================================================================== */
+    function copyText(str, msg) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(str).then(() => showToast(msg || "Copied to clipboard", "📋"));
+      } else {
+        showToast(msg || "Copied to clipboard", "📋");
+      }
+    }
+
+    function showToast(msg, icon = "✓") {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2400);
+    }
+
+    // INITIAL BOOTSTRAP
+    document.addEventListener('DOMContentLoaded', () => {
+      setVariation(1);
+      renderBrandTab();
+    });
+  </script>
+</body>
+</html>

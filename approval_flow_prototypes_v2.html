@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RuPayVault — Recreated Staging & Approval Flow</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* System fonts only for CSP compliance */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 4px;
+    }
+    @keyframes slide-up-smooth {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-enter {
+      animation: slide-up-smooth 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes pop-in {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pop-in {
+      animation: pop-in 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#0c0d0e] text-slate-100 antialiased min-h-screen flex flex-col p-2.5 sm:p-5 select-none transition-colors duration-200 pb-28">
+
+  <!-- TOP APP HEADER -->
+  <header class="max-w-4xl mx-auto w-full mb-3 flex items-center justify-between gap-3 pb-3 border-b border-neutral-800">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center font-black text-black text-base shadow-md">
+        ₹
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+          <span>RuPay Vault</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/60 font-semibold">STAGE 2 READY</span>
+        </h1>
+        <p class="text-[11px] text-neutral-400">Activity Log Hierarchy & Floating Dock Integration</p>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Select Mode Toggle Button (as in actual app) -->
+      <button id="header-select-btn" onclick="toggleSelectMode()" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] border border-neutral-700 active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span id="header-select-text">Select</span>
+      </button>
+
+      <!-- Reset Simulation State -->
+      <button onclick="resetSimulation()" title="Reset simulation state" class="p-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-800 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-4xl mx-auto w-full flex-1 flex flex-col space-y-3">
+
+    <!-- ARCHITECTURAL EXPLANATION CALLOUT -->
+    <div class="p-3 rounded-2xl bg-gradient-to-r from-neutral-900 to-neutral-950 border border-neutral-800 text-xs text-neutral-300">
+      <div class="flex items-center justify-between mb-1">
+        <span class="font-bold text-white flex items-center gap-1.5">
+          <span class="text-amber-400">⚡</span>
+          <span>How "New" Tab Fits the 2-Tier Hierarchy</span>
+        </span>
+        <span class="text-[10px] text-neutral-400 font-mono">Option A Strict Invariant</span>
+      </div>
+      <p class="text-[11px] text-neutral-400 leading-relaxed">
+        <strong>Activity Log</strong> &rarr; <strong>⚡ Ingested</strong> (reads strictly from the <code class="text-indigo-300 bg-indigo-950/40 px-1 py-0.2 rounded font-mono">New</code> tab) &rarr; divides into <strong>Untagged</strong> & <strong>Tagged</strong>. 
+        Pending items (Red) stay here until voucher code arrives (turns Green). Green items can then be approved, leaving Ingested (Inbox Zero) and moving into their brand tabs with the <strong>72h Royal Blue accent</strong>!
+      </p>
+    </div>
+
+    <!-- TIER 1: PRIMARY ACTIVITY LOG TABS (⚡ Ingested vs 📤 Shared) + Archive Button -->
+    <div class="flex items-center justify-between gap-2">
+      <!-- 2-Col Segmented Bar -->
+      <div class="flex-1 grid grid-cols-2 p-1 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs shadow-inner">
+        <button onclick="setPrimaryTab('ingested')" id="tab-ingested" class="py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
+          <span>⚡ Ingested</span>
+          <span id="badge-count-ingested" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-emerald-200 font-bold font-mono">7</span>
+        </button>
+
+        <button onclick="setPrimaryTab('shared')" id="tab-shared" class="py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <span>📤 Shared</span>
+          <span id="badge-count-shared" class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300 font-bold font-mono">2</span>
+        </button>
+      </div>
+
+      <!-- Google Material Design Archive SVG Button (From Commit 099b6ca) -->
+      <button onclick="triggerArchiveVisible()" class="p-2.5 rounded-2xl bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 text-neutral-400 hover:text-white active:scale-95 transition shadow-sm" title="Archive / Hide Visible Items">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- TIER 2: INGESTED SUB-FILTERS (Strictly Untagged vs Tagged) -->
+    <div id="ingested-subtier-bar" class="flex items-center justify-between px-3 py-1.5 rounded-2xl bg-neutral-900/80 border border-neutral-800">
+      <div class="flex items-center gap-1.5 text-xs">
+        <span class="text-[10px] text-neutral-400 font-medium uppercase tracking-wider mr-1">Filter Ingested:</span>
+        
+        <button onclick="setIngestSubFilter('untagged')" id="subfilter-untagged" class="px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
+          <svg class="w-3.5 h-3.5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Untagged</span>
+          <span id="count-untagged" class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-black font-black font-mono">4</span>
+        </button>
+
+        <button onclick="setIngestSubFilter('tagged')" id="subfilter-tagged" class="px-3 py-1 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          <span>Tagged</span>
+          <span id="count-tagged" class="px-1.5 py-0.2 rounded-full text-[9px] bg-neutral-800 text-emerald-400 font-bold font-mono">3</span>
+        </button>
+      </div>
+
+      <!-- Quick Helper Indicator -->
+      <div id="select-mode-indicator" class="text-[11px] text-neutral-400 font-mono hidden sm:block">
+        Tap card to inspect details
+      </div>
+    </div>
+
+    <!-- SELECT MODE BANNER (Appears when Select Mode is active) -->
+    <div id="select-mode-banner" class="hidden px-3.5 py-2 rounded-2xl bg-amber-950/30 border border-amber-800/50 flex items-center justify-between text-xs text-amber-200 pop-in">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        <span class="font-bold">Select Mode Active</span>
+        <span class="text-amber-300/70 text-[11px]">— Checkboxes enabled. Tap cards to select.</span>
+      </div>
+      <button onclick="selectOnlyGreenCurrentView()" class="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-lg transition">
+        Select All Green
+      </button>
+    </div>
+
+    <!-- MAIN PLACARDS LIST -->
+    <div id="placards-container" class="space-y-2.5">
+      <!-- Injected by renderCards() -->
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div id="empty-state" class="hidden py-14 flex flex-col items-center justify-center text-center">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 flex items-center justify-center text-emerald-400 text-xl mb-2.5 shadow-lg">
+        ✓
+      </div>
+      <div class="text-sm font-bold text-white">Inbox Zero Achieved</div>
+      <p class="text-xs text-neutral-400 mt-1 max-w-xs">All vouchers in this section have arrived and been approved into brand tabs!</p>
+    </div>
+
+    <!-- BRAND TAB VAULT LIVE PREVIEW DRAWER (Shows Brand Destination) -->
+    <div class="mt-6 pt-4 border-t border-neutral-800">
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">🏷️</span>
+          <span class="text-xs font-bold text-white uppercase tracking-wider">Spendable Brand Tab Preview</span>
+        </div>
+        <select id="vault-brand-select" onchange="renderBrandTabPreview()" class="text-xs bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-1 text-slate-200 focus:outline-none">
+          <option value="Thyrocare">Thyrocare</option>
+          <option value="Lakme">Lakme</option>
+          <option value="AmazonPrime">AmazonPrime</option>
+          <option value="Decathlon">Decathlon</option>
+          <option value="Reliance">Reliance</option>
+        </select>
+      </div>
+
+      <!-- Denomination Header -->
+      <div class="p-3 rounded-2xl bg-neutral-900/60 border border-neutral-800 flex items-center justify-between text-xs mb-2">
+        <span class="text-neutral-400">Cumulative Spendable Denomination:</span>
+        <span id="vault-denom-total" class="font-bold text-[#F47A21] font-mono text-sm">₹1,500</span>
+      </div>
+
+      <!-- Brand Tab Cards List -->
+      <div id="brand-preview-cards" class="space-y-2">
+        <!-- Injected via renderBrandTabPreview() -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================================
+       BOTTOM FLOATING SPACING & ACTION DOCK
+       Accommodates WhatsApp / Double-Tick FAB at bottom-right (right-4 bottom-6)
+       ====================================================================== -->
+
+  <!-- 1. FLOATING APPROVE PILL (Appears ONLY when ALL selected are GREEN; DISAPPEARS if any RED is selected!) -->
+  <div id="floating-approve-container" class="fixed bottom-6 left-4 z-40 transition-all duration-300 -translate-y-2 opacity-0 pointer-events-none" style="right: 5rem;">
+    <!-- Pinned with right: 5rem so it completely leaves the bottom-right 56px FAB free with zero overlap! -->
+    <button onclick="executeApproveSelected()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-[0_10px_35px_rgba(16,185,129,0.5)] border border-emerald-400/30 flex items-center justify-between gap-3 active:scale-[0.98] transition-all">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span id="approve-btn-label" class="truncate">✓ Approve to Brand Tab</span>
+      </div>
+      <span id="approve-btn-count-pill" class="px-2 py-0.5 rounded-full bg-black/30 text-emerald-100 text-[11px] font-mono font-black">
+        1 Ready
+      </span>
+    </button>
+  </div>
+
+  <!-- 2. EXISTING EXPANDABLE 56px FAB DOCK (WhatsApp, Double-Tick, Tag Card) -->
+  <div id="floating-dock-container" class="fixed right-4 bottom-6 z-40 flex flex-col items-end transition-all duration-300">
+    
+    <!-- EXPANDED ACTION CIRCLES (Stack circles) -->
+    <div id="menu-expanded" class="hidden flex-col items-center gap-2.5 mb-2.5">
+      <!-- Circle 1: Tag Card (52px) -->
+      <button onclick="triggerTagAction()" class="relative w-12 h-12 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-500 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-amber-300/40" title="Tag Payment Card">
+        <span class="text-base">🏷️</span>
+      </button>
+
+      <!-- Circle 2: WhatsApp Share (52px) -->
+      <button onclick="triggerWhatsAppShare()" class="relative w-12 h-12 rounded-full bg-[#25D366] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-white/30" title="Share via WhatsApp">
+        <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
+        </svg>
+      </button>
+
+      <!-- Circle 3: Double-Tick Redeem (52px) -->
+      <button onclick="triggerRedeemAction()" class="relative w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-emerald-300/40" title="Mark as Redeemed">
+        <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 12l4 4L20 6"></path>
+          <path d="M2 12l4 4 2-2"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- COLLAPSED MASTER FAB BUTTON (56px) -->
+    <button id="btn-master-trigger" onclick="toggleFabMenu()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80" title="Actions Dock">
+      <div id="master-fab-icon" class="flex items-center justify-center">
+        <!-- SVG Icon (Double tick / sparkles / menu) -->
+        <svg class="w-6 h-6 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"></circle>
+          <circle cx="12" cy="5" r="1"></circle>
+          <circle cx="12" cy="19" r="1"></circle>
+        </svg>
+      </div>
+      <!-- Selected count badge on Master FAB -->
+      <span id="fab-badge-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-white bg-[#F47A21] rounded-full border-2 border-black shadow">0</span>
+    </button>
+  </div>
+
+  <!-- MATERIAL DETAIL SHEET (i) DRAWER -->
+  <div id="sheet-overlay" onclick="closeDetailSheet()" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden opacity-0 transition-opacity duration-200"></div>
+
+  <div id="detail-sheet" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-neutral-900 border-t border-neutral-800 rounded-t-3xl p-5 shadow-2xl z-50 hidden flex flex-col max-h-[85vh]">
+    <div class="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-4"></div>
+
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span id="sheet-brand-name" class="text-lg font-bold text-white">Brand Name</span>
+          <span id="sheet-status-badge" class="px-2 py-0.5 rounded-full text-xs font-semibold">Status</span>
+        </div>
+        <div id="sheet-subhead" class="text-xs text-neutral-400 mt-0.5 font-mono">RUPS-XXXX · IST Timestamp</div>
+      </div>
+      <button onclick="closeDetailSheet()" class="p-1 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-800">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4">
+      <!-- Voucher Code Box -->
+      <div id="sheet-code-container" class="p-3.5 rounded-2xl border flex items-center justify-between">
+        <div>
+          <div class="text-[10.5px] text-neutral-400 font-medium" id="sheet-code-label">Voucher Code Status</div>
+          <div class="text-base font-mono font-bold tracking-wider mt-0.5" id="sheet-code-value">Awaiting Delivery</div>
+        </div>
+        <button id="sheet-copy-btn" onclick="copySheetCode()" class="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-white border border-neutral-700">
+          Copy
+        </button>
+      </div>
+
+      <!-- PIN Box -->
+      <div id="sheet-pin-box" class="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-neutral-400 block uppercase font-mono">Voucher PIN</span>
+          <span id="sheet-pin-value" class="text-sm font-mono font-bold text-white mt-0.5">None</span>
+        </div>
+        <button id="sheet-copy-combo-btn" onclick="copySheetCodeAndPin()" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2 py-1">
+          Copy Code + PIN
+        </button>
+      </div>
+
+      <!-- Metadata Grid -->
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800">
+          <span class="text-neutral-500 block text-[10px] uppercase font-mono">Denomination</span>
+          <span id="sheet-amount" class="text-white font-bold">₹500</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800">
+          <span class="text-neutral-500 block text-[10px] uppercase font-mono">Payment Card</span>
+          <span id="sheet-card" class="text-white font-semibold truncate">Unassigned</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800">
+          <span class="text-neutral-500 block text-[10px] uppercase font-mono">Target Tab</span>
+          <span id="sheet-target-brand" class="text-white font-semibold">Thyrocare</span>
+        </div>
+        <div class="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800">
+          <span class="text-neutral-500 block text-[10px] uppercase font-mono">Arrival Time</span>
+          <span id="sheet-time" class="text-neutral-300 text-[11px] font-mono">20-Oct 04:02 AM</span>
+        </div>
+      </div>
+
+      <!-- Lock Guard Warning when Red -->
+      <div id="sheet-guard-warning" class="p-3 rounded-xl bg-rose-950/40 border border-rose-800/50 text-xs text-rose-300 flex items-center gap-2.5">
+        <svg class="w-4 h-4 flex-shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <div>
+          <strong>Awaiting Delivery:</strong> Voucher code has not arrived yet. It cannot be approved into brand tabs until fulfilled.
+        </div>
+      </div>
+    </div>
+
+    <!-- Sheet Footer -->
+    <div class="pt-3 border-t border-neutral-800 flex items-center gap-2">
+      <button onclick="closeDetailSheet()" class="w-1/3 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold text-xs">
+        Close
+      </button>
+      <button id="sheet-approve-btn" onclick="approveFromDetailSheet()" class="w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md bg-emerald-600 hover:bg-emerald-500 text-white transition disabled:opacity-40 disabled:cursor-not-allowed">
+        ✓ Approve to Brand Tab
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-neutral-900 text-white border border-neutral-700 px-4 py-2 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+    <span id="toast-icon">✓</span>
+    <span id="toast-msg">Notification text</span>
+  </div>
+
+  <script>
+    /* ======================================================================
+       SIMULATION DATA
+       ====================================================================== */
+    const INITIAL_INGESTED_UNTAGGED = [
+      {
+        id: 'u-1',
+        brand: 'Thyrocare',
+        bookingId: 'RUPS-BD5D6314',
+        user: '@smitioswal',
+        timeAgo: '14h ago',
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        amount: 500,
+        card: 'Unassigned',
+        targetBrand: 'Thyrocare',
+        timestampIST: '19-Oct-2026 04:12 PM IST'
+      },
+      {
+        id: 'u-2',
+        brand: 'Thyrocare',
+        bookingId: 'RUPS-70BBACDA',
+        user: '@smitioswal',
+        timeAgo: '2h ago',
+        status: 'ACTIVE',
+        code: 'THYRO-984219',
+        pin: '4432',
+        amount: 500,
+        card: 'Unassigned',
+        targetBrand: 'Thyrocare',
+        timestampIST: '20-Oct-2026 04:02 AM IST'
+      },
+      {
+        id: 'u-3',
+        brand: 'Lakme',
+        bookingId: 'RUPS-DB700CCD',
+        user: '@vibhavoswal',
+        timeAgo: '18h ago',
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        amount: 500,
+        card: 'Unassigned',
+        targetBrand: 'Lakme',
+        timestampIST: '19-Oct-2026 12:30 PM IST'
+      },
+      {
+        id: 'u-4',
+        brand: 'Kalyan',
+        bookingId: 'RUPS-CDC69FA6',
+        user: '@smitioswal',
+        timeAgo: '22h ago',
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        amount: 500,
+        card: 'Unassigned',
+        targetBrand: 'Kalyan',
+        timestampIST: '19-Oct-2026 08:15 AM IST'
+      }
+    ];
+
+    const INITIAL_INGESTED_TAGGED = [
+      {
+        id: 't-1',
+        brand: 'AmazonPrime',
+        bookingId: 'RUPS-34AB2FE3',
+        user: '@vibhavoswal',
+        timeAgo: '1h ago',
+        status: 'ACTIVE',
+        code: 'PRIME-A77610',
+        pin: null,
+        amount: 500,
+        card: 'PNB ····4012',
+        targetBrand: 'AmazonPrime',
+        timestampIST: '20-Oct-2026 05:01 AM IST'
+      },
+      {
+        id: 't-2',
+        brand: 'Decathlon',
+        bookingId: 'RUPS-8061D8FE',
+        user: '@smitioswal',
+        timeAgo: '4h ago',
+        status: 'ACTIVE',
+        code: 'DECAT-499120',
+        pin: '8812',
+        amount: 500,
+        card: 'BOB ····8821',
+        targetBrand: 'Decathlon',
+        timestampIST: '20-Oct-2026 02:15 AM IST'
+      },
+      {
+        id: 't-3',
+        brand: 'Reliance',
+        bookingId: 'RUPS-5130A9DD',
+        user: '@vibhavoswal',
+        timeAgo: '19h ago',
+        status: 'PENDING',
+        code: 'PENDING',
+        pin: null,
+        amount: 500,
+        card: 'HDFC ····1102',
+        targetBrand: 'Reliance',
+        timestampIST: '19-Oct-2026 11:20 AM IST'
+      }
+    ];
+
+    const INITIAL_SHARED = [
+      {
+        id: 's-1',
+        brand: 'Thyrocare',
+        bookingId: 'RUPS-99881122',
+        user: '@vibhavoswal',
+        timeAgo: '1d ago',
+        status: 'ACTIVE',
+        code: 'THYRO-554433',
+        pin: '1212',
+        amount: 500,
+        card: 'RuPay Select',
+        targetBrand: 'Thyrocare',
+        timestampIST: '18-Oct-2026 09:00 AM IST'
+      },
+      {
+        id: 's-2',
+        brand: 'Lakme',
+        bookingId: 'RUPS-44332211',
+        user: '@smitioswal',
+        timeAgo: '2d ago',
+        status: 'ACTIVE',
+        code: 'LAKME-887766',
+        pin: null,
+        amount: 500,
+        card: 'RuPay Select',
+        targetBrand: 'Lakme',
+        timestampIST: '17-Oct-2026 03:00 PM IST'
+      }
+    ];
+
+    const INITIAL_BRAND_VAULT = {
+      Thyrocare: [
+        { code: 'THYRO-112233', pin: '9921', amount: 500, isRecent: false, card: 'PNB ····4012' },
+        { code: 'THYRO-445566', pin: '1102', amount: 500, isRecent: false, card: 'BOB ····8821' },
+        { code: 'THYRO-778899', pin: '4452', amount: 500, isRecent: false, card: 'HDFC ····1102' }
+      ],
+      Lakme: [
+        { code: 'LAKME-223344', pin: null, amount: 500, isRecent: false, card: 'PNB ····4012' },
+        { code: 'LAKME-556677', pin: null, amount: 500, isRecent: false, card: 'BOB ····8821' }
+      ],
+      AmazonPrime: [
+        { code: 'PRIME-119922', pin: null, amount: 500, isRecent: false, card: 'HDFC ····1102' }
+      ],
+      Decathlon: [
+        { code: 'DECAT-338811', pin: '7721', amount: 500, isRecent: false, card: 'PNB ····4012' }
+      ],
+      Reliance: [
+        { code: 'RELI-994411', pin: null, amount: 500, isRecent: false, card: 'BOB ····8821' }
+      ]
+    };
+
+    let appState = {
+      primaryTab: 'ingested', // 'ingested' | 'shared'
+      ingestSubFilter: 'untagged', // 'untagged' | 'tagged'
+      isSelectMode: false, // Checkboxes hidden by default!
+      selectedIds: new Set(),
+      isFabMenuExpanded: false,
+      activeDetailVoucher: null,
+      
+      // Data collections
+      untagged: JSON.parse(JSON.stringify(INITIAL_INGESTED_UNTAGGED)),
+      tagged: JSON.parse(JSON.stringify(INITIAL_INGESTED_TAGGED)),
+      shared: JSON.parse(JSON.stringify(INITIAL_SHARED)),
+      brandVault: JSON.parse(JSON.stringify(INITIAL_BRAND_VAULT))
+    };
+
+    /* ======================================================================
+       SELECT MODE CONTROLLER (Default = No Checkboxes)
+       ====================================================================== */
+    function toggleSelectMode() {
+      appState.isSelectMode = !appState.isSelectMode;
+      
+      const btn = document.getElementById('header-select-btn');
+      const text = document.getElementById('header-select-text');
+      const banner = document.getElementById('select-mode-banner');
+
+      if (appState.isSelectMode) {
+        btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#F47A21] text-white border border-[#F47A21] shadow-md";
+        text.textContent = "Done";
+        banner.classList.remove('hidden');
+        showToast("Select Mode ON: Tap cards to select", "☑️");
+      } else {
+        btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] border border-neutral-700";
+        text.textContent = "Select";
+        banner.classList.add('hidden');
+        appState.selectedIds.clear();
+      }
+
+      renderCards();
+      updateSelectionActionUI();
+    }
+
+    function selectOnlyGreenCurrentView() {
+      const items = getCurrentTabItems();
+      appState.selectedIds.clear();
+      items.filter(v => v.status === 'ACTIVE').forEach(v => appState.selectedIds.add(v.id));
+      renderCards();
+      updateSelectionActionUI();
+      showToast("Selected all delivered (green) vouchers", "✓");
+    }
+
+    /* ======================================================================
+       NAVIGATION CONTROLLER (2-Tier Hierarchy)
+       ====================================================================== */
+    function setPrimaryTab(tab) {
+      appState.primaryTab = tab;
+      
+      const tIng = document.getElementById('tab-ingested');
+      const tSha = document.getElementById('tab-shared');
+      const subBar = document.getElementById('ingested-subtier-bar');
+
+      if (tab === 'ingested') {
+        tIng.className = "py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow";
+        tSha.className = "py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5";
+        subBar.classList.remove('hidden');
+      } else {
+        tSha.className = "py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow";
+        tIng.className = "py-2 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5";
+        subBar.classList.add('hidden');
+      }
+
+      appState.selectedIds.clear();
+      renderCards();
+      updateBadgeCounts();
+      updateSelectionActionUI();
+    }
+
+    function setIngestSubFilter(sub) {
+      appState.ingestSubFilter = sub;
+      
+      const uBtn = document.getElementById('subfilter-untagged');
+      const tBtn = document.getElementById('subfilter-tagged');
+
+      if (sub === 'untagged') {
+        uBtn.className = "px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow";
+        tBtn.className = "px-3 py-1 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center gap-1.5";
+      } else {
+        tBtn.className = "px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow";
+        uBtn.className = "px-3 py-1 rounded-xl text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center gap-1.5";
+      }
+
+      appState.selectedIds.clear();
+      renderCards();
+      updateSelectionActionUI();
+    }
+
+    function getCurrentTabItems() {
+      if (appState.primaryTab === 'shared') {
+        return appState.shared;
+      }
+      return appState.ingestSubFilter === 'untagged' ? appState.untagged : appState.tagged;
+    }
+
+    function updateBadgeCounts() {
+      document.getElementById('badge-count-ingested').textContent = appState.untagged.length + appState.tagged.length;
+      document.getElementById('badge-count-shared').textContent = appState.shared.length;
+      document.getElementById('count-untagged').textContent = appState.untagged.length;
+      document.getElementById('count-tagged').textContent = appState.tagged.length;
+    }
+
+    /* ======================================================================
+       CARD RENDERING (3-Line Placard + Dynamic Select Mode Checkbox)
+       ====================================================================== */
+    function renderCards() {
+      const container = document.getElementById('placards-container');
+      const emptyState = document.getElementById('empty-state');
+      const items = getCurrentTabItems();
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = items.map(v => {
+        const isGreen = v.status === 'ACTIVE';
+        const isSelected = appState.selectedIds.has(v.id);
+
+        // Background Tint: Green/Delivered vs Red/Pending (from Variation 2 design)
+        const bgClass = isGreen
+          ? "bg-emerald-950/20 hover:bg-emerald-950/30 border-emerald-800/40 text-emerald-100"
+          : "bg-rose-950/20 hover:bg-rose-950/30 border-rose-800/40 text-rose-100";
+
+        // Status pill indicator
+        const statusBadge = isGreen
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-700/60 font-mono">Delivered</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-900/60 text-rose-300 border border-rose-700/60 font-mono">Pending</span>';
+
+        return `
+          <div class="p-3 rounded-2xl border transition-all duration-150 flex items-center justify-between gap-3 ${bgClass} ${isSelected ? 'ring-2 ring-[#0C8C46] bg-emerald-950/40' : ''}">
+            
+            <!-- Left Info Area -->
+            <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer" onclick="handleCardInteraction('${v.id}')">
+              
+              <!-- Checkbox (VISIBLE ONLY IN SELECT MODE) -->
+              ${appState.isSelectMode ? `
+                <div class="flex-shrink-0 pop-in">
+                  <input type="checkbox" 
+                         ${isSelected ? 'checked' : ''} 
+                         onclick="event.stopPropagation(); toggleCardSelect('${v.id}')"
+                         class="w-4 h-4 rounded text-emerald-600 bg-neutral-900 border-neutral-700 focus:ring-emerald-500 cursor-pointer">
+                </div>
+              ` : ''}
+
+              <!-- 3-Line Placard Body -->
+              <div class="min-w-0 flex-1">
+                <!-- Line 1: Brand Name & Status Pill -->
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-sm text-white truncate">${v.brand}</span>
+                  ${statusBadge}
+                  ${v.card && v.card !== 'Unassigned' ? `<span class="text-[10px] font-mono text-neutral-400 px-1.5 py-0.2 rounded bg-neutral-900 border border-neutral-800 truncate">${v.card}</span>` : ''}
+                </div>
+
+                <!-- Line 2: RUPS- Booking ID with simple "Copy" button -->
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="font-mono text-xs text-slate-300 font-semibold tracking-wide">${v.bookingId}</span>
+                  <button onclick="event.stopPropagation(); copyText('${v.bookingId}', 'Booking ID copied')" class="text-[11px] font-semibold text-neutral-300 hover:text-white bg-neutral-800/80 hover:bg-neutral-700 px-2 py-0.5 rounded-md border border-neutral-700 transition">
+                    Copy
+                  </button>
+                  ${isGreen ? `<span class="text-[10px] text-emerald-400 font-mono font-bold">✓ Code ready in (i)</span>` : ''}
+                </div>
+
+                <!-- Line 3: User & Timestamp -->
+                <div class="text-[11px] text-neutral-400 mt-0.5 flex items-center gap-1.5 truncate">
+                  <span>${v.user}</span>
+                  <span>·</span>
+                  <span>${v.timeAgo}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Material Detail (i) Button -->
+            <button onclick="openDetailSheet('${v.id}')" class="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition flex-shrink-0" title="Inspect Voucher Details">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ======================================================================
+       INTERACTION & STRICT VISIBILITY OF APPROVE BUTTON
+       ====================================================================== */
+    function handleCardInteraction(id) {
+      if (appState.isSelectMode) {
+        toggleCardSelect(id);
+      } else {
+        openDetailSheet(id);
+      }
+    }
+
+    function toggleCardSelect(id) {
+      if (appState.selectedIds.has(id)) {
+        appState.selectedIds.delete(id);
+      } else {
+        appState.selectedIds.add(id);
+      }
+      renderCards();
+      updateSelectionActionUI();
+    }
+
+    /**
+     * CORE USER REQUIREMENT:
+     * "The bottom button should appear only when ALL green are selected
+     *  and should disappear when ANY red is selected"
+     * "Accommodates that WhatsApp/double tick hovering button spacing"
+     */
+    function updateSelectionActionUI() {
+      const approveContainer = document.getElementById('floating-approve-container');
+      const approveLabel = document.getElementById('approve-btn-label');
+      const countPill = document.getElementById('approve-btn-count-pill');
+      const fabBadge = document.getElementById('fab-badge-count');
+
+      const allItems = [...appState.untagged, ...appState.tagged, ...appState.shared];
+      const selected = allItems.filter(v => appState.selectedIds.has(v.id));
+      const totalSelected = selected.length;
+
+      // Update badge on the 56px FAB dock
+      if (totalSelected > 0) {
+        fabBadge.textContent = totalSelected;
+        fabBadge.classList.remove('hidden');
+      } else {
+        fabBadge.classList.add('hidden');
+      }
+
+      // Check delivery states of selected items
+      const hasAnyRed = selected.some(v => v.status === 'PENDING' || v.code === 'PENDING');
+      const allGreen = totalSelected > 0 && selected.every(v => v.status === 'ACTIVE');
+
+      if (totalSelected > 0 && allGreen && !hasAnyRed) {
+        // STRICT RULE: ALL SELECTED ARE GREEN -> SLIDE IN / APPEAR!
+        approveContainer.classList.remove('-translate-y-2', 'opacity-0', 'pointer-events-none');
+        approveContainer.classList.add('translate-y-0', 'opacity-100');
+        
+        approveLabel.textContent = `✓ Approve ${totalSelected} to Brand Tab${totalSelected > 1 ? 's' : ''}`;
+        countPill.textContent = `${totalSelected} Ready`;
+      } else {
+        // STRICT RULE: IF ANY RED IS SELECTED OR ZERO SELECTED -> COMPLETELY DISAPPEAR!
+        approveContainer.classList.add('-translate-y-2', 'opacity-0', 'pointer-events-none');
+        approveContainer.classList.remove('translate-y-0', 'opacity-100');
+      }
+    }
+
+    /* ======================================================================
+       APPROVE EXECUTION (Option A: Move to Brand Tab with 72h Royal Blue)
+       ====================================================================== */
+    function executeApproveSelected() {
+      const allItems = [...appState.untagged, ...appState.tagged];
+      const selected = allItems.filter(v => appState.selectedIds.has(v.id));
+
+      if (selected.length === 0) return;
+
+      // Redundant Safety Guard
+      if (selected.some(v => v.status === 'PENDING')) {
+        showToast("Error: Cannot approve pending vouchers!", "⚠️");
+        return;
+      }
+
+      // Move into Brand Vault with isRecent: true (triggers 72h Royal Blue Tint)
+      selected.forEach(v => {
+        const brand = v.targetBrand || v.brand;
+        if (!appState.brandVault[brand]) appState.brandVault[brand] = [];
+
+        appState.brandVault[brand].unshift({
+          code: v.code,
+          pin: v.pin,
+          amount: v.amount,
+          card: v.card || 'RuPay Select',
+          isRecent: true // 72-Hour Royal Blue Flag
+        });
+      });
+
+      // Remove from Ingested (Untagged & Tagged) - Inbox Zero!
+      appState.untagged = appState.untagged.filter(v => !appState.selectedIds.has(v.id));
+      appState.tagged = appState.tagged.filter(v => !appState.selectedIds.has(v.id));
+
+      const approvedCount = selected.length;
+      appState.selectedIds.clear();
+
+      // Exit Select Mode automatically on completion
+      appState.isSelectMode = false;
+      document.getElementById('header-select-text').textContent = "Select";
+      document.getElementById('header-select-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] border border-neutral-700";
+      document.getElementById('select-mode-banner').classList.add('hidden');
+
+      updateBadgeCounts();
+      renderCards();
+      renderBrandTabPreview();
+      updateSelectionActionUI();
+
+      showToast(`✓ Approved ${approvedCount} voucher(s) into brand tab with 72h Royal Blue styling!`, "🏷️");
+    }
+
+    /* ======================================================================
+       BRAND TAB PREVIEW (72-Hour Royal Blue Left Accent Stripe)
+       ====================================================================== */
+    function renderBrandTabPreview() {
+      const brand = document.getElementById('vault-brand-select').value;
+      const vouchers = appState.brandVault[brand] || [];
+      const listEl = document.getElementById('brand-preview-cards');
+      const totalEl = document.getElementById('vault-denom-total');
+
+      const sum = vouchers.reduce((acc, v) => acc + v.amount, 0);
+      totalEl.textContent = `₹${sum.toLocaleString('en-IN')}`;
+
+      if (vouchers.length === 0) {
+        listEl.innerHTML = `<div class="p-3 text-center text-xs text-neutral-500">No vouchers in ${brand} yet.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = vouchers.map(v => {
+        // 72-HOUR ROYAL BLUE ACCENT STRIPE & SOFT ICE-BLUE TINT
+        const isRecent = v.isRecent === true;
+
+        const cardStyle = isRecent
+          ? "border-l-4 border-l-blue-500 bg-blue-950/25 border-neutral-800 text-blue-100 shadow-md"
+          : "border-l-4 border-l-neutral-700 bg-neutral-900 border-neutral-800 text-neutral-200";
+
+        const badge = isRecent
+          ? '<span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-blue-900/60 text-blue-300 border border-blue-700/50">New (72h)</span>'
+          : '';
+
+        return `
+          <div class="p-2.5 rounded-xl border transition-all ${cardStyle} flex items-center justify-between text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white">${brand}</span>
+                <span class="text-emerald-400 font-mono font-bold">₹${v.amount}</span>
+                ${badge}
+              </div>
+              <div class="text-[11px] font-mono mt-0.5 text-neutral-300 flex items-center gap-1.5">
+                <span>${v.code}</span>
+                ${v.pin ? `<span>· PIN: ${v.pin}</span>` : ''}
+              </div>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">Active</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ======================================================================
+       DETAIL SHEET (i) CONTROLLER
+       ====================================================================== */
+    function openDetailSheet(id) {
+      const all = [...appState.untagged, ...appState.tagged, ...appState.shared];
+      const v = all.find(x => x.id === id);
+      if (!v) return;
+      appState.activeDetailVoucher = v;
+
+      document.getElementById('sheet-brand-name').textContent = v.brand;
+      document.getElementById('sheet-subhead').textContent = `${v.bookingId} · ${v.timestampIST}`;
+      document.getElementById('sheet-amount').textContent = `₹${v.amount}`;
+      document.getElementById('sheet-card').textContent = v.card;
+      document.getElementById('sheet-target-brand').textContent = v.targetBrand;
+      document.getElementById('sheet-time').textContent = v.timestampIST.split(' ')[0] + ' ' + v.timeAgo;
+
+      const isGreen = v.status === 'ACTIVE';
+      const badge = document.getElementById('sheet-status-badge');
+      const codeBox = document.getElementById('sheet-code-container');
+      const codeVal = document.getElementById('sheet-code-value');
+      const copyBtn = document.getElementById('sheet-copy-btn');
+      const pinBox = document.getElementById('sheet-pin-box');
+      const warning = document.getElementById('sheet-guard-warning');
+      const approveBtn = document.getElementById('sheet-approve-btn');
+
+      if (isGreen) {
+        badge.textContent = "Delivered & Ready";
+        badge.className = "px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/60 font-mono";
+
+        codeBox.className = "p-3.5 rounded-2xl border border-emerald-800/60 bg-emerald-950/30 flex items-center justify-between";
+        codeVal.textContent = v.code;
+        codeVal.className = "text-base font-mono font-bold tracking-wider text-emerald-300 mt-0.5";
+        copyBtn.classList.remove('hidden');
+
+        if (v.pin) {
+          pinBox.classList.remove('hidden');
+          document.getElementById('sheet-pin-value').textContent = v.pin;
+        } else {
+          pinBox.classList.add('hidden');
+        }
+
+        warning.classList.add('hidden');
+        approveBtn.disabled = false;
+        approveBtn.className = "w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer transition";
+        approveBtn.innerHTML = `✓ Approve to ${v.targetBrand} Tab`;
+      } else {
+        badge.textContent = "Awaiting Delivery";
+        badge.className = "px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-900/60 text-rose-300 border border-rose-700/60 font-mono";
+
+        codeBox.className = "p-3.5 rounded-2xl border border-rose-800/60 bg-rose-950/30 flex items-center justify-between";
+        codeVal.textContent = "Awaiting Delivery";
+        codeVal.className = "text-sm font-semibold text-rose-300 mt-0.5";
+        copyBtn.classList.add('hidden');
+        pinBox.classList.add('hidden');
+
+        warning.classList.remove('hidden');
+        approveBtn.disabled = true;
+        approveBtn.className = "w-2/3 py-2.5 rounded-xl font-bold text-xs shadow-md bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-60";
+        approveBtn.innerHTML = `🔒 Approval Locked`;
+      }
+
+      document.getElementById('sheet-overlay').classList.remove('hidden');
+      document.getElementById('detail-sheet').classList.remove('hidden');
+      document.getElementById('detail-sheet').classList.add('sheet-enter');
+      setTimeout(() => document.getElementById('sheet-overlay').classList.remove('opacity-0'), 10);
+    }
+
+    function closeDetailSheet() {
+      const overlay = document.getElementById('sheet-overlay');
+      const sheet = document.getElementById('detail-sheet');
+      overlay.classList.add('opacity-0');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        sheet.classList.add('hidden');
+        sheet.classList.remove('sheet-enter');
+        appState.activeDetailVoucher = null;
+      }, 200);
+    }
+
+    function approveFromDetailSheet() {
+      if (!appState.activeDetailVoucher || appState.activeDetailVoucher.status !== 'ACTIVE') return;
+      const v = appState.activeDetailVoucher;
+      appState.selectedIds.clear();
+      appState.selectedIds.add(v.id);
+      closeDetailSheet();
+      executeApproveSelected();
+    }
+
+    function copySheetCode() {
+      if (!appState.activeDetailVoucher || appState.activeDetailVoucher.status !== 'ACTIVE') return;
+      copyText(appState.activeDetailVoucher.code, "Voucher code copied");
+    }
+
+    function copySheetCodeAndPin() {
+      if (!appState.activeDetailVoucher || appState.activeDetailVoucher.status !== 'ACTIVE') return;
+      const v = appState.activeDetailVoucher;
+      const str = v.pin ? `${v.code} | PIN: ${v.pin}` : v.code;
+      copyText(str, "Code & PIN copied together");
+    }
+
+    /* ======================================================================
+       FAB ACTIONS & TOAST
+       ====================================================================== */
+    function toggleFabMenu() {
+      appState.isFabMenuExpanded = !appState.isFabMenuExpanded;
+      const menu = document.getElementById('menu-expanded');
+      if (appState.isFabMenuExpanded) {
+        menu.classList.remove('hidden');
+        menu.classList.add('flex');
+      } else {
+        menu.classList.add('hidden');
+        menu.classList.remove('flex');
+      }
+    }
+
+    function triggerTagAction() {
+      toggleFabMenu();
+      if (appState.selectedIds.size === 0) {
+        showToast("Select vouchers to tag payment card", "🏷️");
+        return;
+      }
+      showToast(`Tagging card for ${appState.selectedIds.size} vouchers`, "🏷️");
+    }
+
+    function triggerWhatsAppShare() {
+      toggleFabMenu();
+      if (appState.selectedIds.size === 0) {
+        showToast("Select vouchers to share on WhatsApp", "📤");
+        return;
+      }
+      showToast(`Formatting WhatsApp share for ${appState.selectedIds.size} vouchers`, "📤");
+    }
+
+    function triggerRedeemAction() {
+      toggleFabMenu();
+      if (appState.selectedIds.size === 0) {
+        showToast("Select vouchers to mark redeemed", "✓");
+        return;
+      }
+      showToast(`Marking ${appState.selectedIds.size} vouchers as redeemed`, "✓");
+    }
+
+    function triggerArchiveVisible() {
+      showToast("Archived visible items from UI", "📦");
+    }
+
+    function copyText(str, msg) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(str).then(() => showToast(msg || "Copied to clipboard", "📋"));
+      } else {
+        showToast(msg || "Copied to clipboard", "📋");
+      }
+    }
+
+    function showToast(msg, icon = "✓") {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      document.getElementById('toast-icon').textContent = icon;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2400);
+    }
+
+    function resetSimulation() {
+      appState.untagged = JSON.parse(JSON.stringify(INITIAL_INGESTED_UNTAGGED));
+      appState.tagged = JSON.parse(JSON.stringify(INITIAL_INGESTED_TAGGED));
+      appState.shared = JSON.parse(JSON.stringify(INITIAL_SHARED));
+      appState.brandVault = JSON.parse(JSON.stringify(INITIAL_BRAND_VAULT));
+      appState.selectedIds.clear();
+      appState.isSelectMode = false;
+      document.getElementById('header-select-text').textContent = "Select";
+      document.getElementById('header-select-btn').className = "px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] border border-neutral-700";
+      document.getElementById('select-mode-banner').classList.add('hidden');
+      updateBadgeCounts();
+      renderCards();
+      renderBrandTabPreview();
+      updateSelectionActionUI();
+      showToast("Reset to initial simulation state", "🔄");
+    }
+
+    // INITIAL MOUNT
+    document.addEventListener('DOMContentLoaded', () => {
+      updateBadgeCounts();
+      renderCards();
+      renderBrandTabPreview();
+    });
+  </script>
+</body>
+</html>

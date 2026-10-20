@@ -1100,6 +1100,19 @@
     <!-- Backdrop scrim when Stack Circles expand -->
     <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200"></div>
 
+    <!-- Floating Approve Button (Appears ONLY when ALL selected items in Ingested are Green; DISAPPEARS if any Red is selected!) -->
+    <div id="floating-approve-container" class="hidden mobile-view fixed left-4 z-40 transition-all duration-300 pointer-events-none -translate-y-2 opacity-0" style="right: 5.5rem; bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
+      <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-[0_10px_35px_rgba(16,185,129,0.5)] border border-emerald-400/30 flex items-center justify-between gap-3 active:scale-[0.98] transition-all">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+          <span id="floating-approve-label" class="truncate">✓ Approve to Brand Tab</span>
+        </div>
+        <span id="floating-approve-count-pill" class="px-2 py-0.5 rounded-full bg-black/30 text-emerald-100 text-[11px] font-mono-apple font-black shrink-0">
+          Ready
+        </span>
+      </button>
+    </div>
+
     <!-- Expandable Stack Circles Dock (56px FAB) -->
     <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-end transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
       
@@ -2099,8 +2112,14 @@
 
     /* --- VOUCHER DETAIL iOS BOTTOM SHEET (MATERIAL SVG ℹ️) --- */
     function openVoucherDetailSheet(id) {
-      let act = state.vouchers.find(v => v.id === id || v.code === id);
+      let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
+      let isStaging = !!act;
       let isShared = false;
+
+      if (!act) {
+        act = state.vouchers.find(v => v.id === id || v.code === id);
+      }
+
       if (!act) {
         const s = sharedActivity.find(x => x.code === id || ('shared-' + x.code) === id);
         if (s) {
@@ -2133,7 +2152,11 @@
       const relTime = formatRelativeTime(timeStr);
 
       const catEl = document.getElementById('vdetail-category');
-      if (catEl) catEl.textContent = isShared ? 'SHARED ACTIVITY ARCHIVE' : `INGESTED VOUCHER (${isTagged ? 'TAGGED' : 'UNTAGGED'})`;
+      if (catEl) {
+        if (isShared) catEl.textContent = 'SHARED ACTIVITY ARCHIVE';
+        else if (isStaging) catEl.textContent = `INGESTED STAGING · ${isTagged ? 'TAGGED' : 'UNTAGGED'}`;
+        else catEl.textContent = `${brandDisplay.toUpperCase()} VAULT PASS`;
+      }
 
       const titleEl = document.getElementById('vdetail-title');
       if (titleEl) titleEl.textContent = `${brandDisplay}${act.amount > 0 ? ` · ₹${act.amount.toLocaleString()}` : ''}`;
@@ -2192,6 +2215,13 @@
               </div>
             ` : ''}
 
+            ${isStaging && act.targetBrand ? `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-neutral-400">Destination Brand Tab:</span>
+                <span class="font-mono-apple text-emerald-400 font-bold">${act.targetBrand}</span>
+              </div>
+            ` : ''}
+
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">Account Tag:</span>
               <span class="font-mono-apple text-blue-400 font-bold">@${act.account || '-'}</span>
@@ -2216,7 +2246,7 @@
 
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">Cloud Sync Origin:</span>
-              <span class="text-neutral-400 text-[11px] font-mono-apple">${isShared ? 'Shared Activity Tab' : 'Gmail Sync (CronCode.gs)'}</span>
+              <span class="text-neutral-400 text-[11px] font-mono-apple">${isShared ? 'Shared Activity Tab' : (isStaging ? '"New" Tab Staging (CronCode.gs)' : 'Brand Tab Vault')}</span>
             </div>
           </div>
         `;
@@ -2231,6 +2261,26 @@
             </button>
             <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-all active:scale-95">
               Dismiss
+            </button>
+          `;
+        } else if (isStaging) {
+          footerEl.innerHTML = `
+            ${!isTagged ? `
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95">
+                🏷️ Tag Card
+              </button>
+            ` : ''}
+            ${hasArrived ? `
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); executeApproveSelectedStaging();" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95">
+                ✓ Approve to Brand Tab
+              </button>
+            ` : `
+              <div class="flex-1 py-2.5 px-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-neutral-500 text-center text-xs font-semibold">
+                🔒 Awaiting Delivery
+              </div>
+            `}
+            <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
+              Done
             </button>
           `;
         } else {
@@ -2855,22 +2905,21 @@
           }
         } else {
           context = 'ingested';
-          const visibleIngested = state.vouchers.filter(v =>
-            v.displayInUI !== false &&
-            !isVoucherRedeemed(v) &&
-            v.timestampIST &&
-            (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
-          );
+          const visibleIngested = (state.staging || []).filter(s => {
+            if (s.displayInUI === false) return false;
+            const tagged = isCardTagged(s.card);
+            return state.ingestFilter === 'tagged' ? tagged : !tagged;
+          });
           if (state.isSelectMode) {
-            targets = visibleIngested.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code));
+            targets = visibleIngested.filter(s => state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code));
             if (!targets.length) {
-              showToast("Please select ingested items to clear");
+              showToast("Please select items to archive");
               return;
             }
           } else {
             targets = [...visibleIngested];
             if (!targets.length) {
-              showToast("No ingested items to clear");
+              showToast("No items to archive");
               return;
             }
           }
@@ -3022,7 +3071,8 @@
       pendingShareVoucher: null,
       accounts: [],
       cards: [],
-      vouchers: []
+      vouchers: [],
+      staging: []
     };
 
     const MATRIX_RULES = [
@@ -3334,6 +3384,24 @@
           await saveEncryptedAccounts(state.accounts);
         }
 
+        if (data.staging && Array.isArray(data.staging)) {
+          state.staging = data.staging.map((s, idx) => ({
+            id: 'staging-' + (s.bookingId || idx),
+            bookingId: s.bookingId || ('#S' + (idx + 1)),
+            brand: s.brand || s.targetBrand || '⚡ Unassigned',
+            targetBrand: s.targetBrand || s.brand || '⚡ Unassigned',
+            code: s.code || 'PENDING',
+            pin: s.pin || null,
+            amount: Number(s.amount) || 500,
+            dateOfIssue: s.dateOfIssue || '',
+            account: s.account || '-',
+            card: (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned',
+            status: (s.status || 'PENDING').toUpperCase(),
+            timestampIST: s.timestampIST || null,
+            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
+          }));
+        }
+
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
         const sheetLink = document.getElementById('sheet-link-btn');
         if (sheetLink) sheetLink.href = sheetUrl;
@@ -3506,28 +3574,23 @@
         const nowMs = Date.now();
         let allActivities = [];
 
-        // 1. Ingested from Gmail / Active Vault (strictly within 7 days, valid timestampIST, displayInUI !== false, exclude redeemed)
-        state.vouchers.filter(v => {
-          if (v.displayInUI === false) return false;
-          if (isVoucherRedeemed(v)) return false;
-          if (!v.timestampIST || String(v.timestampIST).trim() === '' || String(v.timestampIST).trim() === 'null') return false;
-          const timeMs = parseTimestamp(v.timestampIST);
-          return timeMs > 0 && (nowMs - timeMs) <= SEVEN_DAYS_MS;
-        }).forEach(v => {
+        // 1. Ingested from "New" Tab Staging Queue (Inbox Zero model: displayed until approved into brand tabs!)
+        (state.staging || []).filter(s => s.displayInUI !== false).forEach(s => {
           allActivities.push({
             type: 'INGESTED',
-            id: v.id,
-            bookingId: v.bookingId || '',
-            code: v.code,
-            brand: v.brand,
-            amount: v.amount,
-            pin: v.pin,
-            account: v.account || '-',
-            card: v.card || 'Unassigned',
-            timestampStr: v.timestampIST,
-            timestampMs: parseTimestamp(v.timestampIST),
-            status: v.status || 'ACTIVE',
-            expiry: v.expiry
+            id: s.id,
+            bookingId: s.bookingId || '',
+            code: s.code,
+            brand: s.brand,
+            targetBrand: s.targetBrand || s.brand,
+            amount: s.amount,
+            pin: s.pin,
+            account: s.account || '-',
+            card: s.card || 'Unassigned',
+            timestampStr: s.timestampIST,
+            timestampMs: parseTimestamp(s.timestampIST),
+            status: s.status || 'PENDING',
+            expiry: s.expiry || '31 Dec 2026'
           });
         });
 
@@ -4043,16 +4106,28 @@
         const isChecked = state.selectedIds.has(v.id);
         const vBrandName = getBrandDisplayName(v.brand);
 
+        const timeMs = v.timestampIST ? parseTimestamp(v.timestampIST) : 0;
+        const isRecentArrival = v.isRecent === true || (timeMs > 0 && (Date.now() - timeMs) <= (72 * 3600 * 1000));
+
+        const cardStripeClass = isRecentArrival
+          ? 'border-l-4 border-l-blue-500 bg-blue-950/25 border-neutral-800'
+          : (isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700 bg-gradient-to-br from-neutral-900 to-neutral-950');
+
+        const recentBadge = isRecentArrival
+          ? '<span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-blue-900/60 text-blue-300 border border-blue-700/50 font-mono-apple">New (72h)</span>'
+          : '';
+
         return `
           <div id="mb-card-${v.id}" 
                data-code="${v.code}" 
                onclick="handleCardClick('${v.id}')" 
-               class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
+               class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
             <!-- Top Row: Checkbox (visible ONLY in select mode), PASS #, Status -->
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
                 <span class="font-mono-apple font-bold text-[#F47A21]/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
+                ${recentBadge}
               </div>
               <div class="flex items-center gap-1.5">
                 ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-[#F47A21]/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
@@ -4495,6 +4570,127 @@
         tagBadge.textContent = count;
       }
       updateMasterTriggerIcon();
+
+      // FLOATING APPROVE BUTTON VISIBILITY:
+      // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
+      // DISAPPEARS COMPLETELY if ANY RED (PENDING) item is selected or count is 0
+      const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
+      const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
+      const approveContainer = document.getElementById('floating-approve-container');
+      const approveLabel = document.getElementById('floating-approve-label');
+      const countPill = document.getElementById('floating-approve-count-pill');
+
+      if (approveContainer) {
+        if (isIngestedView && count > 0) {
+          const selectedStaging = (state.staging || []).filter(s =>
+            state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
+          );
+
+          const hasAnyRed = selectedStaging.some(s => s.status === 'PENDING' || s.code === 'PENDING' || !s.code);
+          const allGreen = selectedStaging.length > 0 && selectedStaging.every(s => s.status === 'ACTIVE' && s.code !== 'PENDING' && !!s.code);
+
+          if (allGreen && !hasAnyRed && selectedStaging.length === count) {
+            approveContainer.classList.remove('hidden', '-translate-y-2', 'opacity-0', 'pointer-events-none');
+            approveContainer.classList.add('translate-y-0', 'opacity-100');
+            if (approveLabel) approveLabel.textContent = `✓ Approve ${count} to Brand Tab${count > 1 ? 's' : ''}`;
+            if (countPill) countPill.textContent = `${count} Ready`;
+          } else {
+            approveContainer.classList.add('-translate-y-2', 'opacity-0', 'pointer-events-none');
+            approveContainer.classList.remove('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+              if (approveContainer.classList.contains('opacity-0')) {
+                approveContainer.classList.add('hidden');
+              }
+            }, 250);
+          }
+        } else {
+          approveContainer.classList.add('-translate-y-2', 'opacity-0', 'pointer-events-none');
+          approveContainer.classList.remove('translate-y-0', 'opacity-100');
+          approveContainer.classList.add('hidden');
+        }
+      }
+    }
+
+    /* --- BATCH APPROVE STAGED GREEN VOUCHERS TO BRAND TABS --- */
+    async function executeApproveSelectedStaging() {
+      const selectedStaging = (state.staging || []).filter(s =>
+        state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
+      );
+
+      if (!selectedStaging.length) return;
+
+      if (selectedStaging.some(s => s.status === 'PENDING' || s.code === 'PENDING' || !s.code)) {
+        showToast('Cannot approve pending vouchers awaiting delivery');
+        return;
+      }
+
+      const bookingIds = selectedStaging.map(s => s.bookingId).filter(Boolean);
+      const approvedCount = selectedStaging.length;
+
+      // 1. Optimistic UI: Add to state.vouchers with isRecent = true
+      selectedStaging.forEach(s => {
+        const canonicalBrand = s.targetBrand || s.brand || '⚡ Unassigned';
+        state.vouchers.unshift({
+          id: 'v-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+          bookingId: s.bookingId,
+          brand: canonicalBrand,
+          title: (canonicalBrand || 'Voucher') + ' Voucher',
+          amount: s.amount || 500,
+          code: s.code,
+          pin: s.pin || null,
+          account: s.account || '-',
+          card: s.card || 'Unassigned',
+          expiry: s.dateOfIssue || '31 Dec 2026',
+          redeemedOn: null,
+          timestampIST: s.timestampIST || nowIST(),
+          displayInUI: true,
+          status: 'ACTIVE',
+          isRecent: true // 72-Hour Royal Blue Flag
+        });
+      });
+
+      // 2. Remove from state.staging (Inbox Zero)
+      const bookingIdSet = new Set(bookingIds);
+      state.staging = state.staging.filter(s => !bookingIdSet.has(s.bookingId));
+
+      // 3. Clear selection and exit Select Mode
+      state.selectedIds.clear();
+      collapseActionMenu();
+      if (state.isSelectMode) {
+        state.isSelectMode = false;
+        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
+        const dtBtn = document.getElementById('dt-select-btn');
+        if (dtBtn) dtBtn.textContent = 'Select Multiple';
+        if (mbBtn) {
+          mbBtn.textContent = 'Select';
+          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
+          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
+        }
+      }
+
+      renderVault();
+      updateFloatingDock();
+      showToast(`✓ Approved ${approvedCount} voucher${approvedCount > 1 ? 's' : ''} to brand tab!`);
+
+      // 4. Background Sync: POST action APPROVE_STAGING
+      try {
+        const token = getSessionToken();
+        const res = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          body: JSON.stringify({
+            token: token,
+            auth: VAULT_AUTH_KEY,
+            action: 'APPROVE_STAGING',
+            bookingIds: bookingIds
+          })
+        });
+        const resData = await res.json();
+        if (resData.error) {
+          console.warn('Backend approval error:', resData.error);
+        }
+      } catch (err) {
+        console.warn('Network error during staging approval:', err);
+      }
     }
 
     /* --- POPUP: TAG PAYMENT CARD LOGIC --- */
@@ -4674,15 +4870,8 @@
 
     function handleCardClick(id) {
       if (!state.isSelectMode) {
-        state.isSelectMode = true;
-        const mbBtn = document.getElementById('mb-select-btn') || document.getElementById('mb-select-toggle');
-        const dtBtn = document.getElementById('dt-select-btn');
-        if (dtBtn) dtBtn.textContent = 'Done';
-        if (mbBtn) {
-          mbBtn.textContent = 'Done';
-          mbBtn.classList.remove('bg-neutral-800', 'text-[#F47A21]');
-          mbBtn.classList.add('bg-[#F47A21]', 'text-white', 'shadow-md');
-        }
+        openVoucherDetailSheet(id);
+        return;
       }
       toggleSelectVoucher(id);
     }
