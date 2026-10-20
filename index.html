@@ -547,6 +547,23 @@
       100% { transform: scaleX(1); }
     }
 
+    /* Frosted Glass Island (Option 1) */
+    .dock-frosted-island {
+      background: rgba(24, 21, 22, 0.60);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="light"] .dock-frosted-island,
+    html.light .dock-frosted-island {
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.12), 0 4px 14px rgba(0, 0, 0, 0.06);
+    }
+
     /* Staggered Spring Pop for Stack Circles */
     .spring-pop-item-1 {
       animation: springPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.04s forwards;
@@ -1099,7 +1116,7 @@
     </main>
 
     <!-- Backdrop scrim when Stack Circles expand -->
-    <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200"></div>
+    <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px] transition-opacity duration-200"></div>
 
     <!-- Floating Approve Button (Appears ONLY when ALL selected items in Ingested are Green; DISAPPEARS if any Red is selected!) -->
     <div id="floating-approve-container" class="hidden mobile-view fixed left-4 z-40 transition-all duration-300 pointer-events-none -translate-y-2 opacity-0" style="right: 5.5rem; bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
@@ -1114,29 +1131,31 @@
       </button>
     </div>
 
-    <!-- Expandable Stack Circles Dock (56px FAB) -->
-    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-end transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
+    <!-- Expandable Floating Action Dock (Pill) -->
+    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-center transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
       
-      <!-- EXPANDED STATE: STACK CIRCLES (NO LITERAL TEXT) -->
-      <div id="menu-expanded" class="hidden flex-col items-center gap-3 mb-3">
-        <!-- 1. Top Circle: Tag Card Button (56px x 56px) -->
-        <button id="btn-tag-card-fab" onclick="triggerTagPopup()" class="spring-pop-item-3 relative w-14 h-14 rounded-full bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-500 text-white shadow-[0_8px_30px_rgba(245,158,11,0.6)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-amber-300/40" title="Tag Payment Card">
-          <span class="text-xl">🏷️</span>
-          <span class="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 flex items-center justify-center text-[10px] font-black text-black bg-white rounded-full border border-black shadow" id="tag-badge-count">0</span>
+      <!-- EXPANDED STATE: FROSTED GLASS ISLAND (OPTION 1) -->
+      <div id="menu-expanded" class="hidden flex-col items-center gap-3 p-2 rounded-full dock-frosted-island mb-3 transition-all duration-300">
+        <!-- 1. Top Circle: Tag Card Button -->
+        <button id="btn-tag-card-fab" onclick="triggerTagPopup()" class="spring-pop-item-3 relative w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-white shadow-[0_8px_20px_rgba(245,158,11,0.4)] flex items-center justify-center active:scale-95 transition-all border border-amber-300/30" title="Tag Payment Card">
+          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+            <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+          </svg>
+          <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black text-black bg-white rounded-full border border-black/20 shadow" id="tag-badge-count">0</span>
         </button>
 
-        <!-- 2. Middle Circle: WhatsApp Button (56px x 56px) -->
-        <button onclick="triggerWhatsAppShare()" class="spring-pop-item-2 relative w-14 h-14 rounded-full bg-[#25D366] text-white shadow-[0_8px_30px_rgba(37,211,102,0.6)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-white/30" title="Share via WhatsApp">
-          <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24">
+        <!-- 2. Middle Circle: WhatsApp Button -->
+        <button onclick="triggerWhatsAppShare()" class="spring-pop-item-2 relative w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-[0_8px_20px_rgba(37,211,102,0.4)] flex items-center justify-center active:scale-95 transition-all border border-white/20" title="Share via WhatsApp">
+          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
           </svg>
         </button>
 
-        <!-- 3. Bottom Circle: Redeem Double-Tick Button (56px x 56px) -->
-        <button onclick="batchMarkAsRedeemed()" class="spring-pop-item-1 relative w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 text-white shadow-[0_8px_30px_rgba(16,185,129,0.6)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all border border-emerald-300/40" title="Mark Selected as Redeemed">
-          <svg class="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M7 12l4 4L20 6"></path>
-            <path d="M2 12l4 4 2-2"></path>
+        <!-- 3. Bottom Circle: Redeem Button -->
+        <button onclick="batchMarkAsRedeemed()" class="spring-pop-item-1 relative w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-[0_8px_20px_rgba(12,140,70,0.4)] flex items-center justify-center active:scale-95 transition-all border border-emerald-300/30" title="Mark Selected as Redeemed">
+          <svg class="w-6 h-6 stroke-white fill-none" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6L7 17l-5-5"></path>
+            <path d="M22 10l-7.5 7.5-1.5-1.5"></path>
           </svg>
         </button>
       </div>
@@ -4652,12 +4671,12 @@
       if (!slot || !triggerBtn) return;
       if (isMenuExpanded) {
         slot.innerHTML = CLOSE_ICON;
-        triggerBtn.classList.remove('border-emerald-500/60');
+        triggerBtn.classList.remove('border-emerald-500/60', 'border-[#0C8C46]/80');
         triggerBtn.classList.add('border-neutral-500', 'bg-neutral-800');
         if (badgeMaster) badgeMaster.classList.add('hidden');
       } else {
         slot.innerHTML = INTERLOCK_COMBO_ICON;
-        triggerBtn.classList.add('border-emerald-500/60');
+        triggerBtn.classList.add('border-[#0C8C46]/80');
         triggerBtn.classList.remove('border-neutral-500', 'bg-neutral-800');
         if (badgeMaster) {
           if (state.selectedIds.size > 0) {
