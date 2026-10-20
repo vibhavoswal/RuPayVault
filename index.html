@@ -1675,6 +1675,18 @@
       }
     }
 
+    /* --- RESILIENT TIMEOUT SIGNAL (AbortSignal.timeout with AbortController fallback) --- */
+    function createTimeoutSignal(timeoutMs = 35000) {
+      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+        try {
+          return { signal: AbortSignal.timeout(timeoutMs), cleanup: () => {} };
+        } catch (e) {}
+      }
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeoutMs);
+      return { signal: controller.signal, cleanup: () => clearTimeout(id) };
+    }
+
     /* --- EMAIL OTP REQUEST & COOLDOWN --- */
     async function requestOtp() {
       const btn = document.getElementById('btn-request-otp');
@@ -1686,11 +1698,14 @@
       if (btnText) btnText.textContent = 'Sending code...';
       if (feedback) feedback.textContent = '';
 
+      const { signal, cleanup } = createTimeoutSignal(25000);
       try {
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
+          signal: signal,
           body: JSON.stringify({ action: 'REQUEST_OTP' })
         });
+        cleanup();
         const data = await res.json();
         if (data && data.success) {
           showToast('Verification code sent to email');
@@ -1706,7 +1721,8 @@
           }
         }
       } catch (err) {
-        if (feedback) feedback.textContent = 'Network error. Please try again.';
+        cleanup();
+        if (feedback) feedback.textContent = err.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Network error. Please try again.';
         if (btn) btn.disabled = false;
         if (btnText) btnText.textContent = 'Send Verification Code';
       }
@@ -1792,14 +1808,17 @@
         }
       }
 
+      const { signal, cleanup } = createTimeoutSignal(25000);
       try {
         const res = await fetch(API_ENDPOINT, {
           method: 'POST',
+          signal: signal,
           body: JSON.stringify({
             action: 'VERIFY_OTP',
             otp: entered
           })
         });
+        cleanup();
         const data = await res.json();
 
         if (data && data.success && data.token) {
@@ -1841,8 +1860,9 @@
           handlePinFailure(data?.error || 'Invalid or expired verification code.');
         }
       } catch (err) {
+        cleanup();
         console.error('OTP verification error:', err);
-        handlePinFailure('Connection error. Please try again.');
+        handlePinFailure(err.name === 'AbortError' ? 'Verification timed out. Try again.' : 'Connection error. Please try again.');
       }
     }
 
@@ -1914,12 +1934,11 @@
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const token = getSessionToken();
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 35000);
+        const { signal, cleanup } = createTimeoutSignal(options.timeout || 35000);
         try {
           const res = await fetch(API_ENDPOINT, {
             method: 'POST',
-            signal: controller.signal,
+            signal: signal,
             keepalive: !!options.keepalive,
             body: JSON.stringify({
               token: token,
@@ -1927,7 +1946,7 @@
               ...payload
             })
           });
-          clearTimeout(timeoutId);
+          cleanup();
           const data = await res.json();
           if (data && data.error) {
             if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
@@ -1947,8 +1966,12 @@
           }
           return data;
         } catch (err) {
-          clearTimeout(timeoutId);
-          lastErr = err;
+          cleanup();
+          if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+            lastErr = new Error(`Request timeout (35s): Server busy or connection stalled on ${action}.`);
+          } else {
+            lastErr = err;
+          }
           if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
             throw err;
           }
@@ -1957,9 +1980,9 @@
             continue;
           }
           if (!options.silent) {
-            console.warn(`API call ${action} failed:`, err);
+            console.warn(`API call ${action} failed:`, lastErr);
           }
-          throw err;
+          throw lastErr;
         }
       }
       throw lastErr;
@@ -3390,8 +3413,16 @@
       try {
         const token = getSessionToken();
         const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) + '&ingest=false';
-        const res = await fetch(syncUrl);
-        const data = await res.json();
+        const { signal, cleanup } = createTimeoutSignal(35000);
+        let res, data;
+        try {
+          res = await fetch(syncUrl, { signal: signal });
+          cleanup();
+          data = await res.json();
+        } catch (fetchErr) {
+          cleanup();
+          throw fetchErr;
+        }
         
         if (data && data.error) {
           if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
