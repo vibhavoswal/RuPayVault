@@ -1914,9 +1914,12 @@
 
       for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const token = getSessionToken();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 35000);
         try {
           const res = await fetch(API_ENDPOINT, {
             method: 'POST',
+            signal: controller.signal,
             keepalive: !!options.keepalive,
             body: JSON.stringify({
               token: token,
@@ -1924,6 +1927,7 @@
               ...payload
             })
           });
+          clearTimeout(timeoutId);
           const data = await res.json();
           if (data && data.error) {
             if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
@@ -1943,6 +1947,7 @@
           }
           return data;
         } catch (err) {
+          clearTimeout(timeoutId);
           lastErr = err;
           if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
             throw err;
@@ -2515,6 +2520,7 @@
 
       const summaryLabel = getBrandDisplayName(sheetBrand);
       const pendingRedeem = {
+        items: [{ brand: sheetBrand, code: code, bookingId: (v ? v.bookingId : '') || bookingId || '' }],
         byBrand: { [sheetBrand]: [code] },
         codes: [code],
         brandName: summaryLabel,
@@ -2630,6 +2636,7 @@
         const filtered = list.filter(item => !item.codes.some(c => codeSet.has(c)));
         filtered.push({
           id: 'ur-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+          items: pending.items || [],
           byBrand: pending.byBrand || {},
           codes: pending.codes,
           brandName: pending.brandName || '',
@@ -2663,17 +2670,21 @@
       isFlushingUncommitted = true;
       try {
         for (const item of list) {
-          if (!item.byBrand || Object.keys(item.byBrand).length === 0) {
+          const items = item.items || (
+            item.byBrand
+              ? Object.entries(item.byBrand).flatMap(([brand, codes]) => codes.map(c => ({ brand, code: c })))
+              : (item.codes || []).map(c => ({ code: c }))
+          );
+          if (!items.length) {
             removeUncommittedRedeem(item.codes);
             continue;
           }
           try {
-            await Promise.all(Object.entries(item.byBrand).map(([brand, codes]) =>
-              apiFetch('MOVE_TO_REDEEMED', {
-                brand: brand,
-                codes: codes
-              }, { silent: true })
-            ));
+            // Option B: Single Consolidated Batch Payload (zero lock collisions)
+            await apiFetch('MOVE_TO_REDEEMED', {
+              items: items,
+              codes: item.codes || []
+            }, { silent: true });
             removeUncommittedRedeem(item.codes);
           } catch (err) {
             console.warn('[Uncommitted Redeems] Batch flush retry deferred:', err);
@@ -2846,15 +2857,21 @@
     }
 
     async function commitRedeemToBackend(pending, options = {}) {
-      if (!pending || !pending.byBrand || pending.isCommitted) return;
+      if (!pending || pending.isCommitted) return;
       pending.isCommitted = true;
       try {
-        await Promise.all(Object.entries(pending.byBrand).map(([brand, codes]) =>
-          apiFetch('MOVE_TO_REDEEMED', {
-            brand: brand,
-            codes: codes
-          }, { silent: true, keepalive: !!options.keepalive })
-        ));
+        // Option B: Single Consolidated Batch Payload (zero lock collisions, single roundtrip)
+        const items = pending.items || (
+          pending.byBrand
+            ? Object.entries(pending.byBrand).flatMap(([brand, codes]) => codes.map(c => ({ brand, code: c })))
+            : (pending.codes || []).map(c => ({ code: c }))
+        );
+
+        await apiFetch('MOVE_TO_REDEEMED', {
+          items: items,
+          codes: pending.codes || []
+        }, { silent: true, keepalive: !!options.keepalive });
+
         // Remove from persistent queue once committed
         removeUncommittedRedeem(pending.codes);
       } catch (e) {
@@ -5388,6 +5405,7 @@
         const summaryLabel = targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`;
 
         const pendingRedeem = {
+          items: targetVouchers.map(v => ({ brand: v.brand, code: v.code, bookingId: (v ? v.bookingId : '') || '' })),
           byBrand: byBrand,
           codes: movedCodes,
           brandName: summaryLabel,

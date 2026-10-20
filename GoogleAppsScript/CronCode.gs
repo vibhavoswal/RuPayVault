@@ -1218,12 +1218,37 @@ function doPost(e) {
       }
 
 
-    // 3. Move Voucher to "Redeemed" Tab (Approach A - True Cut & Paste with Deduplication Lock)
+    // 3. Move Voucher to "Redeemed" Tab (Option B: Single Consolidated Batch Payload with Bottom-Up Descending Deletion)
     if (data.action === "MOVE_TO_REDEEMED" || data.action === "MARK_REDEEMED") {
+      // 1. Normalize items array
+      let items = [];
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        items = data.items.map(it => ({
+          bookingId: String(it.bookingId || '').trim(),
+          brand: String(it.brand || '').trim(),
+          code: String(it.code || '').trim()
+        })).filter(it => it.bookingId || it.code);
+      } else {
+        const rawCodes = data.codes || (data.code ? [data.code] : []);
+        const codes = Array.from(new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []));
+        if (!codes.length && data.bookingId) codes.push(String(data.bookingId).trim());
+        items = codes.map(c => ({
+          bookingId: /^RUPS/i.test(c) ? c : (data.bookingId ? String(data.bookingId).trim() : ''),
+          brand: data.brand ? String(data.brand).trim() : '',
+          code: c
+        }));
+      }
+
       // Guard against illegal New -> Redeemed transition
-      if (data.brand === "New") {
+      if (data.brand === "New" || items.some(it => it.brand === "New")) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Illegal transition: Vouchers in 'New' tab cannot be moved directly to Redeemed. Approve to brand tab first."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      if (!items.length) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "No vouchers specified for redemption."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -1235,115 +1260,149 @@ function doPost(e) {
         rSheet.setFrozenRows(1);
       }
 
-      const rawCodes = data.codes || (data.code ? [data.code] : []);
-      // Unique codes only
-      const codes = Array.from(new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []));
-      if (!codes.length && data.bookingId) {
-        codes.push(String(data.bookingId).trim());
+      // Pre-fetch Redeemed sheet Booking IDs & Codes (Strict Booking ID Idempotency)
+      const rVals = rSheet.getDataRange().getValues();
+      const existingRedeemedBookings = new Set();
+      const existingRedeemedCodes = new Set();
+      for (let r = 1; r < rVals.length; r++) {
+        const b = String(rVals[r][2] || '').trim().toUpperCase(); // Col 3: Booking ID
+        const c = String(rVals[r][3] || '').trim().toUpperCase(); // Col 4: Code
+        if (b && b !== '-' && !b.startsWith('#')) existingRedeemedBookings.add(b);
+        if (c && c !== '-' && c !== 'PENDING') existingRedeemedCodes.add(c);
       }
 
       const moved = [];
-      const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+      const itemsToSearch = [];
 
-      // Pre-fetch Redeemed sheet codes to prevent duplicate entries in Redeemed tab
-      const rVals = rSheet.getDataRange().getValues();
-      const existingRedeemedCodes = new Set();
-      for (let r = 1; r < rVals.length; r++) {
-        const c = String(rVals[r][3] || '').trim();
-        if (c) existingRedeemedCodes.add(c);
-      }
+      // Check for self-healing: if already present in Redeemed, mark success immediately
+      items.forEach(it => {
+        const bUpper = (it.bookingId || '').trim().toUpperCase();
+        const cUpper = (it.code || '').trim().toUpperCase();
+        const isAlreadyRedeemedByBid = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && existingRedeemedBookings.has(bUpper);
+        const isAlreadyRedeemedByCode = !bUpper && cUpper && cUpper !== '-' && cUpper !== 'PENDING' && existingRedeemedCodes.has(cUpper);
 
-      codes.forEach(codeVal => {
-        let targetSheet = null;
-        let matchingRowIndices = [];
-        let rowData = null;
-
-        // 1. Try provided brand if present
-        if (data.brand) {
-          const directSheet = ss.getSheetByName(data.brand);
-          if (directSheet && directSheet.getName() !== "Redeemed" && directSheet.getName() !== "New") {
-            const vals = directSheet.getDataRange().getValues();
-            for (let i = 1; i < vals.length; i++) {
-              const isCodeMatch = String(vals[i][2]).trim() === codeVal;
-              const isBookingMatch = /^RUPS/i.test(codeVal) && String(vals[i][1]).trim() === codeVal;
-              if (isCodeMatch || isBookingMatch) {
-                targetSheet = directSheet;
-                matchingRowIndices.push(i + 1);
-                if (!rowData) rowData = vals[i];
-              }
-            }
-          }
-        }
-
-        // 2. If not found in provided brand, scan ALL brand sheets (excluding system tabs)
-        if (!targetSheet) {
-          const allSheets = ss.getSheets();
-          for (const s of allSheets) {
-            const sName = s.getName();
-            if (systemTabs.has(sName)) continue;
-            const vals = s.getDataRange().getValues();
-            for (let i = 1; i < vals.length; i++) {
-              const isCodeMatch = String(vals[i][2]).trim() === codeVal;
-              const isBookingMatch = /^RUPS/i.test(codeVal) && String(vals[i][1]).trim() === codeVal;
-              if (isCodeMatch || isBookingMatch) {
-                targetSheet = s;
-                matchingRowIndices.push(i + 1);
-                if (!rowData) rowData = vals[i];
-              }
-            }
-            if (targetSheet) break;
-          }
-        }
-
-        if (targetSheet && rowData) {
-          const origBrand = targetSheet.getName();
-
-          // Strict Source Tab Guard: Never cut and paste from "New" to "Redeemed"
-          if (origBrand === "New") {
-            return;
-          }
-
-          // DEDUPLICATION LOCK: Only append to Redeemed if not already present in Redeemed!
-          if (!existingRedeemedCodes.has(codeVal)) {
-            const redeemedRow = [
-              rSheet.getLastRow(),                    // A: #
-              origBrand,                              // B: Brand
-              rowData[1],                             // C: Booking ID
-              `'${rowData[2]}`,                       // D: Code
-              rowData[3] ? `'${rowData[3]}` : "",     // E: PIN
-              rowData[4],                             // F: Value
-              rowData[5],                             // G: Date of Issue
-              rowData[6],                             // H: Account
-              rowData[7],                             // I: Card
-              "REDEEMED",                             // J: Status
-              formatISTTimestamp(new Date()),         // K: Redeemed Timestamp (IST)
-              origBrand,                              // L: Original Tab
-              rowData[9] ? String(rowData[9]) : "",   // M: Original Ingested Timestamp (if any)
-              true                                    // N: Display in UI
-            ];
-            rSheet.appendRow(redeemedRow);
-            existingRedeemedCodes.add(codeVal);
-          }
-
-          // ATOMIC CUT: Delete all matching instances from target brand sheet in reverse (descending) order
-          matchingRowIndices.sort((a, b) => b - a).forEach(idx => {
-            targetSheet.deleteRow(idx);
-          });
-
-          moved.push({ code: codeVal, brand: origBrand });
+        if (isAlreadyRedeemedByBid || isAlreadyRedeemedByCode) {
+          moved.push({ bookingId: it.bookingId, code: it.code, brand: it.brand, alreadyRedeemed: true });
+        } else {
+          itemsToSearch.push(it);
         }
       });
+
+      // If items still need to be moved from brand tabs:
+      if (itemsToSearch.length > 0) {
+        const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
+        
+        // Group search items by brand sheet where known, or collect for discovery
+        const sheetsToScan = new Map();
+
+        itemsToSearch.forEach(it => {
+          if (it.brand && !systemTabs.has(it.brand)) {
+            if (!sheetsToScan.has(it.brand)) sheetsToScan.set(it.brand, []);
+            sheetsToScan.get(it.brand).push(it);
+          } else {
+            if (!sheetsToScan.has('__ALL__')) sheetsToScan.set('__ALL__', []);
+            sheetsToScan.get('__ALL__').push(it);
+          }
+        });
+
+        // Determine all sheets that need inspecting
+        const allSheets = ss.getSheets();
+        const targetSheetsMap = new Map();
+
+        for (const [brandName, bItems] of sheetsToScan.entries()) {
+          if (brandName === '__ALL__') {
+            for (const s of allSheets) {
+              const sName = s.getName();
+              if (systemTabs.has(sName)) continue;
+              if (!targetSheetsMap.has(s)) targetSheetsMap.set(s, []);
+              targetSheetsMap.get(s).push(...bItems);
+            }
+          } else {
+            const directSheet = ss.getSheetByName(brandName);
+            if (directSheet && !systemTabs.has(directSheet.getName())) {
+              if (!targetSheetsMap.has(directSheet)) targetSheetsMap.set(directSheet, []);
+              targetSheetsMap.get(directSheet).push(...bItems);
+            }
+          }
+        }
+
+        // Process each target brand sheet with Single-Pass Bottom-Up Descending Deletion
+        for (const [sheet, sheetItems] of targetSheetsMap.entries()) {
+          const sName = sheet.getName();
+          if (systemTabs.has(sName) || sName === "New") continue;
+
+          const vals = sheet.getDataRange().getValues();
+          if (vals.length <= 1) continue;
+
+          const rowsToDelete = [];
+          const targetBidSet = new Set(sheetItems.map(it => (it.bookingId || '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
+          const targetCodeSet = new Set(sheetItems.map(it => (it.code || '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+
+          for (let i = 1; i < vals.length; i++) {
+            const rowBid = String(vals[i][1] || '').trim().toUpperCase();
+            const rowCode = String(vals[i][2] || '').trim().toUpperCase();
+
+            // Strict Booking ID matching with code fallback
+            const isBidMatch = targetBidSet.has(rowBid);
+            const isCodeMatch = !rowBid && targetCodeSet.has(rowCode);
+
+            if (isBidMatch || isCodeMatch) {
+              const bVal = String(vals[i][1] || '').trim();
+              const cVal = String(vals[i][2] || '').trim();
+              const bValUpper = bVal.toUpperCase();
+
+              // Append to Redeemed if not already present in Redeemed
+              if (!existingRedeemedBookings.has(bValUpper)) {
+                const nextRowIdx = rSheet.getLastRow();
+                const redeemedRow = [
+                  nextRowIdx,                              // A: #
+                  sName,                                   // B: Brand
+                  vals[i][1],                              // C: Booking ID
+                  `'${vals[i][2]}`,                        // D: Code
+                  vals[i][3] ? `'${vals[i][3]}` : "",      // E: PIN
+                  vals[i][4],                              // F: Value
+                  vals[i][5],                              // G: Date of Issue
+                  vals[i][6],                              // H: Account
+                  vals[i][7],                              // I: Card
+                  "REDEEMED",                              // J: Status
+                  formatISTTimestamp(new Date()),          // K: Redeemed Timestamp (IST)
+                  sName,                                   // L: Original Tab
+                  vals[i][9] ? String(vals[i][9]) : "",    // M: Original Ingested Timestamp
+                  true                                     // N: Display in UI
+                ];
+                rSheet.appendRow(redeemedRow);
+                if (bValUpper && bValUpper !== '-' && !bValUpper.startsWith('#')) {
+                  existingRedeemedBookings.add(bValUpper);
+                }
+              }
+
+              rowsToDelete.push(i + 1);
+              moved.push({ bookingId: bVal, code: cVal, brand: sName });
+            }
+          }
+
+          // Single-Pass Bottom-Up Deletion: Sort descending (highest row first)
+          if (rowsToDelete.length > 0) {
+            rowsToDelete.sort((a, b) => b - a);
+            for (const rIdx of rowsToDelete) {
+              sheet.deleteRow(rIdx);
+            }
+          }
+        }
+      }
 
       // Force atomic persistence
       SpreadsheetApp.flush();
 
-      // Also update Shared_Activity status to REDEEMED for these codes if present
+      // Also update Shared_Activity status to REDEEMED for these codes
       const sSheet = ss.getSheetByName("Shared_Activity");
       if (sSheet && moved.length > 0) {
-        const movedCodesSet = new Set(moved.map(m => m.code));
+        const movedCodesSet = new Set(moved.map(m => m.code).filter(Boolean));
+        const movedBidsSet = new Set(moved.map(m => m.bookingId).filter(Boolean));
         const sRows = sSheet.getDataRange().getValues();
         for (let i = 1; i < sRows.length; i++) {
-          if (movedCodesSet.has(String(sRows[i][1]).trim())) {
+          const sCode = String(sRows[i][1] || '').trim();
+          if (movedCodesSet.has(sCode) || movedBidsSet.has(sCode)) {
             sSheet.getRange(i + 1, 7).setValue("REDEEMED");
           }
         }
@@ -1359,7 +1418,7 @@ function doPost(e) {
       }
 
       return ContentService.createTextOutput(JSON.stringify({
-        error: "Voucher(s) not found in any brand tab: " + codes.join(", ")
+        error: "Voucher(s) not found in any brand tab: " + items.map(it => it.bookingId || it.code).join(", ")
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -1397,23 +1456,21 @@ function doPost(e) {
             bSheet.setFrozenRows(1);
           }
 
-          // DEDUPLICATION LOCK: Inspect brand sheet first! Does this code already exist in brand sheet?
+          // DEDUPLICATION LOCK: Inspect brand sheet strictly on Booking ID!
           const bVals = bSheet.getDataRange().getValues();
           let existingBrandRowIndex = -1;
           for (let b = 1; b < bVals.length; b++) {
-            if (String(bVals[b][2]).trim() === rowCode) {
+            const bIdVal = String(bVals[b][1] || '').trim();
+            if (rowBooking && rowBooking !== '-' && !rowBooking.startsWith('#') && bIdVal === rowBooking) {
               existingBrandRowIndex = b + 1;
               break;
             }
           }
 
           if (existingBrandRowIndex > 0) {
-            // ALREADY EXISTS in brand tab! Do NOT append a duplicate row.
-            // Just ensure its Status is ACTIVE and Display in UI is true.
             bSheet.getRange(existingBrandRowIndex, 9).setValue("ACTIVE");
             bSheet.getRange(existingBrandRowIndex, 11).setValue(true);
           } else {
-            // DOES NOT EXIST in brand tab: Safe to append!
             const originalTimestamp = (rRows[i].length > 12 && rRows[i][12]) ? String(rRows[i][12]) : "";
             const restoredRow = [
               bSheet.getLastRow(),                    // A: #
@@ -1431,18 +1488,29 @@ function doPost(e) {
             bSheet.appendRow(restoredRow);
           }
 
-          // Mark row in Redeemed for deletion
           rowsToDeleteFromRedeemed.push(i + 1);
-          restored.push({ code: rowCode, brand: origBrand });
+          restored.push({ bookingId: rowBooking, code: rowCode, brand: origBrand });
         }
       }
 
-      // Delete from Redeemed sheet in reverse (descending) order
-      rowsToDeleteFromRedeemed.sort((a, b) => b - a).forEach(rowIdx => {
-        rSheet.deleteRow(rowIdx);
+      // Self-healing: If not found in Redeemed, check if already restored in brand tab!
+      codes.forEach(codeOrBid => {
+        if (!restored.some(r => r.code === codeOrBid || r.bookingId === codeOrBid)) {
+          const foundInBrand = findRowInBrandTabs(ss, codeOrBid);
+          if (foundInBrand) {
+            restored.push({ bookingId: codeOrBid, brand: foundInBrand.sheet.getName(), alreadyRestored: true });
+          }
+        }
       });
 
-      // Force atomic persistence
+      // Delete from Redeemed sheet in descending order
+      if (rowsToDeleteFromRedeemed.length > 0) {
+        rowsToDeleteFromRedeemed.sort((a, b) => b - a);
+        for (const rowIdx of rowsToDeleteFromRedeemed) {
+          rSheet.deleteRow(rowIdx);
+        }
+      }
+
       SpreadsheetApp.flush();
 
       if (restored.length > 0) {
