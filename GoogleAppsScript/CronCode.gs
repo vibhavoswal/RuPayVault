@@ -477,6 +477,53 @@ function extractAmount(body) {
 }
 
 /**
+ * Helper to inspect canonical brand tabs for an existing Booking ID or Voucher Code.
+ * Prevents re-staging or duplicate ingestion of vouchers already approved to Brand tabs.
+ */
+function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
+  if (!bookingId && !code) return null;
+  const bUpper = bookingId ? String(bookingId).trim().toUpperCase() : '';
+  const cUpper = code ? String(code).trim().toUpperCase() : '';
+
+  // 1. Direct check in targetBrand first if valid canonical sheet
+  if (targetBrand && targetBrand !== "New" && targetBrand !== "Redeemed") {
+    const sheet = ss.getSheetByName(targetBrand);
+    if (sheet) {
+      const vals = sheet.getDataRange().getValues();
+      for (let i = 1; i < vals.length; i++) {
+        const rowBid = String(vals[i][1] || '').trim().toUpperCase();
+        const rowCode = String(vals[i][2] || '').trim().toUpperCase();
+        const isBidMatch = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && (rowBid === bUpper);
+        const isCodeMatch = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && (rowCode === cUpper);
+        if (isBidMatch || isCodeMatch) {
+          return { sheet: sheet, rowIndex: i + 1, rowData: vals[i] };
+        }
+      }
+    }
+  }
+
+  // 2. Scan all other canonical brand tabs (excluding system tabs)
+  const sheets = ss.getSheets();
+  const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
+  for (const s of sheets) {
+    const sName = s.getName();
+    if (systemTabs.has(sName) || sName === targetBrand) continue;
+    const vals = s.getDataRange().getValues();
+    for (let i = 1; i < vals.length; i++) {
+      const rowBid = String(vals[i][1] || '').trim().toUpperCase();
+      const rowCode = String(vals[i][2] || '').trim().toUpperCase();
+      const isBidMatch = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && (rowBid === bUpper);
+      const isCodeMatch = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && (rowCode === cUpper);
+      if (isBidMatch || isCodeMatch) {
+        return { sheet: s, rowIndex: i + 1, rowData: vals[i] };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN "NEW" TAB
  */
 function recordPendingRedemption(ss, data) {
@@ -513,6 +560,13 @@ function recordPendingRedemption(ss, data) {
   // 3. Determine canonical target brand (Col 12)
   const canonicalBrand = extractBrand(data.brand, "");
   const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+
+  // 4. Hardening against duplicate re-staging: Check if Booking ID already exists in Brand tabs!
+  const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
+  if (existingBrandMatch) {
+    // Already approved to brand tab! Do not re-stage in "New".
+    return;
+  }
 
   const nextNum = newSheet.getLastRow();
   const rowData = [
@@ -571,9 +625,35 @@ function fulfillVoucherCode(ss, data) {
   }
 
   // Fallback: If Stage 1 email was missed and delivery email arrived directly,
-  // append as an ACTIVE row in "New" tab so user can review and approve it.
+  // FIRST check if it is already in Redeemed or in any canonical Brand tab!
   const canonicalBrand = extractBrand(data.brand, "");
   const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+
+  // Check if already in Redeemed tab
+  const rSheet = ss.getSheetByName("Redeemed");
+  if (rSheet) {
+    const rRows = rSheet.getDataRange().getValues();
+    for (let i = 1; i < rRows.length; i++) {
+      if (String(rRows[i][2]).trim() === data.bookingId || (data.code && String(rRows[i][3]).trim() === data.code)) {
+        return;
+      }
+    }
+  }
+
+  // Check if already in a canonical Brand tab
+  const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand, data.code);
+  if (existingBrandMatch) {
+    // If it exists in the brand tab but code or pin wasn't populated yet, heal it in place!
+    const row = existingBrandMatch.rowData;
+    const existingCode = String(row[2] || '').trim();
+    if (!existingCode || existingCode === 'PENDING' || existingCode === '-') {
+      existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 3).setValue(`'${data.code}`);
+      if (data.pin) existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 4).setValue(`'${data.pin}`);
+      existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 9).setValue("ACTIVE");
+    }
+    return;
+  }
+
   const nextNum = newSheet.getLastRow();
   const rowData = [
     nextNum,                                             // Col 1: #
