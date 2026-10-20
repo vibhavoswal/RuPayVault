@@ -28,18 +28,18 @@
 
 ## Strict Backend & Data Integrity Rules
 
-### 1. Booking ID is the Sole Canonical Identifier for Idempotency (STRICT)
-- **All idempotency and deduplication checks across Google Sheets tabs MUST be performed EXCLUSIVELY on Booking ID (`RUPS-...`).**
-- **NEVER use dual-identifier matching (matching on Voucher Code) for idempotency.**
-- **Reasoning**:
-  1. Voucher codes are absent or placeholder (`PENDING`) during initial acknowledgement and booking emails.
-  2. Voucher codes may carry markdown artifacts, prefix quotes (`'`), or formatting differences across stages.
-  3. The Booking ID (`RUPS-...`) is generated directly by RuPay/Truztee and is the permanent, unique primary key across the entire voucher lifecycle.
-- **Enforcement Scope**:
-  - `APPROVE_STAGING`: Inspect destination Brand tab strictly by Booking ID before appending. If found, mark `ACTIVE` and do not append a duplicate row.
-  - `recordPendingRedemption`: Inspect `Redeemed`, `"New"`, and Brand tabs strictly by Booking ID.
-  - `fulfillVoucherCode`: Match and heal rows strictly by Booking ID.
-  - Any future migration, reconciliation, or movement scripts must adhere to Booking ID-only matching for idempotency.
+### 1. Hierarchical Idempotency Model (Primary RUPS Booking ID, Fallback Voucher Code) (STRICT)
+- **Email Ingestion into "New" Tab (Strict RUPS Invariant)**:
+  - Email ingestion (`recordPendingRedemption`, `fulfillVoucherCode`) MUST be keyed strictly by RuPay/Truztee Booking ID (`RUPS-...`).
+  - Voucher codes in `"New"` can be absent or placeholder (`PENDING`) during initial acknowledgement, so code-based ingestion matching is strictly forbidden to prevent collision.
+- **Brand Tab Mutations & Lifecycle Operations (Hierarchical Invariant)**:
+  - Canonical Brand Tabs contain two classes of vouchers:
+    1. Standard RuPay Select vouchers (Apollo, Lakme, Kalyan, etc.) carrying a `RUPS-...` Booking ID in Column B.
+    2. Direct partner membership passes (Times Prime Ace, Decathlon, Swiggy One direct, legacy passes) which do NOT have a `RUPS-...` code (Column B contains partner pass names or is blank), but have a globally unique voucher code in Column C.
+  - Therefore, all brand tab mutations (`APPROVE_STAGING`, `MOVE_TO_REDEEMED`, `UNDO_REDEEM`, `findRowInBrandTabs`):
+    - **Primary Identifier**: If Booking ID is present and starts with `RUPS-`, match strictly on `RUPS-...` Booking ID.
+    - **Fallback Identifier**: If Booking ID does NOT start with `RUPS-` (or is absent/placeholder), match on the unique Voucher Code (ignoring `PENDING`, `-`, and blanks).
+  - This hierarchical model prevents duplicate rows while ensuring non-RUPS partner vouchers can be moved to `"Redeemed"` and undone seamlessly without getting trapped or locked out.
 
 ### 2. Strict Voucher Lifecycle Transition Invariant
 - Canonical flow: `"New"` (Staging) $\rightarrow$ Brand Tab (Active Vault) $\rightarrow$ `"Redeemed"` (Archive).

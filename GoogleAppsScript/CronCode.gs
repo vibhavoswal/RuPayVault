@@ -478,24 +478,35 @@ function extractAmount(body) {
 }
 
 /**
- * Helper to inspect canonical brand tabs for an existing Booking ID.
- * Strict Invariant: Idempotency checks are performed EXCLUSIVELY on Booking ID (RUPS-...).
+ * Helper to inspect canonical brand tabs for an existing Booking ID or Voucher Code.
+ * Hierarchical Invariant: Primary match on RUPS- Booking ID; Fallback to unique Voucher Code.
  */
-function findRowInBrandTabs(ss, bookingId, targetBrand) {
-  if (!bookingId || bookingId === '-' || bookingId.startsWith('#')) return null;
-  const bUpper = String(bookingId).trim().toUpperCase();
+function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
+  const bUpper = (bookingId && bookingId !== '-' && !bookingId.startsWith('#')) ? String(bookingId).trim().toUpperCase() : '';
+  const cUpper = (code && code !== '-' && code.toUpperCase() !== 'PENDING') ? String(code).trim().toUpperCase() : '';
+  if (!bUpper && !cUpper) return null;
+
+  const checkSheet = (sheet) => {
+    const vals = sheet.getDataRange().getValues();
+    for (let i = 1; i < vals.length; i++) {
+      const rowBid = String(vals[i][1] || '').trim().toUpperCase();
+      const rowCode = String(vals[i][2] || '').trim().toUpperCase();
+      const hasRups = bUpper && bUpper.startsWith('RUPS-');
+      const bidMatch = hasRups && rowBid === bUpper;
+      const codeMatch = cUpper && rowCode === cUpper;
+      if (bidMatch || codeMatch) {
+        return { sheet: sheet, rowIndex: i + 1, rowData: vals[i] };
+      }
+    }
+    return null;
+  };
 
   // 1. Direct check in targetBrand first if valid canonical sheet
   if (targetBrand && targetBrand !== "New" && targetBrand !== "Redeemed") {
     const sheet = ss.getSheetByName(targetBrand);
     if (sheet) {
-      const vals = sheet.getDataRange().getValues();
-      for (let i = 1; i < vals.length; i++) {
-        const rowBid = String(vals[i][1] || '').trim().toUpperCase();
-        if (rowBid === bUpper) {
-          return { sheet: sheet, rowIndex: i + 1, rowData: vals[i] };
-        }
-      }
+      const res = checkSheet(sheet);
+      if (res) return res;
     }
   }
 
@@ -505,13 +516,8 @@ function findRowInBrandTabs(ss, bookingId, targetBrand) {
   for (const s of sheets) {
     const sName = s.getName();
     if (systemTabs.has(sName) || sName === targetBrand) continue;
-    const vals = s.getDataRange().getValues();
-    for (let i = 1; i < vals.length; i++) {
-      const rowBid = String(vals[i][1] || '').trim().toUpperCase();
-      if (rowBid === bUpper) {
-        return { sheet: s, rowIndex: i + 1, rowData: vals[i] };
-      }
-    }
+    const res = checkSheet(s);
+    if (res) return res;
   }
 
   return null;
@@ -801,8 +807,6 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === "SETUP_SWIGGY_ONE") {
     try {
       const ss = getSpreadsheet();
-      
-      // 1. Ensure SwiggyOne tab exists with standard unified headers and formatting
       let swiggySheet = ss.getSheetByName("SwiggyOne");
       let sheetCreated = false;
       if (!swiggySheet) {
@@ -812,45 +816,13 @@ function doGet(e) {
         swiggySheet.setFrozenRows(1);
         sheetCreated = true;
       }
-
-      // 2. Locate RUPS-5ACE0C37 in "New" tab and update Target Brand (Col 12) to "SwiggyOne"
-      const newSheet = ss.getSheetByName("New");
-      let rowUpdated = false;
-      let foundRowIndex = -1;
-      let oldTargetBrand = "";
-      if (newSheet) {
-        const vals = newSheet.getDataRange().getValues();
-        for (let i = 1; i < vals.length; i++) {
-          const bid = String(vals[i][1] || '').trim();
-          if (bid.toUpperCase() === "RUPS-5ACE0C37") {
-            foundRowIndex = i + 1;
-            oldTargetBrand = String(vals[i][11] || '');
-            newSheet.getRange(i + 1, 11).setValue(true); // Col 11: Restore Display in UI = TRUE
-            newSheet.getRange(i + 1, 12).setValue("SwiggyOne"); // Col 12: Target Brand = SwiggyOne
-            if (e && e.parameter && e.parameter.card) {
-              newSheet.getRange(i + 1, 8).setValue(String(e.parameter.card).trim());
-            }
-            rowUpdated = true;
-            break;
-          }
-        }
-      }
-      SpreadsheetApp.flush();
-
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         swiggySheetCreated: sheetCreated,
-        sheetExists: !!swiggySheet,
-        foundRowIndex: foundRowIndex,
-        oldTargetBrand: oldTargetBrand,
-        newTargetBrand: "SwiggyOne",
-        rowUpdated: rowUpdated
+        sheetExists: !!swiggySheet
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({
-        success: false,
-        error: err.message
-      })).setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
     }
   }
 
@@ -1207,13 +1179,17 @@ function doPost(e) {
             // Target Brand Sheet
             const brandSheet = getTargetBrandSheet(ss, targetBrand);
 
-            // IDEMPOTENCY CHECK (Strictly on Booking ID):
-            // Check if this Booking ID already exists in the destination Brand tab
+            // IDEMPOTENCY CHECK (Hierarchical: Primary RUPS Booking ID, Fallback Voucher Code):
+            // Check if this Booking ID or Code already exists in the destination Brand tab
             let existingBrandRowIndex = -1;
             const brandVals = brandSheet.getDataRange().getValues();
             for (let b = 1; b < brandVals.length; b++) {
               const existingBid = String(brandVals[b][1] || '').trim().toUpperCase();
-              if (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#') && (existingBid === bIdUpper)) {
+              const existingCode = String(brandVals[b][2] || '').trim().toUpperCase();
+              const hasRups = bIdUpper && bIdUpper.startsWith('RUPS-');
+              const bidMatch = hasRups && (existingBid === bIdUpper);
+              const codeMatch = (!hasRups || !existingBid.startsWith('RUPS-')) && codeUpper && codeUpper !== 'PENDING' && codeUpper !== '-' && (existingCode === codeUpper);
+              if (bidMatch || codeMatch) {
                 existingBrandRowIndex = b + 1;
                 break;
               }
@@ -1336,8 +1312,9 @@ function doPost(e) {
       items.forEach(it => {
         const bUpper = (it.bookingId || '').trim().toUpperCase();
         const cUpper = (it.code || '').trim().toUpperCase();
-        const isAlreadyRedeemedByBid = bUpper && bUpper !== '-' && !bUpper.startsWith('#') && existingRedeemedBookings.has(bUpper);
-        const isAlreadyRedeemedByCode = !bUpper && cUpper && cUpper !== '-' && cUpper !== 'PENDING' && existingRedeemedCodes.has(cUpper);
+        const hasRupsBid = bUpper.startsWith('RUPS-');
+        const isAlreadyRedeemedByBid = hasRupsBid && existingRedeemedBookings.has(bUpper);
+        const isAlreadyRedeemedByCode = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && existingRedeemedCodes.has(cUpper);
 
         if (isAlreadyRedeemedByBid || isAlreadyRedeemedByCode) {
           moved.push({ bookingId: it.bookingId, code: it.code, brand: it.brand, alreadyRedeemed: true });
@@ -1400,17 +1377,23 @@ function doPost(e) {
             const rowBid = String(vals[i][1] || '').trim().toUpperCase();
             const rowCode = String(vals[i][2] || '').trim().toUpperCase();
 
-            // Strict Booking ID matching with code fallback
-            const isBidMatch = targetBidSet.has(rowBid);
-            const isCodeMatch = !rowBid && targetCodeSet.has(rowCode);
+            // Hierarchical matching: Primary RUPS Booking ID, Fallback Voucher Code
+            const hasRupsBid = rowBid.startsWith('RUPS-');
+            const isBidMatch = hasRupsBid && targetBidSet.has(rowBid);
+            const isCodeMatch = rowCode && rowCode !== '-' && rowCode !== 'PENDING' && targetCodeSet.has(rowCode);
 
             if (isBidMatch || isCodeMatch) {
               const bVal = String(vals[i][1] || '').trim();
               const cVal = String(vals[i][2] || '').trim();
               const bValUpper = bVal.toUpperCase();
+              const cValUpper = cVal.toUpperCase();
 
-              // Append to Redeemed if not already present in Redeemed
-              if (!existingRedeemedBookings.has(bValUpper)) {
+              // Append to Redeemed if not already present in Redeemed (Hierarchical check)
+              const hasRupsVal = bValUpper.startsWith('RUPS-');
+              const alreadyInRedeemed = (hasRupsVal && existingRedeemedBookings.has(bValUpper)) ||
+                                        (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING' && existingRedeemedCodes.has(cValUpper));
+
+              if (!alreadyInRedeemed) {
                 const nextRowIdx = rSheet.getLastRow();
                 const redeemedRow = [
                   nextRowIdx,                              // A: #
@@ -1429,9 +1412,8 @@ function doPost(e) {
                   true                                     // N: Display in UI
                 ];
                 rSheet.appendRow(redeemedRow);
-                if (bValUpper && bValUpper !== '-' && !bValUpper.startsWith('#')) {
-                  existingRedeemedBookings.add(bValUpper);
-                }
+                if (hasRupsVal) existingRedeemedBookings.add(bValUpper);
+                if (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING') existingRedeemedCodes.add(cValUpper);
               }
 
               rowsToDelete.push(i + 1);
@@ -1525,12 +1507,16 @@ function doPost(e) {
             bSheet.setFrozenRows(1);
           }
 
-          // DEDUPLICATION LOCK: Inspect brand sheet strictly on Booking ID!
+          // DEDUPLICATION: Inspect brand sheet (Hierarchical: Primary RUPS Booking ID, Fallback Voucher Code)
           const bVals = bSheet.getDataRange().getValues();
           let existingBrandRowIndex = -1;
           for (let b = 1; b < bVals.length; b++) {
-            const bIdVal = String(bVals[b][1] || '').trim();
-            if (rowBooking && rowBooking !== '-' && !rowBooking.startsWith('#') && bIdVal === rowBooking) {
+            const bIdVal = String(bVals[b][1] || '').trim().toUpperCase();
+            const bCodeVal = String(bVals[b][2] || '').trim().toUpperCase();
+            const hasRupsBooking = rowBooking && rowBooking.toUpperCase().startsWith('RUPS-');
+            const bidMatch = hasRupsBooking && bIdVal === rowBooking.toUpperCase();
+            const codeMatch = (!hasRupsBooking || !bIdVal.startsWith('RUPS-')) && rowCode && rowCode !== '-' && rowCode !== 'PENDING' && bCodeVal === rowCode.toUpperCase();
+            if (bidMatch || codeMatch) {
               existingBrandRowIndex = b + 1;
               break;
             }
@@ -1565,7 +1551,7 @@ function doPost(e) {
       // Self-healing: If not found in Redeemed, check if already restored in brand tab!
       codes.forEach(codeOrBid => {
         if (!restored.some(r => r.code === codeOrBid || r.bookingId === codeOrBid)) {
-          const foundInBrand = findRowInBrandTabs(ss, codeOrBid);
+          const foundInBrand = findRowInBrandTabs(ss, codeOrBid, null, codeOrBid);
           if (foundInBrand) {
             restored.push({ bookingId: codeOrBid, brand: foundInBrand.sheet.getName(), alreadyRestored: true });
           }
