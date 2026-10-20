@@ -1648,6 +1648,33 @@
       }
     }
 
+    // Save staging (Ingested queue) to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedStaging(staging) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify(staging || []);
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_staging_encrypted_cache', JSON.stringify(encrypted));
+      } catch (err) {
+        console.warn("Failed to save encrypted staging cache:", err);
+      }
+    }
+
+    // Load and decrypt staging from cache
+    async function loadEncryptedStaging() {
+      try {
+        const cached = localStorage.getItem('rupay_staging_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const staging = JSON.parse(decryptedJson);
+        return Array.isArray(staging) ? staging : null;
+      } catch (err) {
+        console.warn("Encrypted staging cache decryption failed:", err);
+        return null;
+      }
+    }
+
     /* --- EMAIL OTP REQUEST & COOLDOWN --- */
     async function requestOtp() {
       const btn = document.getElementById('btn-request-otp');
@@ -1949,10 +1976,11 @@
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) lockEl.classList.add('hidden');
 
-      const [decryptedVouchers, decryptedCards, decryptedAccounts] = await Promise.all([
+      const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging] = await Promise.all([
         loadEncryptedVouchers(),
         loadEncryptedCards(),
-        loadEncryptedAccounts()
+        loadEncryptedAccounts(),
+        loadEncryptedStaging()
       ]);
 
       if (decryptedVouchers && decryptedVouchers.length) {
@@ -1963,6 +1991,9 @@
       }
       if (decryptedAccounts && decryptedAccounts.length) {
         state.accounts = decryptedAccounts;
+      }
+      if (decryptedStaging && decryptedStaging.length) {
+        state.staging = decryptedStaging;
       }
 
       renderAll();
@@ -1979,7 +2010,8 @@
         await Promise.all([
           state.vouchers && state.vouchers.length ? saveEncryptedVouchers(state.vouchers) : Promise.resolve(),
           state.cards && state.cards.length ? saveEncryptedCards(state.cards) : Promise.resolve(),
-          state.accounts && state.accounts.length ? saveEncryptedAccounts(state.accounts) : Promise.resolve()
+          state.accounts && state.accounts.length ? saveEncryptedAccounts(state.accounts) : Promise.resolve(),
+          state.staging && state.staging.length ? saveEncryptedStaging(state.staging) : Promise.resolve()
         ]);
       } catch (e) {
         console.warn('Error saving encrypted cache on lock:', e);
@@ -1988,6 +2020,7 @@
       state.vouchers = [];
       state.cards = [];
       state.accounts = [];
+      state.staging = [];
       state.selectedIds.clear();
       securityState.cryptoKey = null;
 
@@ -3401,6 +3434,7 @@
             timestampIST: s.timestampIST || null,
             displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
           }));
+          await saveEncryptedStaging(state.staging);
         }
 
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
@@ -4678,6 +4712,8 @@
 
       renderVault();
       updateFloatingDock();
+      saveEncryptedStaging(state.staging);
+      saveEncryptedVouchers(state.vouchers);
       showToast(`✓ Approved ${approvedCount} voucher${approvedCount > 1 ? 's' : ''} to brand tab!`);
 
       // 4. Background Sync: POST action APPROVE_STAGING
@@ -4834,7 +4870,10 @@
         }
 
         // Save local encrypted cache
-        await saveEncryptedVouchers(state.vouchers);
+        await Promise.all([
+          saveEncryptedVouchers(state.vouchers),
+          saveEncryptedStaging(state.staging)
+        ]);
         renderVault();
         showToast(`Tagged ${targetCount} voucher${targetCount > 1 ? 's' : ''} as ${cardTag} · Moved to Tagged`);
 
@@ -5364,37 +5403,37 @@
       const dtSheetLink = document.getElementById('dt-sheet-link-btn');
       if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
-      // Initialize drawer sheet count if cache exists
-      const drawerSheetCount = document.getElementById('drawer-sheet-count');
-      if (drawerSheetCount && state.vouchers) {
-        drawerSheetCount.textContent = `${state.vouchers.length} vouchers synced`;
+      // 2. Initialize security: Check 24-Hour session & hydrate encrypted cache
+      if (isSessionValid()) {
+        await unlockVaultDirect(getSessionToken());
+      } else {
+        lockVault();
       }
 
-      // 2. Always default to Activity Log on page load/reload and sub-filter to Ingested
+      // 3. Always default to Activity Log on page load/reload and sub-filter to Ingested
       state.activeFilterBrand = 'ActivityLog';
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = 'ActivityLog';
       localStorage.removeItem('rupay_active_brand');
       setActivityFilter('added');
 
-      // 3. Restore last synced time to header
+      // 4. Restore last synced time to header
       const savedTime = localStorage.getItem('rupay_sync_time');
       if (savedTime) {
         const mbSyncTime = document.getElementById('mb-sync-time');
         if (mbSyncTime) mbSyncTime.textContent = `Synced at ${savedTime}`;
       }
 
+      // Initialize drawer sheet count if cache exists
+      const drawerSheetCount = document.getElementById('drawer-sheet-count');
+      if (drawerSheetCount && state.vouchers) {
+        drawerSheetCount.textContent = `${state.vouchers.length} vouchers synced`;
+      }
+
       updateMasterTriggerIcon();
       updateFloatingDock();
 
       setTab('vault');
-
-      // 4. Initialize security: Check 24-Hour session
-      if (isSessionValid()) {
-        await unlockVaultDirect(getSessionToken());
-      } else {
-        lockVault();
-      }
     });
   </script>
 </body>
