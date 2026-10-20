@@ -1387,6 +1387,17 @@ function doPost(e) {
             for (const rIdx of rowsToDelete) {
               sheet.deleteRow(rIdx);
             }
+
+            // Renumber remaining rows in target brand sheet
+            const remaining = sheet.getLastRow();
+            if (remaining > 1) {
+              const numRange = sheet.getRange(2, 1, remaining - 1, 1);
+              const nums = [];
+              for (let n = 1; n < remaining; n++) {
+                nums.push([n]);
+              }
+              numRange.setValues(nums);
+            }
           }
         }
       }
@@ -1508,6 +1519,17 @@ function doPost(e) {
         rowsToDeleteFromRedeemed.sort((a, b) => b - a);
         for (const rowIdx of rowsToDeleteFromRedeemed) {
           rSheet.deleteRow(rowIdx);
+        }
+
+        // Renumber remaining rows in Redeemed sheet
+        const remaining = rSheet.getLastRow();
+        if (remaining > 1) {
+          const numRange = rSheet.getRange(2, 1, remaining - 1, 1);
+          const nums = [];
+          for (let n = 1; n < remaining; n++) {
+            nums.push([n]);
+          }
+          numRange.setValues(nums);
         }
       }
 
