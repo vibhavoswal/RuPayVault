@@ -2824,7 +2824,7 @@
       const { context, targets } = undoState.clearedItems;
       targets.forEach(t => { t.displayInUI = true; });
       if (context === 'ingested') {
-        saveEncryptedVouchers(state.vouchers);
+        saveEncryptedStaging(state.staging);
       } else if (context === 'shared') {
         saveSharedActivity();
       } else if (context === 'redeemed') {
@@ -2838,7 +2838,12 @@
     }
 
     async function commitClearToBackend(context, targets, options = {}) {
-      const codes = (targets || []).map(t => t.code).filter(Boolean);
+      const rawCodes = (targets || []).flatMap(t => [t.bookingId, t.code]).filter(c => {
+        if (!c) return false;
+        const s = String(c).trim().toUpperCase();
+        return s !== '' && s !== 'PENDING' && s !== '-' && !s.startsWith('#');
+      });
+      const codes = Array.from(new Set(rawCodes));
       if (!codes.length) return;
       try {
         if (context === 'ingested') {
@@ -2846,7 +2851,7 @@
             type: 'INGESTED',
             codes: codes
           }, { keepalive: !!options.keepalive });
-          await saveEncryptedVouchers(state.vouchers);
+          await saveEncryptedStaging(state.staging);
         } else if (context === 'shared') {
           await apiFetch('CLEAR_ACTIVITY', {
             type: 'SHARED',
@@ -3122,7 +3127,9 @@
 
       // 1. Optimistically hide targets from the active view
       targets.forEach(t => { t.displayInUI = false; });
-      if (context === 'shared') {
+      if (context === 'ingested') {
+        saveEncryptedStaging(state.staging);
+      } else if (context === 'shared') {
         saveSharedActivity();
       } else if (context === 'redeemed') {
         saveRedeemedList();
@@ -4958,14 +4965,23 @@
       if (last4.length !== 4) return;
       const cardTag = `${variant} ${last4}`;
 
-      // Identify selected vouchers
+      // Identify selected vouchers from both active vault and staging queue
       const targetVouchers = state.vouchers.filter(v =>
         state.selectedIds.has(v.id) ||
-        state.selectedIds.has(v.code) ||
+        (v.code && v.code !== '-' && state.selectedIds.has(v.code)) ||
+        (v.bookingId && state.selectedIds.has(v.bookingId)) ||
         state.selectedIds.has('shared-' + v.code)
       );
 
-      if (!targetVouchers.length) {
+      const targetStaging = (state.staging || []).filter(s =>
+        state.selectedIds.has(s.id) ||
+        (s.bookingId && state.selectedIds.has(s.bookingId)) ||
+        (s.code && s.code !== 'PENDING' && s.code !== '-' && state.selectedIds.has(s.code))
+      );
+
+      const allTargets = [...targetVouchers, ...targetStaging];
+
+      if (!allTargets.length) {
         showToast('No vouchers selected');
         closeTagModal();
         return;
@@ -4974,7 +4990,7 @@
       closeTagModal();
 
       // Trigger Redeem-style horizontal slide-out exit animation
-      targetVouchers.forEach(v => {
+      allTargets.forEach(v => {
         const mbEl = document.getElementById(`mb-card-${v.id}`);
         if (mbEl) mbEl.classList.add('anim-slide-out');
         const dtRow = document.getElementById(`dt-row-${v.id}`);
@@ -4983,12 +4999,20 @@
 
       // Wait 500ms for slide-out animation to complete
       setTimeout(async () => {
-        targetVouchers.forEach(v => {
-          v.card = cardTag;
-        });
+        targetVouchers.forEach(v => { v.card = cardTag; });
+        targetStaging.forEach(s => { s.card = cardTag; });
 
-        const targetCount = targetVouchers.length;
-        const lookupCodes = targetVouchers.map(v => v.code).concat(targetVouchers.map(v => v.bookingId)).filter(Boolean);
+        const targetCount = allTargets.length;
+        const lookupCodesSet = new Set();
+        targetVouchers.forEach(v => {
+          if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) lookupCodesSet.add(v.bookingId);
+          if (v.code && v.code !== '-' && v.code !== 'PENDING') lookupCodesSet.add(v.code);
+        });
+        targetStaging.forEach(s => {
+          if (s.bookingId && s.bookingId !== '-' && !s.bookingId.startsWith('#')) lookupCodesSet.add(s.bookingId);
+          if (s.code && s.code !== '-' && s.code !== 'PENDING') lookupCodesSet.add(s.code);
+        });
+        const lookupCodes = Array.from(lookupCodesSet);
 
         state.selectedIds.clear();
         collapseActionMenu();

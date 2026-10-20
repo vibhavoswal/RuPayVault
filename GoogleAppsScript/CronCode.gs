@@ -825,7 +825,11 @@ function doGet(e) {
           if (bid.toUpperCase() === "RUPS-5ACE0C37") {
             foundRowIndex = i + 1;
             oldTargetBrand = String(vals[i][11] || '');
-            newSheet.getRange(i + 1, 12).setValue("SwiggyOne");
+            newSheet.getRange(i + 1, 11).setValue(true); // Col 11: Restore Display in UI = TRUE
+            newSheet.getRange(i + 1, 12).setValue("SwiggyOne"); // Col 12: Target Brand = SwiggyOne
+            if (e && e.parameter && e.parameter.card) {
+              newSheet.getRange(i + 1, 8).setValue(String(e.parameter.card).trim());
+            }
             rowUpdated = true;
             break;
           }
@@ -1849,10 +1853,14 @@ function doPost(e) {
     if (data.action === "CLEAR_ACTIVITY") {
       const type = String(data.type || "INGESTED").toUpperCase();
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      const codes = new Set(
+        (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
+          .map(c => String(c).trim())
+          .filter(c => c && c.toUpperCase() !== 'PENDING' && c !== '-' && !c.startsWith('#'))
+      );
       if (codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Cannot clear activity: No voucher codes specified."
+          error: "Cannot clear activity: No valid voucher codes or booking IDs specified."
         })).setMimeType(ContentService.MimeType.JSON);
       }
       const updated = [];
@@ -1863,7 +1871,7 @@ function doPost(e) {
           const vals = sh.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowCode = String(vals[i][1] || "").trim();
-            if (codes.has(rowCode)) {
+            if (rowCode && rowCode !== '-' && codes.has(rowCode)) {
               sh.getRange(i + 1, 9).setValue(false); // Col 9: Display in UI
               sh.getRange(i + 1, 7).setValue("DISMISSED");
               updated.push(rowCode);
@@ -1878,9 +1886,11 @@ function doPost(e) {
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][1] || "").trim();
             const rowCode = String(vals[i][2] || "").trim();
-            if (codes.has(rowCode) || codes.has(rowBid)) {
+            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
+            const codeMatch = rowCode && rowCode !== '-' && rowCode.toUpperCase() !== 'PENDING' && codes.has(rowCode);
+            if (bidMatch || codeMatch) {
               newSheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
-              updated.push(rowCode || rowBid);
+              updated.push(rowBid || rowCode);
             }
           }
         }
@@ -1892,9 +1902,11 @@ function doPost(e) {
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][1] || "").trim();
             const rowCode = String(vals[i][2] || "").trim();
-            if (codes.has(rowCode) || codes.has(rowBid)) {
+            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
+            const codeMatch = rowCode && rowCode !== '-' && rowCode.toUpperCase() !== 'PENDING' && codes.has(rowCode);
+            if (bidMatch || codeMatch) {
               sheet.getRange(i + 1, 11).setValue(false); // Col 11: Display in UI
-              updated.push(rowCode || rowBid);
+              updated.push(rowBid || rowCode);
             }
           }
         }
