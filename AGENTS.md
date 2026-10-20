@@ -45,3 +45,12 @@
 - Canonical flow: `"New"` (Staging) $\rightarrow$ Brand Tab (Active Vault) $\rightarrow$ `"Redeemed"` (Archive).
 - **Direct `"New"` $\rightarrow$ `"Redeemed"` transition is STRICTLY FORBIDDEN** on both backend and frontend. Vouchers in staging MUST be approved to a brand tab first.
 - `"New"` tab is a system staging buffer and must always remain in `systemTabs` to isolate it from redemption scans.
+
+### 3. Unified Column Schema (No '#' Column) (STRICT)
+- The Google Sheet does NOT use a `#` (row index) column in any tab.
+- All brand tabs, `New`, `Redeemed`, and `Shared_Activity` start directly with their semantic primary keys:
+  - **Brand tabs**: `Booking ID` (Col A), `Code` (Col B), `PIN` (Col C), `Value` (Col D), `Date of Issue` (Col E), `Account` (Col F), `Card` (Col G), `Status` (Col H), `Appended Timestamp` (Col I), `Display in UI` (Col J).
+  - **New tab**: `Booking ID` (Col A), `Code` (Col B), `PIN` (Col C), `Value` (Col D), `Date of Issue` (Col E), `Account` (Col F), `Card` (Col G), `Status` (Col H), `Appended Timestamp` (Col I), `Display in UI` (Col J), `Target Brand` (Col K).
+  - **Redeemed tab**: `Brand` (Col A), `Booking ID` (Col B), `Code` (Col C), `PIN` (Col D), `Value` (Col E), `Date of Issue` (Col F), `Account` (Col G), `Card` (Col H), `Status` (Col I), `Redeemed Timestamp` (Col J), `Original Tab` (Col K), `Appended Timestamp` (Col L), `Display in UI` (Col M).
+  - **Shared_Activity tab**: `Code` (Col A), `Brand` (Col B), `Amount` (Col C), `PIN` (Col D), `Shared Timestamp` (Col E), `Status` (Col F), `Platform` (Col G), `Display in UI` (Col H).
+- Renumbering loops (`setValues(nums)`) are strictly forbidden, as row numbering is handled natively by Google Sheets and card numbering is rendered dynamically by the UI.
