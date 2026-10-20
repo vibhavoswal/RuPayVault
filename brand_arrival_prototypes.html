@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPay Select Vault - Brand Tab Arrival & New Status Stripe Prototypes</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --rupay-green: #0C8C46;
+      --rupay-green-hover: #0A753A;
+      --rupay-orange: #F47A21;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .font-mono-apple {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .anim-pulse-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen p-3 md:p-6 transition-colors duration-200">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Top Header -->
+    <header class="bg-neutral-900 border border-neutral-800 rounded-3xl p-5 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-xs font-bold font-mono-apple uppercase tracking-wider text-[#0C8C46]">
+          <span>⚡ Architecture & Design Explorations</span>
+          <span class="text-neutral-500">•</span>
+          <span class="text-[#F47A21]">Brand Tab Quarantine & New Stripe</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-black text-white mt-1">
+          Brand Tab Arrival Lifecycle & "NEW" Indicator
+        </h1>
+        <p class="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+          Pending vouchers stay strictly in <strong>Activity Log</strong> and never pollute the Brand Tab carousel or Cumulative Denomination. When fulfilled, they land in the brand tab with a prominent <strong>Blue "NEW" status accent stripe</strong>.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2.5 shrink-0">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="theme-btn" class="px-3.5 py-2 rounded-xl text-xs font-bold border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white flex items-center gap-1.5 transition-all">
+          <span id="theme-icon">☀️ Light</span>
+        </button>
+
+        <!-- Simulation Button -->
+        <button onclick="simulateDelivery()" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white shadow-lg active:scale-95 transition-all flex items-center gap-1.5">
+          <span>🚀 Simulate Voucher Arrival</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 3 APPROACHES SELECTION TABS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <!-- Approach 1 -->
+      <button onclick="selectApproach(1)" id="app-btn-1" class="text-left p-4 rounded-2xl border transition-all bg-neutral-900 border-[#0C8C46] ring-2 ring-[#0C8C46]/30">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-full bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/30">Approach 1 (Recommended)</span>
+          <span class="text-xs text-blue-400 font-bold">24-48h Window</span>
+        </div>
+        <h3 class="font-bold text-sm text-white mt-2">Pure Time-Window Stripe</h3>
+        <p class="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+          100% Stateless. Uses delivery timestamp. Blue accent stripe + "NEW" tag stays active for 48 hours after voucher code arrives, then transitions to standard card.
+        </p>
+      </button>
+
+      <!-- Approach 2 -->
+      <button onclick="selectApproach(2)" id="app-btn-2" class="text-left p-4 rounded-2xl border transition-all bg-neutral-900/60 border-neutral-800 hover:border-neutral-700">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Approach 2</span>
+          <span class="text-xs text-blue-400 font-bold">Seen Register</span>
+        </div>
+        <h3 class="font-bold text-sm text-white mt-2">First-Seen "Unread" Glow</h3>
+        <p class="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+          Device-tracked via localStorage. Blue stripe remains until user taps/views the card or copies its code, functioning like unread messages in messaging apps.
+        </p>
+      </button>
+
+      <!-- Approach 3 -->
+      <button onclick="selectApproach(3)" id="app-btn-3" class="text-left p-4 rounded-2xl border transition-all bg-neutral-900/60 border-neutral-800 hover:border-neutral-700">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Approach 3</span>
+          <span class="text-xs text-indigo-400 font-bold">Hybrid</span>
+        </div>
+        <h3 class="font-bold text-sm text-white mt-2">Hybrid Window + Manual Dismiss</h3>
+        <p class="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+          Combines 48h limit with an instant "Dismiss Badge" button. Features an indigo/cyan gradient border pulse to stand out dramatically in dense brand cards.
+        </p>
+      </button>
+    </div>
+
+    <!-- MAIN DEMO INTERACTION GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT: PHONE SCREEN SIMULATOR (7 cols) -->
+      <div class="lg:col-span-7 flex justify-center">
+        <div id="phone-frame" class="w-full max-w-[400px] h-[780px] rounded-[48px] bg-black border-[7px] border-neutral-800 shadow-[0_25px_70px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden relative transition-colors duration-300">
+          
+          <!-- Dynamic Island / Speaker Notch -->
+          <div class="h-6 w-full shrink-0 flex items-center justify-center pt-2">
+            <div class="w-24 h-4 bg-neutral-900 rounded-full flex items-center justify-end px-2">
+              <div class="w-2.5 h-2.5 rounded-full bg-blue-900/60 border border-blue-500/40"></div>
+            </div>
+          </div>
+
+          <!-- Phone Header Nav (Brand Carousel Deck Selector) -->
+          <div id="phone-top-deck" class="p-3 border-b border-neutral-800/80 shrink-0 space-y-2 bg-neutral-950">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-[#0C8C46] animate-ping"></span>
+                <span class="text-[11px] font-black tracking-wider uppercase text-neutral-300" id="phone-header-title">RuPay Select Vault</span>
+              </div>
+              <span id="demo-clock" class="text-[10px] font-mono-apple text-neutral-400">10:45 AM</span>
+            </div>
+
+            <!-- CAROUSEL DECK TABS (Simulating Brand Selectors) -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 text-xs">
+              <!-- Activity Log Tab -->
+              <button onclick="setSimTab('ActivityLog')" id="sim-tab-ActivityLog" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-neutral-900 text-neutral-400 border border-neutral-800">
+                <span>⚡ Activity Log</span>
+                <span id="sim-badge-act" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/40 text-[9px] font-mono-apple text-emerald-200">4</span>
+              </button>
+
+              <!-- Lakmé Tab (Default active to demonstrate brand isolation) -->
+              <button onclick="setSimTab('Lakme')" id="sim-tab-Lakme" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-[#0C8C46] text-white shadow">
+                <span>Lakmé</span>
+                <span id="sim-badge-lakme" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[9px] font-mono-apple text-white">1</span>
+              </button>
+
+              <!-- Thyrocare Tab -->
+              <button onclick="setSimTab('Thyrocare')" id="sim-tab-Thyrocare" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-neutral-900 text-neutral-400 border border-neutral-800">
+                <span>Thyrocare</span>
+                <span id="sim-badge-thyro" class="ml-1 px-1.5 py-0.2 rounded-full bg-neutral-800 text-[9px] font-mono-apple text-neutral-300">1</span>
+              </button>
+
+              <!-- Kalyan Tab -->
+              <button onclick="setSimTab('Kalyan')" id="sim-tab-Kalyan" class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-neutral-900 text-neutral-400 border border-neutral-800">
+                <span>Kalyan</span>
+                <span id="sim-badge-kalyan" class="ml-1 px-1.5 py-0.2 rounded-full bg-neutral-800 text-[9px] font-mono-apple text-neutral-300">1</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Cumulative Denomination Banner (Dynamically Hidden on Activity Log) -->
+          <div id="sim-denom-banner" class="mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[11px] shrink-0 shadow">
+            <span class="text-neutral-400 font-medium tracking-tight">Cumulative Denomination:</span>
+            <span id="sim-denom-text" class="font-bold text-[#F47A21] font-mono-apple tracking-tight">1 voucher × ₹1,500 = ₹1,500</span>
+          </div>
+
+          <!-- Phone Main Content Area -->
+          <div id="phone-content" class="flex-1 overflow-y-auto p-3 space-y-2.5 no-scrollbar">
+            <!-- Dynamically Rendered Via JS -->
+          </div>
+
+          <!-- Bottom Toast / Action Bar -->
+          <div id="phone-toast" class="absolute bottom-4 left-4 right-4 py-2 px-3 rounded-xl bg-neutral-900 border border-neutral-700 shadow-2xl text-xs font-bold text-white flex items-center justify-between opacity-0 transition-opacity duration-200 pointer-events-none">
+            <span id="phone-toast-text">Toast message</span>
+            <span class="text-emerald-400 text-sm">✓</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT: ARCHITECTURE BREAKDOWN & HOW IT WORKS (5 cols) -->
+      <div class="lg:col-span-5 space-y-4">
+        
+        <!-- Explainer Card 1: The Spreadsheet Question -->
+        <div class="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center gap-2 text-xs font-bold font-mono-apple text-emerald-400 uppercase">
+            <span>❓ Spreadsheet Column Question</span>
+          </div>
+          <h4 class="text-base font-bold text-white">Does this require adding another column in Google Sheets?</h4>
+          <p class="text-xs text-neutral-300 leading-relaxed">
+            <strong class="text-emerald-400">No new column is required!</strong> Your existing schema in <code class="text-[#F47A21] bg-black/40 px-1 py-0.5 rounded">CronCode.gs</code> already has:
+          </p>
+          <div class="p-3 rounded-xl bg-black/60 border border-neutral-800 space-y-1.5 text-xs font-mono-apple">
+            <div class="text-neutral-400">• Col 3 (Code): <span class="text-rose-400">"PENDING"</span> vs <span class="text-emerald-400">"THYRO-9823-1102"</span></div>
+            <div class="text-neutral-400">• Col 9 (Status): <span class="text-rose-400">"PENDING"</span> vs <span class="text-emerald-400">"ACTIVE"</span></div>
+            <div class="text-neutral-400">• Col 10 (Timestamp): Populated with exact delivery time IST</div>
+          </div>
+          <p class="text-xs text-neutral-400 leading-relaxed">
+            A voucher is legally spendable if and only if <code class="text-emerald-400">code !== 'PENDING' && status === 'ACTIVE'</code>. The frontend simply uses this existing check!
+          </p>
+        </div>
+
+        <!-- Explainer Card 2: The Lifecycle Pipeline -->
+        <div class="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center gap-2 text-xs font-bold font-mono-apple text-blue-400 uppercase">
+            <span>🔄 2-Stage Lifecycle Separation</span>
+          </div>
+          <h4 class="text-base font-bold text-white">How the Lifecycle Flows</h4>
+          
+          <div class="space-y-2.5 text-xs">
+            <div class="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30 space-y-1">
+              <div class="font-bold text-rose-400 flex items-center justify-between">
+                <span>STAGE 1: Acknowledgement Email</span>
+                <span class="text-[10px] font-mono-apple px-1.5 py-0.2 rounded bg-rose-500/20">Activity Log Only</span>
+              </div>
+              <p class="text-neutral-300 leading-relaxed text-[11px]">
+                Voucher code is not yet generated. Confined strictly to <strong>Activity Log</strong> with a soft red tint & red left stripe. <strong>Hidden from brand tab carousel</strong> to avoid polluting the count & math.
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-blue-950/20 border border-blue-500/30 space-y-1">
+              <div class="font-bold text-blue-400 flex items-center justify-between">
+                <span>STAGE 2: Delivery Email Arrives</span>
+                <span class="text-[10px] font-mono-apple px-1.5 py-0.2 rounded bg-blue-500/20">Brand Tab + Blue Stripe</span>
+              </div>
+              <p class="text-neutral-300 leading-relaxed text-[11px]">
+                Real voucher code arrives. The voucher is unlocked in its respective brand tab, with a vibrant <strong>Blue "NEW" status accent stripe</strong>. Cumulative Denomination updates cleanly!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explainer Card 3: Live State Summary -->
+        <div class="bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold font-mono-apple text-[#F47A21] uppercase">📊 Live Test Data State</span>
+            <button onclick="resetData()" class="text-[10px] font-mono-apple text-neutral-400 hover:text-white underline">Reset Data</button>
+          </div>
+          <div id="live-state-summary" class="text-xs space-y-1 text-neutral-300 font-mono-apple">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // DATA MODEL & INITIAL STATE
+    // ==========================================
+    let activeApproach = 1;
+    let activeTab = 'Lakme'; // 'ActivityLog' | 'Lakme' | 'Thyrocare' | 'Kalyan'
+    let currentTheme = 'dark';
+
+    // Mock vouchers representing the user's vault
+    let VOUCHERS = [
+      {
+        id: 'v-lakme-1',
+        brand: 'Lakme',
+        bookingId: 'RUPS-882194A',
+        code: 'LAK-9921-0021',
+        pin: '8821',
+        amount: 1500,
+        status: 'ACTIVE',
+        account: 'vibhavoswal3',
+        card: 'PNB Select (··1029)',
+        deliveredMs: Date.now() - (3 * 24 * 60 * 60 * 1000), // 3 days ago (not new)
+        seen: true
+      },
+      {
+        id: 'v-lakme-pending',
+        brand: 'Lakme',
+        bookingId: 'RUPS-F92881B',
+        code: 'PENDING',
+        pin: '',
+        amount: 1500,
+        status: 'PENDING',
+        account: 'smitioswal',
+        card: 'Unassigned',
+        deliveredMs: Date.now() - (2 * 60 * 60 * 1000), // 2 hours ago
+        seen: false
+      },
+      {
+        id: 'v-thyrocare-1',
+        brand: 'Thyrocare',
+        bookingId: 'RUPS-772182C',
+        code: 'THYRO-1192-3301',
+        pin: '',
+        amount: 500,
+        status: 'ACTIVE',
+        account: 'vibhavoswal3',
+        card: 'Union Select (··4481)',
+        deliveredMs: Date.now() - (6 * 60 * 60 * 1000), // 6 hours ago (NEW!)
+        seen: false
+      },
+      {
+        id: 'v-kalyan-1',
+        brand: 'Kalyan',
+        bookingId: 'RUPS-661921D',
+        code: 'KALYAN-5519-8820',
+        pin: '4410',
+        amount: 2000,
+        status: 'ACTIVE',
+        account: 'smitioswal',
+        card: 'BOB Select (··9901)',
+        deliveredMs: Date.now() - (4 * 24 * 60 * 60 * 1000), // 4 days ago (regular)
+        seen: true
+      }
+    ];
+
+    function showToast(msg) {
+      const t = document.getElementById('phone-toast');
+      const txt = document.getElementById('phone-toast-text');
+      txt.textContent = msg;
+      t.classList.remove('opacity-0');
+      setTimeout(() => t.classList.add('opacity-0'), 2200);
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      const frame = document.getElementById('phone-frame');
+      const btn = document.getElementById('theme-btn');
+      const icon = document.getElementById('theme-icon');
+
+      if (currentTheme === 'light') {
+        frame.classList.remove('bg-black', 'text-neutral-100');
+        frame.classList.add('bg-[#f6f8f6]', 'text-neutral-900');
+        document.getElementById('phone-top-deck').classList.remove('bg-neutral-950');
+        document.getElementById('phone-top-deck').classList.add('bg-white', 'border-neutral-200');
+        icon.textContent = '🌙 Dark';
+        btn.classList.replace('bg-neutral-800', 'bg-white');
+        btn.classList.replace('text-white', 'text-neutral-800');
+      } else {
+        frame.classList.remove('bg-[#f6f8f6]', 'text-neutral-900');
+        frame.classList.add('bg-black', 'text-neutral-100');
+        document.getElementById('phone-top-deck').classList.remove('bg-white', 'border-neutral-200');
+        document.getElementById('phone-top-deck').classList.add('bg-neutral-950', 'border-neutral-800');
+        icon.textContent = '☀️ Light';
+        btn.classList.replace('bg-white', 'bg-neutral-800');
+        btn.classList.replace('text-neutral-800', 'text-white');
+      }
+      renderPhone();
+    }
+
+    function selectApproach(num) {
+      activeApproach = num;
+      [1, 2, 3].forEach(n => {
+        const btn = document.getElementById(`app-btn-${n}`);
+        if (n === num) {
+          btn.className = "text-left p-4 rounded-2xl border transition-all bg-neutral-900 border-[#0C8C46] ring-2 ring-[#0C8C46]/30";
+        } else {
+          btn.className = "text-left p-4 rounded-2xl border transition-all bg-neutral-900/60 border-neutral-800 hover:border-neutral-700";
+        }
+      });
+      showToast(`Switched to Approach ${num}`);
+      renderPhone();
+    }
+
+    function setSimTab(tab) {
+      activeTab = tab;
+      ['ActivityLog', 'Lakme', 'Thyrocare', 'Kalyan'].forEach(t => {
+        const btn = document.getElementById(`sim-tab-${t}`);
+        if (t === tab) {
+          btn.className = "px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-[#0C8C46] text-white shadow";
+        } else {
+          btn.className = currentTheme === 'light'
+            ? "px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-neutral-100 text-neutral-600 border border-neutral-200"
+            : "px-2.5 py-1.5 rounded-xl text-[11px] font-bold shrink-0 transition-all bg-neutral-900 text-neutral-400 border border-neutral-800";
+        }
+      });
+      renderPhone();
+    }
+
+    // Helper: is a voucher considered "NEW"?
+    function isVoucherNew(v) {
+      if (v.status === 'PENDING' || v.code === 'PENDING') return false;
+
+      if (activeApproach === 1) {
+        // Approach 1: delivered within last 48 hours
+        const diffHours = (Date.now() - (v.deliveredMs || 0)) / (1000 * 60 * 60);
+        return diffHours <= 48;
+      } else if (activeApproach === 2) {
+        // Approach 2: client seen register
+        return !v.seen;
+      } else {
+        // Approach 3: hybrid (within 48 hours and not dismissed)
+        const diffHours = (Date.now() - (v.deliveredMs || 0)) / (1000 * 60 * 60);
+        return diffHours <= 48 && !v.seen;
+      }
+    }
+
+    function markSeen(id) {
+      const v = VOUCHERS.find(x => x.id === id);
+      if (v) {
+        v.seen = true;
+        showToast(`Marked ${v.brand} voucher as reviewed`);
+        renderPhone();
+      }
+    }
+
+    // Simulate voucher arriving from Gmail
+    function simulateDelivery() {
+      const pendingV = VOUCHERS.find(v => v.code === 'PENDING');
+      if (pendingV) {
+        pendingV.code = 'LAK-7719-2041';
+        pendingV.pin = '6620';
+        pendingV.status = 'ACTIVE';
+        pendingV.deliveredMs = Date.now(); // Arrived just now!
+        pendingV.seen = false;
+        showToast('🎉 Voucher arrived! Promoted to Lakmé tab with Blue Stripe');
+      } else {
+        // Toggle back to pending for repeatable testing
+        const lastV = VOUCHERS[1];
+        lastV.code = 'PENDING';
+        lastV.pin = '';
+        lastV.status = 'PENDING';
+        lastV.deliveredMs = Date.now() - (2 * 60 * 60 * 1000);
+        lastV.seen = false;
+        showToast('Reset Lakmé voucher to PENDING in Activity Log');
+      }
+      renderPhone();
+    }
+
+    function resetData() {
+      VOUCHERS[1].code = 'PENDING';
+      VOUCHERS[1].pin = '';
+      VOUCHERS[1].status = 'PENDING';
+      VOUCHERS[1].seen = false;
+      VOUCHERS[2].seen = false;
+      showToast('Data reset to original test state');
+      renderPhone();
+    }
+
+    // ==========================================
+    // RENDER LOGIC
+    // ==========================================
+    function renderPhone() {
+      const isLight = currentTheme === 'light';
+      const container = document.getElementById('phone-content');
+      const denomBanner = document.getElementById('sim-denom-banner');
+      const denomText = document.getElementById('sim-denom-text');
+
+      // 1. Update Badges on Deck Selector
+      const activeArrivedCount = (brand) => VOUCHERS.filter(v => v.brand === brand && v.code !== 'PENDING' && v.status === 'ACTIVE').length;
+      document.getElementById('sim-badge-lakme').textContent = activeArrivedCount('Lakme');
+      document.getElementById('sim-badge-thyro').textContent = activeArrivedCount('Thyrocare');
+      document.getElementById('sim-badge-kalyan').textContent = activeArrivedCount('Kalyan');
+      document.getElementById('sim-badge-act').textContent = VOUCHERS.length; // All 4 in activity log
+
+      // 2. Denomination Banner Visibility (Hidden on Activity Log!)
+      if (activeTab === 'ActivityLog') {
+        denomBanner.classList.add('hidden');
+      } else {
+        denomBanner.classList.remove('hidden');
+        if (isLight) {
+          denomBanner.className = "mx-3 my-2 px-3 py-1.5 rounded-xl bg-white border border-neutral-200 flex justify-between items-center text-[11px] shrink-0 shadow-xs";
+        } else {
+          denomBanner.className = "mx-3 my-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-neutral-900 via-neutral-900 to-neutral-950 border border-neutral-800 flex justify-between items-center text-[11px] shrink-0 shadow";
+        }
+
+        const validVouchers = VOUCHERS.filter(v => v.brand === activeTab && v.code !== 'PENDING' && v.status === 'ACTIVE');
+        const count = validVouchers.length;
+        const denom = validVouchers.length ? validVouchers[0].amount : 0;
+        const total = count * denom;
+        denomText.textContent = `${count} voucher${count === 1 ? '' : 's'} × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`;
+      }
+
+      // 3. Render Cards
+      if (activeTab === 'ActivityLog') {
+        // Activity Log: Shows ALL vouchers (both pending and arrived) with Red vs Green status
+        container.innerHTML = `
+          <div class="space-y-1 mb-2">
+            <div class="flex items-center justify-between text-xs px-1">
+              <span class="font-bold ${isLight ? 'text-neutral-800' : 'text-neutral-200'}">⚡ Unified Activity Feed</span>
+              <span class="text-[10px] font-mono-apple text-blue-400">All Stages (7d)</span>
+            </div>
+            <p class="text-[10.5px] ${isLight ? 'text-neutral-500' : 'text-neutral-400'} px-1">
+              Pending redemptions stay here until Gmail delivers the code.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            ${VOUCHERS.map(v => {
+              const isPending = v.code === 'PENDING';
+              const cardBg = isLight
+                ? (isPending ? 'bg-[#FDF0F0] border-rose-200' : 'bg-[#EBF7EE] border-emerald-300')
+                : (isPending ? 'bg-[#260e12]/75 border-rose-500/30' : 'bg-[#062414]/75 border-emerald-500/30');
+              const stripe = isPending ? 'border-l-4 border-l-rose-500' : 'border-l-4 border-l-emerald-500';
+
+              return `
+                <div class="rounded-2xl p-2.5 border transition-all flex items-center justify-between gap-2 ${cardBg} ${stripe}">
+                  <div class="flex-1 min-w-0 space-y-0.5">
+                    <div class="flex items-center gap-1.5 text-xs truncate">
+                      <span class="font-bold ${isLight ? 'text-neutral-900' : 'text-white'} text-[13px]">${v.brand}</span>
+                      <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold ${isPending ? 'bg-amber-400/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-400'}">
+                        ${isPending ? '⏳ Awaiting Delivery' : '✓ Arrived'}
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-2 truncate py-0.5">
+                      <span class="font-mono-apple text-xs font-bold ${isLight ? 'text-neutral-800' : 'text-neutral-200'} tracking-wide">
+                        ${v.bookingId}
+                      </span>
+                      <button onclick="showToast('Copied Ref ID: ${v.bookingId}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold ${isLight ? 'bg-white border border-neutral-300' : 'bg-neutral-800 border border-neutral-700 text-neutral-200'}">
+                        Copy
+                      </button>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[10px] font-mono-apple truncate pt-0.5">
+                      <span class="text-blue-400 font-bold">@${v.account}</span>
+                      <span class="text-neutral-500">•</span>
+                      <span class="text-neutral-400">2h ago</span>
+                    </div>
+                  </div>
+
+                  <div class="shrink-0">
+                    <button onclick="showToast('Inspecting ${v.brand} in detail sheet')" class="w-7 h-7 rounded-lg flex items-center justify-center border ${isLight ? 'bg-white border-neutral-200 text-neutral-700' : 'bg-neutral-800 border-neutral-700 text-neutral-300'}">
+                      ℹ️
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else {
+        // Brand Tab: ONLY shows ARRIVED vouchers (code !== 'PENDING')
+        const brandVouchers = VOUCHERS.filter(v => v.brand === activeTab && v.code !== 'PENDING' && v.status === 'ACTIVE');
+
+        if (!brandVouchers.length) {
+          container.innerHTML = `
+            <div class="py-16 px-6 text-center space-y-3 rounded-3xl ${isLight ? 'bg-white border border-neutral-200' : 'bg-neutral-900/40 border border-neutral-800/60'} my-4">
+              <div class="w-12 h-12 mx-auto rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl font-bold">
+                ⏳
+              </div>
+              <h4 class="font-bold text-sm ${isLight ? 'text-neutral-800' : 'text-neutral-200'}">No Delivered Vouchers Yet</h4>
+              <p class="text-xs ${isLight ? 'text-neutral-500' : 'text-neutral-400'} max-w-xs mx-auto leading-relaxed">
+                Vouchers currently pending fulfillment from Gmail are safely sequestered in the <strong>Activity Log</strong> so they don't pollute your spendable total.
+              </p>
+              <button onclick="setSimTab('ActivityLog')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] text-white">
+                View in Activity Log →
+              </button>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="space-y-1 mb-2 px-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold ${isLight ? 'text-neutral-800' : 'text-neutral-200'}">${activeTab} Ready Deck</span>
+                <span class="text-[10.5px] font-mono-apple text-emerald-400 font-bold">${brandVouchers.length} spendable</span>
+              </div>
+              <p class="text-[10.5px] ${isLight ? 'text-neutral-500' : 'text-neutral-400'}">
+                Only vouchers with verified codes appear here.
+              </p>
+            </div>
+
+            <div class="space-y-3">
+              ${brandVouchers.map(v => {
+                const isNew = isVoucherNew(v);
+
+                // APPROACH-SPECIFIC CARD STYLING
+                let stripeColor = 'border-l-4 border-l-emerald-500'; // Default arrived
+                let tagMarkup = '';
+                let cardGlow = '';
+
+                if (isNew) {
+                  if (activeApproach === 1) {
+                    // Approach 1: Blue Stripe + "NEW" Pill
+                    stripeColor = 'border-l-4 border-l-blue-500';
+                    tagMarkup = `
+                      <span class="text-[9.5px] px-2 py-0.5 rounded-full font-mono-apple font-bold bg-blue-500 text-white flex items-center gap-1 shadow-sm">
+                        ✨ NEW
+                      </span>
+                    `;
+                  } else if (activeApproach === 2) {
+                    // Approach 2: Sky Blue Stripe + "UNREAD" Click to mark seen
+                    stripeColor = 'border-l-4 border-l-sky-400';
+                    cardGlow = 'ring-1 ring-sky-500/50 shadow-[0_0_15px_rgba(56,189,248,0.15)]';
+                    tagMarkup = `
+                      <button onclick="markSeen('${v.id}')" class="text-[9px] px-2 py-0.5 rounded-full font-mono-apple font-bold bg-sky-500/20 text-sky-400 border border-sky-400/40 hover:bg-sky-500 hover:text-white transition-all flex items-center gap-1">
+                        ● NEW ARRIVAL (Tap to review)
+                      </button>
+                    `;
+                  } else {
+                    // Approach 3: Indigo Gradient Pulse + Dismiss X
+                    stripeColor = 'border-l-4 border-l-indigo-500';
+                    cardGlow = 'ring-2 ring-indigo-500/40 anim-pulse-subtle';
+                    tagMarkup = `
+                      <div class="flex items-center gap-1">
+                        <span class="text-[9.5px] px-2 py-0.5 rounded-md font-mono-apple font-black bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow">
+                          JUST LANDED
+                        </span>
+                        <button onclick="markSeen('${v.id}')" class="w-4 h-4 rounded-full bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center text-[9px]" title="Dismiss New badge">✕</button>
+                      </div>
+                    `;
+                  }
+                }
+
+                const cardBg = isLight
+                  ? (isNew ? 'bg-[#EEF5FF] border-blue-200' : 'bg-[#EBF7EE] border-emerald-300')
+                  : (isNew ? 'bg-[#0b172a]/85 border-blue-500/40' : 'bg-[#062414]/75 border-emerald-500/30');
+
+                return `
+                  <div class="rounded-2xl p-3 border transition-all space-y-2.5 ${cardBg} ${stripeColor} ${cardGlow}">
+                    
+                    <!-- Top Row: Brand & Status -->
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm ${isLight ? 'text-neutral-900' : 'text-white'}">${v.brand} Voucher</span>
+                        <span class="text-xs font-bold text-emerald-500">₹${v.amount.toLocaleString()}</span>
+                      </div>
+                      ${tagMarkup}
+                    </div>
+
+                    <!-- Voucher Code & PIN (Prominent Display) -->
+                    <div class="p-2.5 rounded-xl ${isLight ? 'bg-white border border-neutral-200' : 'bg-black/80 border border-neutral-800'} flex items-center justify-between gap-2">
+                      <div>
+                        <div class="font-mono-apple text-sm font-bold ${isLight ? 'text-neutral-900' : 'text-white'} tracking-wider">
+                          ${v.code}
+                        </div>
+                        ${v.pin ? `
+                          <div class="font-mono-apple text-xs text-[#F47A21] font-bold mt-0.5">
+                            PIN: ${v.pin}
+                          </div>
+                        ` : ''}
+                      </div>
+
+                      <button onclick="showToast('Copied Code + PIN for ${v.brand}!')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow transition-all shrink-0">
+                        ${v.pin ? 'Copy Code + PIN' : 'Copy Code'}
+                      </button>
+                    </div>
+
+                    <!-- Metadata Row -->
+                    <div class="flex items-center justify-between text-[10.5px] font-mono-apple pt-0.5 ${isLight ? 'text-neutral-600' : 'text-neutral-400'}">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-blue-400 font-bold">@${v.account}</span>
+                        <span>•</span>
+                        <span>${v.card}</span>
+                      </div>
+                      <span class="${isNew ? 'text-blue-400 font-bold' : ''}">
+                        ${isNew ? '⚡ Landed Recently' : 'Standard Active'}
+                      </span>
+                    </div>
+
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+      }
+
+      // 4. Update Summary Sidebar
+      const pendingCnt = VOUCHERS.filter(v => v.code === 'PENDING').length;
+      const arrivedCnt = VOUCHERS.filter(v => v.code !== 'PENDING').length;
+      const newCnt = VOUCHERS.filter(v => isVoucherNew(v)).length;
+
+      document.getElementById('live-state-summary').innerHTML = `
+        <div class="flex justify-between"><span>Total Ingested:</span><span class="text-white font-bold">${VOUCHERS.length}</span></div>
+        <div class="flex justify-between"><span>Pending (Activity Only):</span><span class="text-rose-400 font-bold">${pendingCnt}</span></div>
+        <div class="flex justify-between"><span>Delivered (In Brand Tabs):</span><span class="text-emerald-400 font-bold">${arrivedCnt}</span></div>
+        <div class="flex justify-between"><span>Delivered Flagged "NEW":</span><span class="text-blue-400 font-bold">${newCnt}</span></div>
+        <div class="flex justify-between pt-1 border-t border-neutral-800"><span>Current Approach:</span><span class="text-[#F47A21] font-bold">Approach ${activeApproach}</span></div>
+      `;
+    }
+
+    // Initial render
+    renderPhone();
+  </script>
+</body>
+</html>
