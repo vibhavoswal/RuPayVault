@@ -1332,17 +1332,18 @@ function doPost(e) {
             // Target Brand Sheet
             const brandSheet = getTargetBrandSheet(ss, targetBrand);
 
-            // IDEMPOTENCY CHECK (Strictly on Booking ID):
-            // Check if this Booking ID already exists in the destination Brand tab
+            // IDEMPOTENCY CHECK (Booking ID and Code):
+            // Check if this Booking ID or Voucher Code already exists in the destination Brand tab
             let existingBrandRowIndex = -1;
-            if (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#')) {
-              const brandVals = brandSheet.getDataRange().getValues();
-              for (let b = 1; b < brandVals.length; b++) {
-                const existingBid = String(brandVals[b][1] || '').trim().toUpperCase();
-                if (existingBid === bIdUpper) {
-                  existingBrandRowIndex = b + 1;
-                  break;
-                }
+            const brandVals = brandSheet.getDataRange().getValues();
+            for (let b = 1; b < brandVals.length; b++) {
+              const existingBid = String(brandVals[b][1] || '').trim().toUpperCase();
+              const existingCode = String(brandVals[b][2] || '').trim().toUpperCase();
+              const isBidMatch = (bIdUpper && bIdUpper !== '-' && !bIdUpper.startsWith('#')) && (existingBid === bIdUpper);
+              const isCodeMatch = (codeUpper && codeUpper !== 'PENDING' && codeUpper !== '-') && (existingCode === codeUpper);
+              if (isBidMatch || isCodeMatch) {
+                existingBrandRowIndex = b + 1;
+                break;
               }
             }
 
@@ -1482,6 +1483,11 @@ function doPost(e) {
 
         if (targetSheet && rowData) {
           const origBrand = targetSheet.getName();
+
+          // Strict Source Tab Guard: Never cut and paste from "New" to "Redeemed"
+          if (origBrand === "New") {
+            return;
+          }
 
           // DEDUPLICATION LOCK: Only append to Redeemed if not already present in Redeemed!
           if (!existingRedeemedCodes.has(codeVal)) {
