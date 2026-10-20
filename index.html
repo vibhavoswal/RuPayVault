@@ -2814,6 +2814,7 @@
 
       updateIngestFilterUI();
       updateClearTrashBadges();
+      renderDeckSelector();
       renderVault();
     }
 
@@ -2838,13 +2839,12 @@
             );
             selectedCount = visibleShared.filter(s => state.selectedIds.has('shared-' + s.code) || state.selectedIds.has(s.code)).length;
           } else {
-            const visibleIngested = state.vouchers.filter(v =>
-              v.displayInUI !== false &&
-              !isVoucherRedeemed(v) &&
-              v.timestampIST &&
-              (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
-            );
-            selectedCount = visibleIngested.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code)).length;
+            const visibleIngested = (state.staging || []).filter(s => {
+              if (s.displayInUI === false) return false;
+              const tagged = isCardTagged(s.card);
+              return state.ingestFilter === 'tagged' ? tagged : !tagged;
+            });
+            selectedCount = visibleIngested.filter(s => state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)).length;
           }
         } else if (normActive === 'Redeemed') {
           const visibleRedeemed = redeemedList.filter(r => r.displayInUI !== false);
@@ -2986,12 +2986,7 @@
         if (mbDenomBanner) mbDenomBanner.classList.add('hidden');
 
         const nowMs = Date.now();
-        const ingestedCount = state.vouchers.filter(v =>
-          v.displayInUI !== false &&
-          !isVoucherRedeemed(v) &&
-          v.timestampIST &&
-          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
-        ).length;
+        const ingestedCount = (state.staging || []).filter(s => s.displayInUI !== false).length;
 
         const sharedCount = sharedActivity.filter(s =>
           s.displayInUI !== false &&
@@ -3000,13 +2995,19 @@
           (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
         ).length;
 
-        const totalEvents = ingestedCount + sharedCount;
-
-        return {
-          title: '⚡ Activity Log',
-          calc: `${totalEvents} events (${ingestedCount} ingested · ${sharedCount} shared · 7-day window)`,
-          sub: 'Live activity stream from Gmail ingestion and shared vouchers in the last 7 days'
-        };
+        if (activityFilter === 'shared') {
+          return {
+            title: '⚡ Activity Log',
+            calc: `${sharedCount} Shared Vouchers`,
+            sub: 'Vouchers shared via WhatsApp in the last 7 days'
+          };
+        } else {
+          return {
+            title: '⚡ Activity Log',
+            calc: `${ingestedCount} Ingested Vouchers`,
+            sub: 'Incoming vouchers from Gmail staged in the "New" tab'
+          };
+        }
       } else if (normKey === 'Redeemed') {
         if (dtFilterBar) dtFilterBar.classList.add('hidden');
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
@@ -4197,29 +4198,27 @@
         }
       });
 
-      const activeIngested7d = state.vouchers.filter(v =>
-        v.displayInUI !== false &&
-        !isVoucherRedeemed(v) &&
-        v.timestampIST &&
-        (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
-      ).length;
+      const ingestedCount = (state.staging || []).filter(s => s.displayInUI !== false).length;
 
-      const activeShared7d = sharedActivity.filter(s =>
+      const sharedCount = sharedActivity.filter(s =>
         s.displayInUI !== false &&
         !isVoucherRedeemed(s) &&
         (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
         (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
       ).length;
 
-      counts['ActivityLog'] = activeIngested7d + activeShared7d;
+      counts['ActivityLog'] = (activityFilter === 'shared') ? sharedCount : ingestedCount;
       counts['Redeemed'] = redeemedList.filter(r => r.displayInUI !== false).length;
 
       container.innerHTML = BRAND_CONFIG.map(item => {
         const count = counts[item.key] || 0;
         const isSel = (normActive === item.key);
         let countLabel = `${count} vouchers`;
-        if (item.key === 'ActivityLog') countLabel = `${count} active`;
-        else if (item.key === 'Redeemed') countLabel = `${count} redeemed`;
+        if (item.key === 'ActivityLog') {
+          countLabel = (activityFilter === 'shared') ? `${count} Shared` : `${count} Ingested`;
+        } else if (item.key === 'Redeemed') {
+          countLabel = `${count} redeemed`;
+        }
 
         return `
           <button id="deck-btn-${item.key}" onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-[#0C8C46] text-white shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
@@ -4237,8 +4236,17 @@
       const normKey = normalizeBrandKey(state.activeFilterBrand);
       let vs;
       if (normKey === 'ActivityLog') {
-        vs = state.vouchers.filter(v => !isVoucherRedeemed(v) && v.status !== 'USED');
-        if (!vs.length) vs = state.vouchers.filter(v => !isVoucherRedeemed(v));
+        if (activityFilter === 'shared') {
+          const nowMs = Date.now();
+          vs = sharedActivity.filter(s =>
+            s.displayInUI !== false &&
+            !isVoucherRedeemed(s) &&
+            (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+            (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+          );
+        } else {
+          vs = (state.staging || []).filter(s => s.displayInUI !== false && s.code && s.code.trim() !== '');
+        }
       } else {
         vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
         if (!vs.length) vs = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
@@ -4881,25 +4889,24 @@
       let brandVouchers;
       if (normKey === 'ActivityLog') {
         const nowMs = Date.now();
-        brandVouchers = state.vouchers.filter(v =>
-          v.displayInUI !== false &&
-          !isVoucherRedeemed(v) &&
-          v.timestampIST &&
-          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS &&
-          v.status !== 'USED'
-        );
-        const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v =>
-          v.displayInUI !== false &&
-          !isVoucherRedeemed(v) &&
-          v.timestampIST &&
-          (nowMs - parseTimestamp(v.timestampIST)) <= SEVEN_DAYS_MS
-        );
-        const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+        if (activityFilter === 'shared') {
+          brandVouchers = sharedActivity.filter(s =>
+            s.displayInUI !== false &&
+            !isVoucherRedeemed(s) &&
+            (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+            (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+          );
+        } else {
+          brandVouchers = (state.staging || []).filter(s =>
+            s.displayInUI !== false && s.code && s.code.trim() !== ''
+          );
+        }
+        const sel = brandVouchers.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code) || state.selectedIds.has(v.bookingId));
         if (state.isSelectMode && !sel.length) {
           showToast("Please select at least 1 voucher to share");
           return;
         }
-        const targets = sel.length > 0 ? sel : allBrandVouchers;
+        const targets = sel.length > 0 ? sel : brandVouchers;
         if (!targets.length) {
           showToast("No vouchers to share");
           return;
