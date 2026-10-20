@@ -46,7 +46,7 @@ function getSpreadsheet() {
 const CANONICAL_BRAND_TABS = new Set([
   "Lakme", "FourFountains", "Kalyan", "Myntra", "BigBasket", "Reliance",
   "Apollo", "AmazonPrime", "CultFit", "TimesPrime", "TattvaSpa", "TaxSpanner",
-  "Thyrocare", "Uber", "Decathlon"
+  "Thyrocare", "Uber", "Decathlon", "SwiggyOne"
 ]);
 
 function getTargetBrandSheet(ss, brand) {
@@ -465,6 +465,7 @@ function extractBrand(subject, body) {
   if (combined.includes("decathlon")) return "Decathlon";
   if (combined.includes("tattva")) return "TattvaSpa";
   if (combined.includes("times prime") || combined.includes("timesprime") || combined.includes("tpace")) return "TimesPrime";
+  if (combined.includes("swiggy")) return "SwiggyOne";
 
   return "Other";
 }
@@ -796,6 +797,59 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+  // Administrative One-Off: Setup SwiggyOne brand tab & update target brand in New tab
+  if (e && e.parameter && e.parameter.action === "SETUP_SWIGGY_ONE") {
+    try {
+      const ss = getSpreadsheet();
+      
+      // 1. Ensure SwiggyOne tab exists with standard unified headers and formatting
+      let swiggySheet = ss.getSheetByName("SwiggyOne");
+      let sheetCreated = false;
+      if (!swiggySheet) {
+        swiggySheet = ss.insertSheet("SwiggyOne");
+        swiggySheet.appendRow(UNIFIED_BRAND_HEADERS);
+        swiggySheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+        swiggySheet.setFrozenRows(1);
+        sheetCreated = true;
+      }
+
+      // 2. Locate RUPS-5ACE0C37 in "New" tab and update Target Brand (Col 12) to "SwiggyOne"
+      const newSheet = ss.getSheetByName("New");
+      let rowUpdated = false;
+      let foundRowIndex = -1;
+      let oldTargetBrand = "";
+      if (newSheet) {
+        const vals = newSheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const bid = String(vals[i][1] || '').trim();
+          if (bid.toUpperCase() === "RUPS-5ACE0C37") {
+            foundRowIndex = i + 1;
+            oldTargetBrand = String(vals[i][11] || '');
+            newSheet.getRange(i + 1, 12).setValue("SwiggyOne");
+            rowUpdated = true;
+            break;
+          }
+        }
+      }
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        swiggySheetCreated: sheetCreated,
+        sheetExists: !!swiggySheet,
+        foundRowIndex: foundRowIndex,
+        oldTargetBrand: oldTargetBrand,
+        newTargetBrand: "SwiggyOne",
+        rowUpdated: rowUpdated
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: err.message
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // SECURITY CHECK: Enforce 24-Hour HMAC Session Token
   const providedAuth = (e && e.parameter) ? (e.parameter.token || e.parameter.auth || e.parameter.key || "") : "";
   const authCheck = validateAuth(providedAuth);

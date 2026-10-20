@@ -806,6 +806,7 @@
               <option value="TaxSpanner">12. TaxSpanner (₹2,950)</option>
               <option value="Thyrocare">13. Thyrocare</option>
               <option value="Uber">14. Uber Rides (₹100)</option>
+              <option value="SwiggyOne">15. Swiggy One</option>
               <option value="Redeemed">📜 Redeemed Archive</option>
             </select>
             <a id="dt-sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
@@ -2100,6 +2101,7 @@
       { key: 'TaxSpanner', name: 'TaxSpanner', denom: 2950, hasPin: false, tag: 'Tax Filing' },
       { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
       { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' },
+      { key: 'SwiggyOne', name: 'Swiggy One', denom: 0, hasPin: false, tag: 'Food & Dining' },
       { key: 'Redeemed', name: '📜 Redeemed', denom: 0, hasPin: false, tag: 'Archive', isSpecial: true }
     ];
 
@@ -2121,6 +2123,7 @@
       if (b.includes('taxspanner') || b.includes('tax')) return 'TaxSpanner';
       if (b.includes('thyrocare')) return 'Thyrocare';
       if (b.includes('uber')) return 'Uber';
+      if (b.includes('swiggy')) return 'SwiggyOne';
       if (b === 'redeemed' || b === 'redeem') return 'Redeemed';
       return brand;
     }
