@@ -576,6 +576,19 @@
       border-color: rgba(0, 0, 0, 0.12) !important;
     }
 
+    /* Brand Tab Recency - Subtle Cobalt Edge for T-7 Recent Vouchers */
+    .cobalt-accent-dark {
+      border-left: 3.5px solid #007AFF !important;
+      background: radial-gradient(circle at 0% 50%, rgba(0, 122, 255, 0.10), transparent 70%), #171516 !important;
+    }
+    .cobalt-accent-light,
+    [data-theme="light"] .mobile-view [id^="mb-card-"].cobalt-accent-dark,
+    [data-theme="light"] .cobalt-accent-dark,
+    html.light .cobalt-accent-dark {
+      border-left: 3.5px solid #007AFF !important;
+      background: radial-gradient(circle at 0% 50%, rgba(0, 122, 255, 0.08), transparent 70%), #ffffff !important;
+    }
+
     /* Staggered Spring Pop for Stack Circles */
     .spring-pop-item-1 {
       animation: springPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.02s forwards;
@@ -2224,6 +2237,20 @@
       const diffDay = Math.floor(diffHr / 24);
       if (diffDay < 7) return `${diffDay}d ago`;
       return `${Math.floor(diffDay / 7)}w ago`;
+    }
+
+    // Formats arrival timestamp strictly in IST: e.g. "Ingested on 19th Oct"
+    function formatArrivalDate(ts) {
+      if (!ts) return '';
+      const ms = parseTimestamp(ts);
+      if (!ms) return '';
+      const d = new Date(ms);
+      const day = parseInt(d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric' }), 10);
+      const month = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', month: 'short' });
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = day % 100;
+      const ordinal = day + (s[(v - 20) % 10] || s[v] || s[0]);
+      return `Ingested on ${ordinal} ${month}`;
     }
 
     /* --- SMART COMBINED VOUCHER CODE + PIN COPY HELPER --- */
@@ -4280,6 +4307,16 @@
         );
       }
 
+      // Sort: Reverse-chronological by timestampIST (newest arrivals on top). Untimestamped vouchers below in original sheet order.
+      vs.sort((a, b) => {
+        const tA = a.timestampIST ? parseTimestamp(a.timestampIST) : 0;
+        const tB = b.timestampIST ? parseTimestamp(b.timestampIST) : 0;
+        if (tA && tB) return tB - tA; // Newest first
+        if (tA && !tB) return -1;    // Timestamped vouchers on top
+        if (!tA && tB) return 1;     // Legacy untimestamped vouchers below
+        return 0;                    // Maintain original sheet order
+      });
+
       if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
 
       const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
@@ -4334,45 +4371,48 @@
       `;
       }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
 
-      // Mobile VIP Wallet Cards
+      // Mobile VIP Wallet Cards (Minimal Subtle Cobalt Edge Placards)
       document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
-        const isFF = normalizeBrandKey(v.brand) === 'FourFountains';
         const isChecked = state.selectedIds.has(v.id);
-        const vBrandName = getBrandDisplayName(v.brand);
 
         const timeMs = v.timestampIST ? parseTimestamp(v.timestampIST) : 0;
-        const isRecentArrival = v.isRecent === true || (timeMs > 0 && (Date.now() - timeMs) <= (72 * 3600 * 1000));
+        const isRecentArrival = (timeMs > 0 && (Date.now() - timeMs) <= (7 * 24 * 3600 * 1000));
 
         const cardStripeClass = isRecentArrival
-          ? 'border-l-4 border-l-blue-500 bg-blue-950/25 border-neutral-800'
+          ? (isChecked ? 'cobalt-accent-dark border-neutral-800 ring-2 ring-[#0C8C46]/50' : 'cobalt-accent-dark border-neutral-800')
           : (isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700 bg-gradient-to-br from-neutral-900 to-neutral-950');
 
-        const recentBadge = isRecentArrival
-          ? '<span class="px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-blue-900/60 text-blue-300 border border-blue-700/50 font-mono-apple">New (72h)</span>'
-          : '';
+        // Bottom Line: ONLY for recent vouchers (< 7 days)
+        // Left: [● Ingested on 19th Oct] | Right: Card tag
+        // Older vouchers: OMITTED COMPLETELY (no card tag, no untagged label, no recency badge)
+        const bottomLineHtml = isRecentArrival ? `
+          <div class="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/40">
+            <span class="text-[10px] font-bold text-[#007AFF] flex items-center gap-1.5 font-mono-apple">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#007AFF]"></span>
+              ${formatArrivalDate(v.timestampIST)}
+            </span>
+            <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
+              <span>💳</span>
+              <span>${v.card || 'RuPay Select'}</span>
+            </div>
+          </div>
+        ` : '';
 
         return `
           <div id="mb-card-${v.id}" 
                data-code="${v.code}" 
                onclick="handleCardClick('${v.id}')" 
-               class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}" style="max-height: 250px;">
-            <!-- Top Row: Checkbox (visible ONLY in select mode), PASS #, Status -->
+               class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}">
+            <!-- Top Line: Pass # ONLY (+ checkbox in select mode) -->
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
-                <span class="font-mono-apple font-bold text-[#F47A21]/90 text-[11px] tracking-wider">PASS #${i + 1}</span>
-                ${recentBadge}
-              </div>
-              <div class="flex items-center gap-1.5">
-                ${isFF ? (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-[#F47A21]/15 border border-[#F47A21]/30 text-[#F47A21] text-[10px] font-medium">Redeemed: ${v.redeemedOn}</span>` : `<span class="px-2 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-400 text-[10px]">Strict 30D Validity</span>`) : (v.redeemedOn ? `<span class="px-2 py-0.5 rounded-full bg-neutral-900 text-[#F47A21]/80 text-[10px]">Redeemed: ${v.redeemedOn}</span>` : `<span class="text-[10px] text-neutral-400">Valid: ${v.expiry || '31 Dec 2026'}</span>`)}
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${v.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : (v.status === 'USED' ? 'bg-neutral-800 text-neutral-400' : 'bg-[#0C8C46]/20 text-[#0C8C46] border border-[#0C8C46]/30')}">
-                  ${v.status === 'PENDING' ? '⏳ PENDING' : v.status}
-                </span>
+                <span class="font-mono-apple font-bold text-[#F47A21] text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
             </div>
 
-            <!-- Embossed Monospace Code Box (Tap anywhere on card to select, or tap button to copy) -->
+            <!-- Monospace Code Box: Code & PIN ONLY -->
             <div class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between pointer-events-auto">
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
@@ -4396,6 +4436,9 @@
                 </button>
               `}
             </div>
+
+            <!-- Bottom Line (Present ONLY on recent arrivals < 7 days) -->
+            ${bottomLineHtml}
           </div>
         `;
       }).join('') : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
