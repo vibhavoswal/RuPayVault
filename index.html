@@ -1036,28 +1036,50 @@
   <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
     
     <!-- Top Bar with Safe Area Top Padding -->
-    <header class="px-3.5 py-2.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30">
-      <!-- Left: Menu Bar Icon (Opens Navigation Drawer) -->
-      <button id="mb-menu-btn" onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
-        <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="17" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-      
-      <div class="flex items-center gap-2">
-        <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
-        <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-[#0C8C46] hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
-          <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+    <header class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
+      <!-- Left Cell: Fixed 36px height container for zero layout shift -->
+      <div class="flex items-center h-9 min-w-[36px]">
+        <!-- State A: Menu Bar Icon (Opens Navigation Drawer) -->
+        <button id="mb-menu-btn" onclick="openNavDrawer()" class="w-9 h-9 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
+          <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="17" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
         </button>
-        <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
-          🔒
+
+        <!-- State B: "Select All" Button (Variation 2: Native Apple Header Toolbar) -->
+        <button id="top-left-select-all-btn" onclick="toggleSelectAll()" class="hidden h-9 px-1 text-xs font-bold text-emerald-400 hover:text-emerald-300 active:scale-95 transition-all items-center">
+          <span id="top-left-select-label">Select All</span>
         </button>
-        <!-- ONLY ONE SELECT BUTTON AT THE TOP -->
-        <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 hover:bg-neutral-700 active:scale-95 transition-all">
-          Select
+      </div>
+
+      <!-- Center Cell: Native Selection Counter (Variation 2) -->
+      <div id="top-center-counter" class="hidden text-xs font-bold text-white font-mono-apple">
+        <span id="top-center-counter-text">0 Selected</span>
+      </div>
+
+      <!-- Right Cell: Fixed 36px height container -->
+      <div class="flex items-center gap-2 h-9">
+        <!-- Variation 2: Native Done Button on Top Right -->
+        <button id="top-right-done-btn" onclick="toggleSelectMode()" class="hidden h-8 px-3 rounded-xl bg-[#F47A21] text-white text-xs font-bold shadow-sm items-center active:scale-95 transition-all">
+          Done
         </button>
+
+        <!-- Standard Header Right Icons (When not in Select Mode) -->
+        <div id="mb-standard-header-right" class="flex items-center gap-2">
+          <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
+          <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-[#0C8C46] hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
+            <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+          <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
+            🔒
+          </button>
+          <!-- ONLY ONE SELECT BUTTON AT THE TOP -->
+          <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 hover:bg-neutral-700 active:scale-95 transition-all">
+            Select
+          </button>
+        </div>
       </div>
     </header>
 
@@ -1157,11 +1179,11 @@
       <div id="mb-view-matrix" class="hidden"></div>
     </main>
 
-    <!-- Backdrop scrim when Stack Circles expand -->
+    <!-- Backdrop scrim (preserved for modal backwards-compatibility) -->
     <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px] transition-opacity duration-200"></div>
 
     <!-- Floating Approve Button (Appears ONLY when ALL selected items in Ingested are Green; DISAPPEARS if any Red is selected!) -->
-    <div id="floating-approve-container" class="hidden mobile-view fixed left-4 z-40 transition-all duration-300 pointer-events-none -translate-y-2 opacity-0" style="right: 5.5rem; bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
+    <div id="floating-approve-container" class="hidden mobile-view fixed left-4 right-4 z-40 transition-all duration-300 pointer-events-none -translate-y-2 opacity-0" style="bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));">
       <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-[0_10px_35px_rgba(16,185,129,0.5)] border border-emerald-400/30 flex items-center justify-between gap-3 active:scale-[0.98] transition-all">
         <div class="flex items-center gap-2 min-w-0">
           <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
@@ -1173,51 +1195,38 @@
       </button>
     </div>
 
-    <!-- Expandable Floating Action Dock (Option A: Pure Unified Stadium Island) -->
-    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-center transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
-      
-      <!-- EXPANDED STATE: PURE UNIFIED 4-BUTTON STADIUM ISLAND -->
-      <div id="menu-expanded" class="hidden flex-col items-center gap-3 p-2 rounded-full dock-frosted-island transition-all duration-300">
-        <!-- 1. Top Circle: Tag Card Button -->
-        <button id="btn-tag-card-fab" onclick="triggerTagPopup()" class="spring-pop-item-1 relative w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-white shadow-[0_6px_20px_rgba(245,158,11,0.45)] flex items-center justify-center active:scale-95 transition-all border border-amber-300/30" title="Tag Payment Card">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/>
-          </svg>
-          <span class="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black text-black bg-white rounded-full border border-black/20 shadow" id="tag-badge-count">0</span>
-        </button>
-
-        <!-- 2. Middle Circle: WhatsApp Button -->
-        <button onclick="triggerWhatsAppShare()" class="spring-pop-item-2 relative w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-[0_6px_20px_rgba(37,211,102,0.45)] flex items-center justify-center active:scale-95 transition-all border border-white/20" title="Share via WhatsApp">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
-          </svg>
-        </button>
-
-        <!-- 3. Third Circle: Redeem Button -->
-        <button onclick="batchMarkAsRedeemed()" class="spring-pop-item-3 relative w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-[0_6px_20px_rgba(12,140,70,0.45)] flex items-center justify-center active:scale-95 transition-all border border-emerald-300/30" title="Mark Selected as Redeemed">
-          <svg class="w-6 h-6 stroke-white fill-none" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6L7 17l-5-5"></path>
-            <path d="M22 10l-7.5 7.5-1.5-1.5"></path>
-          </svg>
-        </button>
-
-        <!-- 4. Base Circle: Close Button (Inside Stadium Capsule) -->
-        <button id="btn-dock-close" onclick="collapseActionMenu()" class="spring-pop-item-4 relative w-12 h-12 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700/80 flex items-center justify-center active:scale-95 transition-all shadow-sm" title="Close Menu">
-          <svg class="w-5 h-5 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+    <!-- VARIATION 2: FLOATING ACTION DOCK (Visible when 1+ passes selected in Select Mode) -->
+    <div id="mb-action-dock" class="hidden mobile-view fixed left-4 right-4 z-40 pointer-events-auto transition-all duration-300" style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
+      <div class="w-full h-14 dock-frosted-island rounded-full px-4 flex items-center justify-between shadow-2xl">
+        <span id="mb-dock-selected-text" class="font-mono-apple text-xs font-bold text-neutral-200">0 Selected</span>
+        <div class="flex items-center gap-2">
+          <button id="mb-dock-tag-btn" onclick="triggerTagPopup()" class="hidden h-9 px-3 rounded-full bg-gradient-to-tr from-amber-500 to-amber-600 text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition-all" title="Tag Payment Card">
+            <span>🏷️ Tag</span>
+          </button>
+          <button onclick="triggerWhatsAppShare()" class="h-9 px-3 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition-all" title="Share via WhatsApp">
+            <span>📤 WhatsApp</span>
+          </button>
+          <button onclick="batchMarkAsRedeemed()" class="h-9 px-3 rounded-full bg-[#0C8C46] hover:bg-[#0A753A] text-white text-xs font-bold shadow flex items-center gap-1 active:scale-95 transition-all" title="Mark Selected as Redeemed">
+            <span>✓ Redeem</span>
+          </button>
+          <button onclick="toggleSelectMode()" class="h-9 px-3 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-bold border border-neutral-700 flex items-center gap-1 active:scale-95 transition-all" title="Done / Exit Select Mode">
+            Done
+          </button>
+        </div>
       </div>
+    </div>
 
-      <!-- COLLAPSED MASTER BUTTON (56px x 56px FAB) -->
-      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80" title="Actions">
+    <!-- MASTER FAB (Bottom Right: Single button when 0 selected; Morphs to Done when in Select Mode) -->
+    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-center transition-all duration-300" style="bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
+      <!-- Hidden legacy wrapper to preserve any older querySelectors -->
+      <div id="menu-expanded" class="hidden"></div>
+      
+      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80" title="Toggle Select Mode">
         <div id="master-icon-slot" class="flex items-center justify-center">
-          <!-- Injected via JS -->
+          <!-- Injected via JS: Interlock or Done -->
         </div>
         <span id="badge-master-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-white bg-[#F47A21] rounded-full border-2 border-black shadow">0</span>
       </button>
-
     </div>
   </div>
 
@@ -3087,6 +3096,10 @@
         else mbIngested.classList.add('hidden');
       }
 
+      if (state.isSelectMode) {
+        state.selectedIds.clear();
+      }
+
       updateIngestFilterUI();
       updateClearTrashBadges();
       renderDeckSelector();
@@ -4560,6 +4573,9 @@
     function filterVaultBrand(brand) {
       state.activeFilterBrand = brand;
       localStorage.setItem('rupay_active_brand', brand);
+      if (state.isSelectMode) {
+        state.selectedIds.clear();
+      }
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = brand;
       const mbScroll = document.querySelector('.mobile-scroll-container');
@@ -4762,6 +4778,14 @@
       </div>
     `;
 
+    // Done Content for Master FAB when in Select Mode
+    const DONE_CONTENT = `
+      <div class="flex items-center gap-1.5 text-white font-bold text-xs tracking-wide pointer-events-none">
+        <span class="w-5 h-5 rounded-full bg-white text-[#F47A21] flex items-center justify-center font-black text-xs leading-none">✓</span>
+        <span class="font-mono-apple text-sm">Done</span>
+      </div>
+    `;
+
     const CLOSE_ICON = `
       <svg class="w-6 h-6 text-neutral-300 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -4776,15 +4800,18 @@
       const triggerBtn = document.getElementById('btn-master-trigger');
       const badgeMaster = document.getElementById('badge-master-count');
       if (!slot || !triggerBtn) return;
-      if (isMenuExpanded) {
+      if (state.isSelectMode) {
+        slot.innerHTML = DONE_CONTENT;
+        triggerBtn.className = 'relative h-12 rounded-full px-4 bg-[#F47A21] border-2 border-[#F47A21] text-white shadow-[0_10px_35px_rgba(244,122,33,0.4)] flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer overflow-hidden';
+        if (badgeMaster) badgeMaster.classList.add('hidden');
+      } else if (isMenuExpanded) {
         slot.innerHTML = CLOSE_ICON;
         triggerBtn.classList.remove('border-emerald-500/60', 'border-[#0C8C46]/80');
         triggerBtn.classList.add('border-neutral-500', 'bg-neutral-800');
         if (badgeMaster) badgeMaster.classList.add('hidden');
       } else {
         slot.innerHTML = INTERLOCK_COMBO_ICON;
-        triggerBtn.classList.add('border-[#0C8C46]/80');
-        triggerBtn.classList.remove('border-neutral-500', 'bg-neutral-800');
+        triggerBtn.className = 'relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80';
         if (badgeMaster) {
           if (state.selectedIds.size > 0) {
             badgeMaster.textContent = state.selectedIds.size;
@@ -4833,20 +4860,77 @@
       updateMasterTriggerIcon();
     }
 
+    // Helper: Retrieve visible vouchers in the current active tab
+    function getVisibleVouchers() {
+      const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
+      if (normActiveBrand === 'ActivityLog') {
+        if (activityFilter === 'shared') {
+          const nowMs = Date.now();
+          return sharedActivity.filter(s =>
+            s.displayInUI !== false &&
+            !isVoucherRedeemed(s) &&
+            (s.timestampMs || parseTimestamp(s.sharedAt)) > 0 &&
+            (nowMs - (s.timestampMs || parseTimestamp(s.sharedAt))) <= SEVEN_DAYS_MS
+          ).map(s => ({ id: 'shared-' + s.code, code: s.code, brand: s.brand }));
+        } else {
+          return (state.staging || []).filter(s => {
+            if (s.displayInUI === false) return false;
+            const tagged = isCardTagged(s.card);
+            return state.ingestFilter === 'tagged' ? tagged : !tagged;
+          }).map(s => ({ id: s.id, code: s.code, brand: s.brand, card: s.card, status: s.status }));
+        }
+      } else if (normActiveBrand === 'Redeemed') {
+        return redeemedList.filter(r => r.displayInUI !== false).map(r => ({ id: 'redeemed-' + r.code, code: r.code, brand: r.brand }));
+      } else {
+        return state.vouchers.filter(v => {
+          if (v.status === 'USED') return false;
+          if (isVoucherRedeemed(v)) return false;
+          const vNorm = normalizeBrandKey(v.brand);
+          if (normActiveBrand === 'AmazonPrime') return vNorm === 'AmazonPrime';
+          if (normActiveBrand === 'FourFountains') return vNorm === 'FourFountains';
+          if (normActiveBrand === 'Kalyan') return vNorm === 'Kalyan';
+          return vNorm === normActiveBrand;
+        }).map(v => ({ id: v.id, code: v.code, brand: v.brand }));
+      }
+    }
+
+    // Brand-scoped Select All / Deselect All
+    function toggleSelectAll() {
+      const visible = getVisibleVouchers();
+      if (!visible.length) {
+        showToast('No passes to select in ' + getBrandDisplayName(state.activeFilterBrand));
+        return;
+      }
+      const visibleIds = visible.map(v => v.id);
+      const allSelected = visibleIds.length > 0 && visibleIds.every(id => state.selectedIds.has(id));
+
+      if (allSelected) {
+        visibleIds.forEach(id => {
+          state.selectedIds.delete(id);
+          if (id.startsWith('shared-')) state.selectedIds.delete(id.replace('shared-', ''));
+          if (id.startsWith('redeemed-')) state.selectedIds.delete(id.replace('redeemed-', ''));
+        });
+        showToast(`Deselected all in ${getBrandDisplayName(state.activeFilterBrand)}`);
+      } else {
+        visibleIds.forEach(id => state.selectedIds.add(id));
+        showToast(`Selected all ${visibleIds.length} in ${getBrandDisplayName(state.activeFilterBrand)}`);
+      }
+
+      renderVault();
+      updateFloatingDock();
+    }
+
     function handleMasterFabClick() {
       if (isMenuExpanded) {
         collapseActionMenu();
         return;
       }
-      if (state.selectedIds.size > 0) {
-        toggleActionMenu();
+      if (!state.isSelectMode) {
+        toggleSelectMode();
+        showToast('Select mode active: use "Select All" on top left or tap cards');
       } else {
-        if (!state.isSelectMode) {
-          toggleSelectMode();
-          showToast('Select mode activated: tap cards to select');
-        } else {
-          showToast('Tap any card to select for WhatsApp or Redeem');
-        }
+        toggleSelectMode();
+        showToast('Done: Exited Select Mode');
       }
     }
 
@@ -4857,27 +4941,120 @@
 
     function updateFloatingDock() {
       const count = state.selectedIds.size;
-      const badgeMaster = document.getElementById('badge-master-count');
-      const tagBadge = document.getElementById('tag-badge-count');
+      const isSelect = !!state.isSelectMode;
 
-      if (badgeMaster) {
-        badgeMaster.textContent = count;
-        if (count > 0 && !isMenuExpanded) {
-          badgeMaster.classList.remove('hidden');
-        } else {
-          badgeMaster.classList.add('hidden');
+      // 1. TOP HEADER TRANSFORMATION (Variation 2: Native Apple Header Toolbar)
+      const menuBtn = document.getElementById('mb-menu-btn');
+      const standardRight = document.getElementById('mb-standard-header-right');
+      const selectAllBtn = document.getElementById('top-left-select-all-btn');
+      const selectAllLabel = document.getElementById('top-left-select-label');
+      const centerCounter = document.getElementById('top-center-counter');
+      const centerCounterText = document.getElementById('top-center-counter-text');
+      const doneBtn = document.getElementById('top-right-done-btn');
+
+      if (isSelect) {
+        if (menuBtn) menuBtn.classList.add('hidden');
+        if (standardRight) standardRight.classList.add('hidden');
+
+        const visible = getVisibleVouchers();
+        const currentCount = visible.length;
+        const allSelected = currentCount > 0 && visible.every(v => state.selectedIds.has(v.id));
+
+        if (selectAllBtn) {
+          selectAllBtn.classList.remove('hidden');
+          selectAllBtn.classList.add('flex');
+        }
+        if (selectAllLabel) {
+          selectAllLabel.textContent = allSelected ? 'Deselect All' : 'Select All';
+        }
+
+        if (centerCounter) {
+          centerCounter.classList.remove('hidden');
+          if (centerCounterText) {
+            centerCounterText.textContent = `${count} Selected`;
+          }
+        }
+
+        if (doneBtn) {
+          doneBtn.classList.remove('hidden');
+          doneBtn.classList.add('flex');
+        }
+      } else {
+        if (menuBtn) menuBtn.classList.remove('hidden');
+        if (standardRight) standardRight.classList.remove('hidden');
+        if (selectAllBtn) {
+          selectAllBtn.classList.add('hidden');
+          selectAllBtn.classList.remove('flex');
+        }
+        if (centerCounter) centerCounter.classList.add('hidden');
+        if (doneBtn) {
+          doneBtn.classList.add('hidden');
+          doneBtn.classList.remove('flex');
         }
       }
-      if (tagBadge) {
-        tagBadge.textContent = count;
-      }
-      updateMasterTriggerIcon();
 
-      // FLOATING APPROVE BUTTON VISIBILITY:
-      // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
-      // DISAPPEARS COMPLETELY if ANY RED (PENDING) item is selected or count is 0
+      // 2. BOTTOM FLOATING CONTROLS
+      const masterContainer = document.getElementById('floating-dock-container');
+      const masterBtn = document.getElementById('btn-master-trigger');
+      const masterSlot = document.getElementById('master-icon-slot');
+      const badgeMaster = document.getElementById('badge-master-count');
+      const actionDock = document.getElementById('mb-action-dock');
+      const dockCountText = document.getElementById('mb-dock-selected-text');
+      const dockTagBtn = document.getElementById('mb-dock-tag-btn');
+
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
       const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
+
+      if (isSelect) {
+        if (count > 0) {
+          // Hide single master button, show full action dock
+          if (masterContainer) masterContainer.classList.add('hidden');
+          if (actionDock) {
+            actionDock.classList.remove('hidden');
+            actionDock.classList.add('flex');
+          }
+          if (dockCountText) {
+            dockCountText.textContent = `${count} Selected`;
+          }
+          if (dockTagBtn) {
+            if (isIngestedView) {
+              dockTagBtn.classList.remove('hidden');
+              dockTagBtn.classList.add('flex');
+            } else {
+              dockTagBtn.classList.add('hidden');
+              dockTagBtn.classList.remove('flex');
+            }
+          }
+        } else {
+          // 0 items selected: Show Master FAB styled as "Done"
+          if (actionDock) {
+            actionDock.classList.add('hidden');
+            actionDock.classList.remove('flex');
+          }
+          if (masterContainer) masterContainer.classList.remove('hidden');
+          if (masterBtn && masterSlot) {
+            masterSlot.innerHTML = DONE_CONTENT;
+            masterBtn.className = 'relative h-12 rounded-full px-4 bg-[#F47A21] border-2 border-[#F47A21] text-white shadow-[0_10px_35px_rgba(244,122,33,0.4)] flex items-center justify-center transition-all duration-200 active:scale-90 cursor-pointer overflow-hidden';
+          }
+          if (badgeMaster) badgeMaster.classList.add('hidden');
+        }
+      } else {
+        // Select mode OFF: Master FAB is in Interlock mode
+        if (actionDock) {
+          actionDock.classList.add('hidden');
+          actionDock.classList.remove('flex');
+        }
+        if (masterContainer) masterContainer.classList.remove('hidden');
+        if (masterBtn && masterSlot) {
+          masterSlot.innerHTML = INTERLOCK_COMBO_ICON;
+          masterBtn.className = 'relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80';
+        }
+        if (badgeMaster) badgeMaster.classList.add('hidden');
+      }
+
+      // 3. FLOATING APPROVE BUTTON VISIBILITY:
+      // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
+      // DISAPPEARS COMPLETELY if ANY RED (PENDING) item is selected or count is 0
       const approveContainer = document.getElementById('floating-approve-container');
       const approveLabel = document.getElementById('floating-approve-label');
       const countPill = document.getElementById('floating-approve-count-pill');
