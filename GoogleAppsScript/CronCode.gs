@@ -175,11 +175,31 @@ function parseRupayVoucherEmail(msg) {
   const amount = extractAmount(body);
   const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
   const account = extractAccountName(msg.getTo(), body, msg.getFrom()) || "vibhavoswal9";
+  const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
+
+  // 3B. Guard: Is this an "On Hold – Validation Pending / Payment Link Sent" email?
+  const isRevalMatch = /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(subject) ||
+                       /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(body);
+  if (isRevalMatch) {
+    return {
+      bookingId: bookingId,
+      brand: brand,
+      amount: amount,
+      dateOfIssue: dateOfIssue,
+      account: account,
+      code: "Pending revalidation",
+      pin: "",
+      status: "PENDING_REVALIDATION",
+      receivedDate: receivedDate,
+      isDelivered: false,
+      isRevalidationPending: true
+    };
+  }
 
   // 4. Extract Raw Coupon Code Line (handles same-line and multi-line table values)
   let rawVal = "";
   const codeLineMatch = body.match(/(?:Coupon|Voucher)\s*Code\s*[:#-]?\s*([^\r\n<]+)/i) ||
-                        body.match(/\bCode\s*[:#-]?\s*([^\r\n<]+)/i);
+                        body.match(/\bCode\s*[:#-]\s*([^\r\n<]+)/i);
   if (codeLineMatch && codeLineMatch[1].trim()) {
     rawVal = codeLineMatch[1].trim();
   } else {
@@ -192,10 +212,13 @@ function parseRupayVoucherEmail(msg) {
   // Strip markdown (*, _, `, quotes) and surrounding whitespace
   rawVal = rawVal.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
 
-  const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
+  // Guard against non-code prose, URL paths, or disclaimer snippets (e.g. "/service if the...")
+  if (/^\/service|payment|validation|on\s*hold|\bterms\b|\bkindly\b/i.test(rawVal)) {
+    rawVal = "";
+  }
 
   // 5. Binary Check: Is it a delay placeholder or a real code?
-  const isDelay = !rawVal || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
+  const isDelay = !rawVal || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a|revalidation/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
   if (isDelay) {
     return {
       bookingId: bookingId,
@@ -355,7 +378,21 @@ function processRupayEmails() {
         const parsed = parseRupayVoucherEmail(msg);
         if (!parsed) continue;
 
-        if (!parsed.isDelivered) {
+        if (parsed.isRevalidationPending) {
+          // ==========================================
+          // STAGE 1.5: On Hold - Validation Pending Email
+          // ==========================================
+          // Updates Code to "Pending revalidation" and Status to "PENDING_REVALIDATION"
+          // Invariant: Leaves initial acknowledgment timestamp untouched!
+          recordPendingRevalidation(ss, {
+            bookingId: parsed.bookingId,
+            brand: parsed.brand,
+            amount: parsed.amount,
+            account: parsed.account,
+            dateOfIssue: parsed.dateOfIssue,
+            receivedDate: parsed.receivedDate
+          });
+        } else if (!parsed.isDelivered) {
           // ==========================================
           // STAGE 1: Acknowledgement Email
           // ==========================================
@@ -521,6 +558,70 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
 }
 
 /**
+ * 1.5 STAGE 1.5: RECORD PENDING REVALIDATION
+ * Triggered when "On Hold – Validation Pending" email arrives.
+ * Updates Code to "Pending revalidation" and Status to "PENDING_REVALIDATION".
+ * STRICT INVARIANT: Timestamp (Col 9) is NEVER updated at this point.
+ */
+function recordPendingRevalidation(ss, data) {
+  let newSheet = ss.getSheetByName("New");
+  if (!newSheet) {
+    newSheet = ss.insertSheet("New");
+    newSheet.appendRow(UNIFIED_NEW_HEADERS);
+    newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+    newSheet.setFrozenRows(1);
+  }
+
+  // Check if already redeemed
+  const rSheet = ss.getSheetByName("Redeemed");
+  if (rSheet) {
+    const rRows = rSheet.getDataRange().getValues();
+    for (let i = 1; i < rRows.length; i++) {
+      if (String(rRows[i][1]).trim() === data.bookingId) return;
+    }
+  }
+
+  // 1. Search "New" tab by Booking ID
+  const newRows = newSheet.getDataRange().getValues();
+  for (let i = 1; i < newRows.length; i++) {
+    if (String(newRows[i][0]).trim() === data.bookingId) {
+      const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
+      const currentCode = String(newRows[i][1] || '').trim();
+
+      // Guard: If already ACTIVE with a real delivered code, do not revert!
+      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation") {
+        return;
+      }
+
+      // Update Code & Status, but leave Col 9 (Timestamp) untouched!
+      newSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
+      newSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
+      newSheet.getRange(i + 1, 10).setValue(true);
+      return;
+    }
+  }
+
+  // 2. Fallback: If Stage 1 email was missed and validation pending arrives first, create staging row
+  const canonicalBrand = extractBrand(data.brand, "");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+
+  const rowData = [
+    data.bookingId,                                      // Col 1: Booking ID (RUPS...)
+    "'Pending revalidation",                             // Col 2: Code
+    "",                                                  // Col 3: PIN
+    data.amount || 500,                                  // Col 4: Value
+    data.dateOfIssue || "",                              // Col 5: Date of Issue
+    data.account || "",                                  // Col 6: Account
+    "Unassigned",                                        // Col 7: Card
+    "PENDING_REVALIDATION",                              // Col 8: Status
+    formatISTTimestamp(data.receivedDate || new Date()), // Col 9: Initial Timestamp (only set once on creation)
+    true,                                                // Col 10: Display in UI
+    targetBrand                                          // Col 11: Target Brand
+  ];
+  newSheet.appendRow(rowData);
+}
+
+/**
  * 2. STAGE 1: RECORD PENDING REDEMPTION DIRECTLY IN "NEW" TAB
  */
 function recordPendingRedemption(ss, data) {
@@ -602,7 +703,7 @@ function fulfillVoucherCode(ss, data) {
       const currentStatus = String(rows[i][7] || '').trim().toUpperCase();
 
       // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
-      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING") {
+      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation") {
         return; // No-op, do not re-stamp
       }
 
@@ -681,7 +782,7 @@ function reconcilePendingVouchers(ss) {
     const currentPin = String(sRows[i][2] || '').trim();
     const status = String(sRows[i][7] || '').trim();
 
-    if ((status === 'PENDING' || code === 'PENDING') && /^RUPS/i.test(bid)) {
+    if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || code === 'PENDING' || code === 'Pending revalidation') && /^RUPS/i.test(bid)) {
       if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
         newSheet.getRange(i + 1, 3).setValue("");
       }
@@ -1163,7 +1264,7 @@ function doPost(e) {
             const targetBrand = String(row[10] || '⚡ Unassigned').trim();
 
             // HARD CONDITION GUARD: Only fulfilled (ACTIVE, real code) vouchers can be approved!
-            if (currentStatus !== 'ACTIVE' || currentCode === 'PENDING' || !currentCode) {
+            if (currentStatus !== 'ACTIVE' || currentCode === 'PENDING' || currentCode === 'Pending revalidation' || currentStatus === 'PENDING_REVALIDATION' || !currentCode) {
               return ContentService.createTextOutput(JSON.stringify({
                 error: `Cannot approve unfulfilled voucher ${bId || currentCode}. Code must arrive before approval.`
               })).setMimeType(ContentService.MimeType.JSON);
