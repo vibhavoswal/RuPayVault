@@ -353,7 +353,7 @@ function consolidateRogueTabs(ss) {
       for (let i = 1; i < nRows.length; i++) {
         const rowCode = String(nRows[i][1] || '').trim();
         const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
-        if (rowCode.toLowerCase().startsWith("/service") || rowBid === "RUPS-34AB2FE3" || rowBid === "RUPS-B3366AE3") {
+        if (rowCode.toLowerCase().startsWith("/service") || rowBid === "RUPS-34AB2FE3" || rowBid === "RUPS-5ACE0C37" || rowBid === "RUPS-B3366AE3") {
           nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
           nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
         }
@@ -933,6 +933,45 @@ function doGet(e) {
         success: true,
         swiggySheetCreated: sheetCreated,
         sheetExists: !!swiggySheet
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Administrative One-Off: Correct revalidation rows in "New" tab
+  if (e && e.parameter && e.parameter.action === "CORRECT_REVALIDATION_ROWS") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const nRows = nSheet.getDataRange().getValues();
+      const targetBids = new Set(["RUPS-34AB2FE3", "RUPS-5ACE0C37", "RUPS-B3366AE3"]);
+      const updated = [];
+      for (let i = 1; i < nRows.length; i++) {
+        const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
+        const rowCode = String(nRows[i][1] || '').trim();
+        if (targetBids.has(rowBid) || rowCode.toLowerCase().startsWith("/service")) {
+          nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
+          nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
+          nSheet.getRange(i + 1, 10).setValue(true);
+          updated.push({
+            rowIndex: i + 1,
+            bookingId: rowBid,
+            oldCode: rowCode,
+            newCode: "Pending revalidation",
+            status: "PENDING_REVALIDATION",
+            timestampPreserved: nRows[i][8]
+          });
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        updatedCount: updated.length,
+        updated: updated
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
