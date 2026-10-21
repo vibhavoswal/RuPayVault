@@ -344,6 +344,25 @@ function consolidateRogueTabs(ss) {
   if (moved.length > 0) {
     SpreadsheetApp.flush();
   }
+
+  // Auto-heal corrupted revalidations where code was erroneously set to "/service if the" or matching known booking IDs
+  try {
+    const nSheet = ss.getSheetByName("New");
+    if (nSheet) {
+      const nRows = nSheet.getDataRange().getValues();
+      for (let i = 1; i < nRows.length; i++) {
+        const rowCode = String(nRows[i][1] || '').trim();
+        const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
+        if (rowCode.toLowerCase().startsWith("/service") || rowBid === "RUPS-34AB2FE3" || rowBid === "RUPS-B3366AE3") {
+          nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
+          nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
+        }
+      }
+    }
+  } catch(e) {
+    console.warn("Auto-heal revalidation error:", e);
+  }
+
   return moved;
 }
 
