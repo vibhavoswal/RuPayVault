@@ -600,6 +600,17 @@ function recordPendingRevalidation(ss, data) {
     }
   }
 
+  // Determine canonical target brand (Col 11)
+  const canonicalBrand = extractBrand(data.brand, "");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+
+  // Hardening against duplicate re-staging: Check if Booking ID already exists in Brand tabs!
+  const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
+  if (existingBrandMatch) {
+    // Already approved to brand tab! Do not re-stage in "New".
+    return;
+  }
+
   // 1. Search "New" tab by Booking ID
   const newRows = newSheet.getDataRange().getValues();
   for (let i = 1; i < newRows.length; i++) {
@@ -621,9 +632,6 @@ function recordPendingRevalidation(ss, data) {
   }
 
   // 2. Fallback: If Stage 1 email was missed and validation pending arrives first, create staging row
-  const canonicalBrand = extractBrand(data.brand, "");
-  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
-
   const rowData = [
     data.bookingId,                                      // Col 1: Booking ID (RUPS...)
     "'Pending revalidation",                             // Col 2: Code
@@ -948,7 +956,7 @@ function doGet(e) {
         return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
       }
       const nRows = nSheet.getDataRange().getValues();
-      const targetBids = new Set(["RUPS-34AB2FE3", "RUPS-5ACE0C37", "RUPS-B3366AE3"]);
+      const targetBids = new Set(["RUPS-34AB2FE3", "RUPS-5ACE0C37"]);
       const updated = [];
       for (let i = 1; i < nRows.length; i++) {
         const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
@@ -972,6 +980,56 @@ function doGet(e) {
         success: true,
         updatedCount: updated.length,
         updated: updated
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Administrative One-Off: Remove already approved vouchers from "New" tab
+  if (e && e.parameter && e.parameter.action === "PURGE_APPROVED_DUPLICATES_FROM_NEW") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const nRows = nSheet.getDataRange().getValues();
+      const rowsToDelete = [];
+      const purged = [];
+
+      for (let i = 1; i < nRows.length; i++) {
+        const rowBid = String(nRows[i][0] || '').trim();
+        const rowCode = String(nRows[i][1] || '').trim();
+        const rowBrand = String(nRows[i][10] || '').trim();
+        if (!rowBid && !rowCode) continue;
+
+        const match = findRowInBrandTabs(ss, rowBid, rowBrand, rowCode);
+        if (match) {
+          rowsToDelete.push(i + 1);
+          purged.push({
+            rowIndex: i + 1,
+            bookingId: rowBid,
+            code: rowCode,
+            foundInBrandTab: match.sheet.getName(),
+            brandRowIndex: match.rowIndex
+          });
+        }
+      }
+
+      // Bottom-up deletion
+      if (rowsToDelete.length > 0) {
+        rowsToDelete.sort((a, b) => b - a);
+        for (const rIdx of rowsToDelete) {
+          nSheet.deleteRow(rIdx);
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        purgedCount: purged.length,
+        purged: purged
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
