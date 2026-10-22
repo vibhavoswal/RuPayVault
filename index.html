@@ -375,6 +375,13 @@
       background-color: #F47A21 !important;
       color: #ffffff !important;
     }
+    [data-theme="light"] #vault-otp-input,
+    html.light #vault-otp-input {
+      background-color: #ffffff !important;
+      border-color: rgba(12, 140, 70, 0.35) !important;
+      color: #141212 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    }
     [data-theme="light"] .mobile-view #btn-master-trigger,
     html.light .mobile-view #btn-master-trigger {
       background: #ffffff !important;
@@ -711,43 +718,42 @@
 
       <button id="btn-cancel-reauth" onclick="cancelPendingReauth()" class="hidden text-xs text-rose-400 hover:text-rose-300 underline pt-1">Cancel action &amp; revert</button>
 
-      <!-- 6 PIN Dots -->
-      <div id="pin-dots-container" class="flex items-center gap-3.5 pt-2">
-        <div id="pin-dot-0" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-        <div id="pin-dot-1" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-        <div id="pin-dot-2" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-        <div id="pin-dot-3" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-        <div id="pin-dot-4" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-        <div id="pin-dot-5" class="w-3.5 h-3.5 rounded-full border-2 border-neutral-600 transition-all duration-200"></div>
-      </div>
-      
-      <p id="pin-feedback" class="text-[11px] text-[#F47A21] font-mono-apple h-4"></p>
-    </div>
+      <!-- Native 6-Digit AutoFill OTP Input Card -->
+      <div id="otp-input-container" class="w-full max-w-[300px] pt-4 pb-2 space-y-3">
+        <div class="relative flex items-center justify-center">
+          <input 
+            id="vault-otp-input"
+            type="text" 
+            inputmode="numeric" 
+            pattern="[0-9]*" 
+            maxlength="6" 
+            autocomplete="one-time-code" 
+            placeholder="······"
+            oninput="handleOtpInput(this)"
+            onkeydown="handleOtpKeydown(event, this)"
+            class="w-full py-3.5 px-4 rounded-2xl bg-black/90 border-2 border-neutral-800 focus:border-[#0C8C46] focus:ring-4 focus:ring-[#0C8C46]/20 text-center font-mono-apple text-3xl font-black tracking-[10px] text-white placeholder-neutral-700 outline-none transition-all shadow-[0_4px_25px_rgba(0,0,0,0.8)]"
+            autofocus
+          />
+        </div>
 
-    <!-- Center/Bottom Area: Keypad -->
-    <div class="w-full max-w-[280px] pb-6 space-y-4">
-      
-      <!-- Circular 3x4 Keypad -->
-      <div class="grid grid-cols-3 gap-3.5 justify-items-center">
-        <button onclick="pressPinDigit('1')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">1</button>
-        <button onclick="pressPinDigit('2')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">2</button>
-        <button onclick="pressPinDigit('3')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">3</button>
-        <button onclick="pressPinDigit('4')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">4</button>
-        <button onclick="pressPinDigit('5')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">5</button>
-        <button onclick="pressPinDigit('6')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">6</button>
-        <button onclick="pressPinDigit('7')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">7</button>
-        <button onclick="pressPinDigit('8')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">8</button>
-        <button onclick="pressPinDigit('9')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">9</button>
+        <!-- Status & Auto-Submit Indicator -->
+        <p id="pin-feedback" class="text-[11px] text-[#F47A21] font-mono-apple text-center min-h-[16px] leading-tight"></p>
         
-        <button onclick="clearPinDigits()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 flex items-center justify-center text-sm font-bold text-neutral-400 active:scale-90 transition-all shadow" title="Clear">C</button>
-        <button onclick="pressPinDigit('0')" class="w-16 h-16 rounded-full bg-neutral-900/90 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 text-xl font-bold active:scale-90 transition-all shadow">0</button>
-        <button onclick="pressPinBackspace()" class="w-16 h-16 rounded-full bg-neutral-900/60 border border-neutral-800 hover:border-[#0C8C46]/50 hover:bg-neutral-800 flex items-center justify-center text-neutral-400 active:scale-90 transition-all shadow" title="Delete">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l7-7h11a2 2 0 012 2v10a2 2 0 01-2 2H10l-7-7z"/></svg>
-        </button>
+        <!-- Quick Action Helper Bar: Paste & Clear -->
+        <div class="flex items-center justify-between text-xs px-1 text-neutral-400">
+          <button type="button" onclick="pasteClipboardOtp()" class="hover:text-emerald-400 active:scale-95 transition-all flex items-center gap-1 font-medium">
+            <span>📋</span> Paste Code
+          </button>
+          <button type="button" onclick="clearOtpInput()" class="hover:text-rose-400 active:scale-95 transition-all text-neutral-500 font-medium">
+            Clear
+          </button>
+        </div>
       </div>
 
-      <div class="pt-2 text-center">
-        <p class="text-[10px] text-neutral-500">24-Hour Authenticated Session &middot; vibhavoswal3@gmail.com</p>
+      <div class="pt-2 text-center max-w-[280px]">
+        <p class="text-[10px] text-neutral-500 leading-relaxed">
+          ✨ AutoFill supported from email &middot; 24-Hour Authenticated Session
+        </p>
       </div>
     </div>
   </div>
@@ -1812,6 +1818,11 @@
           showToast('Verification code sent to email');
           if (subtitle) subtitle.textContent = 'Code sent! Enter 6-digit OTP from email.';
           startOtpCooldown(data.cooldownSeconds || 60);
+          const inp = document.getElementById('vault-otp-input');
+          if (inp) {
+            inp.value = '';
+            inp.focus();
+          }
         } else {
           if (feedback) feedback.textContent = data?.error || 'Failed to send code.';
           if (data?.error && data.error.includes('wait')) {
@@ -1851,62 +1862,89 @@
       }, 1000);
     }
 
-    /* --- OTP KEYPAD & VERIFICATION --- */
-    function pressPinDigit(digit) {
-      if (securityState.enteredPin.length >= 6) return;
-      securityState.enteredPin += digit;
-      updatePinDotsUI();
+    /* --- NATIVE AUTOFILL OTP INPUT & VERIFICATION (APPROACH 1) --- */
+    function handleOtpInput(input) {
+      if (!input) return;
+      // Strip any non-numeric characters and cap at 6 digits
+      input.value = input.value.replace(/\D/g, '').slice(0, 6);
+      securityState.enteredPin = input.value;
 
-      if (securityState.enteredPin.length === 6) {
+      const feedback = document.getElementById('pin-feedback');
+      if (feedback && !feedback.dataset.loading) feedback.textContent = '';
+
+      // Auto-submit immediately when all 6 digits are populated (via iOS/Android AutoFill or typing)
+      if (input.value.length === 6) {
         verifyEnteredPin();
       }
     }
 
-    function pressPinBackspace() {
-      if (securityState.enteredPin.length > 0) {
-        securityState.enteredPin = securityState.enteredPin.slice(0, -1);
-        updatePinDotsUI();
-      }
-    }
-
-    function clearPinDigits() {
-      securityState.enteredPin = '';
-      updatePinDotsUI();
-    }
-
-    function updatePinDotsUI() {
-      const len = securityState.enteredPin.length;
-      for (let i = 0; i < 6; i++) {
-        const dot = document.getElementById(`pin-dot-${i}`);
-        if (dot) {
-          if (i < len) {
-            dot.classList.add('bg-[#0C8C46]', 'border-[#0C8C46]', 'shadow-[0_0_12px_rgba(12,140,70,0.7)]');
-            dot.classList.remove('border-neutral-600');
-          } else {
-            dot.classList.remove('bg-[#0C8C46]', 'border-[#0C8C46]', 'shadow-[0_0_12px_rgba(12,140,70,0.7)]');
-            dot.classList.add('border-neutral-600');
-          }
+    function handleOtpKeydown(e, input) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (input && input.value.length === 6) {
+          verifyEnteredPin();
         }
       }
+    }
+
+    function clearOtpInput() {
+      const input = document.getElementById('vault-otp-input');
+      if (input) {
+        input.value = '';
+        input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20', 'border-rose-500', 'ring-rose-500/20', 'border-[#0C8C46]', 'ring-[#0C8C46]/30');
+        input.classList.add('border-neutral-800');
+        input.focus();
+      }
+      securityState.enteredPin = '';
       const feedback = document.getElementById('pin-feedback');
       if (feedback && !feedback.dataset.loading) feedback.textContent = '';
+    }
+
+    // Backward-compatible alias for existing reauth reset calls
+    function clearPinDigits() {
+      clearOtpInput();
+    }
+
+    async function pasteClipboardOtp() {
+      try {
+        const text = await navigator.clipboard.readText();
+        const digits = (text || '').replace(/\D/g, '').slice(0, 6);
+        if (digits.length === 6) {
+          const input = document.getElementById('vault-otp-input');
+          if (input) {
+            input.value = digits;
+            handleOtpInput(input);
+          }
+        } else if (digits.length > 0) {
+          const input = document.getElementById('vault-otp-input');
+          if (input) {
+            input.value = digits;
+            handleOtpInput(input);
+          }
+          showToast(`Pasted ${digits.length} digits · Enter 6-digit code`);
+        } else {
+          showToast('No numbers found in clipboard');
+        }
+      } catch (err) {
+        showToast('Clipboard access denied');
+      }
     }
 
     // Verify OTP with Server & Issue 24-Hour Session Token
     async function verifyEnteredPin() {
       const entered = securityState.enteredPin;
+      if (!entered || entered.length !== 6) return;
+
+      const input = document.getElementById('vault-otp-input');
       const feedback = document.getElementById('pin-feedback');
       if (feedback) {
         feedback.dataset.loading = 'true';
         feedback.textContent = 'Verifying code with server...';
       }
-
-      for (let i = 0; i < 6; i++) {
-        const dot = document.getElementById(`pin-dot-${i}`);
-        if (dot) {
-          dot.classList.remove('border-neutral-600');
-          dot.classList.add('bg-[#F47A21]', 'border-[#F47A21]');
-        }
+      if (input) {
+        input.disabled = true;
+        input.classList.remove('border-neutral-800', 'border-rose-500', 'border-[#0C8C46]');
+        input.classList.add('border-[#F47A21]', 'ring-4', 'ring-[#F47A21]/20');
       }
 
       const { signal, cleanup } = createTimeoutSignal(25000);
@@ -1926,12 +1964,9 @@
           localStorage.setItem('rupay_session_token', String(data.token));
           localStorage.setItem('rupay_session_expiry', String(data.expiry));
 
-          for (let i = 0; i < 6; i++) {
-            const dot = document.getElementById(`pin-dot-${i}`);
-            if (dot) {
-              dot.classList.remove('bg-[#F47A21]', 'border-[#F47A21]');
-              dot.classList.add('bg-[#0C8C46]', 'border-[#0C8C46]');
-            }
+          if (input) {
+            input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20');
+            input.classList.add('border-[#0C8C46]', 'ring-4', 'ring-[#0C8C46]/30');
           }
           if (feedback) {
             delete feedback.dataset.loading;
@@ -1939,6 +1974,10 @@
           }
 
           setTimeout(async () => {
+            if (input) {
+              input.disabled = false;
+              input.value = '';
+            }
             await unlockVaultDirect(String(data.token));
 
             // Replay queued mutation if mid-operation re-auth
@@ -1968,15 +2007,15 @@
     }
 
     function handlePinFailure(msg) {
-      const container = document.getElementById('pin-dots-container');
+      const container = document.getElementById('otp-input-container');
+      const input = document.getElementById('vault-otp-input');
       if (container) container.classList.add('pin-shake');
-      for (let i = 0; i < 6; i++) {
-        const dot = document.getElementById(`pin-dot-${i}`);
-        if (dot) {
-          dot.classList.remove('bg-[#F47A21]', 'border-[#F47A21]');
-          dot.classList.add('bg-rose-500', 'border-rose-500');
-        }
+      if (input) {
+        input.disabled = false;
+        input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20', 'border-[#0C8C46]');
+        input.classList.add('border-rose-500', 'ring-4', 'ring-rose-500/20');
       }
+
       const feedback = document.getElementById('pin-feedback');
       if (feedback) {
         delete feedback.dataset.loading;
@@ -1985,9 +2024,14 @@
 
       setTimeout(() => {
         if (container) container.classList.remove('pin-shake');
+        if (input) {
+          input.value = '';
+          input.classList.remove('border-rose-500', 'ring-4', 'ring-rose-500/20');
+          input.classList.add('border-neutral-800');
+          input.focus();
+        }
         securityState.enteredPin = '';
-        updatePinDotsUI();
-      }, 600);
+      }, 700);
     }
 
     /* --- RE-AUTH & MUTATION AUTO-REPLAY / ROLLBACK --- */
@@ -2150,7 +2194,7 @@
     async function lockVault() {
       securityState.isUnlocked = false;
       securityState.enteredPin = '';
-      updatePinDotsUI();
+      clearOtpInput();
 
       try {
         await Promise.all([

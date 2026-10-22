@@ -1275,17 +1275,54 @@ function doPost(e) {
       cache.put("OTP_COOLDOWN", "true", 60); // 60s lock
       cache.put("OTP_HOURLY_COUNT", String(hourlyCount + 1), 3600); // 1 hr window
 
-      // 5. Send Email via GmailApp
+      // 5. Send Email via GmailApp (Clean subject line with zero corrupted emojis & responsive HTML card)
       try {
-        GmailApp.sendEmail(
-          AUTHORIZED_USER,
-          "🔐 RuPayVault Login Code: " + otp,
-          "Hello Vibhav,\n\n" +
+        const subject = "[RuPayVault] Login Code: " + otp + " (Valid for 10 mins)";
+        const plainBody = "Hello Vibhav,\n\n" +
           "Your RuPayVault one-time login verification code is:\n\n" +
           "      " + otp + "\n\n" +
           "This code will expire in 10 minutes.\n" +
           "If you did not request this login code, please verify your account security.\n\n" +
-          "— RuPayVault Security"
+          "— RuPayVault Security";
+
+        const htmlBody = '<div style="background-color: #0A0A0C; padding: 28px 14px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">' +
+          '<div style="max-width: 420px; margin: 0 auto; background: #161517; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 28px 24px; text-align: center; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);">' +
+          '<div style="display: inline-block; padding: 6px 14px; background: rgba(12, 140, 70, 0.15); border: 1px solid rgba(12, 140, 70, 0.35); border-radius: 9999px; color: #10B981; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 20px;">' +
+          'RUPAY VAULT SECURITY' +
+          '</div>' +
+          '<h2 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0 0 8px 0; letter-spacing: -0.3px;">Authentication Code</h2>' +
+          '<p style="color: #9CA3AF; font-size: 13px; margin: 0 0 24px 0; line-height: 1.5;">' +
+          'Use the one-time code below to authenticate your private RuPay voucher vault session.' +
+          '</p>' +
+          '<div style="background: #000000; border: 1.5px solid #0C8C46; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(12, 140, 70, 0.2);">' +
+          '<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-indent: 10px;">' +
+          otp +
+          '</div>' +
+          '</div>' +
+          '<div style="background: rgba(244, 122, 33, 0.08); border: 1px solid rgba(244, 122, 33, 0.25); border-radius: 12px; padding: 12px 14px; text-align: left; margin-bottom: 24px;">' +
+          '<div style="color: #F47A21; font-size: 11px; font-weight: 700; margin-bottom: 2px;">' +
+          '⏱ Valid for 10 minutes &middot; Single use' +
+          '</div>' +
+          '<div style="color: #9CA3AF; font-size: 11px; line-height: 1.4;">' +
+          'If you did not initiate this login request, please verify your account credentials immediately.' +
+          '</div>' +
+          '</div>' +
+          '<div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px;">' +
+          '<p style="color: #6B7280; font-size: 11px; margin: 0 0 4px 0;">' +
+          'Sent to <span style="color: #9CA3AF;">vibhavoswal3@gmail.com</span>' +
+          '</p>' +
+          '<p style="color: #4B5563; font-size: 10px; margin: 0;">' +
+          'RuPayVault Automated Security System &middot; 24h HMAC Protection' +
+          '</p>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
+
+        GmailApp.sendEmail(
+          AUTHORIZED_USER,
+          subject,
+          plainBody,
+          { htmlBody: htmlBody }
         );
       } catch (err) {
         return ContentService.createTextOutput(JSON.stringify({
