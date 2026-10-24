@@ -4936,13 +4936,13 @@
 
     /* --- BENEFIT RULES & MATRIX MODAL --- */
     const BENEFIT_CARDS = [
-      { key: 'pnb_imp', name: 'PNB Imperial' },
-      { key: 'union', name: 'Union Emperio' },
-      { key: 'jana', name: 'Jana SFB' },
-      { key: 'bob', name: 'BoB Bhoomi' },
+      { key: 'pnb_imp', name: 'PNB Imperial RSDC' },
+      { key: 'union', name: 'Union Emperio Metal RSDC' },
+      { key: 'jana', name: 'Jana RSDC' },
+      { key: 'bob', name: 'Bank of Baroda RSDC' },
       { key: 'canara_dc', name: 'Canara RSDC' },
-      { key: 'pnb_cc', name: 'PNB CC' },
-      { key: 'canara_cc', name: 'Canara CC' }
+      { key: 'pnb_cc', name: 'PNB RSCC' },
+      { key: 'canara_cc', name: 'Canara RSCC' }
     ];
     let selectedBenefitCardKey = 'pnb_imp';
 
@@ -5023,12 +5023,12 @@
 
     /* --- CARD PORTFOLIO MANAGER & REPLACEMENT STUDIO (STYLE A: OBSIDIAN GLASS) --- */
     const BIN_MAP = {
-      "652859": { bank: "PNB", type: "Credit", name: "PNB RuPay Select", theme: "pnb-glass" },
-      "653020": { bank: "Canara", type: "Credit", name: "Canara RuPay Select", theme: "canara-glass" },
-      "652497": { bank: "PNB", type: "Debit", name: "PNB Imperial", theme: "pnb-glass" },
-      "652505": { bank: "Bank of Baroda", type: "Debit", name: "BoB RuPay Select DC", theme: "bob-glass" },
-      "652550": { bank: "Canara", type: "Debit", name: "Canara RS DC Crest", theme: "canara-glass" },
-      "652520": { bank: "Jana SFB", type: "Debit", name: "Jana SFB DC", theme: "jana-glass" },
+      "652859": { bank: "PNB", type: "Credit", name: "PNB RSCC", theme: "pnb-glass" },
+      "653020": { bank: "Canara", type: "Credit", name: "Canara RSCC", theme: "canara-glass" },
+      "652497": { bank: "PNB", type: "Debit", name: "PNB Imperial RSDC", theme: "pnb-glass" },
+      "652505": { bank: "Bank of Baroda", type: "Debit", name: "Bank of Baroda RSDC", theme: "bob-glass" },
+      "652550": { bank: "Canara", type: "Debit", name: "Canara RSDC", theme: "canara-glass" },
+      "652520": { bank: "Jana SFB", type: "Debit", name: "Jana RSDC", theme: "jana-glass" },
       "652411": { bank: "Union Bank", type: "Debit", name: "Union Emperio Metal RSDC", theme: "union-glass" }
     };
 
@@ -5363,13 +5363,25 @@
         const bankSelect = document.getElementById('add-card-bank');
         const typeSelect = document.getElementById('add-card-type');
         const nameInput = document.getElementById('add-card-name');
+        const accInput = document.getElementById('add-card-acc');
+
+        // Automatically change Bank, Card Type, and Card Name inferred from BIN
         if (bankSelect) bankSelect.value = match.bank;
         if (typeSelect) typeSelect.value = match.type;
-        if (nameInput && !nameInput.value) nameInput.value = match.name;
+        if (nameInput) nameInput.value = match.name;
+
+        // Auto-handle Linked Account: NA for Credit Cards, blank placeholder for Debit
+        if (accInput) {
+          if (match.type === 'Credit') {
+            if (!accInput.value || accInput.value === '') accInput.value = 'NA';
+          } else if (match.type === 'Debit' && accInput.value === 'NA') {
+            accInput.value = '';
+          }
+        }
 
         if (badge) {
           badge.classList.remove('hidden');
-          badge.textContent = `✓ Detected: ${match.bank} ${match.name}`;
+          badge.textContent = `✓ Detected: ${match.name} (${match.bank} ${match.type})`;
         }
       } else if (badge && inputEl.id === 'add-card-num') {
         badge.classList.add('hidden');
