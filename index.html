@@ -958,17 +958,18 @@
               <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
               <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
               <option value="Myntra">4. Myntra (₹500)</option>
-              <option value="BigBasket">5. BigBasket (₹250)</option>
-              <option value="Reliance">6. Reliance Digital (₹500)</option>
-              <option value="Apollo">7. Apollo Pharmacy (₹250)</option>
-              <option value="AmazonPrime">8. Amazon Prime</option>
-              <option value="CultFit">9. Cult.fit Elite</option>
-              <option value="TimesPrime">10. Times Prime</option>
-              <option value="TattvaSpa">11. Tattva Spa (₹1,500)</option>
-              <option value="TaxSpanner">12. TaxSpanner (₹2,950)</option>
-              <option value="Thyrocare">13. Thyrocare</option>
-              <option value="Uber">14. Uber Rides (₹100)</option>
-              <option value="SwiggyOne">15. Swiggy One</option>
+              <option value="Decathlon">5. Decathlon (₹500)</option>
+              <option value="BigBasket">6. BigBasket (₹250)</option>
+              <option value="Reliance">7. Reliance Digital (₹500)</option>
+              <option value="Apollo">8. Apollo Pharmacy (₹250)</option>
+              <option value="AmazonPrime">9. Amazon Prime</option>
+              <option value="CultFit">10. Cult.fit Elite</option>
+              <option value="TimesPrime">11. Times Prime</option>
+              <option value="TattvaSpa">12. Tattva Spa (₹1,500)</option>
+              <option value="TaxSpanner">13. TaxSpanner (₹2,950)</option>
+              <option value="Thyrocare">14. Thyrocare</option>
+              <option value="Uber">15. Uber Rides (₹100)</option>
+              <option value="SwiggyOne">16. Swiggy One</option>
               <option value="Redeemed">📜 Redeemed Archive</option>
             </select>
             <a id="dt-sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
@@ -2513,6 +2514,7 @@
       { key: 'FourFountains', name: 'Four Fountains', denom: 1500, hasPin: true, tag: 'Strict 30D Expiry' },
       { key: 'Kalyan', name: 'Kalyan Jewellers', denom: 2000, hasPin: true, tag: 'Jewellery' },
       { key: 'Myntra', name: 'Myntra', denom: 500, hasPin: true, tag: 'Fashion' },
+      { key: 'Decathlon', name: 'Decathlon', denom: 500, hasPin: true, tag: 'Sports' },
       { key: 'BigBasket', name: 'BigBasket', denom: 250, hasPin: true, tag: 'Grocery' },
       { key: 'Reliance', name: 'Reliance Digital', denom: 500, hasPin: false, tag: 'Electronics' },
       { key: 'Apollo', name: 'Apollo Pharmacy', denom: 250, hasPin: true, tag: 'Health' },
@@ -2535,6 +2537,7 @@
       if (b.includes('fourfountain') || b.includes('four')) return 'FourFountains';
       if (b.includes('kalyan')) return 'Kalyan';
       if (b.includes('myntra')) return 'Myntra';
+      if (b.includes('decathlon')) return 'Decathlon';
       if (b.includes('bigbasket')) return 'BigBasket';
       if (b.includes('reliance')) return 'Reliance';
       if (b.includes('apollo')) return 'Apollo';
@@ -6268,6 +6271,7 @@
         'kalyan': 'Kalyan Jewellers',
         'reliance': 'Reliance Digital',
         'myntra': 'Myntra',
+        'decathlon': 'Decathlon',
         'uber': 'Uber Rides',
         'apollo': 'Apollo Pharmacy',
         'bigbasket': 'BigBasket',
