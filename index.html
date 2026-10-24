@@ -559,6 +559,32 @@
       100% { opacity: 1; transform: translate3d(0, 0, 0); }
     }
 
+    /* Bank Theme Glass Gradients (Style A: Obsidian Glass) */
+    .pnb-glass {
+      background: linear-gradient(145deg, #1f1118 0%, #2e1420 50%, #151016 100%);
+      border: 1px solid rgba(225, 29, 72, 0.3);
+    }
+    .bob-glass {
+      background: linear-gradient(145deg, #24160d 0%, #381e0e 50%, #16120e 100%);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+    .canara-glass {
+      background: linear-gradient(145deg, #0e1a22 0%, #122c3e 50%, #0d161c 100%);
+      border: 1px solid rgba(14, 165, 233, 0.3);
+    }
+    .union-glass {
+      background: linear-gradient(145deg, #201d10 0%, #342e12 50%, #15140d 100%);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+    }
+    .jana-glass {
+      background: linear-gradient(145deg, #1a1122 0%, #2b1339 50%, #140f1a 100%);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+    .default-glass {
+      background: linear-gradient(145deg, #171717 0%, #262626 50%, #141414 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
     /* Strikethrough Laser Draw Across Code */
     .strikethrough-laser {
       position: relative;
@@ -1273,87 +1299,6 @@
 
 
   <!-- ======================================================== -->
-  <!-- MODAL: ADD CARD                                           -->
-  <!-- ======================================================== -->
-  <div id="modal-add-card" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
-    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
-      <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
-        <h3 class="text-sm font-bold" style="color: var(--system-blue);">+ Add RuPay Select Card</h3>
-        <button onclick="closeAddCardModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
-      </div>
-      <div class="space-y-2.5 text-xs">
-        <div>
-          <label class="block font-medium mb-1">Bank Name</label>
-          <input type="text" id="add-card-bank" placeholder="e.g. PNB, Bank of Baroda, Canara" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-        </div>
-        <div>
-          <label class="block font-medium mb-1">Card Nickname / Account</label>
-          <input type="text" id="add-card-nick" placeholder="e.g. PNB Imperial Primary" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-medium mb-1">BIN (6-8 digits)</label>
-            <input type="text" id="add-card-bin" placeholder="65249710" class="w-full rounded-lg px-3 py-2 font-mono-apple text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-          </div>
-          <div>
-            <label class="block font-medium mb-1">Last 4 Digits</label>
-            <input type="text" id="add-card-last4" placeholder="9102" maxlength="4" class="w-full rounded-lg px-3 py-2 font-mono-apple text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-medium mb-1">Total Quota</label>
-            <input type="number" id="add-card-total" value="5" min="1" max="20" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-          </div>
-          <div>
-            <label class="block font-medium mb-1">Card Type</label>
-            <select id="add-card-type" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              <option value="Debit Card">Debit Card</option>
-              <option value="Credit Card">Credit Card</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-neutral-800/40">
-        <button onclick="closeAddCardModal()" class="px-3 py-1.5 rounded-lg text-xs" style="color: var(--label-secondary);">Cancel</button>
-        <button onclick="confirmAddCard()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: var(--system-blue);">Save Card</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ======================================================== -->
-  <!-- MODAL: BLOCK CARD                                        -->
-  <!-- ======================================================== -->
-  <div id="modal-block" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
-    <div class="rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
-      <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
-        <h3 class="text-sm font-bold text-rose-500">Block &amp; Decommission Card</h3>
-        <button onclick="closeBlockModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
-      </div>
-      <div class="rounded-xl p-3 text-xs space-y-1" style="background: var(--fill-quaternary);">
-        <div class="flex justify-between font-semibold">
-          <span id="modal-block-title">Card Name</span>
-          <span id="modal-block-last4" class="font-mono-apple">···· 0000</span>
-        </div>
-      </div>
-      <div class="space-y-1">
-        <label class="text-xs font-medium">Date of Block</label>
-        <input type="date" id="block-date-input" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-      </div>
-      <div class="space-y-1">
-        <label class="text-xs font-medium">Reason / Note</label>
-        <input type="text" id="block-notes-input" placeholder="e.g. Quotas exhausted, new card reissued" class="w-full rounded-lg px-3 py-2 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-      </div>
-      <div class="flex justify-end gap-2 pt-2 border-t border-neutral-800/40">
-        <button onclick="closeBlockModal()" class="px-3 py-1.5 rounded-lg text-xs" style="color: var(--label-secondary);">Cancel</button>
-        <button onclick="confirmBlockCard()" class="px-4 py-1.5 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: var(--system-red);">Block Card</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ======================================================== -->
   <!-- MODAL: WHATSAPP SHARE SHEET PREVIEW                      -->
   <!-- ======================================================== -->
   <div id="modal-share" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.65); backdrop-filter: blur(12px);">
@@ -1522,7 +1467,135 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- CARD PORTFOLIO MANAGER iOS BOTTOM SHEET MODAL (STYLE A)  -->
+  <!-- ======================================================== -->
+  <div id="card-manager-backdrop" onclick="closeCardManagerModal()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-opacity duration-200"></div>
+  <div id="card-manager-sheet" class="hidden fixed bottom-0 left-0 right-0 max-h-[92%] z-50 p-2 sm:p-4 transition-transform duration-250 ease-out flex justify-center pointer-events-none">
+    <div class="w-full max-w-[480px] bg-[#141212] border border-neutral-700/80 rounded-3xl p-4 sm:p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-3 pointer-events-auto backdrop-blur-2xl flex flex-col overflow-hidden max-h-[90vh]">
+      <!-- Drag handle -->
+      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1 shrink-0"></div>
 
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center text-base">
+            💳
+          </span>
+          <div>
+            <h4 class="text-sm font-bold text-white">Card Portfolio Manager</h4>
+            <p class="text-[10px] text-neutral-400 font-mono-apple">Active Quotas &amp; Replacement Studio</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all">
+            <span>+ Add</span>
+          </button>
+          <button onclick="closeCardManagerModal()" class="px-3 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-white text-xs font-semibold transition-all">Done</button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (Debit vs Credit) -->
+      <div class="flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-1.5 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800">
+          <button id="card-tab-dc" onclick="setCardCategoryFilter('Debit')" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all">
+            Debit Cards <span id="badge-count-dc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">16</span>
+          </button>
+          <button id="card-tab-cc" onclick="setCardCategoryFilter('Credit')" class="px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all">
+            Credit Cards <span id="badge-count-cc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">4</span>
+          </button>
+        </div>
+        <span class="text-[10px] text-neutral-500 font-mono-apple">Tap 👁 to reveal</span>
+      </div>
+
+      <!-- Scrollable Cards Container -->
+      <div id="card-manager-list" class="flex-1 overflow-y-auto space-y-3.5 pr-0.5 text-xs no-scrollbar pb-2">
+        <!-- Rendered dynamically via renderCardManagerList() -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CARD MODAL SHEET -->
+  <div id="modal-add-card" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="bg-[#181617] border border-neutral-700 rounded-3xl w-full max-w-[420px] p-5 shadow-2xl text-left space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+            +
+          </span>
+          <div>
+            <h4 class="text-sm font-bold text-white">Add New RuPay Card</h4>
+            <p class="text-[10px] text-neutral-400 font-mono-apple">Auto-detects Bank from 6-digit BIN</p>
+          </div>
+        </div>
+        <button onclick="closeAddCardModal()" class="text-neutral-400 hover:text-white p-1 text-sm">✕</button>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">16-Digit Card Number</label>
+          <input id="add-card-num" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          <div id="add-card-detected-badge" class="hidden mt-1 text-[10px] text-emerald-400 font-semibold flex items-center gap-1"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Bank</label>
+            <select id="add-card-bank" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="PNB">Punjab National Bank</option>
+              <option value="Bank of Baroda">Bank of Baroda</option>
+              <option value="Canara">Canara Bank</option>
+              <option value="Jana SFB">Jana Small Finance Bank</option>
+              <option value="Union Bank">Union Bank of India</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Type</label>
+            <select id="add-card-type" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+              <option value="Debit">Debit Card</option>
+              <option value="Credit">Credit Card</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Name</label>
+            <input id="add-card-name" type="text" placeholder="e.g. PNB Imperial" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Linked Account (Last 4)</label>
+            <input id="add-card-acc" type="text" maxlength="4" placeholder="e.g. 7482 or NA" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
+            <input id="add-card-exp" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
+            <input id="add-card-cvv" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
+          <input id="add-card-notes" type="text" placeholder="e.g. Q4 renewed" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeAddCardModal()" class="flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold text-xs">
+            Cancel
+          </button>
+          <button onclick="submitAddCard()" class="flex-[1.5] py-2.5 rounded-xl bg-[#0C8C46] hover:bg-[#0A753A] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg">
+            ✓ Save &amp; Sync Card
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Notification Toast -->
   <div id="toast" class="fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
@@ -1601,6 +1674,10 @@
             <button onclick="filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span>📜 Redeemed Archive</span>
               <span class="text-[10px] font-mono-apple">›</span>
+            </button>
+            <button onclick="openCardManagerModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
+              <span class="flex items-center gap-2"><span>💳</span> <span>Card Portfolio Manager</span></span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-apple" id="drawer-card-count">20 Cards</span>
             </button>
             <button onclick="openBenefitRulesModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2"><span>📊</span> <span>Benefit Rules &amp; Matrix</span></span>
@@ -2184,6 +2261,59 @@
       clearPinDigits();
     }
 
+    /* --- CONCURRENCY SHIELD & MUTATION MUTEX ("SHIELD & QUEUE") --- */
+    let pendingMutationsCount = 0;
+    let syncPendingAfterMutation = false;
+
+    // Ephemeral Quarantine Storage (30-second TTL across page reloads)
+    function quarantineIdentifiers(ids) {
+      if (!Array.isArray(ids) || ids.length === 0) return;
+      try {
+        const key = 'rupay_quarantine_map';
+        const now = Date.now();
+        const existing = JSON.parse(localStorage.getItem(key) || '{}');
+        ids.forEach(id => {
+          if (id) existing[String(id).replace(/['\s]/g, '')] = now + 30000;
+        });
+        localStorage.setItem(key, JSON.stringify(existing));
+      } catch (e) {}
+    }
+
+    function isIdentifierQuarantined(id) {
+      if (!id) return false;
+      try {
+        const key = 'rupay_quarantine_map';
+        const existing = JSON.parse(localStorage.getItem(key) || '{}');
+        const cleanId = String(id).replace(/['\s]/g, '');
+        const expiry = existing[cleanId];
+        if (expiry && expiry > Date.now()) return true;
+      } catch (e) {}
+      return false;
+    }
+
+    function isCardQuarantined(cardNum) {
+      return isIdentifierQuarantined(cardNum);
+    }
+
+    function updateSyncPulseIndicator(isSaving) {
+      const spinner = document.getElementById('mb-sync-spinner');
+      const syncTime = document.getElementById('mb-sync-time');
+      if (isSaving) {
+        if (spinner) spinner.classList.add('animate-pulse', 'text-amber-400');
+        if (syncTime) {
+          syncTime.textContent = 'Saving to Sheets...';
+          syncTime.classList.add('text-[#F47A21]');
+        }
+      } else {
+        if (spinner) spinner.classList.remove('animate-pulse', 'text-amber-400');
+        if (syncTime) {
+          syncTime.classList.remove('text-[#F47A21]');
+          const savedTime = localStorage.getItem('rupay_sync_time');
+          if (savedTime) syncTime.textContent = `Synced at ${savedTime}`;
+        }
+      }
+    }
+
     /* --- UNIFIED API CLIENT WITH PRE-FLIGHT GUARD, AUTO-REPLAY & TRANSIENT RETRY --- */
     async function apiFetch(action, payload = {}, options = {}) {
       if (!isTokenUsable()) {
@@ -2192,63 +2322,88 @@
         });
       }
 
+      // 1. Increment Mutation Mutex & Quarantine Target IDs (Shield)
+      pendingMutationsCount++;
+      const targetIds = [];
+      if (payload.codes) targetIds.push(...(Array.isArray(payload.codes) ? payload.codes : [payload.codes]));
+      if (payload.bookingIds) targetIds.push(...(Array.isArray(payload.bookingIds) ? payload.bookingIds : [payload.bookingIds]));
+      if (payload.cardNumber) targetIds.push(payload.cardNumber);
+      if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
+      if (targetIds.length > 0) quarantineIdentifiers(targetIds);
+      updateSyncPulseIndicator(true);
+
       const maxAttempts = options.retries !== undefined ? options.retries : 2;
       let lastErr = null;
 
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const token = getSessionToken();
-        const { signal, cleanup } = createTimeoutSignal(options.timeout || 35000);
-        try {
-          const res = await fetch(API_ENDPOINT, {
-            method: 'POST',
-            signal: signal,
-            keepalive: !!options.keepalive,
-            body: JSON.stringify({
-              token: token,
-              action: action,
-              ...payload
-            })
-          });
-          cleanup();
-          const data = await res.json();
-          if (data && data.error) {
-            if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
-              return new Promise((resolve, reject) => {
-                promptReauth(action, payload, options, resolve, reject);
-              });
+      try {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          const token = getSessionToken();
+          const { signal, cleanup } = createTimeoutSignal(options.timeout || 35000);
+          try {
+            const res = await fetch(API_ENDPOINT, {
+              method: 'POST',
+              signal: signal,
+              keepalive: !!options.keepalive,
+              body: JSON.stringify({
+                token: token,
+                action: action,
+                ...payload
+              })
+            });
+            cleanup();
+            const data = await res.json();
+            if (data && data.error) {
+              if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
+                return new Promise((resolve, reject) => {
+                  promptReauth(action, payload, options, resolve, reject);
+                });
+              }
+              // Retry on transient lock contention
+              if (data.error.includes('Server is processing another request') && attempt < maxAttempts) {
+                await new Promise(r => setTimeout(r, 1200));
+                continue;
+              }
+              if (!options.silent) {
+                showToast(data.error);
+              }
+              throw new Error(data.error);
             }
-            // Retry on transient lock contention
-            if (data.error.includes('Server is processing another request') && attempt < maxAttempts) {
+            return data;
+          } catch (err) {
+            cleanup();
+            if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+              lastErr = new Error(`Request timeout (35s): Server busy on ${action}.`);
+            } else {
+              lastErr = err;
+            }
+            if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
+              throw err;
+            }
+            if (attempt < maxAttempts) {
               await new Promise(r => setTimeout(r, 1200));
               continue;
             }
-            if (!options.silent) {
-              showToast(data.error);
+            if (options.rollback && typeof options.rollback === 'function') {
+              try { options.rollback(); } catch (rbErr) {}
             }
-            throw new Error(data.error);
+            if (!options.silent) {
+              console.warn(`API call ${action} failed:`, lastErr);
+            }
+            throw lastErr;
           }
-          return data;
-        } catch (err) {
-          cleanup();
-          if (err.name === 'AbortError' || err.name === 'TimeoutError') {
-            lastErr = new Error(`Request timeout (35s): Server busy or connection stalled on ${action}.`);
-          } else {
-            lastErr = err;
+        }
+        throw lastErr;
+      } finally {
+        // 2. Decrement Mutation Mutex & Trigger Queued Sync if Clear
+        pendingMutationsCount = Math.max(0, pendingMutationsCount - 1);
+        if (pendingMutationsCount === 0) {
+          updateSyncPulseIndicator(false);
+          if (syncPendingAfterMutation) {
+            syncPendingAfterMutation = false;
+            setTimeout(() => syncWithGoogleSheets(), 350);
           }
-          if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
-            throw err;
-          }
-          if (attempt < maxAttempts) {
-            await new Promise(r => setTimeout(r, 1000));
-            continue;
-          }
-          if (!options.silent) {
-            console.warn(`API call ${action} failed:`, lastErr);
-          }
-          throw lastErr;
         }
       }
-      throw lastErr;
     }
 
     // Unlock Vault and Hydrate
@@ -3703,6 +3858,14 @@
     /* --- LIVE GOOGLE SHEETS FETCH (WITH REAL-TIME ON-DEMAND INGESTION) --- */
     async function syncWithGoogleSheets() {
       if (isSyncing) return;
+
+      // Mutation Mutex Shield: Prevent premature read during active write operations
+      if (pendingMutationsCount > 0) {
+        syncPendingAfterMutation = true;
+        showToast("Saving changes to Google Sheets... sync queued");
+        return;
+      }
+
       isSyncing = true;
 
       // Flush any persisted uncommitted redemptions from previous sessions
@@ -3838,20 +4001,24 @@
         }
 
         if (data.cards && Array.isArray(data.cards) && data.cards.length) {
-          state.cards = data.cards.map(c => ({
-            id: c.id,
-            bank: c.bank || 'RuPay Card',
-            type: c.type || 'RuPay Select',
-            bin: c.bin || '',
-            last4: c.last4 || '',
-            nick: c.nick || 'Card',
-            status: (c.status || 'active').toLowerCase(),
-            claimed: Number(c.claimed) || 0,
-            total: Number(c.total) || 5,
-            blockedDate: c.blockedDate || '',
-            notes: c.notes || ''
-          }));
+          state.cards = data.cards
+            .filter(c => !isCardQuarantined(c.cardNumber))
+            .map(c => ({
+              bank: c.bank || 'RuPay Card',
+              type: c.type || 'Debit',
+              name: c.name || 'RuPay Card',
+              linkedAccount: c.linkedAccount || 'NA',
+              cardNumber: c.cardNumber || '',
+              expiry: c.expiry || '10/33',
+              cvv: c.cvv || '000',
+              status: (c.status || 'ACTIVE').toUpperCase(),
+              notes: c.notes || '',
+              benefits: c.benefits || {},
+              lastUpdated: c.lastUpdated || ''
+            }));
           await saveEncryptedCards(state.cards);
+          updateDrawerCardCount();
+          if (isCardManagerOpen) renderCardManagerList(currentCardCategoryFilter);
         }
 
         if (data.shared && Array.isArray(data.shared)) {
@@ -3880,7 +4047,9 @@
         }
 
         if (data.staging && Array.isArray(data.staging)) {
-          state.staging = data.staging.map((s, idx) => ({
+          state.staging = data.staging
+            .filter(s => !isIdentifierQuarantined(s.bookingId) && !isIdentifierQuarantined(s.code))
+            .map((s, idx) => ({
             id: 'staging-' + (s.bookingId || idx),
             bookingId: s.bookingId || ('#S' + (idx + 1)),
             brand: s.brand || s.targetBrand || '⚡ Unassigned',
@@ -4852,107 +5021,479 @@
       }
     }
 
-    /* --- ACTIONS: ADD CARD --- */
+    /* --- CARD PORTFOLIO MANAGER & REPLACEMENT STUDIO (STYLE A: OBSIDIAN GLASS) --- */
+    const BIN_MAP = {
+      "652859": { bank: "PNB", type: "Credit", name: "PNB RuPay Select", theme: "pnb-glass" },
+      "653020": { bank: "Canara", type: "Credit", name: "Canara RuPay Select", theme: "canara-glass" },
+      "652497": { bank: "PNB", type: "Debit", name: "PNB Imperial", theme: "pnb-glass" },
+      "652505": { bank: "Bank of Baroda", type: "Debit", name: "BoB RuPay Select DC", theme: "bob-glass" },
+      "652550": { bank: "Canara", type: "Debit", name: "Canara RS DC Crest", theme: "canara-glass" },
+      "652520": { bank: "Jana SFB", type: "Debit", name: "Jana SFB DC", theme: "jana-glass" },
+      "652411": { bank: "Union Bank", type: "Debit", name: "Union Emperio Metal RSDC", theme: "union-glass" }
+    };
+
+    let currentCardCategoryFilter = 'Debit';
+    const cardPeekStates = new Set();
+    let isCardManagerOpen = false;
+
+    function openCardManagerModal() {
+      isCardManagerOpen = true;
+      const backdrop = document.getElementById('card-manager-backdrop');
+      const sheet = document.getElementById('card-manager-sheet');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (sheet) sheet.classList.remove('hidden');
+      renderCardManagerList(currentCardCategoryFilter);
+      updateDrawerCardCount();
+    }
+
+    function closeCardManagerModal() {
+      isCardManagerOpen = false;
+      const backdrop = document.getElementById('card-manager-backdrop');
+      const sheet = document.getElementById('card-manager-sheet');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (sheet) sheet.classList.add('hidden');
+    }
+
+    function setCardCategoryFilter(category) {
+      currentCardCategoryFilter = category;
+      const btnDc = document.getElementById('card-tab-dc');
+      const btnCc = document.getElementById('card-tab-cc');
+      if (category === 'Debit') {
+        if (btnDc) btnDc.className = "px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all";
+        if (btnCc) btnCc.className = "px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all";
+      } else {
+        if (btnCc) btnCc.className = "px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all";
+        if (btnDc) btnDc.className = "px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all";
+      }
+      renderCardManagerList(category);
+    }
+
+    function updateDrawerCardCount() {
+      const allCards = state.cards || [];
+      const dcCount = allCards.filter(c => String(c.type || '').toLowerCase() === 'debit').length;
+      const ccCount = allCards.filter(c => String(c.type || '').toLowerCase() === 'credit').length;
+      
+      const badgeDc = document.getElementById('badge-count-dc');
+      const badgeCc = document.getElementById('badge-count-cc');
+      if (badgeDc) badgeDc.textContent = dcCount;
+      if (badgeCc) badgeCc.textContent = ccCount;
+
+      const drawerCount = document.getElementById('drawer-card-count');
+      if (drawerCount) drawerCount.textContent = `${allCards.length} Cards`;
+    }
+
+    function getBankThemeClass(bank) {
+      const b = String(bank || '').toLowerCase();
+      if (b.includes('pnb')) return 'pnb-glass';
+      if (b.includes('baroda') || b.includes('bob')) return 'bob-glass';
+      if (b.includes('canara')) return 'canara-glass';
+      if (b.includes('union')) return 'union-glass';
+      if (b.includes('jana')) return 'jana-glass';
+      return 'default-glass';
+    }
+
+    function getBankBadgeColor(bank) {
+      const b = String(bank || '').toLowerCase();
+      if (b.includes('pnb')) return 'bg-rose-600/30 text-rose-300 border-rose-500/40';
+      if (b.includes('baroda') || b.includes('bob')) return 'bg-orange-600/30 text-orange-300 border-orange-500/40';
+      if (b.includes('canara')) return 'bg-sky-600/30 text-sky-300 border-sky-500/40';
+      if (b.includes('union')) return 'bg-amber-600/30 text-amber-300 border-amber-500/40';
+      if (b.includes('jana')) return 'bg-purple-600/30 text-purple-300 border-purple-500/40';
+      return 'bg-neutral-800 text-neutral-300 border-neutral-700';
+    }
+
+    function formatCardNumberChunks(num) {
+      const clean = String(num || '').replace(/\D/g, '');
+      return clean.replace(/(\d{4})/g, '$1 ').trim();
+    }
+
+    function renderCardManagerList(category) {
+      const container = document.getElementById('card-manager-list');
+      if (!container) return;
+
+      const filtered = (state.cards || []).filter(c => 
+        String(c.type || '').toLowerCase() === String(category || '').toLowerCase() &&
+        String(c.status || '').toUpperCase() === 'ACTIVE'
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-10 text-neutral-400 space-y-2">
+            <div class="text-3xl">💳</div>
+            <div class="font-bold text-sm text-neutral-300">No active ${category} cards</div>
+            <p class="text-xs text-neutral-500 max-w-xs mx-auto">Click "+ Add" above to onboard your RuPay ${category} cards into the portfolio.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(card => {
+        const rawNum = String(card.cardNumber || '').replace(/['\s]/g, '');
+        const isPeeked = cardPeekStates.has(rawNum);
+        const maskedNum = isPeeked 
+          ? formatCardNumberChunks(rawNum)
+          : `${rawNum.slice(0, 4)} •••• •••• ${rawNum.slice(-4)}`;
+        const cvvDisplay = isPeeked ? (card.cvv || '•••') : '•••';
+        const themeClass = getBankThemeClass(card.bank);
+        const badgeColor = getBankBadgeColor(card.bank);
+        const linkedAccDisplay = (card.linkedAccount && card.linkedAccount !== 'NA') 
+          ? `<span class="px-1.5 py-0.5 rounded bg-black/40 text-neutral-300 font-mono-apple text-[10px] border border-white/5">A/c ${card.linkedAccount}</span>` 
+          : '';
+
+        return `
+          <div id="card-box-${rawNum}" class="${themeClass} rounded-2xl p-4 relative overflow-hidden shadow-xl transition-all">
+            <!-- Top Row: Bank Badge, Title, Linked Account -->
+            <div class="flex items-center justify-between mb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg border font-black text-[10px] flex items-center justify-center tracking-tight ${badgeColor}">
+                  ${card.bank ? card.bank.slice(0, 3).toUpperCase() : 'RP'}
+                </span>
+                <div class="text-xs font-bold text-white tracking-tight flex items-center gap-1.5 flex-wrap">
+                  <span>${card.name || 'RuPay Card'}</span>
+                  ${linkedAccDisplay}
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Number Row with Eye Reveal -->
+            <div class="my-2">
+              <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">Card Number</div>
+              <div class="flex items-center justify-between">
+                <div id="num-display-${rawNum}" class="font-mono-apple text-base font-bold text-white tracking-widest">
+                  ${maskedNum}
+                </div>
+                <button onclick="toggleCardPeek('${rawNum}')" title="Reveal / Mask Card Details" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 text-neutral-400 hover:text-white flex items-center justify-center transition-all">
+                  ${isPeeked ? `
+                    <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ` : `
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  `}
+                </button>
+              </div>
+            </div>
+
+            <!-- Expiry & CVV + iOS Share Button Aligned Directly Below Eye Icon -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-6">
+                <div>
+                  <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">Expiry</div>
+                  <div class="font-mono-apple text-xs font-bold text-neutral-200">${card.expiry || '10/33'}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">CVV</div>
+                  <div id="cvv-display-${rawNum}" class="font-mono-apple text-xs font-bold text-neutral-200">${cvvDisplay}</div>
+                </div>
+              </div>
+
+              <!-- iOS Share Button -->
+              <button onclick="triggerCardShare('${card.name || 'RuPay Card'}', '${card.linkedAccount || 'NA'}', '${rawNum}', '${card.expiry || '10/33'}', '${card.cvv || '000'}')" title="Share Card Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-neutral-200 border border-white/10 flex items-center justify-center transition-all">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </button>
+            </div>
+
+            <!-- Action Buttons: Block & Block & Replace -->
+            <div class="flex items-center gap-2 pt-2.5 border-t border-white/10">
+              <button onclick="swipeBlockCard('${rawNum}', '${card.name || 'Card'}')" class="flex-1 py-2 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                <span>Block</span>
+              </button>
+              <button onclick="toggleReplaceDrawer('${rawNum}')" class="flex-[1.5] py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-md text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                <span>Block &amp; Replace</span>
+              </button>
+            </div>
+
+            <!-- INLINE REPLACEMENT FORM DRAWER -->
+            <div id="replace-drawer-${rawNum}" class="hidden mt-3 pt-3 border-t border-rose-500/30 bg-black/60 -mx-4 -mb-4 p-4 rounded-b-2xl transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  <span>Enter Replacement Card</span>
+                </div>
+                <button onclick="toggleReplaceDrawer('${rawNum}')" class="text-neutral-400 hover:text-white p-1">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              <div class="space-y-2 text-left">
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
+                  <input id="rep-num-${rawNum}" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
+                    <input id="rep-exp-${rawNum}" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  </div>
+                  <div>
+                    <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
+                    <input id="rep-cvv-${rawNum}" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
+                  <input id="rep-notes-${rawNum}" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                </div>
+                <button onclick="submitCardReplacement('${rawNum}')" class="w-full mt-1.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Save &amp; Activate Replacement Card</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleCardPeek(rawNum) {
+      if (cardPeekStates.has(rawNum)) {
+        cardPeekStates.delete(rawNum);
+      } else {
+        cardPeekStates.add(rawNum);
+      }
+      renderCardManagerList(currentCardCategoryFilter);
+    }
+
+    function triggerCardShare(cardName, linkedAcc, cardNum, exp, cvv) {
+      const payload = `${cardName}${linkedAcc && linkedAcc !== 'NA' ? ' (A/c ' + linkedAcc + ')' : ''}\nCard: ${cardNum}\nExpiry: ${exp}\nCVV: ${cvv}`;
+      if (navigator.share) {
+        navigator.share({
+          title: cardName,
+          text: payload
+        }).then(() => {
+          showToast('Shared via iOS Share Sheet!');
+        }).catch(() => {
+          copyToClipboard(payload);
+          showToast('Card credentials copied to clipboard');
+        });
+      } else {
+        copyToClipboard(payload);
+        showToast('Card credentials copied to clipboard');
+      }
+    }
+
+    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block
+    function swipeBlockCard(cardNum, cardName) {
+      const cardEl = document.getElementById(`card-box-${cardNum}`);
+      if (!cardEl) return;
+
+      // Phase 1 (0ms): Tactile micro-press
+      cardEl.style.transform = 'scale(0.98)';
+
+      // Phase 2 (100ms): Horizontal slide through (0deg tilt, 130% X-axis slide, 0 opacity)
+      setTimeout(() => {
+        cardEl.classList.add('anim-swipe-horizontal-700');
+        showToast(`${cardName} (••${cardNum.slice(-4)}) blocked & archived`);
+      }, 100);
+
+      // Phase 3 (380ms): Silky height collapse
+      setTimeout(() => {
+        cardEl.classList.add('anim-collapse-700');
+      }, 380);
+
+      // Phase 4 (800ms): Remove from memory & dispatch backend call
+      setTimeout(() => {
+        state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cardNum);
+        saveEncryptedCards(state.cards);
+        updateDrawerCardCount();
+        renderCardManagerList(currentCardCategoryFilter);
+
+        apiFetch('BLOCK_CARD', { cardNumber: cardNum }).catch(err => {
+          console.warn('Block card network warning:', err);
+        });
+      }, 800);
+    }
+
+    function toggleReplaceDrawer(cardNum) {
+      const d = document.getElementById(`replace-drawer-${cardNum}`);
+      if (d) d.classList.toggle('hidden');
+    }
+
+    function onExpiryInput(inputEl) {
+      let v = inputEl.value.replace(/\D/g, '');
+      if (v.length >= 2) {
+        inputEl.value = v.slice(0, 2) + '/' + v.slice(2, 4);
+      } else {
+        inputEl.value = v;
+      }
+    }
+
+    function onCardNumberInput(inputEl) {
+      let v = inputEl.value.replace(/\D/g, '');
+      if (v.length > 16) v = v.slice(0, 16);
+      
+      // Format as 4-digit chunks
+      inputEl.value = v.replace(/(\d{4})/g, '$1 ').trim();
+
+      // BIN Detection
+      const bin6 = v.slice(0, 6);
+      const match = BIN_MAP[bin6];
+      const badge = document.getElementById('add-card-detected-badge');
+
+      if (match && inputEl.id === 'add-card-num') {
+        const bankSelect = document.getElementById('add-card-bank');
+        const typeSelect = document.getElementById('add-card-type');
+        const nameInput = document.getElementById('add-card-name');
+        if (bankSelect) bankSelect.value = match.bank;
+        if (typeSelect) typeSelect.value = match.type;
+        if (nameInput && !nameInput.value) nameInput.value = match.name;
+
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.textContent = `✓ Detected: ${match.bank} ${match.name}`;
+        }
+      } else if (badge && inputEl.id === 'add-card-num') {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function getClientEligibleBenefits(bank, type) {
+      const isCc = String(type).toLowerCase().includes('credit');
+      const bLower = String(bank || '').toLowerCase();
+      const isPnb = bLower.includes('pnb');
+      const isCanara = bLower.includes('canara');
+
+      if (isCc) {
+        if (isCanara) {
+          return { Spa_Lakme: "Unredeemed", Health_Thyrocare: "Unredeemed", Amazon_Prime: "Not Applicable", Cult_Live_90D: "Not Applicable", Cult_Elite_1M: "Not Applicable", Uber: "Not Applicable", Myntra: "Not Applicable", Decathlon: "Not Applicable", Reliance_Digital: "Not Applicable", BigBasket: "Not Applicable", Apollo_Pharmacy: "Not Applicable", Kalyan_Jewellers: "Not Applicable", TaxSpanner: "Not Applicable" };
+        } else {
+          return { Spa_Lakme: "Unredeemed", Health_Thyrocare: "Unredeemed", Amazon_Prime: "Not Applicable", Cult_Live_90D: "Unredeemed", Cult_Elite_1M: "Unredeemed", Uber: "Unredeemed", Myntra: "Not Applicable", Decathlon: "Not Applicable", Reliance_Digital: "Not Applicable", BigBasket: "Not Applicable", Apollo_Pharmacy: "Not Applicable", Kalyan_Jewellers: "Not Applicable", TaxSpanner: "Not Applicable" };
+        }
+      } else {
+        if (isPnb) {
+          return { Spa_Lakme: "Unredeemed", Health_Thyrocare: "Unredeemed", Amazon_Prime: "Unredeemed", Cult_Live_90D: "Unredeemed", Cult_Elite_1M: "Not Applicable", Uber: "Not Applicable", Myntra: "Unredeemed", Decathlon: "Unredeemed", Reliance_Digital: "Unredeemed", BigBasket: "Unredeemed", Apollo_Pharmacy: "Unredeemed", Kalyan_Jewellers: "Unredeemed", TaxSpanner: "Unredeemed" };
+        } else {
+          return { Spa_Lakme: "Unredeemed", Health_Thyrocare: "Unredeemed", Amazon_Prime: "Unredeemed", Cult_Live_90D: "Unredeemed", Cult_Elite_1M: "Unredeemed", Uber: "Unredeemed", Myntra: "Not Applicable", Decathlon: "Not Applicable", Reliance_Digital: "Not Applicable", BigBasket: "Not Applicable", Apollo_Pharmacy: "Not Applicable", Kalyan_Jewellers: "Not Applicable", TaxSpanner: "Not Applicable" };
+        }
+      }
+    }
+
+    function submitCardReplacement(oldCardNum) {
+      const numInput = document.getElementById(`rep-num-${oldCardNum}`);
+      const expInput = document.getElementById(`rep-exp-${oldCardNum}`);
+      const cvvInput = document.getElementById(`rep-cvv-${oldCardNum}`);
+      const notesInput = document.getElementById(`rep-notes-${oldCardNum}`);
+
+      const newNum = (numInput?.value || '').replace(/\D/g, '');
+      const newExp = (expInput?.value || '').trim();
+      const newCvv = (cvvInput?.value || '').trim();
+      const newNotes = (notesInput?.value || '').trim();
+
+      if (newNum.length !== 16) {
+        showToast('Please enter a valid 16-digit card number');
+        return;
+      }
+      if (!newExp || newExp.length < 4) {
+        showToast('Please enter a valid Expiry (MM/YY)');
+        return;
+      }
+      if (newCvv.length < 3) {
+        showToast('Please enter a 3-digit CVV');
+        return;
+      }
+
+      const oldCard = (state.cards || []).find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === oldCardNum);
+      if (!oldCard) return;
+
+      const newCard = {
+        bank: oldCard.bank,
+        type: oldCard.type,
+        name: oldCard.name,
+        linkedAccount: oldCard.linkedAccount,
+        cardNumber: newNum,
+        expiry: newExp,
+        cvv: newCvv,
+        status: 'ACTIVE',
+        notes: newNotes || 'Replaced card',
+        benefits: getClientEligibleBenefits(oldCard.bank, oldCard.type),
+        lastUpdated: nowIST()
+      };
+
+      // Optimistically swap card in state.cards
+      state.cards = state.cards.filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== oldCardNum);
+      state.cards.push(newCard);
+      saveEncryptedCards(state.cards);
+      renderCardManagerList(currentCardCategoryFilter);
+      showToast(`Replaced card! Fresh quota activated.`);
+
+      apiFetch('BLOCK_AND_REPLACE_CARD', {
+        oldCardNumber: oldCardNum,
+        newCard: newCard
+      }).catch(err => console.warn('Replacement backend sync warning:', err));
+    }
+
     function openAddCardModal() {
-      document.getElementById('add-card-bank').value = '';
-      document.getElementById('add-card-nick').value = '';
-      document.getElementById('add-card-bin').value = '';
-      document.getElementById('add-card-last4').value = '';
-      document.getElementById('modal-add-card').classList.remove('hidden');
+      const numEl = document.getElementById('add-card-num');
+      const nameEl = document.getElementById('add-card-name');
+      const accEl = document.getElementById('add-card-acc');
+      const expEl = document.getElementById('add-card-exp');
+      const cvvEl = document.getElementById('add-card-cvv');
+      const notesEl = document.getElementById('add-card-notes');
+      const badge = document.getElementById('add-card-detected-badge');
+
+      if (numEl) numEl.value = '';
+      if (nameEl) nameEl.value = '';
+      if (accEl) accEl.value = '';
+      if (expEl) expEl.value = '';
+      if (cvvEl) cvvEl.value = '';
+      if (notesEl) notesEl.value = '';
+      if (badge) badge.classList.add('hidden');
+
+      document.getElementById('modal-add-card')?.classList.remove('hidden');
     }
 
     function closeAddCardModal() {
-      document.getElementById('modal-add-card').classList.add('hidden');
+      document.getElementById('modal-add-card')?.classList.add('hidden');
     }
 
-    function confirmAddCard() {
-      const bank = document.getElementById('add-card-bank').value.trim() || 'RuPay Card';
-      const nick = document.getElementById('add-card-nick').value.trim() || 'New Card';
-      const bin = document.getElementById('add-card-bin').value.trim() || '652500';
-      const last4 = document.getElementById('add-card-last4').value.trim() || '0000';
-      const total = parseInt(document.getElementById('add-card-total').value) || 5;
-      const type = document.getElementById('add-card-type').value;
+    function submitAddCard() {
+      const num = (document.getElementById('add-card-num')?.value || '').replace(/\D/g, '');
+      const bank = document.getElementById('add-card-bank')?.value || 'PNB';
+      const type = document.getElementById('add-card-type')?.value || 'Debit';
+      const name = (document.getElementById('add-card-name')?.value || '').trim() || 'RuPay Card';
+      const acc = (document.getElementById('add-card-acc')?.value || '').trim() || 'NA';
+      const exp = (document.getElementById('add-card-exp')?.value || '').trim();
+      const cvv = (document.getElementById('add-card-cvv')?.value || '').trim();
+      const notes = (document.getElementById('add-card-notes')?.value || '').trim();
+
+      if (num.length !== 16) {
+        showToast('Please enter a valid 16-digit card number');
+        return;
+      }
+      if (!exp || exp.length < 4) {
+        showToast('Please enter a valid Expiry (MM/YY)');
+        return;
+      }
+      if (cvv.length < 3) {
+        showToast('Please enter a 3-digit CVV');
+        return;
+      }
 
       const newCard = {
-        id: 'c-' + Date.now(),
         bank: bank,
         type: type,
-        bin: bin,
-        last4: last4,
-        nick: nick,
-        status: 'active',
-        claimed: 0,
-        total: total
+        name: name,
+        linkedAccount: acc,
+        cardNumber: num,
+        expiry: exp,
+        cvv: cvv,
+        status: 'ACTIVE',
+        notes: notes,
+        benefits: getClientEligibleBenefits(bank, type),
+        lastUpdated: nowIST()
       };
 
+      state.cards = state.cards || [];
       state.cards.push(newCard);
       saveEncryptedCards(state.cards);
       closeAddCardModal();
-      showToast('Card added: ' + nick);
-      renderCards();
+      updateDrawerCardCount();
+      renderCardManagerList(currentCardCategoryFilter);
+      showToast(`Added card: ${name}`);
 
-      // Cloud Persistence: Cards tab in Google Sheets
-      apiFetch('SAVE_CARD', {
-        card: newCard
-      }).catch(err => console.warn('Background sync error (SAVE_CARD):', err));
-    }
-
-    /* --- ACTIONS: QUICK CLAIM --- */
-    function quickClaim(cardId) {
-      const card = state.cards.find(c => c.id === cardId);
-      if (!card) return;
-      if (card.claimed >= card.total) {
-        showToast('All quotas already claimed for ' + card.nick);
-        return;
-      }
-      card.claimed += 1;
-      saveEncryptedCards(state.cards);
-      showToast(`Logged claim for ${card.nick} (${card.claimed}/${card.total})`);
-      renderCards();
-
-      // Cloud Persistence: Cards tab in Google Sheets
-      apiFetch('UPDATE_CARD_QUOTA', {
-        id: cardId,
-        claimed: card.claimed
-      }).catch(err => console.warn('Background sync error (UPDATE_CARD_QUOTA):', err));
-    }
-
-    /* --- ACTIONS: BLOCK CARD --- */
-    function promptBlock(id) {
-      const c = state.cards.find(x => x.id === id);
-      if (!c) return;
-      state.targetCardToBlock = c;
-      document.getElementById('modal-block-title').textContent = c.nick;
-      document.getElementById('modal-block-last4').textContent = `···· ${c.last4}`;
-      document.getElementById('block-date-input').value = new Date().toISOString().split('T')[0];
-      document.getElementById('block-notes-input').value = '';
-      document.getElementById('modal-block').classList.remove('hidden');
-    }
-
-    function closeBlockModal() {
-      document.getElementById('modal-block').classList.add('hidden');
-      state.targetCardToBlock = null;
-    }
-
-    function confirmBlockCard() {
-      if (!state.targetCardToBlock) return;
-      const targetId = state.targetCardToBlock.id;
-      const d = document.getElementById('block-date-input').value || new Date().toISOString().split('T')[0];
-      const n = document.getElementById('block-notes-input').value || 'Reissued';
-      state.targetCardToBlock.status = 'blocked';
-      state.targetCardToBlock.blockedDate = d;
-      state.targetCardToBlock.notes = n;
-      saveEncryptedCards(state.cards);
-      closeBlockModal();
-      showToast('Card moved to Blocked archive');
-      renderAll();
-
-      // Cloud Persistence: Cards tab in Google Sheets
-      apiFetch('BLOCK_CARD', {
-        id: targetId,
-        blockedDate: d,
-        notes: n
-      }).catch(err => console.warn('Background sync error (BLOCK_CARD):', err));
+      apiFetch('ADD_CARD', { card: newCard }).catch(err => {
+        console.warn('Add card backend sync warning:', err);
+      });
     }
 
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */

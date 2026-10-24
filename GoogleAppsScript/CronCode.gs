@@ -924,6 +924,127 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+  // Administrative Setup: Initialize "Active Cards" tab with 20 cards, Linked Account, and 13 benefit columns
+  if (e && e.parameter && e.parameter.action === "SETUP_ACTIVE_CARDS_TAB") {
+    try {
+      const ss = getSpreadsheet();
+      let sheet = ss.getSheetByName("Active Cards");
+      let created = false;
+      if (!sheet) {
+        sheet = ss.insertSheet("Active Cards");
+        created = true;
+      } else {
+        sheet.clear();
+      }
+
+      const headers = [
+        "Bank", "Card_Type", "Card_Name", "Linked_Account", "Card_Number", "Expiry", "CVV", "Status", "Notes",
+        "Spa_Lakme", "Health_Thyrocare", "Amazon_Prime", "Cult_Live_90D", "Cult_Elite_1M",
+        "Uber", "Myntra", "Decathlon", "Reliance_Digital", "BigBasket", "Apollo_Pharmacy",
+        "Kalyan_Jewellers", "TaxSpanner", "Last_Updated"
+      ];
+
+      sheet.appendRow(headers);
+      sheet.getRange(1, 1, 1, headers.length)
+        .setFontWeight("bold")
+        .setBackground("#0C8C46")
+        .setFontColor("#FFFFFF");
+      sheet.setFrozenRows(1);
+
+      // Lock plain text format on Linked Account (Col 4), Card Number (Col 5), Expiry (Col 6), CVV (Col 7)
+      sheet.getRange("D:D").setNumberFormat('@');
+      sheet.getRange("E:E").setNumberFormat('@');
+      sheet.getRange("F:F").setNumberFormat('@');
+      sheet.getRange("G:G").setNumberFormat('@');
+
+      const nowStr = formatISTTimestamp(new Date());
+
+      // Benefit Presets based on Benefit Matrix Rules
+      // 1. PNB Credit Cards
+      const bPnbCc = ["Redeemed", "Redeemed", "Not Applicable", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+      // 2. Canara Credit Card
+      const bCanaraCc = ["Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+      // 3. PNB Imperial Debit Cards
+      const bPnbDc = ["Redeemed", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed"];
+      // 4. Other Debit Cards (Jana, BoB, Canara Crest, Union Metal)
+      const bOtherDc = ["Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+
+      const rows = [
+        // RuPay Credit Cards (4) - Linked Account: "NA"
+        ["PNB", "Credit", "PNB RuPay Select (Primary)", "NA", "'6528590001670074", "'10/31", "'324", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
+        ["PNB", "Credit", "PNB Sanjay Add On", "NA", "'6528590001670165", "'10/31", "'300", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
+        ["PNB", "Credit", "PNB Aruna Add On", "NA", "'6528590001670173", "'10/31", "'639", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
+        ["Canara", "Credit", "Canara RuPay Select", "NA", "'6530200329593042", "'10/30", "'870", "ACTIVE", "All done", ...bCanaraCc, nowStr],
+
+        // RuPay Debit Cards (16) - PNB name changed to "PNB Imperial", Linked Account contains last 4 of account
+        ["PNB", "Debit", "PNB Imperial", "'6650", "'6524971000855409", "'10/33", "'300", "ACTIVE", "", ...bPnbDc, nowStr],
+        ["PNB", "Debit", "PNB Imperial", "'6650", "'6524971000843793", "'10/33", "'718", "ACTIVE", "", ...bPnbDc, nowStr],
+        ["PNB", "Debit", "PNB Imperial", "'7482", "'6524971000855151", "'10/33", "'628", "ACTIVE", "", ...bPnbDc, nowStr],
+        ["PNB", "Debit", "PNB Imperial", "'7482", "'6524971000841870", "'10/33", "'158", "ACTIVE", "", ...bPnbDc, nowStr],
+        ["PNB", "Debit", "PNB Imperial", "'8499", "'6524971000853826", "'10/33", "'426", "ACTIVE", "", ...bPnbDc, nowStr],
+
+        // Jana SFB
+        ["Jana SFB", "Debit", "Jana SFB DC", "NA", "'6525200005647267", "'09/32", "'122", "ACTIVE", "", ...bOtherDc, nowStr],
+
+        // Bank of Baroda
+        ["Bank of Baroda", "Debit", "BoB Vibhav DC", "'5465", "'6525050500835465", "'09/30", "'576", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Bank of Baroda", "Debit", "BoB Sanjay DC", "'8674", "'6525050500848674", "'10/30", "'745", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Bank of Baroda", "Debit", "BoB Aruna DC", "'8064", "'6525050500828064", "'09/30", "'780", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Bank of Baroda", "Debit", "BoB Smiti DC", "'8080", "'6525050500828080", "'09/30", "'530", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Bank of Baroda", "Debit", "BoB Shakuntala DC", "'8072", "'6525050500828072", "'09/30", "'342", "ACTIVE", "", ...bOtherDc, nowStr],
+
+        // Canara Bank
+        ["Canara", "Debit", "Canara RS DC", "'5297", "'6525500602705297", "'03/31", "'919", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Canara", "Debit", "Canara RS DC Crest", "'7180", "'6525500601367180", "'11/30", "'912", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Canara", "Debit", "Canara RS DC Crest", "'4407", "'6525500602704407", "'03/31", "'540", "ACTIVE", "", ...bOtherDc, nowStr],
+        ["Canara", "Debit", "Canara RS DC Crest", "'7078", "'6525500602147078", "'10/33", "'974", "ACTIVE", "", ...bOtherDc, nowStr],
+
+        // Union Bank
+        ["Union Bank", "Debit", "Union Emperio Metal RSDC", "'9904", "'6524110100089904", "'09/33", "'690", "ACTIVE", "", ...bOtherDc, nowStr]
+      ];
+
+      for (let r = 0; r < rows.length; r++) {
+        sheet.appendRow(rows[r]);
+      }
+
+      // Update "Blocked Cards" archive tab with matching column ordering
+      let bSheet = ss.getSheetByName("Blocked Cards");
+      if (bSheet) {
+        bSheet.clear();
+      } else {
+        bSheet = ss.insertSheet("Blocked Cards");
+      }
+      const bHeaders = [
+        "Bank", "Card_Type", "Card_Name", "Linked_Account", "Card_Number", "Expiry", "CVV", "Status",
+        "Blocked_Timestamp", "Replaced_By_Card", "Notes",
+        "Spa_Lakme", "Health_Thyrocare", "Amazon_Prime", "Cult_Live_90D", "Cult_Elite_1M",
+        "Uber", "Myntra", "Decathlon", "Reliance_Digital", "BigBasket", "Apollo_Pharmacy",
+        "Kalyan_Jewellers", "TaxSpanner"
+      ];
+      bSheet.appendRow(bHeaders);
+      bSheet.getRange(1, 1, 1, bHeaders.length)
+        .setFontWeight("bold")
+        .setBackground("#1E293B")
+        .setFontColor("#F87171");
+      bSheet.setFrozenRows(1);
+      bSheet.getRange("D:D").setNumberFormat('@');
+      bSheet.getRange("E:E").setNumberFormat('@');
+      bSheet.getRange("F:F").setNumberFormat('@');
+      bSheet.getRange("G:G").setNumberFormat('@');
+
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "SETUP_ACTIVE_CARDS_TAB",
+        activeCardsCount: rows.length,
+        created: created
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative One-Off: Setup SwiggyOne brand tab & update target brand in New tab
   if (e && e.parameter && e.parameter.action === "SETUP_SWIGGY_ONE") {
     try {
@@ -1129,23 +1250,62 @@ function doGet(e) {
             lastUpdated: rows[i][3] ? String(rows[i][3]) : ''
           });
         }
-      } else if (name === "Cards") {
+      } else if (name === "Active Cards") {
         for (let i = 1; i < rows.length; i++) {
-          if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+          if (!rows[i][4] || String(rows[i][4]).trim() === "") continue;
+          let expStr = rows[i][5];
+          if (expStr instanceof Date) {
+            expStr = Utilities.formatDate(expStr, "GMT+05:30", "MM/yy");
+          } else {
+            expStr = String(expStr || '').replace(/^'/, '').trim();
+          }
           result.cards.push({
-            id: String(rows[i][0] || ''),
-            bank: String(rows[i][1] || ''),
-            type: String(rows[i][2] || ''),
-            bin: String(rows[i][3] || ''),
-            last4: String(rows[i][4] || ''),
-            nick: String(rows[i][5] || ''),
-            status: String(rows[i][6] || 'active').toLowerCase(),
-            claimed: Number(rows[i][7]) || 0,
-            total: Number(rows[i][8]) || 5,
-            blockedDate: rows[i][9] ? String(rows[i][9]) : '',
-            notes: rows[i][10] ? String(rows[i][10]) : '',
-            lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
+            bank: String(rows[i][0] || '').trim(),
+            type: String(rows[i][1] || 'Debit').trim(),
+            name: String(rows[i][2] || '').trim(),
+            linkedAccount: String(rows[i][3] || 'NA').replace(/^'/, '').trim(),
+            cardNumber: String(rows[i][4] || '').replace(/['\s]/g, '').trim(),
+            expiry: expStr,
+            cvv: String(rows[i][6] || '').replace(/^'/, '').trim().padStart(3, '0'),
+            status: String(rows[i][7] || 'ACTIVE').trim().toUpperCase(),
+            notes: String(rows[i][8] || '').trim(),
+            benefits: {
+              Spa_Lakme: String(rows[i][9] || 'Not Applicable'),
+              Health_Thyrocare: String(rows[i][10] || 'Not Applicable'),
+              Amazon_Prime: String(rows[i][11] || 'Not Applicable'),
+              Cult_Live_90D: String(rows[i][12] || 'Not Applicable'),
+              Cult_Elite_1M: String(rows[i][13] || 'Not Applicable'),
+              Uber: String(rows[i][14] || 'Not Applicable'),
+              Myntra: String(rows[i][15] || 'Not Applicable'),
+              Decathlon: String(rows[i][16] || 'Not Applicable'),
+              Reliance_Digital: String(rows[i][17] || 'Not Applicable'),
+              BigBasket: String(rows[i][18] || 'Not Applicable'),
+              Apollo_Pharmacy: String(rows[i][19] || 'Not Applicable'),
+              Kalyan_Jewellers: String(rows[i][20] || 'Not Applicable'),
+              TaxSpanner: String(rows[i][21] || 'Not Applicable')
+            },
+            lastUpdated: String(rows[i][22] || '')
           });
+        }
+      } else if (name === "Cards") {
+        // Fallback for legacy Cards sheet if Active Cards is not yet synced
+        if (result.cards.length === 0) {
+          for (let i = 1; i < rows.length; i++) {
+            if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+            result.cards.push({
+              bank: String(rows[i][1] || ''),
+              type: String(rows[i][2] || ''),
+              name: String(rows[i][5] || 'Card'),
+              linkedAccount: 'NA',
+              cardNumber: String(rows[i][3] || '') + String(rows[i][4] || ''),
+              expiry: '10/33',
+              cvv: '000',
+              status: String(rows[i][6] || 'ACTIVE').toUpperCase(),
+              notes: rows[i][10] ? String(rows[i][10]) : '',
+              benefits: {},
+              lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
+            });
+          }
         }
       } else if (name === "Shared_Activity") {
         for (let i = 1; i < rows.length; i++) {
@@ -1852,30 +2012,170 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 6. Block Card
+    // 6. Block Card: Move row from "Active Cards" to "Blocked Cards"
     if (data.action === "BLOCK_CARD") {
-      const cSheet = getOrInitCardsSheet(ss);
-      const cardId = String(data.id || '').trim();
-      const blockedDate = data.blockedDate || formatISTDate(new Date());
-      const notes = data.notes || 'Blocked via App';
-      const rows = cSheet.getDataRange().getValues();
+      const aSheet = ss.getSheetByName("Active Cards");
+      let bSheet = ss.getSheetByName("Blocked Cards");
+      if (!bSheet) {
+        bSheet = ss.insertSheet("Blocked Cards");
+      }
+      const targetCardNum = String(data.cardNumber || data.id || '').replace(/['\s]/g, '').trim();
       let found = false;
 
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][0]).trim() === cardId) {
-          cSheet.getRange(i + 1, 7).setValue('blocked');
-          cSheet.getRange(i + 1, 10).setValue(blockedDate);
-          cSheet.getRange(i + 1, 11).setValue(notes);
-          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
-          found = true;
-          break;
+      if (aSheet) {
+        const aRows = aSheet.getDataRange().getValues();
+        for (let i = 1; i < aRows.length; i++) {
+          const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowNum === targetCardNum || (targetCardNum.length === 4 && rowNum.endsWith(targetCardNum))) {
+            const rowData = aRows[i];
+            const blockedRow = [
+              rowData[0], // Bank
+              rowData[1], // Card_Type
+              rowData[2], // Card_Name
+              "'" + String(rowData[3] || 'NA').replace(/^'/, ''), // Linked_Account
+              "'" + rowNum, // Card_Number
+              "'" + String(rowData[5] || '').replace(/^'/, ''), // Expiry
+              "'" + String(rowData[6] || '').replace(/^'/, ''), // CVV
+              "BLOCKED",
+              formatISTTimestamp(new Date()), // Blocked_Timestamp
+              "", // Replaced_By_Card
+              data.notes || String(rowData[8] || 'Blocked via App'),
+              // 13 benefits preserved
+              rowData[9], rowData[10], rowData[11], rowData[12], rowData[13],
+              rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
+              rowData[19], rowData[20], rowData[21]
+            ];
+            bSheet.appendRow(blockedRow);
+            aSheet.deleteRow(i + 1);
+            found = true;
+            break;
+          }
         }
       }
-
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: found,
         action: "BLOCK_CARD",
-        id: cardId
+        cardNumber: targetCardNum
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6B. Block & Replace Card
+    if (data.action === "BLOCK_AND_REPLACE_CARD") {
+      const aSheet = ss.getSheetByName("Active Cards");
+      let bSheet = ss.getSheetByName("Blocked Cards");
+      if (!bSheet) bSheet = ss.insertSheet("Blocked Cards");
+
+      const oldCardNum = String(data.oldCardNumber || '').replace(/['\s]/g, '').trim();
+      const newCard = data.newCard || {};
+      const newCardNum = String(newCard.cardNumber || '').replace(/['\s]/g, '').trim();
+      let found = false;
+
+      if (aSheet) {
+        const aRows = aSheet.getDataRange().getValues();
+        for (let i = 1; i < aRows.length; i++) {
+          const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowNum === oldCardNum || (oldCardNum.length === 4 && rowNum.endsWith(oldCardNum))) {
+            const rowData = aRows[i];
+            const blockedRow = [
+              rowData[0], // Bank
+              rowData[1], // Card_Type
+              rowData[2], // Card_Name
+              "'" + String(rowData[3] || 'NA').replace(/^'/, ''),
+              "'" + rowNum,
+              "'" + String(rowData[5] || '').replace(/^'/, ''),
+              "'" + String(rowData[6] || '').replace(/^'/, ''),
+              "BLOCKED",
+              formatISTTimestamp(new Date()),
+              newCardNum ? newCardNum.slice(-4) : '',
+              data.notes || String(rowData[8] || 'Replaced via App'),
+              rowData[9], rowData[10], rowData[11], rowData[12], rowData[13],
+              rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
+              rowData[19], rowData[20], rowData[21]
+            ];
+            bSheet.appendRow(blockedRow);
+            aSheet.deleteRow(i + 1);
+            found = true;
+            break;
+          }
+        }
+      }
+
+      // Add New Replacement Card to Active Cards with eligible benefits set to "Unredeemed"
+      if (aSheet && newCardNum) {
+        const bank = newCard.bank || 'PNB';
+        const type = newCard.cardType || 'Debit';
+        const name = newCard.cardName || 'PNB Imperial';
+        const linkedAcc = newCard.linkedAccount || 'NA';
+        const expiry = newCard.expiry || '10/33';
+        const cvv = newCard.cvv || '000';
+        const notes = newCard.notes || 'Replaced card';
+        const nowStr = formatISTTimestamp(new Date());
+
+        const benefits = getEligibleBenefitsArray(bank, type, name);
+
+        const newRow = [
+          bank,
+          type,
+          name,
+          "'" + String(linkedAcc).replace(/^'/, ''),
+          "'" + newCardNum,
+          "'" + String(expiry).replace(/^'/, ''),
+          "'" + String(cvv).replace(/^'/, ''),
+          "ACTIVE",
+          notes,
+          ...benefits,
+          nowStr
+        ];
+        aSheet.appendRow(newRow);
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "BLOCK_AND_REPLACE_CARD",
+        oldCardNumber: oldCardNum,
+        newCardNumber: newCardNum
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6C. Add Brand New Card
+    if (data.action === "ADD_CARD") {
+      const aSheet = ss.getSheetByName("Active Cards");
+      const c = data.card || data;
+      const cardNum = String(c.cardNumber || '').replace(/['\s]/g, '').trim();
+
+      if (aSheet && cardNum) {
+        const bank = c.bank || 'PNB';
+        const type = c.cardType || 'Debit';
+        const name = c.cardName || 'RuPay Select Card';
+        const linkedAcc = c.linkedAccount || 'NA';
+        const expiry = c.expiry || '10/33';
+        const cvv = c.cvv || '000';
+        const notes = c.notes || '';
+        const nowStr = formatISTTimestamp(new Date());
+        const benefits = getEligibleBenefitsArray(bank, type, name);
+
+        aSheet.appendRow([
+          bank,
+          type,
+          name,
+          "'" + String(linkedAcc).replace(/^'/, ''),
+          "'" + cardNum,
+          "'" + String(expiry).replace(/^'/, ''),
+          "'" + String(cvv).replace(/^'/, ''),
+          "ACTIVE",
+          notes,
+          ...benefits,
+          nowStr
+        ]);
+        SpreadsheetApp.flush();
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "ADD_CARD",
+        cardNumber: cardNum
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -1935,6 +2235,61 @@ function doPost(e) {
             updated.push({ brand: sheet.getName(), bookingId: rowBid, code: rowCode, card: cardTag });
           }
         }
+      }
+
+      // Automatically flip the corresponding benefit to "Redeemed" in "Active Cards" tab
+      try {
+        const aSheet = ss.getSheetByName("Active Cards");
+        if (aSheet && updated.length > 0) {
+          const aVals = aSheet.getDataRange().getValues();
+          const brandColMap = {
+            "lakme": 10, "four fountains": 10, "spa": 10,
+            "thyrocare": 11, "health": 11,
+            "amazon prime": 12, "prime": 12,
+            "cult live": 13, "cult.fit live": 13,
+            "cult elite": 14, "cult.fit elite": 14,
+            "uber": 15,
+            "myntra": 16,
+            "decathlon": 17,
+            "reliance": 18, "reliance digital": 18,
+            "bigbasket": 19,
+            "apollo": 20, "apollo pharmacy": 20,
+            "kalyan": 21, "kalyan jewellers": 21,
+            "taxspanner": 22
+          };
+
+          updated.forEach(u => {
+            const bName = String(u.brand || "").toLowerCase();
+            let targetCol = 0;
+            for (const key in brandColMap) {
+              if (bName.includes(key)) {
+                targetCol = brandColMap[key];
+                break;
+              }
+            }
+
+            if (targetCol > 0) {
+              for (let r = 1; r < aVals.length; r++) {
+                const rowCardNum = String(aVals[r][4] || "").replace(/['\s]/g, "");
+                const rowAcc = String(aVals[r][3] || "").replace(/^'/, "");
+                const tagStr = cardTag.replace(/['\s]/g, "");
+                
+                const matchCard = (rowCardNum && tagStr.includes(rowCardNum.slice(-4))) ||
+                                  (rowAcc && rowAcc !== "NA" && tagStr.includes(rowAcc));
+
+                if (matchCard) {
+                  const currentVal = String(aVals[r][targetCol - 1] || "");
+                  if (currentVal !== "Not Applicable") {
+                    aSheet.getRange(r + 1, targetCol).setValue("Redeemed");
+                    aSheet.getRange(r + 1, 23).setValue(formatISTTimestamp(new Date()));
+                  }
+                }
+              }
+            }
+          });
+        }
+      } catch (errTagActive) {
+        console.warn("Active Cards benefit auto-flip notice:", errTagActive.message);
       }
 
       SpreadsheetApp.flush();
@@ -2163,4 +2518,34 @@ function formatISTTimestamp(d) {
 
 function formatISTDate(d) {
   return Utilities.formatDate(d, IST_TIMEZONE, "dd-MMM-yyyy");
+}
+
+/**
+ * BENEFIT MATRIX PRESET GENERATOR
+ * Generates initial 13 benefit states (Unredeemed vs Not Applicable) based on Bank & Card Type
+ */
+function getEligibleBenefitsArray(bank, type, name) {
+  const isCc = String(type).toLowerCase().includes('credit');
+  const bLower = String(bank || '').toLowerCase();
+  const isPnb = bLower.includes('pnb');
+  const isCanara = bLower.includes('canara');
+
+  // Order: [Spa_Lakme, Health_Thyrocare, Amazon_Prime, Cult_Live_90D, Cult_Elite_1M, Uber, Myntra, Decathlon, Reliance_Digital, BigBasket, Apollo_Pharmacy, Kalyan_Jewellers, TaxSpanner]
+  if (isCc) {
+    if (isCanara) {
+      // Canara CC: Spa/Lakme & Thyrocare only
+      return ["Unredeemed", "Unredeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+    } else {
+      // PNB CC: Spa, Thyrocare, Cult Live, Cult Elite, Uber
+      return ["Unredeemed", "Unredeemed", "Not Applicable", "Unredeemed", "Unredeemed", "Unredeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+    }
+  } else {
+    if (isPnb) {
+      // PNB Imperial DC: Spa, Thyrocare, Prime, Cult Live, Myntra, Decathlon, Reliance, BigBasket, Apollo, Kalyan, TaxSpanner
+      return ["Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Not Applicable", "Not Applicable", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed"];
+    } else {
+      // Union, BoB, Canara Crest, Jana DC: Spa, Thyrocare, Prime, Cult Live, Cult Elite, Uber
+      return ["Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Unredeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
+    }
+  }
 }
