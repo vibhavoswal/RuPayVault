@@ -3754,7 +3754,7 @@
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.remove('hidden');
         renderDeckSelector();
-        renderMobileCarousel();
+        renderVault();
       }
 
       updateDrawerSwitcherUI();
@@ -4820,12 +4820,16 @@
 
       // Desktop Batch Action Bar
       const dtBar = document.getElementById('dt-batch-bar');
-      if (state.isSelectMode && sel.length) {
-        dtBar.classList.remove('hidden');
-        document.getElementById('dt-sel-count').textContent = `${sel.length} Selected`;
-        document.getElementById('dt-sel-sum').textContent = `Total: ₹${selSum.toLocaleString()}`;
-      } else {
-        dtBar.classList.add('hidden');
+      if (dtBar) {
+        if (state.isSelectMode && sel.length) {
+          dtBar.classList.remove('hidden');
+          const dtSelCount = document.getElementById('dt-sel-count');
+          if (dtSelCount) dtSelCount.textContent = `${sel.length} Selected`;
+          const dtSelSum = document.getElementById('dt-sel-sum');
+          if (dtSelSum) dtSelSum.textContent = `Total: ₹${selSum.toLocaleString()}`;
+        } else {
+          dtBar.classList.add('hidden');
+        }
       }
 
       // Desktop Table Body
