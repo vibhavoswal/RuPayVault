@@ -701,17 +701,26 @@
     .desktop-view {
       display: none !important;
     }
-    #mobile-app-container {
+    #mobile-app-container:not(.hidden),
+    #view-card-manager:not(.hidden),
+    #view-hub:not(.hidden) {
       display: flex !important;
       width: 100%;
       height: 100%;
+    }
+    #mobile-app-container.hidden,
+    #view-card-manager.hidden,
+    #view-hub.hidden {
+      display: none !important;
     }
 
     @media (min-width: 840px) {
       body {
         background-color: #050507;
       }
-      #mobile-app-container {
+      #mobile-app-container,
+      #view-card-manager,
+      #view-hub {
         max-width: 480px;
         margin-left: auto;
         margin-right: auto;
@@ -733,7 +742,11 @@
       background-color: #f1f5f9;
     }
     [data-theme="light"] #mobile-app-container,
-    html.light #mobile-app-container {
+    [data-theme="light"] #view-card-manager,
+    [data-theme="light"] #view-hub,
+    html.light #mobile-app-container,
+    html.light #view-card-manager,
+    html.light #view-hub {
       border-color: rgba(0, 0, 0, 0.08);
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.06);
     }
@@ -861,240 +874,99 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- 1. DESKTOP VIEW (macOS Fullscreen Layout: >= 840px)       -->
+  <!-- 1. PORTAL HUB / FRONT PAGE VIEW (#view-hub)              -->
   <!-- ======================================================== -->
-  <div class="desktop-view flex-1 h-full w-full overflow-hidden flex flex-row">
+  <section id="view-hub" class="flex-1 flex flex-col justify-between p-6 sm:p-8 w-full h-full overflow-y-auto relative select-none">
     
-    <!-- macOS Translucent Sidebar -->
-    <aside class="w-64 h-full flex flex-col shrink-0" style="background: var(--sidebar-bg); border-right: 0.5px solid var(--separator); backdrop-filter: blur(30px);">
-      <!-- Window Controls & Branding -->
-      <div class="px-5 pt-4 pb-3 flex items-center justify-between border-b border-neutral-800/40">
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full inline-block" style="background: #ff5f57;"></span>
-          <span class="w-3 h-3 rounded-full inline-block" style="background: #febc2e;"></span>
-          <span class="w-3 h-3 rounded-full inline-block" style="background: #28c840;"></span>
-          <span class="ml-2 font-bold text-xs tracking-tight">RuPay Vault</span>
+    <!-- Top Branding & Status -->
+    <div class="w-full pt-4 flex flex-col items-center text-center space-y-3 shrink-0">
+      <div class="relative">
+        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0C8C46]/25 via-[#0C8C46]/10 to-transparent border border-[#0C8C46]/40 flex items-center justify-center shadow-[0_0_40px_rgba(12,140,70,0.22)]">
+          <svg class="w-10 h-10 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="3"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+            <circle cx="7" cy="15" r="1.5" fill="currentColor"></circle>
+          </svg>
         </div>
-        <button onclick="toggleTheme()" class="text-xs px-2 py-0.5 rounded-md" style="background: var(--fill-quaternary); color: var(--label-secondary);">
-          <span class="theme-label">Light</span>
-        </button>
+        <span class="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[9px] font-mono-apple text-emerald-300 font-black tracking-wider">PRO</span>
       </div>
 
-      <!-- Navigation List -->
-      <nav class="flex-1 overflow-y-auto px-2.5 pt-2 pb-3 space-y-1" style="font-size: 13px;">
-        <div class="px-2 pt-3 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); text-transform: uppercase;">Management</div>
-
-        <button onclick="setTab('cards')" id="dt-sidebar-cards" class="hidden w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
-          <span class="flex-1">Cards &amp; Quotas</span>
-          <span id="dt-cards-count" class="text-xs px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,0.25);">5</span>
-        </button>
-
-        <button onclick="setTab('vault')" id="dt-sidebar-vault" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="background: var(--system-blue); color: #fff; font-weight: 600;">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
-          <span class="flex-1">Voucher Vault</span>
-          <span id="dt-vault-count" class="text-xs px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,0.25); color: #fff;">0</span>
-        </button>
-      </nav>
-
-      <!-- Sidebar Status & Sync -->
-      <div class="p-3 border-t border-neutral-800/40 text-xs flex items-center justify-between" style="color: var(--label-tertiary);">
-        <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 hover:underline font-medium" style="color: var(--system-blue);">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          Sync Sheets
-        </button>
-        <div class="flex items-center gap-2 font-mono-apple" style="font-size: 10px;">
-          <span class="w-2 h-2 rounded-full inline-block" id="dt-sync-dot" style="background: var(--system-green);"></span>
-          <span id="dt-sync-status">Live</span>
-          <button onclick="lockVaultManual()" class="ml-1 px-2 py-0.5 rounded bg-neutral-800 hover:bg-neutral-700 text-[#F47A21] font-sans font-semibold text-[10px] active:scale-95 transition-all" title="Lock Vault">🔒 Lock</button>
-        </div>
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-white">RuPay Select Vault</h1>
+        <p class="text-xs text-neutral-400 mt-1">Universal Portfolio &amp; Voucher Management Engine</p>
       </div>
-    </aside>
 
-    <!-- macOS Main Work Area (100% full width and height) -->
-    <main class="flex-1 h-full overflow-hidden flex flex-col" style="background: var(--bg-grouped);">
-      
-      <!-- DESKTOP TAB 1: CARDS (Hidden for now) -->
-      <div id="dt-view-cards" class="hidden flex-1 flex flex-col overflow-y-auto">
-        <div class="sticky top-0 z-10 px-8 py-3.5 flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
-          <div>
-            <h2 class="text-lg font-semibold tracking-tight">Active RuPay Cards</h2>
-            <p class="text-xs" style="color: var(--label-secondary);">Quarterly &amp; Annual Quota Tracking</p>
+      <!-- Quick Session Badge -->
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-mono-apple">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>24h Authenticated Session Active</span>
+      </div>
+    </div>
+
+    <!-- Center Workspace Choice Cards -->
+    <div class="w-full space-y-3.5 my-auto py-6">
+      <div class="flex items-center justify-between px-1">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Select Workspace</p>
+        <span class="text-[10px] text-neutral-500 font-mono-apple">One-Tap Gateway</span>
+      </div>
+
+      <!-- 1. Card Portfolio Manager Portal Card -->
+      <button onclick="switchWorkspace('cards')" class="w-full text-left p-4 rounded-3xl bg-gradient-to-br from-[#1a1719] via-[#141214] to-[#100e10] border border-neutral-800 hover:border-[#0C8C46]/60 hover:shadow-[0_8px_30px_rgba(12,140,70,0.18)] active:scale-[0.98] transition-all group flex items-center justify-between">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+            💳
           </div>
-          <button onclick="openAddCardModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90 shadow-sm" style="background: var(--system-blue);">
-            <span>+ Add Card</span>
-          </button>
-        </div>
-        <div class="p-8 space-y-6">
-          <div id="dt-cards-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
-          
-          <!-- Blocked Cards Inline Collapsible -->
-          <div class="rounded-xl overflow-hidden p-4" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <div class="flex items-center justify-between cursor-pointer" onclick="toggleBlockedAccordion()">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full inline-block" style="background: var(--system-red);"></span>
-                <span class="text-xs font-semibold uppercase tracking-wider">Blocked Cards Archive (<span id="dt-blocked-inline-count">3</span>)</span>
-                <span class="text-xs" style="color: var(--label-tertiary);">&middot; Reverse sorted by Block Date</span>
-              </div>
-              <span class="text-xs font-medium hover:underline" style="color: var(--system-blue);">Toggle</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Card Portfolio Manager</h3>
+              <span id="hub-cards-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple text-[10px] font-black border border-emerald-500/30 shrink-0">20 Cards</span>
             </div>
-            <div id="dt-blocked-inline-list" class="hidden mt-3 pt-3 border-t border-neutral-800/40 space-y-2"></div>
+            <p class="text-[11px] text-neutral-400 mt-0.5 truncate">Full-screen replacement studio, quotas &amp; credentials</p>
           </div>
         </div>
-      </div>
-
-      <!-- DESKTOP TAB 2: VAULT (Primary Active View) -->
-      <div id="dt-view-vault" class="flex-1 flex flex-col overflow-hidden">
-        <div class="sticky top-0 z-10 px-8 py-3.5 flex items-center justify-between border-b border-neutral-800/40" style="background: var(--toolbar-bg); backdrop-filter: blur(25px);">
-          <div>
-            <h2 class="text-lg font-semibold tracking-tight">Voucher Vault</h2>
-            <p class="text-xs" style="color: var(--label-secondary);">154 Parsed Vouchers &middot; WhatsApp batch generator</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <input type="text" id="dt-search-input" placeholder="Search vouchers..." oninput="syncSearchAndRender(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none w-48" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-            <select id="dt-brand-filter" onchange="filterVaultBrand(this.value)" class="rounded-lg px-3 py-1.5 text-xs focus:outline-none" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              <option value="ActivityLog" selected>⚡ Activity Log (All Brands)</option>
-              <option value="Lakme">1. Lakmé Salon (₹1,500)</option>
-              <option value="FourFountains">2. Four Fountains (₹1,500 · 30d Expiry)</option>
-              <option value="Kalyan">3. Kalyan Jewellers (₹2,000)</option>
-              <option value="Myntra">4. Myntra (₹500)</option>
-              <option value="Decathlon">5. Decathlon (₹500)</option>
-              <option value="BigBasket">6. BigBasket (₹250)</option>
-              <option value="Reliance">7. Reliance Digital (₹500)</option>
-              <option value="Apollo">8. Apollo Pharmacy (₹250)</option>
-              <option value="AmazonPrime">9. Amazon Prime</option>
-              <option value="CultFit">10. Cult.fit Elite</option>
-              <option value="TimesPrime">11. Times Prime</option>
-              <option value="TattvaSpa">12. Tattva Spa (₹1,500)</option>
-              <option value="TaxSpanner">13. TaxSpanner (₹2,950)</option>
-              <option value="Thyrocare">14. Thyrocare</option>
-              <option value="Uber">15. Uber Rides (₹100)</option>
-              <option value="SwiggyOne">16. Swiggy One</option>
-              <option value="Redeemed">📜 Redeemed Archive</option>
-            </select>
-            <a id="dt-sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-900/50 hover:text-emerald-300 active:scale-90 transition-all flex items-center justify-center group" title="Google Sheet">
-              <svg class="w-4 h-4 shrink-0 text-[#0F9D58] group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/>
-              </svg>
-            </a>
-            <button id="dt-select-btn" onclick="toggleSelectMode()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-              Select Multiple
-            </button>
-          </div>
+        <div class="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:border-emerald-500/40 shrink-0 ml-2 transition-all">
+          →
         </div>
+      </button>
 
-        <!-- Desktop 3-Second Undo Banner -->
-        <div id="dt-undo-banner" class="hidden px-8 py-2.5 bg-emerald-950/90 border-b border-emerald-500/40 flex items-center justify-between text-xs text-white">
-          <div class="flex items-center gap-2">
-            <span class="text-emerald-400 font-bold">✓</span>
-            <span id="dt-undo-banner-text" class="text-emerald-200">Voucher marked as Redeemed and moved to Sheet</span>
+      <!-- 2. Voucher Manager Portal Card -->
+      <button onclick="switchWorkspace('vouchers')" class="w-full text-left p-4 rounded-3xl bg-gradient-to-br from-[#1a1719] via-[#141214] to-[#100e10] border border-neutral-800 hover:border-amber-500/60 hover:shadow-[0_8px_30px_rgba(245,158,11,0.18)] active:scale-[0.98] transition-all group flex items-center justify-between">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform shadow-inner">
+            🎟️
           </div>
-          <button id="dt-undo-banner-btn" onclick="triggerUndoLast()" class="px-3 py-1 rounded-lg bg-emerald-500 text-black font-bold text-xs hover:bg-emerald-400 active:scale-95 transition-all">
-            ↶ Undo (3s)
-          </button>
-        </div>
-
-        <!-- Desktop Activity Log Sub-Filters (Visible when Activity Log is active) -->
-        <div id="dt-activity-filters-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-              <button onclick="setActivityFilter('added')" id="dt-btn-filter-added" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all">
-                <svg class="w-3.5 h-3.5 inline-block text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
-                <span>Ingested</span>
-                <span id="dt-parent-count-ingested" class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/40 text-emerald-200 font-bold">0</span>
-              </button>
-              <button onclick="setActivityFilter('shared')" id="dt-btn-filter-shared" class="px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 flex items-center gap-1.5 transition-all">
-                <svg class="w-3.5 h-3.5 inline-block text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                <span>Shared</span>
-                <span id="dt-parent-count-shared" class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300 font-bold">0</span>
-              </button>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="text-sm font-bold text-white group-hover:text-amber-400 transition-colors">Voucher Manager</h3>
+              <span id="hub-vouchers-badge" class="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-mono-apple text-[10px] font-black border border-amber-500/30 shrink-0">154 Vouchers</span>
             </div>
-            <button id="dt-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Archive Visible Items">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
-              </svg>
-              <span id="dt-clear-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
-            </button>
-          </div>
-
-          <!-- Desktop Ingested Sub-Filters (Strictly Untagged vs Tagged) -->
-          <div id="dt-ingested-subfilters" class="flex items-center justify-between bg-black/40 p-1.5 rounded-xl border border-neutral-800/80">
-            <div class="flex items-center gap-2 text-xs">
-              <button onclick="setIngestFilter('untagged')" id="dt-subfilter-untagged" class="px-3 py-1 rounded-lg font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all">
-                <svg class="w-3.5 h-3.5 inline-block text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>Untagged</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-black font-black" id="dt-sub-count-untagged">0</span>
-              </button>
-              <button onclick="setIngestFilter('tagged')" id="dt-subfilter-tagged" class="px-3 py-1 rounded-lg font-bold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-all">
-                <svg class="w-3.5 h-3.5 inline-block text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                <span>Tagged</span>
-                <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-emerald-400 font-bold" id="dt-sub-count-tagged">0</span>
-              </button>
-            </div>
-            <span class="text-[11px] text-neutral-400" id="dt-select-hint">Tap "Select Multiple" or click any row to select & tag</span>
+            <p class="text-[11px] text-neutral-400 mt-0.5 truncate">Live brand carousels, batch WhatsApp share &amp; claims</p>
           </div>
         </div>
-
-        <!-- Desktop Redeemed Action Bar (Visible when Redeemed tab is active) -->
-        <div id="dt-redeemed-bar" class="hidden px-8 py-2 border-b border-neutral-800/40 bg-neutral-950 flex items-center justify-between gap-2">
-          <span class="text-xs font-bold text-white flex items-center gap-1.5"><span>📜</span> Redeemed Archive</span>
-          <button id="dt-btn-clear-redeemed-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Archive Redeemed Archive">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
-            </svg>
-            <span id="dt-clear-redeemed-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
-          </button>
+        <div class="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 group-hover:text-white group-hover:border-amber-500/40 shrink-0 ml-2 transition-all">
+          →
         </div>
+      </button>
+    </div>
 
-        <!-- Floating Batch Action Bar -->
-        <div id="dt-batch-bar" class="hidden px-8 py-2.5 flex items-center justify-between" style="background: rgba(10, 132, 255, 0.1); border-bottom: 0.5px solid rgba(10, 132, 255, 0.25);">
-          <div class="flex items-center gap-2.5">
-            <span id="dt-sel-count" class="px-2 py-0.5 rounded text-white text-xs font-semibold" style="background: var(--system-blue);">0</span>
-            <span id="dt-sel-sum" class="text-xs font-semibold" style="color: var(--system-blue);">Total: ₹0</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button onclick="selectAllVouchers()" class="text-xs hover:underline" style="color: var(--system-blue);">Select All</button>
-            <button onclick="copyBatchPlaintext()" class="px-3 py-1 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator);">
-              Copy Plaintext
-            </button>
-            <button onclick="openWhatsAppModal()" class="px-3.5 py-1 rounded-lg text-xs font-semibold text-white shadow-sm" style="background: #25D366;">
-              Share to WhatsApp
-            </button>
-            <button onclick="batchMarkAsRedeemed()" class="px-3 py-1 rounded-lg text-xs font-medium" style="background: var(--fill-secondary); color: var(--system-orange);">
-              Mark as Used
-            </button>
-          </div>
-        </div>
-
-        <!-- Desktop Table -->
-        <div class="flex-1 overflow-y-auto px-8 py-4">
-          <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator); background: var(--bg-grouped-secondary);">
-            <table class="w-full text-left text-xs">
-              <thead class="sticky top-0 border-b border-neutral-800/40" style="background: var(--toolbar-bg); font-size: 11px; text-transform: uppercase; color: var(--label-tertiary);">
-                <tr>
-                  <th class="p-3 w-10 text-center"><input type="checkbox" id="dt-th-cb" onchange="toggleSelectAllRows(this.checked)"></th>
-                  <th class="p-3">Brand</th>
-                  <th class="p-3">Code / PIN</th>
-                  <th class="p-3">Card</th>
-                  <th class="p-3">Validity</th>
-                  <th class="p-3">Status</th>
-                  <th class="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="dt-vault-tbody"></tbody>
-            </table>
-          </div>
-        </div>
+    <!-- Bottom Actions / Sign Out -->
+    <div class="w-full pt-2 pb-2 shrink-0 flex items-center justify-between text-xs text-neutral-400 border-t border-neutral-800/80">
+      <div class="flex items-center gap-2 font-mono-apple text-[11px]">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Sheets Synced</span>
       </div>
-
-    </main>
-  </div>
+      <button onclick="lockVaultManual()" class="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-rose-500/40 text-neutral-300 hover:text-rose-400 font-semibold text-xs active:scale-95 transition-all flex items-center gap-1.5">
+        <span>🔒</span>
+        <span>Lock Vault</span>
+      </button>
+    </div>
+  </section>
 
 
   <!-- ======================================================== -->
-  <!-- 2. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
+  <!-- 3. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
   <!-- ======================================================== -->
-  <div id="mobile-app-container" class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
+  <div id="mobile-app-container" class="hidden mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
     
     <!-- Top Bar with Safe Area Top Padding (Apple Native Selection Toolbar) -->
     <header id="mb-top-header" class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
@@ -1124,6 +996,9 @@
           <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
           <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-[#0C8C46] hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
             <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+          <button onclick="switchWorkspace('hub')" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all text-xs" title="Return to Hub">
+            🏠
           </button>
           <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs" title="Lock Vault">
             🔒
@@ -1469,52 +1344,55 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- CARD PORTFOLIO MANAGER iOS BOTTOM SHEET MODAL (STYLE A)  -->
+  <!-- 2. FULL-SCREEN CARD PORTFOLIO MANAGER VIEW               -->
   <!-- ======================================================== -->
-  <div id="card-manager-backdrop" onclick="closeCardManagerModal()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-opacity duration-200"></div>
-  <div id="card-manager-sheet" class="hidden fixed bottom-0 left-0 right-0 max-h-[92%] z-50 p-2 sm:p-4 transition-transform duration-250 ease-out flex justify-center pointer-events-none">
-    <div class="w-full max-w-[480px] bg-[#141212] border border-neutral-700/80 rounded-3xl p-4 sm:p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-3 pointer-events-auto backdrop-blur-2xl flex flex-col overflow-hidden max-h-[90vh]">
-      <!-- Drag handle -->
-      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1 shrink-0"></div>
-
-      <!-- Sheet Header -->
-      <div class="flex items-center justify-between pb-2 border-b border-neutral-800 shrink-0">
-        <div class="flex items-center gap-2.5">
-          <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center text-base">
-            💳
-          </span>
-          <div>
-            <h4 class="text-sm font-bold text-white">Card Portfolio Manager</h4>
-            <p class="text-[10px] text-neutral-400 font-mono-apple">Active Quotas &amp; Replacement Studio</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all">
-            <span>+ Add</span>
-          </button>
-          <button onclick="closeCardManagerModal()" class="px-3 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-white text-xs font-semibold transition-all">Done</button>
+  <section id="view-card-manager" class="hidden flex-1 flex flex-col h-full w-full bg-[#0d0c0d] overflow-hidden select-none">
+    <!-- Card Manager Header -->
+    <header class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
+      <div class="flex items-center gap-2.5">
+        <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
+          <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="17" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div>
+          <h2 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+            <span>💳 Card Portfolio</span>
+          </h2>
+          <p class="text-[10px] text-neutral-400 font-mono-apple">Active Quotas &amp; Replacement Studio</p>
         </div>
       </div>
 
-      <!-- Category Filter Pills (Debit vs Credit) -->
-      <div class="flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-1.5 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800">
-          <button id="card-tab-dc" onclick="setCardCategoryFilter('Debit')" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all">
-            Debit Cards <span id="badge-count-dc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">16</span>
-          </button>
-          <button id="card-tab-cc" onclick="setCardCategoryFilter('Credit')" class="px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all">
-            Credit Cards <span id="badge-count-cc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">4</span>
-          </button>
-        </div>
-        <span class="text-[10px] text-neutral-500 font-mono-apple">Tap 👁 to reveal</span>
+      <div class="flex items-center gap-2">
+        <button onclick="switchWorkspace('hub')" class="px-2.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 active:scale-95 text-xs font-semibold text-neutral-300 hover:text-white transition-all flex items-center gap-1 shadow-sm" title="Return to Front Hub">
+          <span>🏠 Hub</span>
+        </button>
+        <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm">
+          <span>+ Add</span>
+        </button>
       </div>
+    </header>
 
-      <!-- Scrollable Cards Container -->
-      <div id="card-manager-list" class="flex-1 overflow-y-auto space-y-3.5 pr-0.5 text-xs no-scrollbar pb-2">
-        <!-- Rendered dynamically via renderCardManagerList() -->
+    <!-- Subheader: Category Tabs & Helper -->
+    <div class="px-3.5 py-2.5 bg-[#141214] border-b border-neutral-800/80 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-1.5 bg-neutral-900/90 p-1 rounded-xl border border-neutral-800">
+        <button id="card-tab-dc" onclick="setCardCategoryFilter('Debit')" class="px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all">
+          Debit Cards <span id="badge-count-dc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">16</span>
+        </button>
+        <button id="card-tab-cc" onclick="setCardCategoryFilter('Credit')" class="px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all">
+          Credit Cards <span id="badge-count-cc" class="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono-apple">4</span>
+        </button>
       </div>
+      <span class="text-[10px] text-neutral-400 font-mono-apple">Tap numbers to copy</span>
     </div>
-  </div>
+
+    <!-- Cards Scroll Container -->
+    <div id="card-manager-list" class="flex-1 overflow-y-auto p-3.5 space-y-3.5 pb-20 no-scrollbar">
+      <!-- Rendered dynamically via renderCardManagerList() -->
+    </div>
+  </section>
 
   <!-- ADD CARD MODAL SHEET -->
   <div id="modal-add-card" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
@@ -1626,6 +1504,18 @@
           <button onclick="closeNavDrawer()" class="p-1.5 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] active:scale-90 transition-transform" title="Close Drawer">✕</button>
         </div>
 
+        <!-- Top Workspace Switcher Action Card -->
+        <button id="drawer-btn-switch-workspace" onclick="toggleWorkspaceFromDrawer()" class="w-full text-left rounded-2xl p-3 bg-gradient-to-r from-neutral-900 to-neutral-900 hover:from-neutral-800 hover:to-neutral-800 border border-neutral-700/70 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group shadow-sm">
+          <div class="flex items-center gap-2.5">
+            <span class="text-xl" id="drawer-switch-icon">🎟️</span>
+            <div>
+              <div class="text-[9px] uppercase tracking-wider text-neutral-400 font-mono-apple font-bold">Switch Workspace</div>
+              <div class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors" id="drawer-switch-title">Switch to Voucher Manager</div>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-neutral-400 group-hover:text-white transition-colors">⇄</span>
+        </button>
+
         <!-- Section 1: Google Sheets Inset Group -->
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Cloud Database</div>
@@ -1668,17 +1558,25 @@
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Quick Shortcuts</div>
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] divide-y divide-[var(--theme-border)] text-xs text-[var(--theme-text-muted)] overflow-hidden shadow-sm">
-            <button onclick="filterVaultBrand('Activity Log'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+            <button onclick="switchWorkspace('hub'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+              <span class="flex items-center gap-2"><span>🏠</span> <span>Return to Front Hub</span></span>
+              <span class="text-[10px] font-mono-apple">›</span>
+            </button>
+            <button onclick="switchWorkspace('cards'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
+              <span class="flex items-center gap-2"><span>💳</span> <span>Card Portfolio Manager</span></span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-apple" id="drawer-card-count">20 Cards</span>
+            </button>
+            <button onclick="switchWorkspace('vouchers'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
+              <span class="flex items-center gap-2"><span>🎟️</span> <span>Voucher Manager</span></span>
+              <span class="text-[10px] font-mono-apple">›</span>
+            </button>
+            <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Activity Log'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span>⚡ Activity Log (7-Day)</span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
-            <button onclick="filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+            <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span>📜 Redeemed Archive</span>
               <span class="text-[10px] font-mono-apple">›</span>
-            </button>
-            <button onclick="openCardManagerModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
-              <span class="flex items-center gap-2"><span>💳</span> <span>Card Portfolio Manager</span></span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-apple" id="drawer-card-count">20 Cards</span>
             </button>
             <button onclick="openBenefitRulesModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2"><span>📊</span> <span>Benefit Rules &amp; Matrix</span></span>
@@ -2466,6 +2364,8 @@
         renderAll();
         flushUncommittedRedeems();
         syncWithGoogleSheets();
+        switchWorkspace('hub');
+        updateHubStats();
       }
     }
 
@@ -3701,6 +3601,7 @@
 
     const state = {
       isDark: true,
+      activeWorkspace: 'hub',
       activeTab: 'vault',
       isSelectMode: false,
       selectedIds: new Set(),
@@ -3714,6 +3615,73 @@
       vouchers: [],
       staging: []
     };
+
+    /* --- WORKSPACE NAVIGATION (HUB, CARDS, VOUCHERS) --- */
+    function switchWorkspace(target) {
+      state.activeWorkspace = target || 'hub';
+      const hubEl = document.getElementById('view-hub');
+      const cardEl = document.getElementById('view-card-manager');
+      const voucherEl = document.getElementById('mobile-app-container');
+
+      if (state.activeWorkspace === 'hub') {
+        isCardManagerOpen = false;
+        if (hubEl) hubEl.classList.remove('hidden');
+        if (cardEl) cardEl.classList.add('hidden');
+        if (voucherEl) voucherEl.classList.add('hidden');
+        updateHubStats();
+      } else if (state.activeWorkspace === 'cards') {
+        isCardManagerOpen = true;
+        if (hubEl) hubEl.classList.add('hidden');
+        if (cardEl) cardEl.classList.remove('hidden');
+        if (voucherEl) voucherEl.classList.add('hidden');
+        renderCardManagerList(currentCardCategoryFilter || 'Debit');
+        updateDrawerCardCount();
+      } else if (state.activeWorkspace === 'vouchers') {
+        isCardManagerOpen = false;
+        if (hubEl) hubEl.classList.add('hidden');
+        if (cardEl) cardEl.classList.add('hidden');
+        if (voucherEl) voucherEl.classList.remove('hidden');
+        renderDeckSelector();
+        renderMobileCarousel();
+      }
+
+      updateDrawerSwitcherUI();
+    }
+
+    function updateHubStats() {
+      const cardCountBadge = document.getElementById('hub-cards-badge');
+      const voucherCountBadge = document.getElementById('hub-vouchers-badge');
+      if (cardCountBadge && state.cards) {
+        const activeCards = state.cards.filter(c => String(c.status || '').toUpperCase() === 'ACTIVE');
+        cardCountBadge.textContent = `${activeCards.length || state.cards.length} Cards`;
+      }
+      if (voucherCountBadge && state.vouchers) {
+        voucherCountBadge.textContent = `${state.vouchers.length} Vouchers`;
+      }
+    }
+
+    function updateDrawerSwitcherUI() {
+      const switchIcon = document.getElementById('drawer-switch-icon');
+      const switchTitle = document.getElementById('drawer-switch-title');
+      if (!switchIcon || !switchTitle) return;
+
+      if (state.activeWorkspace === 'cards') {
+        switchIcon.textContent = '🎟️';
+        switchTitle.textContent = 'Switch to Voucher Manager';
+      } else {
+        switchIcon.textContent = '💳';
+        switchTitle.textContent = 'Switch to Card Manager';
+      }
+    }
+
+    function toggleWorkspaceFromDrawer() {
+      closeNavDrawer();
+      if (state.activeWorkspace === 'cards') {
+        switchWorkspace('vouchers');
+      } else {
+        switchWorkspace('cards');
+      }
+    }
 
     const MATRIX_RULES = [
       { name: 'Cult.fit Live - 90 Days', pnb_imp: 'Quarterly', union: 'Quarterly', jana: 'Quarterly', bob: 'Quarterly', canara_dc: 'Quarterly', pnb_cc: 'Annually', canara_cc: null },
@@ -3787,6 +3755,8 @@
         const total = (state.vouchers ? state.vouchers.length : 0);
         sheetCount.textContent = `${total} vouchers synced`;
       }
+      updateDrawerSwitcherUI();
+      updateDrawerCardCount();
 
       backdrop.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -4092,6 +4062,7 @@
         }
 
         renderAll();
+        updateHubStats();
       } catch (err) {
         console.error("Sync error:", err);
         if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Offline (cached)';
@@ -4120,7 +4091,9 @@
       if (document.getElementById('mb-blocked-count')) document.getElementById('mb-blocked-count').textContent = blocked.length;
 
       // Desktop Cards Grid
-      document.getElementById('dt-cards-grid').innerHTML = active.map(c => {
+      const dtCardsGrid = document.getElementById('dt-cards-grid');
+      if (dtCardsGrid) {
+        dtCardsGrid.innerHTML = active.map(c => {
         const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
         return `
           <div class="rounded-xl p-4.5 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
@@ -4149,7 +4122,8 @@
             </div>
           </div>
         `;
-      }).join('');
+        }).join('');
+      }
 
       // Mobile Cards List
       const mbCardsList = document.getElementById('mb-cards-list');
@@ -4314,7 +4288,9 @@
         const isTaggedView = state.ingestFilter === 'tagged';
 
         // Desktop Table Body for Activity Log
-        document.getElementById('dt-vault-tbody').innerHTML = allActivities.length ? allActivities.map((act, i) => {
+        const dtVaultTbody1 = document.getElementById('dt-vault-tbody');
+        if (dtVaultTbody1) {
+          dtVaultTbody1.innerHTML = allActivities.length ? allActivities.map((act, i) => {
           const vBrandName = getBrandDisplayName(act.brand);
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
@@ -4390,6 +4366,7 @@
             </td>
           </tr>
         `;
+        }
 
         // Mobile VIP Wallet Cards for Activity Log (High-Touch Micro Cards - Var 2: 3-line layout & status tint)
         document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
@@ -4575,7 +4552,9 @@
         if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = rList.length;
 
         // Desktop Table Body for Redeemed Tab
-        document.getElementById('dt-vault-tbody').innerHTML = rList.length ? rList.map((r, i) => {
+        const dtVaultTbody2 = document.getElementById('dt-vault-tbody');
+        if (dtVaultTbody2) {
+          dtVaultTbody2.innerHTML = rList.length ? rList.map((r, i) => {
           const vBrandName = getBrandDisplayName(r.brand);
           const isChecked = state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code);
           return `
@@ -4606,7 +4585,8 @@
               </td>
             </tr>
           `;
-        }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No redeemed vouchers in archive.</td></tr>`;
+          }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No redeemed vouchers in archive.</td></tr>`;
+        }
 
         // Mobile VIP Wallet Cards for Redeemed Tab
         document.getElementById('mb-vouchers-list').innerHTML = rList.length ? rList.map((r, i) => {
@@ -4734,7 +4714,9 @@
       }
 
       // Desktop Table Body
-      document.getElementById('dt-vault-tbody').innerHTML = vs.length ? vs.map((v, i) => {
+      const dtVaultTbody3 = document.getElementById('dt-vault-tbody');
+      if (dtVaultTbody3) {
+        dtVaultTbody3.innerHTML = vs.length ? vs.map((v, i) => {
         const vBrandName = getBrandDisplayName(v.brand);
         return `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
@@ -4771,6 +4753,7 @@
         </tr>
       `;
       }).join('') : `<tr><td colspan="6" class="p-8 text-center text-sm text-neutral-400">No vouchers found for ${bConfig.name}.</td></tr>`;
+      }
 
       // Mobile VIP Wallet Cards (Minimal Subtle Cobalt Edge Placards)
       document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
@@ -5041,21 +5024,11 @@
     let isCardManagerOpen = false;
 
     function openCardManagerModal() {
-      isCardManagerOpen = true;
-      const backdrop = document.getElementById('card-manager-backdrop');
-      const sheet = document.getElementById('card-manager-sheet');
-      if (backdrop) backdrop.classList.remove('hidden');
-      if (sheet) sheet.classList.remove('hidden');
-      renderCardManagerList(currentCardCategoryFilter);
-      updateDrawerCardCount();
+      switchWorkspace('cards');
     }
 
     function closeCardManagerModal() {
-      isCardManagerOpen = false;
-      const backdrop = document.getElementById('card-manager-backdrop');
-      const sheet = document.getElementById('card-manager-sheet');
-      if (backdrop) backdrop.classList.add('hidden');
-      if (sheet) sheet.classList.add('hidden');
+      switchWorkspace('hub');
     }
 
     function setCardCategoryFilter(category) {
@@ -6667,6 +6640,10 @@
       updateFloatingDock();
 
       setTab('vault');
+
+      // 5. Always boot directly to Front Page Hub view (even upon refresh)
+      switchWorkspace('hub');
+      updateHubStats();
     });
   </script>
 </body>
