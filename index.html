@@ -671,14 +671,78 @@
       100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
     }
 
-    /* Auto Responsive Breakpoint */
-    @media (min-width: 840px) {
-      .mobile-view { display: none !important; }
-      .desktop-view { display: flex !important; }
+    /* Universal Mobile Layout on all screens */
+    .desktop-view {
+      display: none !important;
     }
-    @media (max-width: 839px) {
-      .mobile-view { display: flex !important; }
-      .desktop-view { display: none !important; }
+    #mobile-app-container {
+      display: flex !important;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (min-width: 840px) {
+      body {
+        background-color: #050507;
+      }
+      #mobile-app-container {
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 70px rgba(0, 0, 0, 0.75);
+      }
+      #floating-dock-container {
+        right: calc(50% - 240px + 1rem) !important;
+      }
+      #floating-approve-container {
+        left: calc(50% - 240px + 1rem) !important;
+        right: calc(50% - 240px + 5.5rem) !important;
+      }
+    }
+
+    [data-theme="light"] body,
+    html.light body {
+      background-color: #f1f5f9;
+    }
+    [data-theme="light"] #mobile-app-container,
+    html.light #mobile-app-container {
+      border-color: rgba(0, 0, 0, 0.08);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Benefit Rules Modal Light Mode */
+    [data-theme="light"] #benefit-rules-sheet > div,
+    html.light #benefit-rules-sheet > div {
+      background-color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      color: #141212 !important;
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .text-white,
+    html.light #benefit-rules-sheet .text-white {
+      color: #141212 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .text-neutral-200,
+    html.light #benefit-rules-sheet .text-neutral-200 {
+      color: #262626 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .bg-neutral-900\/70,
+    html.light #benefit-rules-sheet .bg-neutral-900\/70 {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .bg-neutral-900,
+    html.light #benefit-rules-sheet .bg-neutral-900 {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .bg-neutral-800,
+    html.light #benefit-rules-sheet .bg-neutral-800 {
+      background-color: #e2e8f0 !important;
+      color: #1e293b !important;
     }
   </style>
 </head>
@@ -804,24 +868,6 @@
           <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4M4 7l8 4M4 7v10l8 4m0-10v10"/></svg>
           <span class="flex-1">Voucher Vault</span>
           <span id="dt-vault-count" class="text-xs px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,0.25); color: #fff;">0</span>
-        </button>
-
-        <button onclick="setTab('cooldowns')" id="dt-sidebar-cooldowns" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="flex-1">24h Cooldowns</span>
-          <span id="dt-ready-count" class="text-xs font-semibold" style="color: var(--system-green);">Ready</span>
-        </button>
-
-        <button onclick="setTab('matrix')" id="dt-sidebar-matrix" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--label-primary);">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          <span class="flex-1">Benefit Rules</span>
-        </button>
-
-        <div class="px-2 pt-4 pb-1" style="font-size: 11px; font-weight: 600; color: var(--label-tertiary); text-transform: uppercase;">Archive</div>
-        <button onclick="setTab('blocked')" id="dt-sidebar-blocked" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left" style="color: var(--system-red);">
-          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-          <span class="flex-1">Blocked Cards</span>
-          <span id="dt-blocked-count" class="text-xs">3</span>
         </button>
       </nav>
 
@@ -1014,49 +1060,6 @@
         </div>
       </div>
 
-      <!-- DESKTOP TAB 3: COOLDOWNS -->
-      <div id="dt-view-cooldowns" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
-        <div>
-          <h2 class="text-lg font-semibold tracking-tight">24-Hour Account Cooldowns</h2>
-          <p class="text-xs" style="color: var(--label-secondary);">RuPay Select limit: 1 voucher per account per 24 hours. Rotate accounts to redeem entire card benefits in a sprint.</p>
-        </div>
-        <div id="dt-cooldowns-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
-      </div>
-
-      <!-- DESKTOP TAB 4: MATRIX -->
-      <div id="dt-view-matrix" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
-        <div>
-          <h2 class="text-lg font-semibold tracking-tight">RuPay Select Benefits Comparison</h2>
-          <p class="text-xs" style="color: var(--label-secondary);">Official bank quota entitlement matrix by card tier and BIN.</p>
-        </div>
-        <div class="rounded-xl overflow-hidden" style="border: 0.5px solid var(--separator); background: var(--bg-grouped-secondary);">
-          <table class="w-full text-left text-xs">
-            <thead class="border-b border-neutral-800/40" style="background: var(--toolbar-bg); color: var(--label-secondary);">
-              <tr>
-                <th class="p-3 border-r border-neutral-800/40">Benefit</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">PNB Imperial</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">Union Emperio</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">Jana SFB</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">BoB Bhoomi</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">Canara RSDC</th>
-                <th class="p-3 text-center border-r border-neutral-800/40">PNB CC</th>
-                <th class="p-3 text-center">Canara CC</th>
-              </tr>
-            </thead>
-            <tbody id="dt-matrix-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- DESKTOP TAB 5: BLOCKED -->
-      <div id="dt-view-blocked" class="hidden flex-1 overflow-y-auto p-8 space-y-4">
-        <div>
-          <h2 class="text-lg font-semibold tracking-tight text-rose-500">Blocked Cards Archive</h2>
-          <p class="text-xs" style="color: var(--label-secondary);">When cards are blocked and reissued, historical records are preserved here in reverse-chronological order.</p>
-        </div>
-        <div id="dt-blocked-full-list" class="space-y-2"></div>
-      </div>
-
     </main>
   </div>
 
@@ -1064,7 +1067,7 @@
   <!-- ======================================================== -->
   <!-- 2. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
   <!-- ======================================================== -->
-  <div class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
+  <div id="mobile-app-container" class="mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
     
     <!-- Top Bar with Safe Area Top Padding (Apple Native Selection Toolbar) -->
     <header id="mb-top-header" class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
@@ -1202,8 +1205,6 @@
 
       <!-- Hidden internal views (preserved for data integrity) -->
       <div id="mb-view-cards" class="hidden"></div>
-      <div id="mb-view-cooldowns" class="hidden"></div>
-      <div id="mb-view-matrix" class="hidden"></div>
     </main>
 
     <!-- Backdrop scrim when Stack Circles expand -->
@@ -1488,6 +1489,39 @@
     </div>
   </div>
 
+  <!-- ======================================================== -->
+  <!-- BENEFIT RULES & MATRIX iOS BOTTOM SHEET MODAL            -->
+  <!-- ======================================================== -->
+  <div id="benefit-rules-backdrop" onclick="closeBenefitRulesModal()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-opacity duration-200"></div>
+  <div id="benefit-rules-sheet" class="hidden fixed bottom-0 left-0 right-0 max-h-[88%] z-50 p-3 sm:p-4 transition-transform duration-250 ease-out flex justify-center pointer-events-none">
+    <div class="w-full max-w-lg bg-[#181617] border border-neutral-700/80 rounded-3xl p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-3.5 pointer-events-auto backdrop-blur-2xl flex flex-col overflow-hidden max-h-[85vh]">
+      <!-- Drag handle -->
+      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1 shrink-0"></div>
+      
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center text-base">
+            📊
+          </span>
+          <div>
+            <h4 class="text-sm font-bold text-white">Benefit Rules &amp; Matrix</h4>
+            <p class="text-[10px] text-neutral-400 font-mono-apple">Official bank quota entitlement matrix by card</p>
+          </div>
+        </div>
+        <button onclick="closeBenefitRulesModal()" class="px-3 py-1.5 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-white text-xs font-semibold transition-all">Done</button>
+      </div>
+
+      <!-- Card Selection Pills -->
+      <div class="shrink-0 overflow-x-auto no-scrollbar py-1">
+        <div id="benefit-card-selector" class="flex items-center gap-1.5 text-xs min-w-max"></div>
+      </div>
+
+      <!-- Scrollable Benefits List for Selected Card -->
+      <div id="benefit-rules-content" class="flex-1 overflow-y-auto space-y-2 pr-0.5 text-xs"></div>
+    </div>
+  </div>
+
 
 
   <!-- Notification Toast -->
@@ -1566,6 +1600,10 @@
             </button>
             <button onclick="filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span>📜 Redeemed Archive</span>
+              <span class="text-[10px] font-mono-apple">›</span>
+            </button>
+            <button onclick="openBenefitRulesModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+              <span class="flex items-center gap-2"><span>📊</span> <span>Benefit Rules &amp; Matrix</span></span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
             <button onclick="syncWithGoogleSheets(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
@@ -3624,7 +3662,7 @@
       state.activeTab = tab;
       
       // Desktop Views
-      ['cards', 'vault', 'cooldowns', 'matrix', 'blocked'].forEach(t => {
+      ['cards', 'vault'].forEach(t => {
         const v = document.getElementById(`dt-view-${t}`);
         if (v) v.classList.toggle('hidden', t !== tab);
         const sb = document.getElementById(`dt-sidebar-${t}`);
@@ -3635,14 +3673,14 @@
             sb.style.fontWeight = '600';
           } else {
             sb.style.background = 'transparent';
-            sb.style.color = (t === 'blocked') ? 'var(--system-red)' : 'var(--label-primary)';
+            sb.style.color = 'var(--label-primary)';
             sb.style.fontWeight = '400';
           }
         }
       });
 
       // Mobile Views
-      ['cards', 'vault', 'cooldowns', 'matrix'].forEach(t => {
+      ['cards', 'vault'].forEach(t => {
         const mv = document.getElementById(`mb-view-${t}`);
         if (mv) mv.classList.toggle('hidden', t !== tab);
         const mbBtn = document.getElementById(`mb-btn-${t}`);
@@ -3973,22 +4011,6 @@
         `;
       }).join('');
       }
-
-      // Blocked Lists
-      const bHtml = blocked.map(c => `
-        <div class="flex items-center justify-between p-3 rounded-lg text-xs" style="background: var(--fill-quaternary);">
-          <div>
-            <span class="font-bold line-through text-rose-400">${c.nick}</span>
-            <span class="font-mono-apple ml-1.5" style="color: var(--label-tertiary);">···· ${c.last4}</span>
-            <p class="text-[10px] mt-0.5" style="color: var(--label-tertiary);">Blocked on ${c.blockedDate} &middot; ${c.notes || 'Decommissioned'}</p>
-          </div>
-          <span class="text-[9px] font-bold px-2 py-0.5 rounded text-rose-500" style="background: rgba(255,69,58,0.12);">Blocked</span>
-        </div>
-      `).join('') || `<p class="text-xs p-3" style="color: var(--label-tertiary);">No blocked cards in archive.</p>`;
-
-      if (document.getElementById('dt-blocked-inline-list')) document.getElementById('dt-blocked-inline-list').innerHTML = bHtml;
-      if (document.getElementById('dt-blocked-full-list')) document.getElementById('dt-blocked-full-list').innerHTML = bHtml;
-      if (document.getElementById('mb-blocked-inline-list')) document.getElementById('mb-blocked-inline-list').innerHTML = bHtml;
     }
 
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
@@ -4743,52 +4765,70 @@
       }
     }
 
-    /* --- RENDER COOLDOWNS --- */
-    function renderCooldowns() {
-      const html = state.accounts.map(a => {
-        const remainingMs = (24 * 3600 * 1000) - (Date.now() - new Date(a.lastRedeemed).getTime());
-        const isReady = remainingMs <= 0;
-        const text = isReady ? 'Ready' : `In ${Math.floor(remainingMs/36e5)}h ${Math.floor((remainingMs%36e5)/6e4)}m`;
-        return `
-          <div class="rounded-xl p-4 flex items-center justify-between" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <div>
-              <span class="font-mono-apple font-bold text-xs">${a.id}</span>
-              <p class="text-[10px]" style="color: var(--label-tertiary);">1 per 24h limit</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" style="color: ${isReady ? 'var(--system-green)' : 'var(--system-orange)'}; background: var(--fill-quaternary);">${text}</span>
-              <button onclick="resetAccountTimer('${a.id}')" class="text-xs px-2.5 py-1 rounded text-white font-medium shadow-sm" style="background: var(--system-blue);">Redeem</button>
-            </div>
-          </div>
-        `;
-      }).join('');
+    /* --- BENEFIT RULES & MATRIX MODAL --- */
+    const BENEFIT_CARDS = [
+      { key: 'pnb_imp', name: 'PNB Imperial' },
+      { key: 'union', name: 'Union Emperio' },
+      { key: 'jana', name: 'Jana SFB' },
+      { key: 'bob', name: 'BoB Bhoomi' },
+      { key: 'canara_dc', name: 'Canara RSDC' },
+      { key: 'pnb_cc', name: 'PNB CC' },
+      { key: 'canara_cc', name: 'Canara CC' }
+    ];
+    let selectedBenefitCardKey = 'pnb_imp';
 
-      const dtGrid = document.getElementById('dt-cooldowns-grid');
-      if (dtGrid) dtGrid.innerHTML = html;
-      const mbList = document.getElementById('mb-cooldowns-list');
-      if (mbList) mbList.innerHTML = html;
+    function openBenefitRulesModal() {
+      const backdrop = document.getElementById('benefit-rules-backdrop');
+      const sheet = document.getElementById('benefit-rules-sheet');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (sheet) sheet.classList.remove('hidden');
+      renderBenefitRulesModal();
     }
 
-    /* --- RENDER BENEFIT MATRIX --- */
-    function renderMatrix() {
-      const dtM = document.getElementById('dt-matrix-tbody');
-      if (dtM) {
-        dtM.innerHTML = MATRIX_RULES.map(r => `
-          <tr class="border-b border-neutral-800/40">
-            <td class="p-3 font-semibold border-r border-neutral-800/40">${r.name}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_imp)}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.union)}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.jana)}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.bob)}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.canara_dc)}</td>
-            <td class="p-3 text-center border-r border-neutral-800/40">${renderBadge(r.pnb_cc)}</td>
-            <td class="p-3 text-center">${renderBadge(r.canara_cc)}</td>
-          </tr>
-        `).join('');
+    function closeBenefitRulesModal() {
+      const backdrop = document.getElementById('benefit-rules-backdrop');
+      const sheet = document.getElementById('benefit-rules-sheet');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (sheet) sheet.classList.add('hidden');
+    }
+
+    function selectBenefitCard(key) {
+      selectedBenefitCardKey = key;
+      renderBenefitRulesModal();
+    }
+
+    function renderBenefitRulesModal() {
+      const selector = document.getElementById('benefit-card-selector');
+      if (selector) {
+        selector.innerHTML = BENEFIT_CARDS.map(c => {
+          const isActive = c.key === selectedBenefitCardKey;
+          return `
+            <button onclick="selectBenefitCard('${c.key}')" class="px-3 py-1.5 rounded-xl font-bold text-xs transition-all ${isActive ? 'bg-[#0C8C46] text-white shadow' : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'}">
+              ${c.name}
+            </button>
+          `;
+        }).join('');
       }
 
-      const sel = document.getElementById('mb-matrix-select');
-      renderMobileMatrixCard(sel ? sel.value : 'pnb_imp');
+      const content = document.getElementById('benefit-rules-content');
+      if (content) {
+        content.innerHTML = MATRIX_RULES.map(r => {
+          const quota = r[selectedBenefitCardKey];
+          const isEligible = !!quota;
+          return `
+            <div class="rounded-2xl p-3 flex items-center justify-between gap-3 border ${isEligible ? 'bg-neutral-900/70 border-neutral-800' : 'bg-neutral-950/40 border-neutral-900/50 opacity-40'}">
+              <span class="font-medium text-neutral-200">${r.name}</span>
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-mono-apple font-bold shrink-0 ${isEligible ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-neutral-800/40 text-neutral-500'}">
+                ${quota || '—'}
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderMatrix() {
+      renderBenefitRulesModal();
     }
 
     function renderBadge(val) {
@@ -5915,26 +5955,6 @@
       }, 760);
     }
 
-    function resetAccountTimer(accId) {
-      const a = state.accounts.find(x => x.id === accId);
-      if (a) {
-        a.lastRedeemed = new Date();
-        showToast('24h timer restarted for ' + accId);
-        renderCooldowns();
-        saveEncryptedAccounts(state.accounts);
-
-        // Cloud Persistence: ⏱ Cooldowns tab in Google Sheets
-        apiFetch('RESET_COOLDOWN', {
-          account: accId
-        }).catch(err => console.warn('Background sync error (RESET_COOLDOWN):', err));
-      }
-    }
-
-    function toggleBlockedAccordion() {
-      document.getElementById('dt-blocked-inline-list')?.classList.toggle('hidden');
-      document.getElementById('mb-blocked-inline-list')?.classList.toggle('hidden');
-    }
-
     function copyToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text)
@@ -5972,12 +5992,8 @@
     function renderAll() {
       renderCards();
       renderVault();
-      renderCooldowns();
       renderMatrix();
     }
-
-    // Auto tick every 15s to update remaining cooldowns
-    setInterval(renderCooldowns, 15000);
 
     document.addEventListener('DOMContentLoaded', async () => {
       // Clean up legacy plaintext caches & dev seed if present
