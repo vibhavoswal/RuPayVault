@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault - Select Dock Expansion & Alignment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --anim-duration: 0.42s;
+      --anim-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Slow motion mode */
+    body.slow-mo {
+      --anim-duration: 1.25s;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* MASTER EXPANDING PILL CONTAINER (Pinned to Bottom Right)                */
+    /* Expands strictly from RIGHT to LEFT by keeping right: 0 anchored.      */
+    /* ---------------------------------------------------------------------- */
+    .dock-container {
+      position: absolute;
+      bottom: 20px;
+      right: 16px;
+      height: 56px;
+      transform-origin: right center;
+      transition: width var(--anim-duration) var(--anim-timing),
+                  border-radius var(--anim-duration) var(--anim-timing),
+                  box-shadow var(--anim-duration) var(--anim-timing),
+                  background-color var(--anim-duration) var(--anim-timing),
+                  border-color var(--anim-duration) var(--anim-timing);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      overflow: hidden;
+      z-index: 50;
+      padding: 4px;
+    }
+
+    /* Collapsed state: perfect 56px circle anchored on bottom right */
+    .dock-container.collapsed {
+      width: 56px;
+      border-radius: 9999px;
+      background: #F47A21;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 12px 28px -4px rgba(244, 122, 33, 0.45), 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Expanded state: stretches leftward to fill the width */
+    .dock-container.expanded {
+      width: calc(100% - 32px);
+      max-width: 396px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 3px 12px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .dark .dock-container.expanded {
+      background: rgba(18, 18, 22, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+
+    /* Content drawer containing action buttons inside expanded pill */
+    .action-drawer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(18px);
+      transition: opacity calc(var(--anim-duration) * 0.75) var(--anim-timing),
+                  transform var(--anim-duration) var(--anim-timing);
+      pointer-events: none;
+      padding-left: 2px;
+    }
+    .dock-container.expanded .action-drawer {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    /* Sliding Approve button container */
+    .approve-slot {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width var(--anim-duration) var(--anim-timing),
+                  opacity calc(var(--anim-duration) * 0.7) var(--anim-timing),
+                  transform var(--anim-duration) var(--anim-timing),
+                  margin var(--anim-duration) var(--anim-timing);
+    }
+    .approve-slot.open {
+      max-width: 140px;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      margin-right: 2px;
+      pointer-events: auto;
+    }
+    .approve-slot.closed {
+      max-width: 0 !important;
+      opacity: 0 !important;
+      transform: translateX(-20px) scale(0.9) !important;
+      margin-right: 0 !important;
+      pointer-events: none;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* UNIFIED RIGHTMOST TOGGLE BUTTON (Select ⟷ Cross Icon)                   */
+    /* Perfectly 48px x 48px, never moves a single pixel during expansion!    */
+    /* ---------------------------------------------------------------------- */
+    .dock-toggle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: background-color var(--anim-duration) var(--anim-timing),
+                  border-color var(--anim-duration) var(--anim-timing),
+                  transform 0.15s ease;
+    }
+    .dock-toggle-btn:active {
+      transform: scale(0.92);
+    }
+
+    .dock-container.collapsed .dock-toggle-btn {
+      background: transparent;
+      color: #ffffff;
+    }
+    .dock-container.expanded .dock-toggle-btn {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .dark .dock-container.expanded .dock-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dock-container.expanded .dock-toggle-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .dark .dock-container.expanded .dock-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+    }
+
+    /* Layered morphing icon SVGs inside the 48px button */
+    .icon-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--anim-duration) var(--anim-timing),
+                  opacity calc(var(--anim-duration) * 0.8) var(--anim-timing);
+    }
+    .dock-container.collapsed .layer-select {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+    .dock-container.collapsed .layer-cross {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.6);
+    }
+    .dock-container.expanded .layer-select {
+      opacity: 0;
+      transform: rotate(90deg) scale(0.6);
+    }
+    .dock-container.expanded .layer-cross {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+
+    /* Action Circle Buttons */
+    .action-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease, background-color 0.2s ease, opacity 0.2s ease;
+      position: relative;
+    }
+    .action-circle-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Alignment Guide overlay */
+    .alignment-guide {
+      position: absolute;
+      bottom: 20px;
+      right: 16px;
+      width: 56px;
+      height: 56px;
+      border: 2px dashed #ec4899;
+      border-radius: 9999px;
+      pointer-events: none;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .alignment-crosshair {
+      position: absolute;
+      width: 100%;
+      height: 1px;
+      background: rgba(236, 72, 153, 0.5);
+    }
+    .alignment-crosshair.vert {
+      width: 1px;
+      height: 100%;
+    }
+
+    /* Pulse dot */
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 9999px;
+      background: #ffffff;
+      animation: pulseAnim 1.6s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulseAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.7); }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-3 sm:p-6 select-none transition-colors">
+
+  <!-- TOP SHOWCASE CONTROL BAR -->
+  <header class="w-full max-w-xl bg-slate-800/90 backdrop-blur-md rounded-2xl p-4 border border-slate-700/80 mb-5 shadow-2xl">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-mono-code text-[11px] font-bold">PRECISION ALIGNMENT</span>
+          <span class="text-xs text-slate-400">Right-to-Left Expansion Lab</span>
+        </div>
+        <h1 class="text-base font-bold text-white mt-1">Select ⟷ Cross Dock Expansion</h1>
+      </div>
+
+      <!-- Quick Toggles -->
+      <div class="flex items-center gap-2 text-xs">
+        <!-- Slow Motion Toggle -->
+        <button onclick="toggleSlowMo()" id="btn-slowmo" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-medium flex items-center gap-1.5 transition-all">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          <span id="slowmo-label">Slow-Mo: OFF</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-medium flex items-center gap-1.5 transition-all">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line></svg>
+          <span id="theme-label">Light</span>
+        </button>
+
+        <!-- Alignment Guide Overlay Toggle -->
+        <button onclick="toggleGuide()" id="btn-guide" class="px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/40 font-bold flex items-center gap-1.5 transition-all">
+          <span>Guide: ON</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- State & Rule Indicators -->
+    <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-700/60 text-[11px]">
+      <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-700/40">
+        <span class="text-slate-400 block text-[10px]">ANCHOR COORDINATE</span>
+        <span class="font-mono-code font-bold text-amber-400">Right: 16px · Bot: 20px</span>
+      </div>
+      <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-700/40">
+        <span class="text-slate-400 block text-[10px]">ICON SIZE</span>
+        <span class="font-mono-code font-bold text-emerald-400">Exact 48×48px (1:1)</span>
+      </div>
+      <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-700/40">
+        <span class="text-slate-400 block text-[10px]">INGEST RULE</span>
+        <span id="stat-ingest-rule" class="font-mono-code font-bold text-emerald-400">Approve Available</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- PHONE CONTAINER (iPhone 16 Dimensions: 414px) -->
+  <div class="relative w-full max-w-[414px] h-[820px] rounded-[44px] shadow-[0_25px_70px_rgba(0,0,0,0.85)] border-[8px] border-slate-800 overflow-hidden bg-white dark:bg-[#0a0a0d] transition-colors flex flex-col">
+
+    <!-- Top Status Bar & Dynamic Island -->
+    <div class="h-10 px-6 shrink-0 flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-white pt-1">
+      <span>9:36</span>
+      <div class="w-24 h-4 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center"></div>
+      <div class="flex items-center gap-1.5 text-[11px]">
+        <span>5G</span>
+        <div class="w-5 h-2.5 rounded border border-current p-0.5 flex items-center">
+          <div class="h-full w-full bg-current rounded-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Header Top Bar -->
+    <header class="h-[52px] px-3.5 shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 transition-colors">
+      <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-900 dark:text-white text-xs font-bold shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-[#F47A21]"></span>
+          <span>Activity Log</span>
+          <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Right Top: Select All / Deselect All Toggle -->
+      <button id="top-select-all" onclick="toggleSelectAll()" class="h-9 px-3 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:opacity-80 active:scale-95 transition-all">
+        Select All
+      </button>
+    </header>
+
+    <!-- Subheader Filter Deck & Ingested Chips -->
+    <div class="p-3 border-b border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+        <div class="px-3 py-1.5 rounded-xl bg-[#0C8C46] text-white font-bold shrink-0 flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Activity Log</span>
+          <span class="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px]">3</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold shrink-0">
+          <span>Lakmé Salon</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold shrink-0">
+          <span>Four Fountains</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2 text-[11px] font-semibold">
+        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-bold">
+          <span>⚡ Ingested</span>
+          <span>3</span>
+        </span>
+        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400">
+          Shared 0
+        </span>
+        <span class="text-[10px] text-slate-400 dark:text-neutral-500 ml-auto font-mono-code">2 Arrived · 1 Pending</span>
+      </div>
+    </div>
+
+    <!-- Voucher Feed -->
+    <main class="flex-1 overflow-y-auto p-3.5 space-y-3 pb-28">
+
+      <!-- Card 1: Thyrocare (ARRIVED) -->
+      <div onclick="toggleCard(1)" id="voucher-card-1" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-1" class="w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Thyrocare</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-mono-code font-bold">Arrived</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code font-bold text-xs text-slate-800 dark:text-neutral-200">RUPS–DBC45651</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 font-medium">Copy</span>
+              </div>
+              <p class="text-[11px] text-blue-500 dark:text-blue-400 mt-1">@vibhavoswal1 · 40m ago</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></span>
+        </div>
+      </div>
+
+      <!-- Card 2: Cult.fit Elite (ARRIVED) -->
+      <div onclick="toggleCard(2)" id="voucher-card-2" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-2" class="w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Cult.fit Elite ₹1,000</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-mono-code font-bold">Arrived</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code font-bold text-xs text-slate-800 dark:text-neutral-200">RUPS–6D886B70</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 font-medium">Copy</span>
+              </div>
+              <p class="text-[11px] text-blue-500 dark:text-blue-400 mt-1">@vibhavoswal3 · 1h ago</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></span>
+        </div>
+      </div>
+
+      <!-- Card 3: Swiggy ₹500 (NOT ARRIVED YET - PENDING GENERATION) -->
+      <div onclick="toggleCard(3)" id="voucher-card-3" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-amber-500/40 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-3" class="w-5 h-5 rounded-md border border-amber-400 flex items-center justify-center shrink-0 mt-0.5"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Swiggy ₹500</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono-code font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span>Awaiting Arrival</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code text-[11px] text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">PENDING GENERATION</span>
+              </div>
+              <p class="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium">⚡ Ingest Rule: Selecting this will slide Approve shut</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ================================================================== -->
+    <!-- MASTER PRECISION DOCK: EXPANDS FROM RIGHT TO LEFT                  -->
+    <!-- Select icon and Cross icon occupy the EXACT same 48px circle!      -->
+    <!-- ================================================================== -->
+    <div id="dock" class="dock-container collapsed">
+      
+      <!-- Drawer items (Revealed as pill expands to the left) -->
+      <div class="action-drawer">
+        
+        <!-- Sliding Approve Button (Appears only if arrived vouchers selected) -->
+        <div id="approve-track" class="approve-slot open">
+          <button onclick="approveSelected()" class="h-12 px-4 rounded-full bg-[#0C8C46] text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-transform" title="Approve to Brand Tab">
+            <span class="pulse-dot"></span>
+            <span id="approve-label">Approve</span>
+          </button>
+        </div>
+
+        <!-- Tag Card Circle (Orange) -->
+        <button onclick="toast('Tag Card action')" class="action-circle-btn bg-[#F47A21] text-white shadow-sm" title="Tag Card">
+          <!-- Material Tag SVG -->
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+          <span id="tag-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black text-white font-mono-code text-[9px] font-bold flex items-center justify-center">1</span>
+        </button>
+
+        <!-- Material Design Share SVG Circle (Green) -->
+        <button onclick="toast('Share action')" class="action-circle-btn bg-[#25D366] text-white shadow-sm" title="Share via Material SVG">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
+
+        <!-- Redeem Check Circle (Dark Green) -->
+        <button onclick="toast('Mark as Redeemed')" class="action-circle-btn bg-[#0C8C46] text-white shadow-sm" title="Mark as Redeemed">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+
+      </div>
+
+      <!-- Rightmost Toggle Button: Locked at exact coordinate, morphs from Select to Cross -->
+      <button onclick="handleToggleClick()" id="toggle-btn" class="dock-toggle-btn" title="Toggle Select Mode">
+        
+        <!-- Layer 1: Select Icon (Visible when collapsed) -->
+        <div class="icon-layer layer-select">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+
+        <!-- Layer 2: Cross (✕) Icon (Visible when expanded) -->
+        <div class="icon-layer layer-cross">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+
+      </button>
+
+    </div>
+
+    <!-- Pink Alignment Bounding Box (Visual Proof of 100% Zero-Pixel Shift) -->
+    <div id="guide-overlay" class="alignment-guide">
+      <div class="alignment-crosshair"></div>
+      <div class="alignment-crosshair vert"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="absolute top-16 inset-x-6 z-50 transform -translate-y-12 opacity-0 transition-all duration-300 pointer-events-none p-3 rounded-2xl bg-neutral-900 text-white border border-neutral-700 text-xs font-semibold shadow-2xl flex items-center justify-between">
+      <span id="toast-text">Toast</span>
+      <span class="text-emerald-400 font-mono-code">✓</span>
+    </div>
+
+  </div>
+
+  <script>
+    // State
+    const selectedCards = new Set();
+    let isExpanded = false;
+    let isSlowMo = false;
+    let isDark = false;
+    let isGuideVisible = true;
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      el.classList.remove('-translate-y-12', 'opacity-0');
+      el.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        el.classList.remove('translate-y-0', 'opacity-100');
+        el.classList.add('-translate-y-12', 'opacity-0');
+      }, 2000);
+    }
+
+    function toggleSlowMo() {
+      isSlowMo = !isSlowMo;
+      document.body.classList.toggle('slow-mo', isSlowMo);
+      document.getElementById('slowmo-label').textContent = isSlowMo ? 'Slow-Mo: 1.25s' : 'Slow-Mo: OFF';
+      toast(isSlowMo ? 'Slow-Motion Enabled (1.25s animation)' : 'Normal Speed (0.42s)');
+    }
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.classList.toggle('light', !isDark);
+      document.getElementById('theme-label').textContent = isDark ? 'Dark' : 'Light';
+    }
+
+    function toggleGuide() {
+      isGuideVisible = !isGuideVisible;
+      document.getElementById('guide-overlay').style.display = isGuideVisible ? 'flex' : 'none';
+      document.getElementById('btn-guide').textContent = isGuideVisible ? 'Guide: ON' : 'Guide: OFF';
+      document.getElementById('btn-guide').className = isGuideVisible
+        ? 'px-3 py-1.5 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/40 font-bold flex items-center gap-1.5 transition-all'
+        : 'px-3 py-1.5 rounded-xl bg-slate-700 text-slate-400 border border-slate-600 font-medium flex items-center gap-1.5 transition-all';
+    }
+
+    // Toggle card selection
+    function toggleCard(id) {
+      if (selectedCards.has(id)) {
+        selectedCards.delete(id);
+      } else {
+        selectedCards.add(id);
+      }
+      
+      // Auto-expand if items selected, collapse if empty
+      isExpanded = selectedCards.size > 0;
+      updateUI();
+    }
+
+    // Toggle Select All
+    function toggleSelectAll() {
+      if (selectedCards.size === 3) {
+        selectedCards.clear();
+        isExpanded = false;
+      } else {
+        selectedCards.add(1);
+        selectedCards.add(2);
+        selectedCards.add(3);
+        isExpanded = true;
+      }
+      updateUI();
+    }
+
+    // Bottom-right button clicked:
+    // If collapsed: enters select mode & selects first arrived card
+    // If expanded: exits select mode & clears selection
+    function handleToggleClick() {
+      if (!isExpanded) {
+        selectedCards.add(1);
+        isExpanded = true;
+      } else {
+        selectedCards.clear();
+        isExpanded = false;
+      }
+      updateUI();
+    }
+
+    function approveSelected() {
+      toast(`Approved ${selectedCards.size} voucher(s) to Brand Tab!`);
+      selectedCards.clear();
+      isExpanded = false;
+      updateUI();
+    }
+
+    function updateUI() {
+      const count = selectedCards.size;
+      const dock = document.getElementById('dock');
+      const topBtn = document.getElementById('top-select-all');
+      const tagBadge = document.getElementById('tag-badge');
+      const approveTrack = document.getElementById('approve-track');
+      const approveLabel = document.getElementById('approve-label');
+      const statRule = document.getElementById('stat-ingest-rule');
+
+      // 1. Expand / Collapse pill container from right to left
+      if (isExpanded) {
+        dock.classList.remove('collapsed');
+        dock.classList.add('expanded');
+      } else {
+        dock.classList.remove('expanded');
+        dock.classList.add('collapsed');
+      }
+
+      // 2. Top bar label
+      topBtn.textContent = (count === 3) ? 'Deselect All' : 'Select All';
+
+      // 3. Tag badge count
+      tagBadge.textContent = count || 1;
+
+      // 4. Ingest rule check:
+      // Card 3 is unarrived (PENDING). If selected (alone or combined), Approve is NOT permitted.
+      const hasUnarrived = selectedCards.has(3);
+      const canApprove = count > 0 && !hasUnarrived;
+
+      if (canApprove) {
+        approveTrack.classList.remove('closed');
+        approveTrack.classList.add('open');
+        approveLabel.textContent = count > 1 ? `Approve (${count})` : 'Approve';
+        statRule.textContent = 'Approve Available';
+        statRule.className = 'font-mono-code font-bold text-emerald-400';
+      } else {
+        approveTrack.classList.remove('open');
+        approveTrack.classList.add('closed');
+        if (hasUnarrived) {
+          statRule.textContent = 'Hidden (Unarrived item)';
+          statRule.className = 'font-mono-code font-bold text-amber-400';
+        } else {
+          statRule.textContent = 'Collapsed (0 selected)';
+          statRule.className = 'font-mono-code font-bold text-slate-400';
+        }
+      }
+
+      // 5. Update Card check UI
+      updateCardUI(1, selectedCards.has(1), '#0C8C46');
+      updateCardUI(2, selectedCards.has(2), '#0C8C46');
+      updateCardUI(3, selectedCards.has(3), '#f59e0b');
+    }
+
+    function updateCardUI(id, isSelected, brandColor) {
+      const card = document.getElementById(`voucher-card-${id}`);
+      const box = document.getElementById(`check-box-${id}`);
+      if (!card || !box) return;
+
+      if (isSelected) {
+        card.className = id === 3
+          ? "rounded-2xl p-3.5 border transition-all cursor-pointer bg-amber-50/70 dark:bg-amber-950/20 border-amber-500 shadow-sm relative ring-1 ring-amber-500/30"
+          : "rounded-2xl p-3.5 border transition-all cursor-pointer bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm relative ring-1 ring-emerald-500/30";
+        box.className = `w-5 h-5 rounded-md text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm`;
+        box.style.backgroundColor = brandColor;
+        box.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      } else {
+        card.className = id === 3
+          ? "rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-amber-500/40 shadow-sm relative"
+          : "rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative";
+        box.className = "w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5";
+        box.style.backgroundColor = 'transparent';
+        box.innerHTML = "";
+      }
+    }
+
+    // Initial render
+    updateUI();
+  </script>
+</body>
+</html>
