@@ -636,9 +636,10 @@
     }
 
     /* ======================================================== */
-    /* SERIAL BRAND VOUCHER SWIPE GESTURES (PHYSICS 1:1 DRAG)    */
+    /* SERIAL BRAND & CARD MANAGER SWIPE GESTURES (1:1 DRAG)     */
     /* ======================================================== */
-    #mb-vouchers-list {
+    #mb-vouchers-list,
+    #card-manager-list {
       will-change: transform, opacity;
       touch-action: pan-y;
       transform: translate3d(0, 0, 0);
@@ -5997,6 +5998,197 @@
       renderCardManagerList(category);
     }
 
+    /* --- CARD MANAGER CATEGORY SWIPE GESTURES (PHYSICS 1:1 DRAG) --- */
+    function transitionToCardCategory(category, direction, currentDeltaX = 0) {
+      const list = document.getElementById('card-manager-list');
+      if (!list) {
+        setCardCategoryFilter(category);
+        return;
+      }
+
+      // Smooth momentum glide in drag direction
+      const glideTarget = direction > 0 ? (currentDeltaX - 60) : (currentDeltaX + 60);
+      const enterOffset = direction > 0 ? 50 : -50;
+
+      list.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.16s ease-out';
+      list.style.transform = `translate3d(${glideTarget}px, 0, 0)`;
+      list.style.opacity = '0';
+
+      setTimeout(() => {
+        setCardCategoryFilter(category);
+
+        // Position incoming list for gentle enter glide
+        list.style.transition = 'none';
+        list.style.transform = `translate3d(${enterOffset}px, 0, 0)`;
+        list.style.opacity = '0.01';
+
+        // Force synchronous paint layout flush
+        void list.offsetWidth;
+
+        requestAnimationFrame(() => {
+          list.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease-out';
+          list.style.transform = 'translate3d(0, 0, 0)';
+          list.style.opacity = '1';
+        });
+      }, 160);
+    }
+
+    function initCardCategorySwipeGestures() {
+      const container = document.getElementById('view-card-manager');
+      const list = document.getElementById('card-manager-list');
+      if (!container || !list) return;
+
+      let startX = 0, startY = 0;
+      let currentX = 0, currentY = 0;
+      let startTime = 0;
+      let isDragging = false;
+      let isHorizontalGesture = false;
+
+      function onTouchStart(e) {
+        if (state.activeWorkspace !== 'cards') return;
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+      }
+
+      function onTouchMove(e) {
+        if (!isDragging || state.activeWorkspace !== 'cards') return;
+        const touch = e.touches[0];
+        handleDrag(touch.clientX, touch.clientY, e);
+      }
+
+      function onTouchEnd() {
+        if (!isDragging) return;
+        endDrag();
+      }
+
+      function onMouseDown(e) {
+        if (state.activeWorkspace !== 'cards') return;
+        if (e.target.closest('button, input, select, textarea, a, .card-subheader-bar, #modal-add-card')) return;
+        startDrag(e.clientX, e.clientY);
+      }
+
+      function onMouseMove(e) {
+        if (!isDragging || state.activeWorkspace !== 'cards') return;
+        handleDrag(e.clientX, e.clientY, e);
+      }
+
+      function onMouseUp() {
+        if (!isDragging) return;
+        endDrag();
+      }
+
+      function startDrag(x, y) {
+        isDragging = true;
+        isHorizontalGesture = false;
+        startX = x;
+        startY = y;
+        currentX = x;
+        currentY = y;
+        startTime = Date.now();
+        list.style.transition = 'none';
+      }
+
+      function handleDrag(x, y, event) {
+        currentX = x;
+        currentY = y;
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        // Intent detection: natural angle allowance
+        if (!isHorizontalGesture) {
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+          if (absX > 8 && absX > absY * 1.1) {
+            isHorizontalGesture = true;
+            window.__rupayCardSwipingActive = true;
+          } else if (absY > 12 && absY > absX * 1.4) {
+            isDragging = false;
+            return;
+          }
+        }
+
+        if (isHorizontalGesture) {
+          if (event && event.cancelable) event.preventDefault();
+
+          // Rubber-band resistance: Debit is index 0 (swipe right = resistance), Credit is index 1 (swipe left = resistance)
+          const isDebit = (currentCardCategoryFilter === 'Debit');
+          let effectiveDelta = deltaX;
+          if ((isDebit && deltaX > 0) || (!isDebit && deltaX < 0)) {
+            effectiveDelta = deltaX * 0.3;
+          }
+
+          list.style.transform = `translate3d(${effectiveDelta}px, 0, 0)`;
+          list.style.opacity = `${1 - Math.min(0.2, Math.abs(effectiveDelta) / 900)}`;
+        }
+      }
+
+      function endDrag() {
+        isDragging = false;
+        const deltaX = currentX - startX;
+        const timeMs = Math.max(1, Date.now() - startTime);
+        const velocity = Math.abs(deltaX) / timeMs;
+
+        setTimeout(() => { window.__rupayCardSwipingActive = false; }, 150);
+
+        if (!isHorizontalGesture) {
+          list.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease-out';
+          list.style.transform = 'translate3d(0, 0, 0)';
+          list.style.opacity = '1';
+          return;
+        }
+
+        const containerWidth = container.clientWidth || window.innerWidth;
+        const threshold = containerWidth * 0.18; // 18% drag threshold
+
+        const isDebit = (currentCardCategoryFilter === 'Debit');
+        let shouldAdvance = false;
+        let targetCategory = null;
+        let direction = 0;
+
+        if (Math.abs(deltaX) > threshold || (velocity > 0.32 && Math.abs(deltaX) > 20)) {
+          if (deltaX < 0 && isDebit) {
+            // Swipe left on Debit -> advance to Credit
+            shouldAdvance = true;
+            targetCategory = 'Credit';
+            direction = 1;
+          } else if (deltaX > 0 && !isDebit) {
+            // Swipe right on Credit -> advance to Debit
+            shouldAdvance = true;
+            targetCategory = 'Debit';
+            direction = -1;
+          }
+        }
+
+        if (shouldAdvance && targetCategory) {
+          transitionToCardCategory(targetCategory, direction, deltaX);
+          return;
+        }
+
+        // Snap spring back if canceled or at boundary
+        list.style.transition = 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease-out';
+        list.style.transform = 'translate3d(0, 0, 0)';
+        list.style.opacity = '1';
+      }
+
+      // Suppress accidental click/tap on cards after dragging
+      container.addEventListener('click', (e) => {
+        if (window.__rupayCardSwipingActive) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }, true);
+
+      // Register touch listeners on card manager container
+      container.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+
+      // Register mouse drag simulation for desktop
+      container.addEventListener('mousedown', onMouseDown);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+
     function updateDrawerCardCount() {
       const allCards = state.cards || [];
       const dcCount = allCards.filter(c => String(c.type || '').toLowerCase() === 'debit').length;
@@ -7589,6 +7781,9 @@
 
       // 6. Initialize Physics 1:1 Serial Brand Swipe Gestures
       initSerialBrandSwipeGestures();
+
+      // 7. Initialize Physics 1:1 Debit / Credit Card Swipe Gestures
+      initCardCategorySwipeGestures();
     });
   </script>
 </body>
