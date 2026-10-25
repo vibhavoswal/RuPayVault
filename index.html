@@ -636,20 +636,30 @@
     }
 
     .contiguous-pill {
+      height: 56px !important;
+      padding: 4px !important;
       border-radius: 9999px !important;
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: transform, opacity, background-color, box-shadow;
+      transform-origin: right center !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      overflow: hidden !important;
+      will-change: width, transform, background-color, box-shadow;
+      transition: width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
+    /* Collapsed State: Perfect 56px circle anchored on bottom right */
     .contiguous-pill.contiguous-pill-collapsed {
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-      width: auto !important;
+      width: 56px !important;
+      background: #F47A21 !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      box-shadow: 0 12px 28px -4px rgba(244, 122, 33, 0.45), 0 4px 10px rgba(0, 0, 0, 0.15) !important;
     }
 
-    /* Contiguous Stadium Pill Expanded (Dark Mode) - Full Width */
+    /* Expanded State: Stretches right-to-left to fill full width */
     .contiguous-pill.contiguous-pill-expanded {
       width: 100% !important;
       background: rgba(24, 21, 24, 0.94) !important;
@@ -657,64 +667,171 @@
       backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(255, 255, 255, 0.16) !important;
       box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-      padding: 6px 8px !important;
     }
 
-    /* Contiguous Stadium Pill Expanded (Light Mode) - Full Width */
     [data-theme="light"] .contiguous-pill.contiguous-pill-expanded,
     html.light .contiguous-pill.contiguous-pill-expanded {
       background: rgba(255, 255, 255, 0.96) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(203, 213, 225, 0.9) !important;
-      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
     }
 
-    /* Circular Cross (✕) Button in Light Mode */
-    [data-theme="light"] .btn-cross-mode,
-    html.light .btn-cross-mode {
-      background-color: #ffffff !important;
-      border: 1px solid #cbd5e1 !important;
-      color: #334155 !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    /* Content Drawer inside Contiguous Pill */
+    .dock-action-drawer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      padding-left: 2px;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
     }
-    [data-theme="light"] .btn-cross-mode:hover,
-    html.light .btn-cross-mode:hover {
-      background-color: #f1f5f9 !important;
+    .contiguous-pill.contiguous-pill-expanded .dock-action-drawer {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    /* Rightmost Toggle Button: Locked at exact coordinate, 48px circle */
+    .dock-toggle-btn {
+      width: 48px !important;
+      height: 48px !important;
+      border-radius: 9999px !important;
+      flex-shrink: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      cursor: pointer !important;
+      margin: 0 !important;
+      user-select: none !important;
+      transition: background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.15s ease !important;
+    }
+    .dock-toggle-btn:active {
+      transform: scale(0.92) !important;
+    }
+    .contiguous-pill.contiguous-pill-collapsed .dock-toggle-btn {
+      background: transparent !important;
+      border: none !important;
+      color: #ffffff !important;
+      box-shadow: none !important;
+    }
+    .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: #cbd5e1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.16) !important;
+      color: #ffffff !important;
+    }
+    [data-theme="light"] .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn,
+    html.light .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    }
+    [data-theme="light"] .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover,
+    html.light .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover {
+      background: #e2e8f0 !important;
       color: #0f172a !important;
+    }
+
+    /* Icon morph layers inside toggle button */
+    .dock-icon-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .contiguous-pill.contiguous-pill-collapsed .layer-select {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+    .contiguous-pill.contiguous-pill-collapsed .layer-cross {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.6);
+    }
+    .contiguous-pill.contiguous-pill-expanded .layer-select {
+      opacity: 0;
+      transform: rotate(90deg) scale(0.6);
+    }
+    .contiguous-pill.contiguous-pill-expanded .layer-cross {
+      opacity: 1;
+      transform: rotate(0deg) scale(1);
+    }
+
+    /* Sliding Approve button drawer */
+    .approve-slot {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  margin 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .approve-slot.open {
+      max-width: 140px;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      margin-right: 2px;
+      pointer-events: auto;
+    }
+    .approve-slot.closed {
+      max-width: 0 !important;
+      opacity: 0 !important;
+      transform: translateX(-20px) scale(0.9) !important;
+      margin-right: 0 !important;
+      pointer-events: none;
     }
 
     /* All Action Circle Buttons inside Contiguous Pill (Same 48px Size) */
     .action-circle-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 9999px;
-      border: none;
-      color: #ffffff;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
-      user-select: none;
-      flex-shrink: 0;
+      width: 48px !important;
+      height: 48px !important;
+      border-radius: 9999px !important;
+      border: none !important;
+      color: #ffffff !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22) !important;
+      user-select: none !important;
+      flex-shrink: 0 !important;
     }
     .action-circle-btn:active {
-      transform: scale(0.92);
+      transform: scale(0.92) !important;
     }
     .action-circle-btn svg {
-      width: 22px;
-      height: 22px;
+      width: 22px !important;
+      height: 22px !important;
     }
 
     .btn-tag { background: #f59e0b !important; }
     .btn-tag:hover { background: #d97706 !important; }
-    .btn-whatsapp { background: #25D366 !important; }
-    .btn-whatsapp:hover { background: #20ba5a !important; }
-    .btn-redeem { background: #059669 !important; }
-    .btn-redeem:hover { background: #047857 !important; }
+    .btn-share { background: #25D366 !important; }
+    .btn-share:hover { background: #20ba5a !important; }
+    .btn-redeem { background: #0C8C46 !important; }
+    .btn-redeem:hover { background: #0a7a3d !important; }
 
     .tag-count-bubble {
       position: absolute;
@@ -741,30 +858,30 @@
     .btn-approve-pill {
       background: #0C8C46 !important;
       color: #ffffff !important;
-      padding: 8px 14px !important;
+      padding: 0 16px !important;
       border-radius: 9999px !important;
       border: none !important;
-      cursor: pointer;
+      cursor: pointer !important;
       font-size: 12px !important;
       font-weight: 700 !important;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-      height: 48px;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      white-space: nowrap !important;
+      height: 48px !important;
       box-shadow: 0 4px 14px rgba(12, 140, 70, 0.4) !important;
-      transition: background 0.2s ease, transform 0.15s ease;
-      flex-shrink: 0;
+      transition: background 0.2s ease, transform 0.15s ease !important;
+      flex-shrink: 0 !important;
     }
     .btn-approve-pill:hover {
       background: #0a7a3d !important;
     }
     .btn-approve-pill:active {
-      transform: scale(0.95);
+      transform: scale(0.95) !important;
     }
     .btn-approve-pill svg {
-      width: 16px;
-      height: 16px;
+      width: 16px !important;
+      height: 16px !important;
     }
     .pulse-dot {
       width: 7px;
@@ -1528,44 +1645,57 @@
       <div id="mb-view-cards" class="hidden"></div>
     </main>
 
-    <!-- Unified Floating Action Dock: One Contiguous Pill at Bottom (Full Width when expanded) -->
+    <!-- Unified Floating Action Dock: One Contiguous Pill at Bottom (Expands Right to Left) -->
     <div id="unified-floating-dock" class="fixed z-40 pointer-events-none flex items-center justify-end" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); left: 1rem; right: 1rem; max-width: 440px; margin: 0 auto;">
-      <div id="floating-contiguous-pill" class="contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center">
+      <div id="floating-contiguous-pill" class="contiguous-pill contiguous-pill-collapsed pointer-events-auto">
         
-        <!-- Action Cluster (Approve, Tag, WhatsApp, Redeem) - Visible only when count > 0 -->
-        <div id="dock-actions-container" class="hidden items-center justify-around flex-1">
-          <!-- Ingest Approve Button -->
-          <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="hidden btn-approve-pill" title="Approve Vouchers to Brand Tab">
-            <span class="pulse-dot"></span>
-            <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              <span>Approve</span>
-            </span>
-          </button>
+        <!-- Action Drawer: Action Buttons reveal as pill expands to the left -->
+        <div id="dock-actions-container" class="dock-action-drawer">
+          <!-- Ingest Approve Button in Sliding Drawer -->
+          <div id="approve-track" class="approve-slot closed">
+            <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="btn-approve-pill" title="Approve Vouchers to Brand Tab">
+              <span class="pulse-dot"></span>
+              <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
+                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span>Approve</span>
+              </span>
+            </button>
+          </div>
 
           <!-- Tag Card -->
           <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
             <span id="tag-badge-count" class="tag-count-bubble">0</span>
           </button>
 
-          <!-- WhatsApp -->
-          <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-whatsapp" title="Share via WhatsApp">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+          <!-- Google Material Design Share SVG -->
+          <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-share" title="Share Voucher">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
           </button>
 
           <!-- Redeem -->
           <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         </div>
 
-        <!-- Circular Action Button: Select in normal mode, Circular Cross (✕) in select mode -->
-        <button id="dock-select-toggle-btn" onclick="toggleSelectMode()" class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer shrink-0" title="Select Multiple">
-          <svg id="dock-select-toggle-icon" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 11 12 14 22 4"></polyline>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-          </svg>
+        <!-- Rightmost Toggle Button: Locked at exact coordinate, morphs from Select to Cross -->
+        <button id="dock-select-toggle-btn" onclick="handleDockToggleClick()" class="dock-toggle-btn shrink-0" title="Select Multiple">
+          <!-- Layer 1: Select Icon (Visible when collapsed) -->
+          <div class="dock-icon-layer layer-select">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </div>
+
+          <!-- Layer 2: Cross (✕) Icon (Visible when expanded) -->
+          <div class="dock-icon-layer layer-cross">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </div>
         </button>
 
       </div>
@@ -6268,6 +6398,15 @@
       shareSelectedWithShareSheet();
     }
 
+    function handleDockToggleClick() {
+      if (state.isSelectMode) {
+        exitSelectMode();
+      } else {
+        toggleSelectMode();
+        showToast('Select mode active: tap cards or "Select All"');
+      }
+    }
+
     function updateFloatingDock() {
       const count = state.selectedIds.size;
       const tagBadge = document.getElementById('tag-badge-count');
@@ -6305,61 +6444,26 @@
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
       }
 
-      // UPDATE UNIFIED CONTIGUOUS BOTTOM DOCK
+      // UPDATE UNIFIED CONTIGUOUS BOTTOM DOCK (Expands strictly from right to left)
       const dockPill = document.getElementById('floating-contiguous-pill');
-      const actionsContainer = document.getElementById('dock-actions-container');
       const toggleBtn = document.getElementById('dock-select-toggle-btn');
-      const toggleIcon = document.getElementById('dock-select-toggle-icon');
-      const approveBtn = document.getElementById('floating-approve-btn');
+      const approveTrack = document.getElementById('approve-track');
       const approveLabel = document.getElementById('floating-approve-label');
 
       if (!dockPill || !toggleBtn) return;
 
       if (!state.isSelectMode) {
-        // Normal Mode: Floating Circular Select button in bottom right
-        dockPill.className = 'contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center';
-        if (actionsContainer) {
-          actionsContainer.classList.add('hidden');
-          actionsContainer.classList.remove('flex');
-        }
-        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer shrink-0';
+        // Collapsed mode: 56px circle anchored on bottom right
+        dockPill.classList.remove('contiguous-pill-expanded');
+        dockPill.classList.add('contiguous-pill-collapsed');
         toggleBtn.title = 'Select Multiple';
-        toggleBtn.onclick = toggleSelectMode;
-        if (toggleIcon) {
-          toggleIcon.className = 'w-6 h-6';
-          toggleIcon.innerHTML = `<polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>`;
-        }
-      } else if (count === 0) {
-        // Select Mode with 0 selected: Floating Circular Cross (✕) button
-        dockPill.className = 'contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center';
-        if (actionsContainer) {
-          actionsContainer.classList.add('hidden');
-          actionsContainer.classList.remove('flex');
-        }
-        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 btn-cross-mode cursor-pointer shrink-0';
-        toggleBtn.title = 'Exit Select Mode';
-        toggleBtn.onclick = exitSelectMode;
-        if (toggleIcon) {
-          toggleIcon.className = 'w-6 h-6';
-          toggleIcon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>`;
-        }
       } else {
-        // Select Mode with count > 0: One Contiguous Pill with Action Buttons + Cross Button (Full Width)
-        dockPill.className = 'contiguous-pill contiguous-pill-expanded w-full flex items-center justify-between pointer-events-auto';
-        if (actionsContainer) {
-          actionsContainer.classList.remove('hidden');
-          actionsContainer.classList.add('flex');
-        }
-        // In the contiguous pill, ALL circular buttons are the exact same size (w-12 h-12 / 48px)
-        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/80 btn-cross-mode shrink-0 cursor-pointer';
+        // Expanded mode: stretches smoothly from right to left across full width
+        dockPill.classList.remove('contiguous-pill-collapsed');
+        dockPill.classList.add('contiguous-pill-expanded');
         toggleBtn.title = 'Exit Select Mode';
-        toggleBtn.onclick = exitSelectMode;
-        if (toggleIcon) {
-          toggleIcon.className = 'w-6 h-6';
-          toggleIcon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>`;
-        }
 
-        // FLOATING APPROVE BUTTON VISIBILITY:
+        // FLOATING APPROVE BUTTON VISIBILITY (Sliding Drawer):
         // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
         const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
         const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
@@ -6387,16 +6491,16 @@
           );
         }
 
-        if (approveBtn) {
+        if (approveTrack) {
           if (allGreen) {
-            approveBtn.classList.remove('hidden');
-            approveBtn.classList.add('flex');
+            approveTrack.classList.remove('closed');
+            approveTrack.classList.add('open');
             if (approveLabel) {
-              approveLabel.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve</span>`;
+              approveLabel.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve${count > 1 ? ` (${count})` : ''}</span>`;
             }
           } else {
-            approveBtn.classList.add('hidden');
-            approveBtn.classList.remove('flex');
+            approveTrack.classList.remove('open');
+            approveTrack.classList.add('closed');
           }
         }
       }
