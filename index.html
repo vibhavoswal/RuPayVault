@@ -850,11 +850,32 @@
       border-color: #e2e8f0 !important;
     }
 
-    [data-theme="light"] #view-card-manager #card-tab-dc,
-    [data-theme="light"] #view-card-manager #card-tab-cc,
-    html.light #view-card-manager #card-tab-dc,
-    html.light #view-card-manager #card-tab-cc {
-      color: #64748b;
+    /* Active Category Tab (Debit Cards & Credit Cards font pure white) */
+    [data-theme="light"] #view-card-manager #card-tab-dc.bg-\[\#0C8C46\],
+    [data-theme="light"] #view-card-manager #card-tab-cc.bg-\[\#0C8C46\],
+    [data-theme="light"] #view-card-manager button.bg-\[\#0C8C46\],
+    html.light #view-card-manager #card-tab-dc.bg-\[\#0C8C46\],
+    html.light #view-card-manager #card-tab-cc.bg-\[\#0C8C46\],
+    html.light #view-card-manager button.bg-\[\#0C8C46\] {
+      color: #ffffff !important;
+    }
+
+    [data-theme="light"] #view-card-manager #card-tab-dc.bg-\[\#0C8C46\] span,
+    [data-theme="light"] #view-card-manager #card-tab-cc.bg-\[\#0C8C46\] span,
+    [data-theme="light"] #view-card-manager button.bg-\[\#0C8C46\] span,
+    html.light #view-card-manager #card-tab-dc.bg-\[\#0C8C46\] span,
+    html.light #view-card-manager #card-tab-cc.bg-\[\#0C8C46\] span,
+    html.light #view-card-manager button.bg-\[\#0C8C46\] span {
+      background-color: rgba(0, 0, 0, 0.25) !important;
+      color: #ffffff !important;
+    }
+
+    /* Inactive Category Tab in Light Mode */
+    [data-theme="light"] #view-card-manager #card-tab-dc:not(.bg-\[\#0C8C46\]),
+    [data-theme="light"] #view-card-manager #card-tab-cc:not(.bg-\[\#0C8C46\]),
+    html.light #view-card-manager #card-tab-dc:not(.bg-\[\#0C8C46\]),
+    html.light #view-card-manager #card-tab-cc:not(.bg-\[\#0C8C46\]) {
+      color: #64748b !important;
     }
 
     [data-theme="light"] #view-card-manager #card-tab-dc:not(.bg-\[\#0C8C46\]):hover,
@@ -864,12 +885,12 @@
       color: #0f172a !important;
     }
 
-    [data-theme="light"] #view-card-manager #badge-count-dc,
-    [data-theme="light"] #view-card-manager #badge-count-cc,
-    html.light #view-card-manager #badge-count-dc,
-    html.light #view-card-manager #badge-count-cc {
+    [data-theme="light"] #view-card-manager #card-tab-dc:not(.bg-\[\#0C8C46\]) span,
+    [data-theme="light"] #view-card-manager #card-tab-cc:not(.bg-\[\#0C8C46\]) span,
+    html.light #view-card-manager #card-tab-dc:not(.bg-\[\#0C8C46\]) span,
+    html.light #view-card-manager #card-tab-cc:not(.bg-\[\#0C8C46\]) span {
       background-color: rgba(0, 0, 0, 0.08) !important;
-      color: inherit !important;
+      color: #64748b !important;
     }
 
     /* Bank Theme Light Gradients (Option 1: Vibrant Saturated Bank Cards) */
