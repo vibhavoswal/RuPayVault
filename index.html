@@ -1964,23 +1964,6 @@
           </button>
         </div>
 
-        <!-- Top Workspace Switcher Action Card -->
-        <button id="drawer-btn-switch-workspace" onclick="toggleWorkspaceFromDrawer()" class="w-full text-left rounded-2xl p-3 bg-gradient-to-r from-neutral-900 to-neutral-900 hover:from-neutral-800 hover:to-neutral-800 border border-neutral-700/70 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all group shadow-sm">
-          <div class="flex items-center gap-2.5">
-            <span id="drawer-switch-icon-box" class="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
-              <svg id="drawer-switch-svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="5" width="20" height="14" rx="2.5"></rect>
-                <line x1="2" y1="10" x2="22" y2="10"></line>
-              </svg>
-            </span>
-            <div>
-              <div class="text-[9px] uppercase tracking-wider text-neutral-400 font-mono-apple font-bold">Switch Workspace</div>
-              <div class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors" id="drawer-switch-title">Switch to Card Manager</div>
-            </div>
-          </div>
-          <span class="text-xs font-bold text-neutral-400 group-hover:text-white transition-colors">⇄</span>
-        </button>
-
         <!-- Section 1: Google Sheets Inset Group -->
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Cloud Database</div>
@@ -2023,27 +2006,6 @@
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Quick Shortcuts</div>
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] divide-y divide-[var(--theme-border)] text-xs text-[var(--theme-text-muted)] overflow-hidden shadow-sm">
-            <button onclick="switchWorkspace('cards'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
-              <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                <span>Card Manager</span>
-              </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-apple" id="drawer-card-count">20 Cards</span>
-            </button>
-            <button onclick="switchWorkspace('vouchers'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
-              <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path></svg>
-                <span>Voucher Manager</span>
-              </span>
-              <span class="text-[10px] font-mono-apple">›</span>
-            </button>
-            <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Activity Log'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                <span>Activity Log (7-Day)</span>
-              </span>
-              <span class="text-[10px] font-mono-apple">›</span>
-            </button>
             <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
