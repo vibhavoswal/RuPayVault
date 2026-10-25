@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>RuPayVault - Bank Accounts Manager (Dual Carousel Prototypes)</title>
+  <title>RuPayVault - Bank Accounts Manager (Card Manager Style)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
   <script>
@@ -40,8 +40,8 @@
       background-color: #0b0f19;
       color: #f1f5f9;
     }
-    .font-mono-code {
-      font-family: 'JetBrains Mono', monospace;
+    .font-mono-apple {
+      font-family: 'JetBrains Mono', -apple-system, monospace;
     }
     ::-webkit-scrollbar { display: none; }
     * { -ms-overflow-style: none; scrollbar-width: none; }
@@ -176,56 +176,24 @@
       color: #f1f5f9;
     }
 
-    /* Luxury Frosted Card Copy Action Chip */
-    .card-copy-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 10px;
-      border-radius: 9px;
-      font-size: 11px;
-      font-weight: 700;
+    /* Tactile Card Field Button (Card Manager Style) */
+    .tactile-copy-field {
       cursor: pointer;
-      background: rgba(255, 255, 255, 0.16);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      backdrop-filter: blur(10px);
+      border-radius: 10px;
       transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .card-copy-chip:hover {
-      background: rgba(255, 255, 255, 0.26);
-      transform: translateY(-1px);
+    .tactile-copy-field:hover {
+      background: rgba(255, 255, 255, 0.08);
     }
-    .card-copy-chip:active {
-      transform: scale(0.96);
+    .tactile-copy-field:active {
+      transform: scale(0.97);
     }
-    .card-copy-chip.copied {
-      background: #10b981 !important;
-      color: #ffffff !important;
-      border-color: #10b981 !important;
+    .tactile-copy-field.just-copied .copy-target-text {
+      color: #34d399 !important;
     }
-
-    /* Small Micro Copy Chip inside details box */
-    .micro-copy-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 3px 7px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.14);
-      color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      transition: all 0.15s ease;
-    }
-    .micro-copy-btn:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-    .micro-copy-btn.copied {
-      background: #10b981 !important;
-      border-color: #10b981 !important;
+    .tactile-copy-field.just-copied .copy-target-icon {
+      color: #34d399 !important;
+      opacity: 1 !important;
     }
 
     /* Luxury Bank Card Shimmer & Gradients */
@@ -235,6 +203,7 @@
       padding: 18px 20px;
       color: white;
       overflow: hidden;
+      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.35);
       transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
     }
     .bank-card:hover {
@@ -265,67 +234,54 @@
     .bg-indusind-pioneer {
       background: linear-gradient(135deg, #241c09 0%, #463411 50%, #876221 100%);
       border: 1px solid rgba(212, 175, 55, 0.38);
-      box-shadow: 0 10px 25px -5px rgba(70, 52, 17, 0.35);
     }
     .bg-axis-burgundy {
       background: linear-gradient(135deg, #3d0013 0%, #6e0026 55%, #9e083a 100%);
       border: 1px solid rgba(255, 110, 150, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(110, 0, 38, 0.38);
     }
     .bg-hdfc-preferred {
       background: linear-gradient(135deg, #021a38 0%, #003366 50%, #0a4f96 100%);
       border: 1px solid rgba(100, 180, 255, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.38);
     }
     .bg-kotak-privy {
       background: linear-gradient(135deg, #260408 0%, #540b13 50%, #a31925 100%);
       border: 1px solid rgba(255, 120, 130, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(84, 11, 19, 0.38);
     }
     .bg-idfc-wealth {
       background: linear-gradient(135deg, #2b050d 0%, #5a1020 50%, #8a1d34 100%);
       border: 1px solid rgba(240, 130, 150, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(90, 16, 32, 0.38);
     }
     .bg-hsbc-premier {
       background: linear-gradient(135deg, #121212 0%, #2b2b2b 50%, #8f0000 100%);
       border: 1px solid rgba(255, 80, 80, 0.32);
-      box-shadow: 0 10px 25px -5px rgba(143, 0, 0, 0.35);
     }
     .bg-federal-fi {
       background: linear-gradient(135deg, #05261a 0%, #0c4a34 50%, #10b981 100%);
       border: 1px solid rgba(16, 185, 129, 0.38);
-      box-shadow: 0 10px 25px -5px rgba(12, 74, 52, 0.38);
     }
     .bg-federal-jupiter {
       background: linear-gradient(135deg, #1c0f38 0%, #351c6b 50%, #6366f1 100%);
       border: 1px solid rgba(167, 139, 250, 0.32);
-      box-shadow: 0 10px 25px -5px rgba(53, 28, 107, 0.38);
     }
     .bg-pnb-elite {
       background: linear-gradient(135deg, #260505 0%, #541111 50%, #9e1c1c 100%);
       border: 1px solid rgba(248, 113, 113, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(84, 17, 17, 0.38);
     }
     .bg-union-prime {
       background: linear-gradient(135deg, #051a36 0%, #0d3263 50%, #1e40af 100%);
       border: 1px solid rgba(96, 165, 250, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(13, 50, 99, 0.38);
     }
     .bg-canara-crest {
       background: linear-gradient(135deg, #032338 0%, #084c78 50%, #0284c7 100%);
       border: 1px solid rgba(56, 189, 248, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(8, 76, 120, 0.38);
     }
     .bg-jana-sfb {
       background: linear-gradient(135deg, #042426 0%, #08484d 50%, #0d9488 100%);
       border: 1px solid rgba(45, 212, 191, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(8, 72, 77, 0.38);
     }
     .bg-equitas-sfb {
       background: linear-gradient(135deg, #1f1404 0%, #4a2f09 50%, #d97706 100%);
       border: 1px solid rgba(251, 191, 36, 0.28);
-      box-shadow: 0 10px 25px -5px rgba(74, 47, 9, 0.38);
     }
 
     /* Badge Tags */
@@ -359,11 +315,6 @@
       color: #fef3c7;
       border: 1px solid rgba(245, 158, 11, 0.4);
     }
-    .holder-family {
-      background: rgba(168, 85, 247, 0.22);
-      color: #f3e8ff;
-      border: 1px solid rgba(168, 85, 247, 0.4);
-    }
   </style>
 </head>
 <body class="min-h-screen">
@@ -396,9 +347,9 @@
           </div>
         </div>
 
-        <!-- Global Action Controls: Mask Eye & Theme Switcher -->
+        <!-- Global Action Controls: Global Eye & Theme Switcher -->
         <div class="flex items-center gap-1.5">
-          <button id="toggleEyeBtn" onclick="toggleGlobalEye()" title="Toggle Mask Account Numbers" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-slate-700 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:dark:bg-slate-700">
+          <button id="toggleEyeBtn" onclick="toggleGlobalEye()" title="Toggle Mask All Numbers" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-slate-700 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:dark:bg-slate-700">
             <span id="eyeIconSlot">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
@@ -419,28 +370,25 @@
       <!-- Prototype Variant Switcher -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         <button onclick="switchPrototype(1)" id="protoPill1" class="proto-nav-pill active">
-          <span>1. Executive Ribbon</span>
+          <span>1. Card Manager Style</span>
           <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-white font-bold">Pick</span>
         </button>
         <button onclick="switchPrototype(2)" id="protoPill2" class="proto-nav-pill inactive">
-          <span>2. Segmented Chips</span>
+          <span>2. Expandable Ledger</span>
         </button>
         <button onclick="switchPrototype(3)" id="protoPill3" class="proto-nav-pill inactive">
-          <span>3. Wire Ledger</span>
-        </button>
-        <button onclick="switchPrototype(4)" id="protoPill4" class="proto-nav-pill inactive">
-          <span>4. Family Overview</span>
+          <span>3. Wire Desk</span>
         </button>
       </div>
 
     </div>
   </header>
 
-  <!-- Notification Banner (Inline Toast Replacement) -->
-  <div id="inlineCopyBanner" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2">
-    <div class="px-3.5 py-1.5 rounded-full bg-slate-900/95 dark:bg-emerald-500/95 text-white text-xs font-bold shadow-xl flex items-center gap-1.5 backdrop-blur-md">
-      <svg class="w-4 h-4 text-emerald-400 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      <span id="inlineCopyText">Copied to clipboard</span>
+  <!-- Card Manager Style Floating Toast Notification -->
+  <div id="toastNotification" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2">
+    <div class="px-4 py-2 rounded-full bg-neutral-900/95 dark:bg-emerald-600 text-white text-xs font-bold shadow-xl flex items-center gap-2 backdrop-blur-md border border-white/10">
+      <svg class="w-3.5 h-3.5 text-emerald-400 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span id="toastNotificationText">Field copied</span>
     </div>
   </div>
 
@@ -450,7 +398,7 @@
     <!-- ======================================================== -->
     <!-- DUAL CAROUSEL HEADER FILTER (LAYERS 1 & 2)                -->
     <!-- ======================================================== -->
-    <div class="mb-4">
+    <div class="mb-3.5">
       
       <!-- LAYER 1: MEMBER CAROUSEL -->
       <div class="mb-2">
@@ -460,7 +408,7 @@
         </div>
         
         <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" id="memberCarouselTrack">
-          <!-- Dynamically generated or interactive member chips -->
+          <!-- Dynamically generated member chips -->
         </div>
       </div>
 
@@ -478,8 +426,8 @@
 
     </div>
 
-    <!-- Dynamic Content Area For Prototype Views -->
-    <div id="dynamicContentArea" class="space-y-3">
+    <!-- Dynamic Content Area -->
+    <div id="dynamicContentArea" class="space-y-3.5">
       <!-- Injected by JavaScript based on active prototype and dual-carousel filters -->
     </div>
 
@@ -489,8 +437,8 @@
   <!-- JAVASCRIPT DATA & DUAL CAROUSEL ENGINE                   -->
   <!-- ======================================================== -->
   <script>
-    const COPY_SVG = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-    const CHECK_SVG = `<svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    const COPY_SVG = `<svg class="w-3.5 h-3.5 text-white/50 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const MICRO_COPY_SVG = `<svg class="w-3 h-3 text-white/40 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
     // Family Members Master List
     const MEMBERS = [
@@ -880,11 +828,12 @@
       }
     ];
 
-    // Global Interactive State
+    // Global States
     let currentProto = 1;
-    let selectedMember = 'vibhav'; // Default to Vibhav Oswal
-    let selectedBank = 'all';      // 'all' or specific bank code
-    let isMasked = true;
+    let selectedMember = 'vibhav';
+    let selectedBank = 'all';
+    let isGlobalMasked = true;
+    const individualPeekStates = new Set(); // tracks per-card unmask
 
     // Theme Switcher
     function toggleTheme() {
@@ -899,11 +848,12 @@
       }
     }
 
-    // Eye Mask Toggle
+    // Global Eye Mask Toggle
     function toggleGlobalEye() {
-      isMasked = !isMasked;
+      isGlobalMasked = !isGlobalMasked;
+      individualPeekStates.clear();
       const slot = document.getElementById('eyeIconSlot');
-      if (isMasked) {
+      if (isGlobalMasked) {
         slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
       } else {
         slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
@@ -911,53 +861,72 @@
       renderContent();
     }
 
-    // 1-Click Fast Copy Feedback
-    function copyField(text, btnElement, label) {
-      if (!text) return;
-      navigator.clipboard.writeText(text).then(() => {
-        const originalContent = btnElement.innerHTML;
-        btnElement.classList.add('copied');
-        btnElement.innerHTML = `${CHECK_SVG}<span>Done</span>`;
+    // Individual Card Eye Peek Toggle (Identical to Card Manager toggleCardPeek)
+    function toggleCardPeek(accId) {
+      if (individualPeekStates.has(accId)) {
+        individualPeekStates.delete(accId);
+      } else {
+        individualPeekStates.add(accId);
+      }
+      renderContent();
+    }
 
-        const banner = document.getElementById('inlineCopyBanner');
-        const textEl = document.getElementById('inlineCopyText');
-        textEl.textContent = `${label || 'Text'}: ${text} copied`;
-        banner.classList.remove('opacity-0', '-translate-y-2');
-        banner.classList.add('opacity-100', 'translate-y-0');
+    // Card Manager Tactile Quick-Copy Engine (Zero explicit buttons)
+    function quickCopyCardField(value, fieldLabel, element) {
+      if (!value) return;
+      if (navigator.vibrate) {
+        try { navigator.vibrate(12); } catch (_) {}
+      }
+      const valStr = String(value).replace(/['\s]/g, '');
 
-        setTimeout(() => {
-          btnElement.classList.remove('copied');
-          btnElement.innerHTML = originalContent;
-        }, 1200);
+      navigator.clipboard.writeText(valStr).then(() => {
+        // Micro-state highlight on the clicked element
+        if (element) {
+          element.classList.add('just-copied');
+          setTimeout(() => {
+            element.classList.remove('just-copied');
+          }, 900);
+        }
 
-        setTimeout(() => {
-          banner.classList.remove('opacity-100', 'translate-y-0');
-          banner.classList.add('opacity-0', '-translate-y-2');
-        }, 1600);
+        // Floating pill toast
+        showToast(`${fieldLabel} copied`);
       }).catch(err => {
-        console.error('Copy failed:', err);
+        console.error('Clipboard copy failed:', err);
       });
     }
 
-    // Switch between the 4 Prototype Variants
+    function showToast(text) {
+      const banner = document.getElementById('toastNotification');
+      const textEl = document.getElementById('toastNotificationText');
+      textEl.textContent = text;
+      banner.classList.remove('opacity-0', '-translate-y-2');
+      banner.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        banner.classList.remove('opacity-100', 'translate-y-0');
+        banner.classList.add('opacity-0', '-translate-y-2');
+      }, 1400);
+    }
+
+    // Prototype Switcher
     function switchPrototype(num) {
       currentProto = num;
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= 3; i++) {
         const pill = document.getElementById(`protoPill${i}`);
-        if (i === num) {
-          pill.classList.remove('inactive');
-          pill.classList.add('active');
-        } else {
-          pill.classList.remove('active');
-          pill.classList.add('inactive');
+        if (pill) {
+          if (i === num) {
+            pill.classList.remove('inactive');
+            pill.classList.add('active');
+          } else {
+            pill.classList.remove('active');
+            pill.classList.add('inactive');
+          }
         }
       }
       renderContent();
     }
 
-    // ========================================================
     // LAYER 1: MEMBER CAROUSEL RENDERER
-    // ========================================================
     function renderMemberCarousel() {
       const track = document.getElementById('memberCarouselTrack');
       let html = '';
@@ -982,12 +951,11 @@
 
     function selectMember(memberId) {
       selectedMember = memberId;
-      selectedBank = 'all'; // reset to all banks under this member
+      selectedBank = 'all';
       renderMemberCarousel();
       renderBankCarousel();
       renderContent();
 
-      // Auto scroll selected member into view
       setTimeout(() => {
         const activeChip = document.querySelector('#memberCarouselTrack .member-chip.active');
         if (activeChip) {
@@ -996,19 +964,15 @@
       }, 50);
     }
 
-    // ========================================================
-    // LAYER 2: BANK CAROUSEL RENDERER (DYNAMIC PER MEMBER)
-    // ========================================================
+    // LAYER 2: BANK CAROUSEL RENDERER
     function renderBankCarousel() {
       const track = document.getElementById('bankCarouselTrack');
       
-      // Determine accounts accessible under selected member
       let memberAccounts = BANK_ACCOUNTS;
       if (selectedMember !== 'all') {
         memberAccounts = BANK_ACCOUNTS.filter(a => a.memberId === selectedMember);
       }
 
-      // Group unique banks with counts
       const bankMap = new Map();
       memberAccounts.forEach(a => {
         if (!bankMap.has(a.code)) {
@@ -1018,10 +982,8 @@
       });
 
       const uniqueBanks = Array.from(bankMap.values());
-
       let html = '';
 
-      // "All Banks" chip
       const isAllActive = selectedBank === 'all';
       html += `
         <button onclick="selectBank('all')" class="bank-chip ${isAllActive ? 'active' : 'inactive'}">
@@ -1053,7 +1015,6 @@
       renderBankCarousel();
       renderContent();
 
-      // Auto scroll selected bank into view
       setTimeout(() => {
         const activeChip = document.querySelector('#bankCarouselTrack .bank-chip.active');
         if (activeChip) {
@@ -1062,13 +1023,10 @@
       }, 50);
     }
 
-    // ========================================================
-    // CONTENT RENDERER (DISPATCHES TO ACTIVE PROTOTYPE VARIANT)
-    // ========================================================
+    // MAIN CONTENT DISPATCHER
     function renderContent() {
       const container = document.getElementById('dynamicContentArea');
 
-      // Filter accounts based on both Layer 1 and Layer 2
       let filtered = BANK_ACCOUNTS;
       if (selectedMember !== 'all') {
         filtered = filtered.filter(a => a.memberId === selectedMember);
@@ -1077,9 +1035,9 @@
         filtered = filtered.filter(a => a.code === selectedBank);
       }
 
-      // Check empty state
+      // Empty State
       if (!filtered.length) {
-        const memObj = MEMBERS.find(m => m.id === selectedMember) || { name: 'Member' };
+        const memObj = MEMBERS.find(m => m.id === selectedMember) || { name: 'Member', short: 'User' };
         container.innerHTML = `
           <div class="py-12 px-6 text-center rounded-2xl border light:bg-white light:border-slate-200 dark:bg-slate-800/60 dark:border-slate-700">
             <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -1097,117 +1055,139 @@
       }
 
       if (currentProto === 1) {
-        renderVariant1(container, filtered);
+        renderCardManagerStyle(container, filtered);
       } else if (currentProto === 2) {
-        renderVariant2(container, filtered);
+        renderAccordionStyle(container, filtered);
       } else if (currentProto === 3) {
-        renderVariant3(container, filtered);
-      } else if (currentProto === 4) {
-        renderVariant4(container, filtered);
+        renderWireDeskStyle(container, filtered);
       }
     }
 
     // ========================================================
-    // VARIANT 1: EXECUTIVE RIBBON + LUXURY STACKING CARDS
+    // PROTOTYPE 1: CARD MANAGER TACTILE COPY STYLE
+    // (NO EXPLICIT COPY BUTTON - TACTILE FIELDS WITH PEEK EYE)
     // ========================================================
-    function renderVariant1(container, accounts) {
+    function renderCardManagerStyle(container, accounts) {
       let html = `
         <div class="flex items-center justify-between text-xs px-1 mb-1">
           <span class="font-extrabold light:text-slate-800 dark:text-slate-200">
             ${accounts.length} Account${accounts.length > 1 ? 's' : ''} Listed
           </span>
-          <span class="text-[11px] text-slate-500">Tap cards to copy details</span>
+          <span class="text-[11px] text-slate-500 flex items-center gap-1">
+            <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Tap any field to copy</span>
+          </span>
         </div>
       `;
 
       accounts.forEach(acc => {
-        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        // Individual Peek overrides global mask if set
+        const isIndividuallyPeeked = individualPeekStates.has(acc.id);
+        const isCurrentlyUnmasked = (!isGlobalMasked) || isIndividuallyPeeked;
+        const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
+
         html += `
           <div class="bank-card ${acc.gradient}">
-            <div class="flex items-start justify-between mb-2.5">
+            
+            <!-- Top Row: Bank Badge, Tier Badge, Holder & Account Label -->
+            <div class="flex items-start justify-between mb-2">
               <div>
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span class="tier-badge ${acc.accent}">${acc.tier}</span>
                   <span class="holder-badge ${acc.memberId === 'sanjay' ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
+                  ${acc.alias ? `<span class="px-1.5 py-0.5 rounded bg-black/40 text-amber-200 font-mono-apple text-[10px] border border-amber-500/30">Alias: ${acc.alias}</span>` : ''}
                 </div>
                 <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
                 ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
-                ${acc.alias ? `<div class="text-[11px] font-mono text-white/80">Alias: ${acc.alias}</div>` : ''}
               </div>
-              <div class="text-right">
-                <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider">${acc.label}</span>
+
+              <div class="text-right shrink-0">
+                <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider whitespace-nowrap">${acc.label}</span>
               </div>
             </div>
 
-            <!-- Account Number and Copy Pill -->
-            <div class="flex items-center justify-between py-2 border-y border-white/10 mb-2.5">
-              <div>
-                <div class="text-[9px] text-white/70 font-semibold uppercase tracking-wider">Account Number</div>
-                <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
-                  ${displayNumber}
-                </div>
+            <!-- Card Number Row with Tactile Quick-Copy & Eye Peek (Exact Card Manager Architecture) -->
+            <div class="my-2.5">
+              <div class="text-[10px] uppercase font-bold tracking-wider text-white/50 mb-0.5">
+                Account Number
               </div>
-              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
-                ${COPY_SVG}
-                <span>Copy</span>
-              </button>
-            </div>
-
-            <!-- Quick Chips Grid -->
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                <div class="overflow-hidden">
-                  <div class="text-[9px] text-white/60 font-medium">IFSC CODE</div>
-                  <div class="font-mono font-bold text-[11px] truncate">${acc.ifsc}</div>
-                </div>
-                <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
+              <div class="flex items-center justify-between">
+                
+                <!-- Tactile Copy Field (No explicit button - entire number is interactive) -->
+                <button onclick="quickCopyCardField('${acc.accNumber}', 'Account number', this)" title="Tap to copy account number" class="tactile-copy-field group text-left py-1 pr-2 flex items-center gap-2">
+                  <div class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors copy-target-text">
+                    ${displayNumber}
+                  </div>
                   ${COPY_SVG}
-                  <span>Copy</span>
+                </button>
+
+                <!-- Eye Peek Toggle Button (Exact Card Manager Style) -->
+                <button onclick="toggleCardPeek('${acc.id}')" title="Reveal / Mask Account Number" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white flex items-center justify-center transition-all shrink-0">
+                  ${isCurrentlyUnmasked ? `
+                    <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ` : `
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  `}
                 </button>
               </div>
+            </div>
+
+            <!-- Details Grid: IFSC, UPI VPA, Customer ID (Tactile Quick-Copy, No explicit buttons) -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              
+              <!-- IFSC Quick-Copy Tile -->
+              <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">IFSC Code</div>
+                <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                  <span class="truncate copy-target-text">${acc.ifsc}</span>
+                  ${MICRO_COPY_SVG}
+                </div>
+              </button>
 
               ${acc.upi ? `
-                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                  <div class="overflow-hidden">
-                    <div class="text-[9px] text-white/60 font-medium">UPI VPA</div>
-                    <div class="font-mono font-bold text-[11px] truncate">${acc.upi}</div>
+                <!-- UPI VPA Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.upi}', 'UPI VPA', this)" title="Tap to copy UPI VPA" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI VPA</div>
+                  <div class="font-mono-apple text-xs font-bold text-emerald-300 group-hover:text-emerald-200 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text max-w-[130px]">${acc.upi}</span>
+                    ${MICRO_COPY_SVG}
                   </div>
-                  <button onclick="copyField('${acc.upi}', this, 'UPI')" class="micro-copy-btn">
-                    ${COPY_SVG}
-                    <span>Copy</span>
-                  </button>
-                </div>
+                </button>
               ` : (acc.custId ? `
-                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                  <div class="overflow-hidden">
-                    <div class="text-[9px] text-white/60 font-medium">CUSTOMER ID</div>
-                    <div class="font-mono font-bold text-[11px] truncate">${acc.custId}</div>
+                <!-- Customer ID Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                  <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${acc.custId}</span>
+                    ${MICRO_COPY_SVG}
                   </div>
-                  <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="micro-copy-btn">
-                    ${COPY_SVG}
-                    <span>Copy</span>
-                  </button>
-                </div>
+                </button>
               ` : (acc.crn ? `
-                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                  <div class="overflow-hidden">
-                    <div class="text-[9px] text-white/60 font-medium">CRN</div>
-                    <div class="font-mono font-bold text-[11px] truncate">${acc.crn}</div>
+                <!-- CRN Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.crn}', 'CRN Number', this)" title="Tap to copy CRN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">CRN Number</div>
+                  <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${acc.crn}</span>
+                    ${MICRO_COPY_SVG}
                   </div>
-                  <button onclick="copyField('${acc.crn}', this, 'CRN')" class="micro-copy-btn">
-                    ${COPY_SVG}
-                    <span>Copy</span>
-                  </button>
-                </div>
+                </button>
               ` : `
-                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                  <div class="overflow-hidden">
-                    <div class="text-[9px] text-white/60 font-medium">STATUS</div>
-                    <div class="font-mono font-bold text-[11px] text-emerald-300">ACTIVE</div>
-                  </div>
+                <!-- Status Tile -->
+                <div class="p-2 rounded-xl bg-black/25 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Account Status</div>
+                  <div class="font-mono-apple text-xs font-bold text-emerald-300">ACTIVE</div>
                 </div>
               `))}
+
             </div>
+
+            ${acc.tpin ? `
+              <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono-apple text-white/70">
+                <span>TPIN: <span class="font-bold text-amber-300">${acc.tpin}</span></span>
+                <span class="text-[10px] text-white/50 font-sans">Defence Colony Branch</span>
+              </div>
+            ` : ''}
+
           </div>
         `;
       });
@@ -1224,18 +1204,21 @@
     }
 
     // ========================================================
-    // VARIANT 2: EXPANDABLE ACCORDION LEDGER
+    // PROTOTYPE 2: EXPANDABLE LEDGER (TACTILE STYLE)
     // ========================================================
-    function renderVariant2(container, accounts) {
+    function renderAccordionStyle(container, accounts) {
       let html = `
         <div class="p-3 rounded-2xl light:bg-slate-100 dark:bg-slate-800/50 border light:border-slate-200 dark:border-slate-700 mb-2 flex items-center justify-between text-xs font-bold">
-          <span>Accordion Quick-View (${accounts.length} Accounts)</span>
-          <span class="text-[10px] text-sky-500 font-mono">Tap to Expand Details</span>
+          <span>Expandable Ledger (${accounts.length} Accounts)</span>
+          <span class="text-[10px] text-sky-500 font-mono">Tap Card to Expand</span>
         </div>
       `;
 
       accounts.forEach((acc, idx) => {
-        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        const isIndividuallyPeeked = individualPeekStates.has(acc.id);
+        const isCurrentlyUnmasked = (!isGlobalMasked) || isIndividuallyPeeked;
+        const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
+
         html += `
           <div class="rounded-2xl border transition-all light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 overflow-hidden shadow-sm">
             <div class="p-3.5 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-${idx}')">
@@ -1248,53 +1231,53 @@
                     <span class="text-xs font-extrabold light:text-slate-900 dark:text-white">${acc.shortBank}</span>
                     <span class="text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${acc.memberId === 'sanjay' ? 'bg-amber-500/15 text-amber-600' : 'bg-sky-500/15 text-sky-600'}">${acc.holder}</span>
                   </div>
-                  <div class="text-[11px] font-mono font-bold text-slate-500">${displayNumber}</div>
+                  <!-- Tactile copy on account number directly -->
+                  <div onclick="event.stopPropagation(); quickCopyCardField('${acc.accNumber}', 'Account number', this)" class="tactile-copy-field flex items-center gap-1.5 font-mono-apple font-bold text-xs light:text-slate-700 dark:text-slate-300 hover:text-emerald-500">
+                    <span class="copy-target-text">${displayNumber}</span>
+                    ${MICRO_COPY_SVG}
+                  </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-2">
-                <button onclick="event.stopPropagation(); copyField('${acc.accNumber}', this, 'Acc No')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold light:bg-slate-100 light:text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center gap-1">
-                  ${COPY_SVG}
-                  <span>Copy</span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="event.stopPropagation(); toggleCardPeek('${acc.id}')" title="Peek Number" class="w-7 h-7 rounded-lg light:bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white">
+                  ${isCurrentlyUnmasked ? `
+                    <svg class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ` : `
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  `}
                 </button>
                 <svg id="chevron-acc-${idx}" class="w-4 h-4 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </div>
             </div>
 
-            <!-- Expandable Drawer -->
+            <!-- Drawer with Tactile Quick-Copy Fields -->
             <div id="drawer-acc-${idx}" class="px-3.5 pb-3.5 pt-1 border-t light:border-slate-100 dark:border-slate-700/60 text-xs space-y-2">
-              <div class="flex items-center justify-between">
+              <div onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" class="tactile-copy-field p-1.5 rounded-lg flex items-center justify-between cursor-pointer">
                 <span class="text-slate-400 font-medium">IFSC Code:</span>
-                <div class="flex items-center gap-1 font-mono font-bold light:text-slate-800 dark:text-slate-200">
-                  <span>${acc.ifsc}</span>
-                  <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="text-sky-500 hover:text-sky-600 ml-1 font-sans font-bold">Copy</button>
+                <div class="flex items-center gap-1.5 font-mono-apple font-bold light:text-slate-800 dark:text-slate-200">
+                  <span class="copy-target-text">${acc.ifsc}</span>
+                  ${MICRO_COPY_SVG}
                 </div>
               </div>
 
               ${acc.upi ? `
-                <div class="flex items-center justify-between">
+                <div onclick="quickCopyCardField('${acc.upi}', 'UPI VPA', this)" class="tactile-copy-field p-1.5 rounded-lg flex items-center justify-between cursor-pointer">
                   <span class="text-slate-400 font-medium">UPI VPA:</span>
-                  <div class="flex items-center gap-1 font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                    <span class="truncate max-w-[170px]">${acc.upi}</span>
-                    <button onclick="copyField('${acc.upi}', this, 'UPI')" class="text-emerald-500 hover:text-emerald-600 ml-1 font-sans font-bold">Copy</button>
+                  <div class="flex items-center gap-1.5 font-mono-apple font-bold text-emerald-600 dark:text-emerald-400">
+                    <span class="truncate max-w-[170px] copy-target-text">${acc.upi}</span>
+                    ${MICRO_COPY_SVG}
                   </div>
                 </div>
               ` : ''}
 
               ${acc.custId ? `
-                <div class="flex items-center justify-between">
+                <div onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" class="tactile-copy-field p-1.5 rounded-lg flex items-center justify-between cursor-pointer">
                   <span class="text-slate-400 font-medium">Customer ID:</span>
-                  <div class="flex items-center gap-1 font-mono font-bold light:text-slate-700 dark:text-slate-300">
-                    <span>${acc.custId}</span>
-                    <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="text-sky-500 hover:text-sky-600 ml-1 font-sans font-bold">Copy</button>
+                  <div class="flex items-center gap-1.5 font-mono-apple font-bold light:text-slate-700 dark:text-slate-300">
+                    <span class="copy-target-text">${acc.custId}</span>
+                    ${MICRO_COPY_SVG}
                   </div>
-                </div>
-              ` : ''}
-
-              ${acc.branch ? `
-                <div class="flex items-center justify-between">
-                  <span class="text-slate-400 font-medium">Branch:</span>
-                  <span class="font-medium light:text-slate-700 dark:text-slate-300 text-right truncate max-w-[200px]">${acc.branch}</span>
                 </div>
               ` : ''}
             </div>
@@ -1318,21 +1301,24 @@
     }
 
     // ========================================================
-    // VARIANT 3: WIRE TRANSFER DIRECT LEDGER (RAPID NEFT/RTGS)
+    // PROTOTYPE 3: WIRE TRANSFER DESK (TACTILE STYLE)
     // ========================================================
-    function renderVariant3(container, accounts) {
+    function renderWireDeskStyle(container, accounts) {
       let html = `
         <div class="p-3 rounded-xl border light:bg-sky-50/70 light:border-sky-200 dark:bg-sky-950/20 dark:border-sky-900/40 mb-2 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg class="w-4 h-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            <span class="text-xs font-bold light:text-sky-900 dark:text-sky-200">Wire Transfer Desk (${accounts.length} Destination Accounts)</span>
+            <span class="text-xs font-bold light:text-sky-900 dark:text-sky-200">Wire Routing Desk (${accounts.length} Accounts)</span>
           </div>
-          <span class="text-[10px] font-mono text-sky-600 font-bold">1-Click Copy</span>
+          <span class="text-[10px] font-mono text-sky-600 font-bold">Tap Field to Copy</span>
         </div>
       `;
 
       accounts.forEach(acc => {
-        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        const isIndividuallyPeeked = individualPeekStates.has(acc.id);
+        const isCurrentlyUnmasked = (!isGlobalMasked) || isIndividuallyPeeked;
+        const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
+
         html += `
           <div class="p-3 rounded-xl border transition-all light:bg-white light:border-slate-200/90 dark:bg-slate-800/80 dark:border-slate-700/80 shadow-sm">
             <div class="flex items-center justify-between mb-1.5">
@@ -1343,100 +1329,39 @@
               <span class="text-[10px] font-mono text-slate-400">${acc.tier}</span>
             </div>
 
-            <!-- Number & Primary Copy -->
-            <div class="flex items-center justify-between p-2 rounded-lg light:bg-slate-50 dark:bg-slate-900/60 mb-2">
+            <!-- Number Tactile Row -->
+            <button onclick="quickCopyCardField('${acc.accNumber}', 'Account number', this)" class="tactile-copy-field w-full p-2.5 rounded-lg light:bg-slate-50 dark:bg-slate-900/60 mb-2 flex items-center justify-between text-left">
               <div>
                 <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Account Number</div>
-                <div class="text-sm font-mono font-extrabold tracking-wide light:text-slate-800 dark:text-slate-100">${displayNumber}</div>
+                <div class="text-sm font-mono-apple font-extrabold tracking-wide light:text-slate-800 dark:text-slate-100 copy-target-text">${displayNumber}</div>
               </div>
-              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors light:bg-slate-200 light:text-slate-800 hover:light:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 hover:dark:bg-slate-600">
-                ${COPY_SVG}
-                <span>Copy</span>
-              </button>
-            </div>
+              ${COPY_SVG}
+            </button>
 
             <!-- IFSC and UPI direct copy rows -->
-            <div class="flex items-center justify-between text-[11px] font-mono pt-1">
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px] text-slate-400 font-sans font-semibold">IFSC:</span>
-                <span class="font-bold light:text-slate-700 dark:text-slate-300">${acc.ifsc}</span>
-              </div>
-              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="text-xs text-sky-500 hover:text-sky-600 font-sans font-bold flex items-center gap-1">
-                ${COPY_SVG}
-                <span>Copy IFSC</span>
-              </button>
-            </div>
-
-            ${acc.upi ? `
-              <div class="flex items-center justify-between text-[11px] font-mono pt-1.5 mt-1 border-t light:border-slate-100 dark:border-slate-700/60">
-                <div class="flex items-center gap-1.5 overflow-hidden">
-                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-bold">UPI:</span>
-                  <span class="font-medium light:text-slate-600 dark:text-slate-400 truncate">${acc.upi}</span>
+            <div class="grid grid-cols-2 gap-2 text-[11px] font-mono-apple">
+              <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" class="tactile-copy-field p-1.5 rounded-lg flex items-center justify-between text-left light:bg-slate-50 dark:bg-slate-900/40">
+                <div class="truncate">
+                  <span class="text-[9px] text-slate-400 font-sans block font-semibold">IFSC</span>
+                  <span class="font-bold light:text-slate-700 dark:text-slate-300 copy-target-text">${acc.ifsc}</span>
                 </div>
-                <button onclick="copyField('${acc.upi}', this, 'UPI')" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-sans font-bold flex items-center gap-1">
-                  ${COPY_SVG}
-                  <span>Copy UPI</span>
+                ${MICRO_COPY_SVG}
+              </button>
+
+              ${acc.upi ? `
+                <button onclick="quickCopyCardField('${acc.upi}', 'UPI VPA', this)" class="tactile-copy-field p-1.5 rounded-lg flex items-center justify-between text-left light:bg-emerald-50/60 dark:bg-emerald-950/20">
+                  <div class="truncate">
+                    <span class="text-[9px] text-emerald-600 dark:text-emerald-400 font-sans block font-bold">UPI VPA</span>
+                    <span class="font-medium text-emerald-600 dark:text-emerald-400 truncate block copy-target-text">${acc.upi}</span>
+                  </div>
+                  ${MICRO_COPY_SVG}
                 </button>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-
-      container.innerHTML = html;
-    }
-
-    // ========================================================
-    // VARIANT 4: FAMILY PORTFOLIO OVERVIEW
-    // ========================================================
-    function renderVariant4(container, accounts) {
-      let html = `
-        <div class="grid grid-cols-2 gap-2 mb-3">
-          <div class="p-3 rounded-xl border light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 text-center">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">Total Accounts</div>
-            <div class="text-xl font-extrabold text-indigo-500 font-mono">16</div>
-            <div class="text-[10px] text-slate-500">Across 12 Banks</div>
-          </div>
-          <div class="p-3 rounded-xl border light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 text-center">
-            <div class="text-[10px] font-bold text-slate-400 uppercase">Active UPI VPAs</div>
-            <div class="text-xl font-extrabold text-emerald-500 font-mono">8</div>
-            <div class="text-[10px] text-slate-500">Direct Routing</div>
-          </div>
-        </div>
-      `;
-
-      // Render cards as normal under summary
-      accounts.forEach(acc => {
-        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
-        html += `
-          <div class="bank-card ${acc.gradient}">
-            <div class="flex items-start justify-between mb-2">
-              <div>
-                <span class="tier-badge ${acc.accent} mb-1 inline-block">${acc.tier}</span>
-                <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
-              </div>
-              <span class="holder-badge ${acc.memberId === 'sanjay' ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
-            </div>
-
-            <div class="flex items-center justify-between py-1.5 border-y border-white/10 mb-2">
-              <div>
-                <div class="text-[9px] text-white/70 font-semibold uppercase">Account Number</div>
-                <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
-                  ${displayNumber}
+              ` : `
+                <div class="p-1.5 rounded-lg light:bg-slate-50 dark:bg-slate-900/40">
+                  <span class="text-[9px] text-slate-400 font-sans block font-semibold">ROUTING</span>
+                  <span class="font-bold text-slate-500">NEFT / RTGS</span>
                 </div>
-              </div>
-              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
-                ${COPY_SVG}
-                <span>Copy</span>
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between text-xs font-mono">
-              <span class="text-white/80">IFSC: ${acc.ifsc}</span>
-              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
-                ${COPY_SVG}
-                <span>Copy</span>
-              </button>
+              `}
             </div>
           </div>
         `;
@@ -1446,10 +1371,10 @@
     }
 
     function simulateAddAccount(memberName) {
-      alert(`Add Bank Account form modal will open pre-configured for: ${memberName || 'Selected Family Member'}`);
+      alert(`Add Bank Account modal will open for: ${memberName || 'Selected Member'}`);
     }
 
-    // Initialize default states on DOM Load
+    // Initialize on load
     window.addEventListener('DOMContentLoaded', () => {
       renderMemberCarousel();
       renderBankCarousel();
