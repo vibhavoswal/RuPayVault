@@ -641,7 +641,9 @@
     #mb-vouchers-list {
       will-change: transform, opacity;
       touch-action: pan-y;
-      transform-origin: center center;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     /* ======================================================== */
@@ -5637,7 +5639,7 @@
       renderVault();
     }
 
-    function filterVaultBrand(brand) {
+    function filterVaultBrand(brand, options = {}) {
       if (state.isSelectMode) {
         state.selectedIds.clear();
         collapseActionMenu();
@@ -5654,7 +5656,7 @@
       }
 
       const mbScroll = document.querySelector('.mobile-scroll-container');
-      if (mbScroll) mbScroll.scrollTop = 0;
+      if (mbScroll && !options.preserveScroll) mbScroll.scrollTop = 0;
       renderVault();
       updateFloatingDock();
 
@@ -5679,29 +5681,39 @@
       return BRAND_CONFIG[targetIdx];
     }
 
-    function transitionToSerialBrand(direction, targetBrand) {
+    function transitionToSerialBrand(direction, targetBrand, currentDeltaX = 0) {
       const list = document.getElementById('mb-vouchers-list');
       if (!list) {
         filterVaultBrand(targetBrand.key);
         return;
       }
 
-      const exitOffset = direction > 0 ? -220 : 220;
-      list.style.transition = 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease';
-      list.style.transform = `translateX(${exitOffset}px) scale(0.96)`;
+      // Gentle momentum continuation in swipe direction without harsh distance jumps or scales
+      const glideTarget = direction > 0 ? (currentDeltaX - 60) : (currentDeltaX + 60);
+      const enterOffset = direction > 0 ? 50 : -50;
+
+      list.style.transition = 'transform 0.16s cubic-bezier(0.2, 0.8, 0.25, 1), opacity 0.16s ease-out';
+      list.style.transform = `translate3d(${glideTarget}px, 0, 0)`;
       list.style.opacity = '0';
 
       setTimeout(() => {
-        filterVaultBrand(targetBrand.key);
+        // Switch brand state with preserved vertical scroll to prevent scroll jumps
+        filterVaultBrand(targetBrand.key, { preserveScroll: true });
+
+        // Position incoming list for gentle enter glide
         list.style.transition = 'none';
-        list.style.transform = `translateX(${-exitOffset}px) scale(0.96)`;
+        list.style.transform = `translate3d(${enterOffset}px, 0, 0)`;
+        list.style.opacity = '0.01';
+
+        // Force synchronous paint layout flush
+        void list.offsetWidth;
 
         requestAnimationFrame(() => {
-          list.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
-          list.style.transform = 'translateX(0) scale(1)';
+          list.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease-out';
+          list.style.transform = 'translate3d(0, 0, 0)';
           list.style.opacity = '1';
         });
-      }, 180);
+      }, 160);
     }
 
     function initSerialBrandSwipeGestures() {
@@ -5767,12 +5779,14 @@
         const deltaX = currentX - startX;
         const deltaY = currentY - startY;
 
-        // Intent detection: measure first 8px movement
+        // Intent detection: natural angle allowance
         if (!isHorizontalGesture) {
-          if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+          if (absX > 8 && absX > absY * 1.1) {
             isHorizontalGesture = true;
             window.__rupaySwipingActive = true;
-          } else if (Math.abs(deltaY) > 8) {
+          } else if (absY > 12 && absY > absX * 1.4) {
             isDragging = false;
             return;
           }
@@ -5785,11 +5799,12 @@
           const idx = getSerialBrandIndex();
           let effectiveDelta = deltaX;
           if ((idx === 0 && deltaX > 0) || (idx === BRAND_CONFIG.length - 1 && deltaX < 0)) {
-            effectiveDelta = deltaX * 0.35;
+            effectiveDelta = deltaX * 0.3;
           }
 
-          list.style.transform = `translateX(${effectiveDelta}px)`;
-          list.style.opacity = `${1 - Math.min(0.25, Math.abs(effectiveDelta) / 800)}`;
+          // Pure GPU composited translate3d without scaling for 120Hz/60Hz smoothness
+          list.style.transform = `translate3d(${effectiveDelta}px, 0, 0)`;
+          list.style.opacity = `${1 - Math.min(0.2, Math.abs(effectiveDelta) / 900)}`;
         }
       }
 
@@ -5802,20 +5817,20 @@
         setTimeout(() => { window.__rupaySwipingActive = false; }, 150);
 
         if (!isHorizontalGesture) {
-          list.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease';
-          list.style.transform = 'translateX(0) scale(1)';
+          list.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease-out';
+          list.style.transform = 'translate3d(0, 0, 0)';
           list.style.opacity = '1';
           return;
         }
 
         const containerWidth = scrollContainer.clientWidth || window.innerWidth;
-        const threshold = containerWidth * 0.22; // 22% drag threshold
+        const threshold = containerWidth * 0.18; // 18% drag threshold
 
         let shouldAdvance = false;
         let direction = 0;
 
-        // Advance if past distance threshold OR high-velocity flick
-        if (Math.abs(deltaX) > threshold || (velocity > 0.45 && Math.abs(deltaX) > 25)) {
+        // Advance if past distance threshold OR quick flick (>0.32 px/ms)
+        if (Math.abs(deltaX) > threshold || (velocity > 0.32 && Math.abs(deltaX) > 20)) {
           shouldAdvance = true;
           direction = deltaX < 0 ? 1 : -1; // swipe left = next (+1), swipe right = prev (-1)
         }
@@ -5823,14 +5838,14 @@
         if (shouldAdvance) {
           const targetBrand = getNextSerialBrand(direction);
           if (targetBrand) {
-            transitionToSerialBrand(direction, targetBrand);
+            transitionToSerialBrand(direction, targetBrand, deltaX);
             return;
           }
         }
 
-        // Snap spring back if not advanceable
-        list.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
-        list.style.transform = 'translateX(0) scale(1)';
+        // Snap spring back if canceled or at boundary
+        list.style.transition = 'transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease-out';
+        list.style.transform = 'translate3d(0, 0, 0)';
         list.style.opacity = '1';
       }
 
