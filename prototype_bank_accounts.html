@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault - Bank Accounts Manager Prototypes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    .light body, html.light body {
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .dark body, html.dark body {
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Prototype Switcher Navigation */
+    .proto-nav-pill {
+      padding: 7px 13px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .light .proto-nav-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+    }
+    .light .proto-nav-pill.inactive {
+      background: rgba(255, 255, 255, 0.95);
+      color: #64748b;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+    }
+    .light .proto-nav-pill.inactive:hover {
+      background: #ffffff;
+      color: #0f172a;
+    }
+    .dark .proto-nav-pill.active {
+      background: #38bdf8;
+      color: #041322;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+    }
+    .dark .proto-nav-pill.inactive {
+      background: rgba(30, 41, 59, 0.85);
+      color: #94a3b8;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+    }
+    .dark .proto-nav-pill.inactive:hover {
+      background: #1e293b;
+      color: #ffffff;
+    }
+
+    /* Sub-tabs / Segments */
+    .segment-tab {
+      padding: 7px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .light .segment-tab.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .light .segment-tab.inactive {
+      color: #64748b;
+    }
+    .light .segment-tab.inactive:hover {
+      color: #0f172a;
+    }
+    .dark .segment-tab.active {
+      background: #1e293b;
+      color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+    .dark .segment-tab.inactive {
+      color: #94a3b8;
+    }
+    .dark .segment-tab.inactive:hover {
+      color: #f1f5f9;
+    }
+
+    /* Luxury Frosted Card Copy Action Chip */
+    .card-copy-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(10px);
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-copy-chip:hover {
+      background: rgba(255, 255, 255, 0.26);
+      transform: translateY(-1px);
+    }
+    .card-copy-chip:active {
+      transform: scale(0.96);
+    }
+    .card-copy-chip.copied {
+      background: #10b981 !important;
+      color: #ffffff !important;
+      border-color: #10b981 !important;
+    }
+
+    /* Small Micro Copy Chip inside details box */
+    .micro-copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: all 0.15s ease;
+    }
+    .micro-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .micro-copy-btn.copied {
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+    }
+
+    /* Swipe Track Styles */
+    .swipe-container {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      touch-action: pan-y;
+    }
+    .swipe-track {
+      display: flex;
+      width: 100%;
+      will-change: transform;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+      perspective: 1000px;
+    }
+    .swipe-panel {
+      flex: 0 0 100%;
+      width: 100%;
+      min-width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+
+    /* Luxury Bank Card Shimmer & Gradients */
+    .bank-card {
+      position: relative;
+      border-radius: 20px;
+      padding: 18px 20px;
+      color: white;
+      overflow: hidden;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .bank-card:hover {
+      transform: translateY(-2px);
+    }
+    .bank-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: radial-gradient(circle at 85% 15%, rgba(255,255,255,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .bank-card::after {
+      content: '';
+      position: absolute;
+      bottom: -40px;
+      right: -40px;
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Gradient Palettes for Banks */
+    .bg-indusind-pioneer {
+      background: linear-gradient(135deg, #241c09 0%, #463411 50%, #876221 100%);
+      border: 1px solid rgba(212, 175, 55, 0.38);
+      box-shadow: 0 10px 25px -5px rgba(70, 52, 17, 0.35);
+    }
+    .bg-axis-burgundy {
+      background: linear-gradient(135deg, #3d0013 0%, #6e0026 55%, #9e083a 100%);
+      border: 1px solid rgba(255, 110, 150, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(110, 0, 38, 0.38);
+    }
+    .bg-hdfc-preferred {
+      background: linear-gradient(135deg, #021a38 0%, #003366 50%, #0a4f96 100%);
+      border: 1px solid rgba(100, 180, 255, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(0, 51, 102, 0.38);
+    }
+    .bg-kotak-privy {
+      background: linear-gradient(135deg, #260408 0%, #540b13 50%, #a31925 100%);
+      border: 1px solid rgba(255, 120, 130, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(84, 11, 19, 0.38);
+    }
+    .bg-idfc-wealth {
+      background: linear-gradient(135deg, #2b050d 0%, #5a1020 50%, #8a1d34 100%);
+      border: 1px solid rgba(240, 130, 150, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(90, 16, 32, 0.38);
+    }
+    .bg-hsbc-premier {
+      background: linear-gradient(135deg, #121212 0%, #2b2b2b 50%, #8f0000 100%);
+      border: 1px solid rgba(255, 80, 80, 0.32);
+      box-shadow: 0 10px 25px -5px rgba(143, 0, 0, 0.35);
+    }
+    .bg-federal-fi {
+      background: linear-gradient(135deg, #05261a 0%, #0c4a34 50%, #10b981 100%);
+      border: 1px solid rgba(16, 185, 129, 0.38);
+      box-shadow: 0 10px 25px -5px rgba(12, 74, 52, 0.38);
+    }
+    .bg-federal-jupiter {
+      background: linear-gradient(135deg, #1c0f38 0%, #351c6b 50%, #6366f1 100%);
+      border: 1px solid rgba(167, 139, 250, 0.32);
+      box-shadow: 0 10px 25px -5px rgba(53, 28, 107, 0.38);
+    }
+    .bg-pnb-elite {
+      background: linear-gradient(135deg, #260505 0%, #541111 50%, #9e1c1c 100%);
+      border: 1px solid rgba(248, 113, 113, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(84, 17, 17, 0.38);
+    }
+    .bg-union-prime {
+      background: linear-gradient(135deg, #051a36 0%, #0d3263 50%, #1e40af 100%);
+      border: 1px solid rgba(96, 165, 250, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(13, 50, 99, 0.38);
+    }
+    .bg-canara-crest {
+      background: linear-gradient(135deg, #032338 0%, #084c78 50%, #0284c7 100%);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(8, 76, 120, 0.38);
+    }
+    .bg-jana-sfb {
+      background: linear-gradient(135deg, #042426 0%, #08484d 50%, #0d9488 100%);
+      border: 1px solid rgba(45, 212, 191, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(8, 72, 77, 0.38);
+    }
+    .bg-equitas-sfb {
+      background: linear-gradient(135deg, #1f1404 0%, #4a2f09 50%, #d97706 100%);
+      border: 1px solid rgba(251, 191, 36, 0.28);
+      box-shadow: 0 10px 25px -5px rgba(74, 47, 9, 0.38);
+    }
+
+    /* Badge Tags */
+    .tier-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    .holder-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .holder-vibhav {
+      background: rgba(56, 189, 248, 0.2);
+      color: #e0f2fe;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .holder-sanjay {
+      background: rgba(245, 158, 11, 0.22);
+      color: #fef3c7;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Top Sticky Control Header -->
+  <header class="sticky top-0 z-50 backdrop-blur-xl border-b transition-colors light:bg-white/90 light:border-slate-200/90 dark:bg-slate-900/90 dark:border-slate-800">
+    <div class="max-w-md mx-auto px-4 py-2.5">
+      
+      <!-- App / Workspace Banner & Theme Toggle -->
+      <div class="flex items-center justify-between mb-2.5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
+            <!-- Inline Bank SVG -->
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="21" x2="21" y2="21"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+              <polyline points="5 6 12 3 19 6"></polyline>
+              <line x1="4" y1="10" x2="4" y2="21"></line>
+              <line x1="20" y1="10" x2="20" y2="21"></line>
+              <line x1="8" y1="14" x2="8" y2="17"></line>
+              <line x1="12" y1="14" x2="12" y2="17"></line>
+              <line x1="16" y1="14" x2="16" y2="17"></line>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-rose-500 dark:text-rose-400">Workspace Preview</span>
+              <span class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400">16 Accounts</span>
+            </div>
+            <h1 class="text-sm font-extrabold tracking-tight leading-none light:text-slate-900 dark:text-white">Bank Accounts Manager</h1>
+          </div>
+        </div>
+
+        <!-- Global Action Controls: Mask Eye & Theme Switcher -->
+        <div class="flex items-center gap-1.5">
+          <button id="toggleEyeBtn" onclick="toggleGlobalEye()" title="Toggle Mask Account Numbers" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-slate-700 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:dark:bg-slate-700">
+            <span id="eyeIconSlot">
+              <!-- Masked Eye SVG -->
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </span>
+          </button>
+          <button id="toggleThemeBtn" onclick="toggleTheme()" title="Toggle Light / Dark Mode" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-amber-600 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-amber-400 hover:dark:bg-slate-700">
+            <span id="themeIconSlot">
+              <!-- Moon SVG -->
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Prototype Selector Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <button onclick="switchPrototype(1)" id="protoPill1" class="proto-nav-pill active">
+          <span>1. Tier Passbook</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-white font-bold">Pick</span>
+        </button>
+        <button onclick="switchPrototype(2)" id="protoPill2" class="proto-nav-pill inactive">
+          <span>2. Bank Carousel</span>
+        </button>
+        <button onclick="switchPrototype(3)" id="protoPill3" class="proto-nav-pill inactive">
+          <span>3. Wire Terminal</span>
+        </button>
+        <button onclick="switchPrototype(4)" id="protoPill4" class="proto-nav-pill inactive">
+          <span>4. Entity Split</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Notification Banner (Inline Toast Replacement) -->
+  <div id="inlineCopyBanner" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-200 transform -translate-y-2">
+    <div class="px-3.5 py-1.5 rounded-full bg-slate-900/95 dark:bg-emerald-500/95 text-white text-xs font-bold shadow-xl flex items-center gap-1.5 backdrop-blur-md">
+      <svg class="w-4 h-4 text-emerald-400 dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span id="inlineCopyText">Copied to clipboard</span>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-md mx-auto px-4 pt-3 pb-24">
+
+    <!-- ======================================================== -->
+    <!-- PROTOTYPE 1: TIER PASSBOOK WITH 1:1 HORIZONTAL SWIPE     -->
+    <!-- ======================================================== -->
+    <section id="prototype1" class="proto-view block">
+      
+      <!-- Sub-Segment Pill Bar -->
+      <div class="flex items-center justify-between p-1 rounded-2xl mb-3 light:bg-slate-200/70 dark:bg-slate-800/80 border light:border-slate-300/60 dark:border-slate-700/60">
+        <button onclick="proto1GoToTab(0)" id="p1Tab0" class="segment-tab active flex-1 justify-center">
+          <span>HNI & Private</span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">7</span>
+        </button>
+        <button onclick="proto1GoToTab(1)" id="p1Tab1" class="segment-tab inactive flex-1 justify-center">
+          <span>Wealth & Priority</span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">3</span>
+        </button>
+        <button onclick="proto1GoToTab(2)" id="p1Tab2" class="segment-tab inactive flex-1 justify-center">
+          <span>Digital & SFB</span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">6</span>
+        </button>
+      </div>
+
+      <!-- Gesture Helper Hint -->
+      <div class="flex items-center justify-between px-1 mb-2 text-[11px] light:text-slate-500 dark:text-slate-400 font-medium">
+        <span class="flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span>Swipe horizontally between tiers</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </span>
+        <span class="font-mono text-[10px]">1:1 Physics Drag</span>
+      </div>
+
+      <!-- Swipe Track Container -->
+      <div class="swipe-container" id="proto1SwipeContainer">
+        <div class="swipe-track" id="proto1SwipeTrack">
+
+          <!-- PANEL 0: HNI & Private (7 Accounts) -->
+          <div class="swipe-panel pr-1 space-y-3" id="panel0-content"></div>
+
+          <!-- PANEL 1: Wealth & Priority (3 Accounts) -->
+          <div class="swipe-panel pr-1 space-y-3" id="panel1-content"></div>
+
+          <!-- PANEL 2: Digital & SFB (6 Accounts) -->
+          <div class="swipe-panel pr-1 space-y-3" id="panel2-content"></div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PROTOTYPE 2: INSTITUTION CAROUSEL WITH STACKED DECK      -->
+    <!-- ======================================================== -->
+    <section id="prototype2" class="proto-view hidden">
+      
+      <!-- Bank Chip Carousel Navigation -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none" id="bankChipsBar">
+        <button onclick="proto2SelectBank('indusind')" id="chip-indusind" class="segment-tab active">
+          <span>IndusInd</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono font-bold">2</span>
+        </button>
+        <button onclick="proto2SelectBank('axis')" id="chip-axis" class="segment-tab inactive">
+          <span>Axis</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 font-mono font-bold">2</span>
+        </button>
+        <button onclick="proto2SelectBank('hdfc')" id="chip-hdfc" class="segment-tab inactive">
+          <span>HDFC</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('kotak')" id="chip-kotak" class="segment-tab inactive">
+          <span>Kotak</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('idfc')" id="chip-idfc" class="segment-tab inactive">
+          <span>IDFC</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('federal')" id="chip-federal" class="segment-tab inactive">
+          <span>Federal</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-mono font-bold">2</span>
+        </button>
+        <button onclick="proto2SelectBank('canara')" id="chip-canara" class="segment-tab inactive">
+          <span>Canara</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-700 dark:text-sky-400 font-mono font-bold">2</span>
+        </button>
+        <button onclick="proto2SelectBank('pnb')" id="chip-pnb" class="segment-tab inactive">
+          <span>PNB</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">2</span>
+        </button>
+        <button onclick="proto2SelectBank('hsbc')" id="chip-hsbc" class="segment-tab inactive">
+          <span>HSBC</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('union')" id="chip-union" class="segment-tab inactive">
+          <span>Union</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('jana')" id="chip-jana" class="segment-tab inactive">
+          <span>Jana</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-400 font-mono font-bold">1</span>
+        </button>
+        <button onclick="proto2SelectBank('equitas')" id="chip-equitas" class="segment-tab inactive">
+          <span>Equitas</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono font-bold">1</span>
+        </button>
+      </div>
+
+      <!-- Bank Details Dynamic Container -->
+      <div id="bankDetailsContainer" class="space-y-3"></div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PROTOTYPE 3: HIGH-SPEED WIRE & RTGS TERMINAL             -->
+    <!-- ======================================================== -->
+    <section id="prototype3" class="proto-view hidden">
+      
+      <!-- Instant Search Filter Box -->
+      <div class="relative mb-3">
+        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="terminalSearchInput" oninput="filterTerminalList()" placeholder="Quick filter by Bank, IFSC, UPI, or Holder..." 
+          class="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium border transition-colors outline-none light:bg-white light:border-slate-200 light:text-slate-900 focus:light:border-indigo-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white focus:dark:border-sky-400">
+        <button onclick="clearTerminalSearch()" id="clearSearchBtn" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Filter Chips: All, UPI Active, High Value -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
+        <button onclick="filterTerminalCategory('all')" id="termCat-all" class="segment-tab active text-[11px] py-1 px-3">
+          <span>All 16 Accounts</span>
+        </button>
+        <button onclick="filterTerminalCategory('upi')" id="termCat-upi" class="segment-tab inactive text-[11px] py-1 px-3">
+          <span>UPI Enabled (8)</span>
+        </button>
+        <button onclick="filterTerminalCategory('private')" id="termCat-private" class="segment-tab inactive text-[11px] py-1 px-3">
+          <span>Pioneer / Burgundy</span>
+        </button>
+        <button onclick="filterTerminalCategory('sanjay')" id="termCat-sanjay" class="segment-tab inactive text-[11px] py-1 px-3">
+          <span>Family (Sanjay)</span>
+        </button>
+      </div>
+
+      <!-- Compact Ledger Table Cards -->
+      <div id="terminalList" class="space-y-2"></div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PROTOTYPE 4: DUAL-OWNER SPLIT (VIBHAV VS SANJAY)         -->
+    <!-- ======================================================== -->
+    <section id="prototype4" class="proto-view hidden">
+      
+      <!-- Owner Segment Switcher -->
+      <div class="flex items-center p-1 rounded-2xl mb-3 light:bg-slate-200/70 dark:bg-slate-800/80 border light:border-slate-300/60 dark:border-slate-700/60">
+        <button onclick="proto4SwitchOwner('vibhav')" id="p4OwnerVibhav" class="segment-tab active flex-1 justify-center">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+            <span>Vibhav Oswal</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">15</span>
+          </div>
+        </button>
+        <button onclick="proto4SwitchOwner('sanjay')" id="p4OwnerSanjay" class="segment-tab inactive flex-1 justify-center">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span>Sanjay Oswal</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">1</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Owner Container -->
+      <div id="proto4Container" class="space-y-3"></div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT DATA & LOGIC ENGINE                           -->
+  <!-- ======================================================== -->
+  <script>
+    const COPY_SVG = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const CHECK_SVG = `<svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+    // 16 Accounts Master Database
+    const BANK_ACCOUNTS = [
+      {
+        id: "indusind_1",
+        bank: "IndusInd Bank",
+        shortBank: "IndusInd",
+        code: "indusind",
+        tier: "Pioneer Private",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "159247538499",
+        maskedNumber: "1592 •••• 8499",
+        ifsc: "INDB0002169",
+        custId: "41544412",
+        alias: "vibhavoswal",
+        upi: null,
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-indusind-pioneer",
+        accent: "text-amber-300",
+        label: "Account #1"
+      },
+      {
+        id: "indusind_2",
+        bank: "IndusInd Bank",
+        shortBank: "IndusInd",
+        code: "indusind",
+        tier: "Pioneer Private",
+        category: "hni",
+        holder: "Sanjay Oswal",
+        accNumber: "159823470448",
+        maskedNumber: "1598 •••• 0448",
+        ifsc: "INDB0001103",
+        custId: "55855930",
+        alias: null,
+        upi: null,
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-indusind-pioneer",
+        accent: "text-amber-300",
+        label: "Account #2"
+      },
+      {
+        id: "axis_1",
+        bank: "Axis Bank",
+        shortBank: "Axis",
+        code: "axis",
+        tier: "Burgundy",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "921010018051356",
+        maskedNumber: "9210 •••• •••• 1356",
+        ifsc: "UTIB0002366",
+        custId: "908507230",
+        alias: null,
+        upi: "vibhavoswal@axisbank",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-axis-burgundy",
+        accent: "text-rose-300",
+        label: "Burgundy #1"
+      },
+      {
+        id: "axis_2",
+        bank: "Axis Bank",
+        shortBank: "Axis",
+        code: "axis",
+        tier: "Burgundy",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "924010040061771",
+        maskedNumber: "9240 •••• •••• 1771",
+        ifsc: "UTIB0000194",
+        custId: "908507230",
+        alias: null,
+        upi: "vibhavoswal3@axisbank",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-axis-burgundy",
+        accent: "text-rose-300",
+        label: "Burgundy #2"
+      },
+      {
+        id: "hsbc_1",
+        bank: "HSBC India",
+        shortBank: "HSBC",
+        code: "hsbc",
+        tier: "Premier",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "074532227006",
+        maskedNumber: "0745 •••• 7006",
+        ifsc: "HSBC0560002",
+        custId: "254315831",
+        alias: null,
+        upi: null,
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-hsbc-premier",
+        accent: "text-red-400",
+        label: "HSBC Premier"
+      },
+      {
+        id: "union_1",
+        bank: "Union Bank of India",
+        shortBank: "Union",
+        code: "union",
+        tier: "HNI Prime",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "028912250000002",
+        maskedNumber: "0289 •••• •••• 0002",
+        ifsc: "UBIN0802891",
+        custId: "652214823",
+        alias: null,
+        upi: null,
+        branch: "Indiranagar-CMH Road Bangalore",
+        tpin: null,
+        crn: null,
+        gradient: "bg-union-prime",
+        accent: "text-blue-300",
+        label: "HNI Prime"
+      },
+      {
+        id: "pnb_1",
+        bank: "Punjab National Bank",
+        shortBank: "PNB",
+        code: "pnb",
+        tier: "Elite Executive",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "1057100100006650",
+        maskedNumber: "1057 •••• •••• 6650",
+        ifsc: "PUNB0105710",
+        custId: "R67653832",
+        alias: null,
+        upi: null,
+        branch: "Defence Colony Indiranagar",
+        tpin: "4625",
+        crn: null,
+        gradient: "bg-pnb-elite",
+        accent: "text-red-300",
+        label: "PNB Elite (Acc 1)"
+      },
+      {
+        id: "pnb_2",
+        bank: "Punjab National Bank",
+        shortBank: "PNB",
+        code: "pnb",
+        tier: "Elite Executive",
+        category: "hni",
+        holder: "Vibhav Oswal",
+        accNumber: "1057100100007482",
+        maskedNumber: "1057 •••• •••• 7482",
+        ifsc: "PUNB0105710",
+        custId: "R67653832",
+        alias: null,
+        upi: null,
+        branch: "Defence Colony Indiranagar",
+        tpin: "4625",
+        crn: null,
+        gradient: "bg-pnb-elite",
+        accent: "text-red-300",
+        label: "PNB Elite (Acc 2)"
+      },
+      {
+        id: "hdfc_1",
+        bank: "HDFC Bank",
+        shortBank: "HDFC",
+        code: "hdfc",
+        tier: "Imperia / Preferred",
+        category: "wealth",
+        holder: "Vibhav Oswal",
+        accNumber: "50100272080801",
+        maskedNumber: "5010 •••• •••• 0801",
+        ifsc: "HDFC0000827",
+        custId: "128271043",
+        alias: null,
+        upi: "vibhavoswal@hdfcbank",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-hdfc-preferred",
+        accent: "text-sky-300",
+        label: "HDFC Savings"
+      },
+      {
+        id: "kotak_1",
+        bank: "Kotak Mahindra Bank",
+        shortBank: "Kotak",
+        code: "kotak",
+        tier: "Privy League",
+        category: "wealth",
+        holder: "Vibhav Oswal",
+        accNumber: "9113615811",
+        maskedNumber: "9113 •••• 5811",
+        ifsc: "KKBK0002020",
+        custId: "391549346",
+        alias: null,
+        upi: "9983692067@kotak",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-kotak-privy",
+        accent: "text-rose-300",
+        label: "Privy League"
+      },
+      {
+        id: "idfc_1",
+        bank: "IDFC FIRST Bank",
+        shortBank: "IDFC FIRST",
+        code: "idfc",
+        tier: "FIRST Wealth",
+        category: "wealth",
+        holder: "Vibhav Oswal",
+        accNumber: "10064054118",
+        maskedNumber: "1006 •••• 4118",
+        ifsc: "IDFB0040101",
+        custId: "5587071737",
+        alias: null,
+        upi: "9983692067@idfcfirst",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-idfc-wealth",
+        accent: "text-rose-300",
+        label: "FIRST Wealth"
+      },
+      {
+        id: "federal_fi",
+        bank: "Federal Bank (Fi)",
+        shortBank: "Fi Money",
+        code: "federal",
+        tier: "Fi Neo",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "55550107473710",
+        maskedNumber: "5555 •••• •••• 3710",
+        ifsc: "FDRL0005555",
+        custId: null,
+        alias: null,
+        upi: "vibhav@fbl",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-federal-fi",
+        accent: "text-emerald-300",
+        label: "Fi Digital"
+      },
+      {
+        id: "federal_jupiter",
+        bank: "Federal Bank (Jupiter)",
+        shortBank: "Jupiter",
+        code: "federal",
+        tier: "Jupiter Pro",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "77770106660497",
+        maskedNumber: "7777 •••• •••• 0497",
+        ifsc: "FDRL0007777",
+        custId: "9823812",
+        alias: null,
+        upi: "9983692067@jupiteraxis",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-federal-jupiter",
+        accent: "text-purple-300",
+        label: "Jupiter 1% UPI"
+      },
+      {
+        id: "canara_crest",
+        bank: "Canara Bank (Crest)",
+        shortBank: "Canara Crest",
+        code: "canara",
+        tier: "Canara Crest",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "110267332562",
+        maskedNumber: "1102 •••• 2562",
+        ifsc: "CNRB0000492",
+        custId: "325184532",
+        alias: null,
+        upi: null,
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-canara-crest",
+        accent: "text-sky-300",
+        label: "Canara Crest"
+      },
+      {
+        id: "canara_basic",
+        bank: "Canara Bank (Basic)",
+        shortBank: "Canara Basic",
+        code: "canara",
+        tier: "Basic Savings",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "110181739491",
+        maskedNumber: "1101 •••• 9491",
+        ifsc: "CNRB0010754",
+        custId: "325184532",
+        alias: null,
+        upi: null,
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-canara-crest",
+        accent: "text-sky-200",
+        label: "Basic Savings"
+      },
+      {
+        id: "jana_1",
+        bank: "Jana Small Finance Bank",
+        shortBank: "Jana SFB",
+        code: "jana",
+        tier: "Small Finance",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "4800010052985502",
+        maskedNumber: "4800 •••• •••• 5502",
+        ifsc: "JSFB0004800",
+        custId: null,
+        alias: null,
+        upi: null,
+        branch: "BANASHANKARI BRANCH",
+        tpin: null,
+        crn: "2420042415002382",
+        gradient: "bg-jana-sfb",
+        accent: "text-teal-300",
+        label: "Jana SFB"
+      },
+      {
+        id: "equitas_1",
+        bank: "Equitas Small Finance Bank",
+        shortBank: "Equitas SFB",
+        code: "equitas",
+        tier: "Small Finance",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        accNumber: "100021374863",
+        maskedNumber: "1000 •••• 4863",
+        ifsc: "ESFB0009021",
+        custId: null,
+        alias: null,
+        upi: "vibhavoswal@equitasbank",
+        branch: null,
+        tpin: null,
+        crn: null,
+        gradient: "bg-equitas-sfb",
+        accent: "text-amber-300",
+        label: "Equitas SFB"
+      }
+    ];
+
+    // Global States
+    let currentProto = 1;
+    let isMasked = true;
+    let p1CurrentIndex = 0;
+    let activeTerminalCat = 'all';
+
+    // Theme Toggle Function
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      html.classList.toggle('light', !isDark);
+      const slot = document.getElementById('themeIconSlot');
+      if (isDark) {
+        slot.innerHTML = `<svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+      } else {
+        slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+      }
+    }
+
+    // Global Eye Mask Toggle
+    function toggleGlobalEye() {
+      isMasked = !isMasked;
+      const slot = document.getElementById('eyeIconSlot');
+      if (isMasked) {
+        slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+      } else {
+        slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+      }
+
+      document.querySelectorAll('.account-num-display').forEach(el => {
+        const full = el.getAttribute('data-full');
+        const masked = el.getAttribute('data-masked');
+        el.textContent = isMasked ? masked : full;
+      });
+
+      if (currentProto === 2) renderProto2();
+      if (currentProto === 3) renderTerminalList();
+      if (currentProto === 4) renderProto4(currentOwner);
+    }
+
+    // 1-Click Fast Copy Feedback
+    function copyField(text, btnElement, label) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalContent = btnElement.innerHTML;
+        btnElement.classList.add('copied');
+        btnElement.innerHTML = `${CHECK_SVG}<span>Done</span>`;
+
+        const banner = document.getElementById('inlineCopyBanner');
+        const textEl = document.getElementById('inlineCopyText');
+        textEl.textContent = `${label || 'Text'}: ${text} copied`;
+        banner.classList.remove('opacity-0', '-translate-y-2');
+        banner.classList.add('opacity-100', 'translate-y-0');
+
+        setTimeout(() => {
+          btnElement.classList.remove('copied');
+          btnElement.innerHTML = originalContent;
+        }, 1200);
+
+        setTimeout(() => {
+          banner.classList.remove('opacity-100', 'translate-y-0');
+          banner.classList.add('opacity-0', '-translate-y-2');
+        }, 1600);
+      }).catch(err => {
+        console.error('Copy failed:', err);
+      });
+    }
+
+    // HTML Generator for Luxury Bank Card
+    function renderCardHTML(acc) {
+      const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+      return `
+        <div class="bank-card ${acc.gradient}">
+          <div class="flex items-start justify-between mb-2.5">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="tier-badge ${acc.accent}">${acc.tier}</span>
+                <span class="holder-badge ${acc.holder.includes('Sanjay') ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
+              </div>
+              <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
+              ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
+              ${acc.alias ? `<div class="text-[11px] font-mono text-white/80">Alias: ${acc.alias}</div>` : ''}
+            </div>
+            <div class="text-right">
+              <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider">${acc.label}</span>
+            </div>
+          </div>
+
+          <!-- Account Number and Copy Pill -->
+          <div class="flex items-center justify-between py-2 border-y border-white/10 mb-2.5">
+            <div>
+              <div class="text-[9px] text-white/70 font-semibold uppercase tracking-wider">Account Number</div>
+              <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
+                ${displayNumber}
+              </div>
+            </div>
+            <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
+              ${COPY_SVG}
+              <span>Copy</span>
+            </button>
+          </div>
+
+          <!-- Quick Chips Grid -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+              <div class="overflow-hidden">
+                <div class="text-[9px] text-white/60 font-medium">IFSC CODE</div>
+                <div class="font-mono font-bold text-[11px] truncate">${acc.ifsc}</div>
+              </div>
+              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
+                ${COPY_SVG}
+                <span>Copy</span>
+              </button>
+            </div>
+
+            ${acc.upi ? `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                <div class="overflow-hidden">
+                  <div class="text-[9px] text-white/60 font-medium">UPI VPA</div>
+                  <div class="font-mono font-bold text-[11px] truncate">${acc.upi}</div>
+                </div>
+                <button onclick="copyField('${acc.upi}', this, 'UPI')" class="micro-copy-btn">
+                  ${COPY_SVG}
+                  <span>Copy</span>
+                </button>
+              </div>
+            ` : (acc.custId ? `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                <div class="overflow-hidden">
+                  <div class="text-[9px] text-white/60 font-medium">CUSTOMER ID</div>
+                  <div class="font-mono font-bold text-[11px] truncate">${acc.custId}</div>
+                </div>
+                <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="micro-copy-btn">
+                  ${COPY_SVG}
+                  <span>Copy</span>
+                </button>
+              </div>
+            ` : (acc.crn ? `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                <div class="overflow-hidden">
+                  <div class="text-[9px] text-white/60 font-medium">CRN</div>
+                  <div class="font-mono font-bold text-[11px] truncate">${acc.crn}</div>
+                </div>
+                <button onclick="copyField('${acc.crn}', this, 'CRN')" class="micro-copy-btn">
+                  ${COPY_SVG}
+                  <span>Copy</span>
+                </button>
+              </div>
+            ` : `
+              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                <div class="overflow-hidden">
+                  <div class="text-[9px] text-white/60 font-medium">STATUS</div>
+                  <div class="font-mono font-bold text-[11px] text-emerald-300">ACTIVE</div>
+                </div>
+              </div>
+            `))}
+          </div>
+        </div>
+      `;
+    }
+
+    // Switch between the 4 prototypes
+    function switchPrototype(num) {
+      currentProto = num;
+      for (let i = 1; i <= 4; i++) {
+        const view = document.getElementById(`prototype${i}`);
+        const pill = document.getElementById(`protoPill${i}`);
+        if (i === num) {
+          view.classList.remove('hidden');
+          pill.classList.remove('inactive');
+          pill.classList.add('active');
+        } else {
+          view.classList.add('hidden');
+          pill.classList.remove('active');
+          pill.classList.add('inactive');
+        }
+      }
+
+      if (num === 2) {
+        proto2SelectBank('indusind');
+      } else if (num === 3) {
+        renderTerminalList();
+      } else if (num === 4) {
+        proto4SwitchOwner('vibhav');
+      }
+    }
+
+    // ========================================================
+    // PROTOTYPE 1 LOGIC: 1:1 HORIZONTAL PHYSICS DRAG
+    // ========================================================
+    const p1Track = document.getElementById('proto1SwipeTrack');
+    const p1Container = document.getElementById('proto1SwipeContainer');
+
+    function renderProto1() {
+      // Panel 0: HNI
+      const hniAccs = BANK_ACCOUNTS.filter(a => a.category === 'hni');
+      document.getElementById('panel0-content').innerHTML = hniAccs.map(renderCardHTML).join('');
+
+      // Panel 1: Wealth
+      const wealthAccs = BANK_ACCOUNTS.filter(a => a.category === 'wealth');
+      document.getElementById('panel1-content').innerHTML = wealthAccs.map(renderCardHTML).join('');
+
+      // Panel 2: Digital & SFB
+      const digitalAccs = BANK_ACCOUNTS.filter(a => a.category === 'digital');
+      document.getElementById('panel2-content').innerHTML = digitalAccs.map(renderCardHTML).join('');
+    }
+
+    function proto1GoToTab(index, animate = true) {
+      p1CurrentIndex = Math.max(0, Math.min(2, index));
+      [0, 1, 2].forEach(i => {
+        const tab = document.getElementById(`p1Tab${i}`);
+        if (i === p1CurrentIndex) {
+          tab.classList.remove('inactive');
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+          tab.classList.add('inactive');
+        }
+      });
+
+      const containerWidth = p1Container.offsetWidth || 358;
+      const targetX = -p1CurrentIndex * containerWidth;
+
+      if (animate) {
+        p1Track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      } else {
+        p1Track.style.transition = 'none';
+      }
+      p1Track.style.transform = `translate3d(${targetX}px, 0, 0)`;
+    }
+
+    // 1:1 Touch Drag Engine for Prototype 1
+    (function initP1SwipeEngine() {
+      let startX = 0, startY = 0, currentDeltaX = 0;
+      let isDragging = false, isHorizontal = null;
+
+      function onStart(e) {
+        const touch = e.touches ? e.touches[0] : e;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        currentDeltaX = 0;
+        isDragging = true;
+        isHorizontal = null;
+        p1Track.style.transition = 'none';
+      }
+
+      function onMove(e) {
+        if (!isDragging) return;
+        const touch = e.touches ? e.touches[0] : e;
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+
+        if (isHorizontal === null) {
+          if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
+            isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+            if (!isHorizontal) {
+              isDragging = false;
+              return;
+            }
+          } else {
+            return;
+          }
+        }
+
+        if (!isHorizontal) return;
+
+        if (e.cancelable && e.type.startsWith('touch')) {
+          e.preventDefault();
+        }
+
+        const containerWidth = p1Container.offsetWidth || 358;
+        let effectiveDelta = deltaX;
+        if ((p1CurrentIndex === 0 && deltaX > 0) || (p1CurrentIndex === 2 && deltaX < 0)) {
+          effectiveDelta = deltaX * 0.25;
+        }
+
+        currentDeltaX = effectiveDelta;
+        const baseX = -p1CurrentIndex * containerWidth;
+        p1Track.style.transform = `translate3d(${baseX + effectiveDelta}px, 0, 0)`;
+      }
+
+      function onEnd(e) {
+        if (!isDragging || !isHorizontal) {
+          isDragging = false;
+          return;
+        }
+        isDragging = false;
+        const containerWidth = p1Container.offsetWidth || 358;
+        const threshold = containerWidth * 0.22;
+
+        if (currentDeltaX < -threshold && p1CurrentIndex < 2) {
+          proto1GoToTab(p1CurrentIndex + 1);
+        } else if (currentDeltaX > threshold && p1CurrentIndex > 0) {
+          proto1GoToTab(p1CurrentIndex - 1);
+        } else {
+          proto1GoToTab(p1CurrentIndex);
+        }
+      }
+
+      p1Container.addEventListener('touchstart', onStart, { passive: true });
+      p1Container.addEventListener('touchmove', onMove, { passive: false });
+      p1Container.addEventListener('touchend', onEnd);
+      p1Container.addEventListener('touchcancel', onEnd);
+
+      // Desktop mouse drag
+      p1Container.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+    })();
+
+    // ========================================================
+    // PROTOTYPE 2 LOGIC: INSTITUTION CAROUSEL
+    // ========================================================
+    let p2SelectedBankCode = 'indusind';
+    function proto2SelectBank(bankCode) {
+      p2SelectedBankCode = bankCode;
+      const allCodes = ['indusind', 'axis', 'hdfc', 'kotak', 'idfc', 'federal', 'canara', 'pnb', 'hsbc', 'union', 'jana', 'equitas'];
+      allCodes.forEach(c => {
+        const chip = document.getElementById(`chip-${c}`);
+        if (chip) {
+          if (c === bankCode) {
+            chip.classList.remove('inactive');
+            chip.classList.add('active');
+            chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          } else {
+            chip.classList.remove('active');
+            chip.classList.add('inactive');
+          }
+        }
+      });
+      renderProto2();
+    }
+
+    function renderProto2() {
+      const container = document.getElementById('bankDetailsContainer');
+      const accounts = BANK_ACCOUNTS.filter(a => a.code === p2SelectedBankCode);
+      if (!accounts.length) {
+        container.innerHTML = `<div class="p-4 text-center text-sm text-slate-500">No accounts found.</div>`;
+        return;
+      }
+      container.innerHTML = accounts.map(renderCardHTML).join('');
+    }
+
+    // ========================================================
+    // PROTOTYPE 3 LOGIC: INSTANT WIRE & RTGS TERMINAL
+    // ========================================================
+    function filterTerminalCategory(cat) {
+      activeTerminalCat = cat;
+      ['all', 'upi', 'private', 'sanjay'].forEach(c => {
+        const tab = document.getElementById(`termCat-${c}`);
+        if (c === cat) {
+          tab.classList.remove('inactive');
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+          tab.classList.add('inactive');
+        }
+      });
+      renderTerminalList();
+    }
+
+    function clearTerminalSearch() {
+      document.getElementById('terminalSearchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderTerminalList();
+    }
+
+    function filterTerminalList() {
+      const query = document.getElementById('terminalSearchInput').value.trim();
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', query.length === 0);
+      renderTerminalList();
+    }
+
+    function renderTerminalList() {
+      const query = (document.getElementById('terminalSearchInput')?.value || '').toLowerCase().trim();
+      const listEl = document.getElementById('terminalList');
+
+      let filtered = BANK_ACCOUNTS.filter(acc => {
+        if (activeTerminalCat === 'upi' && !acc.upi) return false;
+        if (activeTerminalCat === 'private' && !(acc.code === 'indusind' || acc.code === 'axis' || acc.code === 'hsbc')) return false;
+        if (activeTerminalCat === 'sanjay' && !acc.holder.includes('Sanjay')) return false;
+
+        if (query) {
+          const matchBank = acc.bank.toLowerCase().includes(query);
+          const matchIfsc = acc.ifsc.toLowerCase().includes(query);
+          const matchAcc = acc.accNumber.includes(query);
+          const matchUpi = acc.upi && acc.upi.toLowerCase().includes(query);
+          const matchHolder = acc.holder.toLowerCase().includes(query);
+          return matchBank || matchIfsc || matchAcc || matchUpi || matchHolder;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">No bank accounts match "${query}".</div>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(acc => {
+        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        html += `
+          <div class="p-3 rounded-xl border transition-all light:bg-white light:border-slate-200/90 hover:light:border-slate-300 dark:bg-slate-800/80 dark:border-slate-700/80 hover:dark:border-slate-600 shadow-sm">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold light:text-slate-900 dark:text-white">${acc.shortBank}</span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${acc.holder.includes('Sanjay') ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400'}">${acc.holder}</span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400">${acc.tier}</span>
+            </div>
+
+            <!-- Number & Primary Copy -->
+            <div class="flex items-center justify-between p-2 rounded-lg light:bg-slate-50 dark:bg-slate-900/60 mb-2">
+              <div>
+                <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">Account Number</div>
+                <div class="text-sm font-mono font-extrabold tracking-wide light:text-slate-800 dark:text-slate-100">${displayNumber}</div>
+              </div>
+              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors light:bg-slate-200 light:text-slate-800 hover:light:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 hover:dark:bg-slate-600">
+                ${COPY_SVG}
+                <span>Copy</span>
+              </button>
+            </div>
+
+            <!-- IFSC and UPI direct copy rows -->
+            <div class="flex items-center justify-between text-[11px] font-mono pt-1">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] text-slate-400 font-sans font-semibold">IFSC:</span>
+                <span class="font-bold light:text-slate-700 dark:text-slate-300">${acc.ifsc}</span>
+              </div>
+              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="text-xs text-sky-500 hover:text-sky-600 font-sans font-bold flex items-center gap-1">
+                ${COPY_SVG}
+                <span>Copy IFSC</span>
+              </button>
+            </div>
+
+            ${acc.upi ? `
+              <div class="flex items-center justify-between text-[11px] font-mono pt-1.5 mt-1 border-t light:border-slate-100 dark:border-slate-700/60">
+                <div class="flex items-center gap-1.5 overflow-hidden">
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-bold">UPI:</span>
+                  <span class="font-medium light:text-slate-600 dark:text-slate-400 truncate">${acc.upi}</span>
+                </div>
+                <button onclick="copyField('${acc.upi}', this, 'UPI')" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-sans font-bold flex items-center gap-1">
+                  ${COPY_SVG}
+                  <span>Copy UPI</span>
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    // ========================================================
+    // PROTOTYPE 4 LOGIC: DUAL-OWNER PARTITION
+    // ========================================================
+    let currentOwner = 'vibhav';
+    function proto4SwitchOwner(owner) {
+      currentOwner = owner;
+      const isVibhav = owner === 'vibhav';
+      const p4Vibhav = document.getElementById('p4OwnerVibhav');
+      const p4Sanjay = document.getElementById('p4OwnerSanjay');
+
+      if (isVibhav) {
+        p4Vibhav.classList.remove('inactive');
+        p4Vibhav.classList.add('active');
+        p4Sanjay.classList.remove('active');
+        p4Sanjay.classList.add('inactive');
+      } else {
+        p4Sanjay.classList.remove('inactive');
+        p4Sanjay.classList.add('active');
+        p4Vibhav.classList.remove('active');
+        p4Vibhav.classList.add('inactive');
+      }
+
+      renderProto4(owner);
+    }
+
+    function renderProto4(owner) {
+      const container = document.getElementById('proto4Container');
+      const targetName = owner === 'vibhav' ? 'Vibhav Oswal' : 'Sanjay Oswal';
+      const accounts = BANK_ACCOUNTS.filter(a => a.holder.includes(owner === 'vibhav' ? 'Vibhav' : 'Sanjay'));
+
+      let html = `
+        <div class="p-3 rounded-2xl light:bg-sky-50 dark:bg-slate-800/60 border light:border-sky-100 dark:border-slate-700 mb-3 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full ${owner === 'vibhav' ? 'bg-sky-500' : 'bg-amber-500'} flex items-center justify-center text-white font-bold text-xs">
+              ${owner === 'vibhav' ? 'VO' : 'SO'}
+            </div>
+            <div>
+              <div class="text-xs font-extrabold light:text-slate-900 dark:text-white">${targetName}</div>
+              <div class="text-[10px] text-slate-500">${accounts.length} Bank Account${accounts.length > 1 ? 's' : ''} Linked</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${owner === 'vibhav' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'}">
+            Verified KYB/KYC
+          </span>
+        </div>
+      `;
+
+      html += accounts.map(renderCardHTML).join('');
+      container.innerHTML = html;
+    }
+
+    // Initialize default states on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderProto1();
+      proto1GoToTab(0, false);
+      renderTerminalList();
+    });
+  </script>
+</body>
+</html>
