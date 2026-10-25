@@ -613,33 +613,191 @@
       100% { transform: scaleX(1); }
     }
 
-    /* Frosted Glass Island (Option A: Pure Unified Stadium Island) */
-    .dock-frosted-island {
-      background: rgba(24, 21, 22, 0.65) !important;
+    /* ======================================================== */
+    /* UNIFIED DYNAMIC ACTION ISLAND (APPROACH 4A + 4B HYBRID)  */
+    /* ======================================================== */
+    #floating-dock-container {
+      background: transparent !important;
+      pointer-events: none;
+    }
+
+    .island-capsule {
+      border-radius: 9999px !important;
+      overflow: hidden !important;
+      isolation: isolate !important;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.3s ease,
+                  box-shadow 0.3s ease;
+      will-change: transform, opacity;
+      max-width: 100%;
+    }
+    .island-capsule.island-hidden {
+      transform: translateY(45px) scale(0.92) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden;
+    }
+    .island-capsule.island-visible {
+      transform: translateY(0) scale(1) !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      visibility: visible;
+    }
+
+    /* Dark Mode Glassmorphism */
+    .island-capsule {
+      background: rgba(24, 21, 24, 0.88) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(255, 255, 255, 0.16) !important;
-      border-radius: 9999px !important;
-      overflow: hidden !important;
-      isolation: isolate !important;
-      box-shadow: 0 20px 48px -6px rgba(0, 0, 0, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+      box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
     }
-    [data-theme="light"] .dock-frosted-island,
-    html.light .dock-frosted-island {
-      background: rgba(255, 255, 255, 0.50) !important;
+
+    /* Light Mode Clean Stadium (Zero Gray Box) */
+    [data-theme="light"] .island-capsule,
+    html.light .island-capsule {
+      background: rgba(255, 255, 255, 0.94) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.75) !important;
-      border-radius: 9999px !important;
-      overflow: hidden !important;
-      isolation: isolate !important;
-      box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.14), 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+      border: 1px solid rgba(203, 213, 225, 0.9) !important;
+      box-shadow: 0 20px 42px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.05) !important;
     }
-    [data-theme="light"] #btn-dock-close,
-    html.light #btn-dock-close {
-      background: rgba(0, 0, 0, 0.08) !important;
-      color: #141212 !important;
-      border-color: rgba(0, 0, 0, 0.12) !important;
+
+    /* 4B SLIDING DRAWER: Variation 1 Slower & Smoother (0.52s glide) */
+    .drawer-track {
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      will-change: max-width, opacity, transform;
+      transition: max-width 0.52s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.52s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.45s ease;
+    }
+    .drawer-track.drawer-closed {
+      max-width: 0 !important;
+      opacity: 0 !important;
+      transform: translateX(-40px) !important;
+      pointer-events: none;
+      margin-right: 0 !important;
+    }
+    .drawer-track.drawer-open {
+      max-width: 320px !important;
+      opacity: 1 !important;
+      transform: translateX(0) !important;
+      pointer-events: auto;
+      margin-right: 4px;
+    }
+
+    /* Approve Button inside Drawer */
+    .btn-approve-pill {
+      background: #0C8C46 !important;
+      color: #ffffff !important;
+      padding: 9px 15px;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(12, 140, 70, 0.4) !important;
+      transition: background 0.2s ease, transform 0.15s ease;
+      flex-shrink: 0;
+    }
+    .btn-approve-pill:hover {
+      background: #0a7a3d !important;
+    }
+    .btn-approve-pill:active {
+      transform: scale(0.96);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 9999px;
+      background: #ffffff;
+      animation: pulseDotAnim 1.8s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulseDotAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.7); }
+    }
+    .ready-badge {
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.25);
+      font-size: 10px;
+      font-family: -apple-system, BlinkMacSystemFont, monospace;
+      font-weight: 800;
+      color: #d1fae5;
+      flex-shrink: 0;
+    }
+
+    /* Action Buttons (Tag, WhatsApp, Redeem) */
+    .action-circle-btn {
+      border-radius: 9999px;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .action-circle-btn:active {
+      transform: scale(0.90);
+    }
+
+    /* Expanded (Actions Only) vs Condensed (Drawer Open) */
+    .actions-expanded .action-circle-btn {
+      width: 44px;
+      height: 44px;
+    }
+    .actions-expanded .action-circle-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .actions-condensed .action-circle-btn {
+      width: 38px;
+      height: 38px;
+    }
+    .actions-condensed .action-circle-btn svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .btn-tag { background: #f59e0b !important; }
+    .btn-tag:hover { background: #d97706 !important; }
+    .btn-whatsapp { background: #25D366 !important; }
+    .btn-whatsapp:hover { background: #20ba5a !important; }
+    .btn-redeem { background: #059669 !important; }
+    .btn-redeem:hover { background: #047857 !important; }
+
+    .tag-count-bubble {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 3px;
+      border-radius: 9999px;
+      background: #000000;
+      color: #ffffff;
+      font-size: 9px;
+      font-family: -apple-system, BlinkMacSystemFont, monospace;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     /* Brand Tab Recency - Subtle Cobalt Edge for T-7 Recent Vouchers */
@@ -735,11 +893,11 @@
         box-shadow: 0 0 70px rgba(0, 0, 0, 0.75);
       }
       #floating-dock-container {
-        right: calc(50% - 240px + 1rem) !important;
-      }
-      #floating-approve-container {
-        left: calc(50% - 240px + 1rem) !important;
-        right: calc(50% - 240px + 5.5rem) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        width: 100% !important;
+        max-width: 480px !important;
       }
     }
 
@@ -1421,70 +1579,42 @@
       <div id="mb-view-cards" class="hidden"></div>
     </main>
 
-    <!-- Backdrop scrim when Stack Circles expand -->
-    <div id="capsule-backdrop" onclick="collapseActionMenu()" class="hidden fixed inset-0 z-40 bg-black/35 backdrop-blur-[2px] transition-opacity duration-200"></div>
-
-    <!-- Floating Approve Button (Appears ONLY when ALL selected items in Ingested are Green; DISAPPEARS if any Red is selected!) -->
-    <div id="floating-approve-container" class="hidden mobile-view fixed left-4 z-40 transition-all duration-300 pointer-events-none -translate-y-2 opacity-0" style="right: 5.5rem; bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
-      <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="pointer-events-auto w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-[0_10px_35px_rgba(16,185,129,0.5)] border border-emerald-400/30 flex items-center justify-between gap-3 active:scale-[0.98] transition-all">
-        <div class="flex items-center gap-2 min-w-0">
-          <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-          <span id="floating-approve-label" class="truncate flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span>Approve to Brand Tab</span>
-          </span>
+    <!-- Unified Floating Action Dock (Approach 4A Rounded Stadium + 4B Sliding Drawer) -->
+    <div id="floating-dock-container" class="fixed inset-x-0 z-40 pointer-events-none flex justify-center px-4 transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); background: transparent !important;">
+      <div id="floating-island-capsule" class="island-capsule island-hidden pointer-events-auto flex items-center p-1.5 sm:p-2 rounded-full">
+        
+        <!-- 4B SLIDING DRAWER WING: Pushes in smoothly from Left (Variation 1 Slower & Smoother) -->
+        <div id="dock-approve-drawer" class="drawer-track drawer-closed">
+          <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="btn-approve-pill" title="Approve Vouchers to Brand Tab">
+            <span class="pulse-dot"></span>
+            <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Approve to Brand Tab</span>
+            </span>
+            <span id="floating-approve-count-pill" class="ready-badge">Ready</span>
+          </button>
         </div>
-        <span id="floating-approve-count-pill" class="px-2 py-0.5 rounded-full bg-black/30 text-emerald-100 text-[11px] font-mono-apple font-black shrink-0">
-          Ready
-        </span>
-      </button>
-    </div>
 
-    <!-- Expandable Floating Action Dock (Option A: Pure Unified Stadium Island) -->
-    <div id="floating-dock-container" class="mobile-view fixed right-4 z-40 flex flex-col items-center transition-all duration-300" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));">
-      
-      <!-- EXPANDED STATE: PURE UNIFIED 4-BUTTON STADIUM ISLAND -->
-      <div id="menu-expanded" class="hidden flex-col items-center gap-3 p-2 rounded-full dock-frosted-island transition-all duration-300">
-        <!-- 1. Top Circle: Tag Card Button -->
-        <button id="btn-tag-card-fab" onclick="triggerTagPopup()" class="spring-pop-item-1 relative w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-white shadow-[0_6px_20px_rgba(245,158,11,0.45)] flex items-center justify-center active:scale-95 transition-all border border-amber-300/30" title="Tag Payment Card">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/>
-          </svg>
-          <span class="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-black text-black bg-white rounded-full border border-black/20 shadow" id="tag-badge-count">0</span>
-        </button>
+        <!-- 4A ROUNDED ACTION BUTTONS: Tag, WhatsApp, Redeem -->
+        <div id="dock-actions-cluster" class="flex items-center gap-1.5 shrink-0 actions-expanded">
+          <!-- Tag Card -->
+          <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+            <span id="tag-badge-count" class="tag-count-bubble">0</span>
+          </button>
 
-        <!-- 2. Middle Circle: WhatsApp Button -->
-        <button onclick="triggerWhatsAppShare()" class="spring-pop-item-2 relative w-12 h-12 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-[0_6px_20px_rgba(37,211,102,0.45)] flex items-center justify-center active:scale-95 transition-all border border-white/20" title="Share via WhatsApp">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
-          </svg>
-        </button>
+          <!-- WhatsApp -->
+          <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-whatsapp" title="Share via WhatsApp">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+          </button>
 
-        <!-- 3. Third Circle: Redeem Button -->
-        <button onclick="batchMarkAsRedeemed()" class="spring-pop-item-3 relative w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-[0_6px_20px_rgba(12,140,70,0.45)] flex items-center justify-center active:scale-95 transition-all border border-emerald-300/30" title="Mark Selected as Redeemed">
-          <svg class="w-6 h-6 stroke-white fill-none" viewBox="0 0 24 24" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6L7 17l-5-5"></path>
-            <path d="M22 10l-7.5 7.5-1.5-1.5"></path>
-          </svg>
-        </button>
+          <!-- Redeem -->
+          <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
 
-        <!-- 4. Base Circle: Close Button (Inside Stadium Capsule) -->
-        <button id="btn-dock-close" onclick="collapseActionMenu()" class="spring-pop-item-4 relative w-12 h-12 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700/80 flex items-center justify-center active:scale-95 transition-all shadow-sm" title="Close Menu">
-          <svg class="w-5 h-5 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
       </div>
-
-      <!-- COLLAPSED MASTER BUTTON (56px x 56px FAB) -->
-      <button id="btn-master-trigger" onclick="handleMasterFabClick()" class="relative w-14 h-14 rounded-full bg-gradient-to-tr from-neutral-900 via-neutral-850 to-neutral-800 text-white shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all border-2 border-[#0C8C46]/80" title="Actions">
-        <div id="master-icon-slot" class="flex items-center justify-center">
-          <!-- Injected via JS -->
-        </div>
-        <span id="badge-master-count" class="hidden absolute -top-1.5 -right-1.5 min-w-[22px] h-[22px] px-1 flex items-center justify-center text-[11px] font-black text-white bg-[#F47A21] rounded-full border-2 border-black shadow">0</span>
-      </button>
-
     </div>
   </div>
 
@@ -6036,21 +6166,16 @@
 
     function updateFloatingDock() {
       const count = state.selectedIds.size;
-      const badgeMaster = document.getElementById('badge-master-count');
+      const islandCapsule = document.getElementById('floating-island-capsule');
+      const approveDrawer = document.getElementById('dock-approve-drawer');
+      const actionsCluster = document.getElementById('dock-actions-cluster');
+      const approveLabel = document.getElementById('floating-approve-label');
+      const countPill = document.getElementById('floating-approve-count-pill');
       const tagBadge = document.getElementById('tag-badge-count');
 
-      if (badgeMaster) {
-        badgeMaster.textContent = count;
-        if (count > 0 && !isMenuExpanded) {
-          badgeMaster.classList.remove('hidden');
-        } else {
-          badgeMaster.classList.add('hidden');
-        }
-      }
       if (tagBadge) {
         tagBadge.textContent = count;
       }
-      updateMasterTriggerIcon();
 
       // SYNC APPLE NATIVE TOP HEADER TOOLBAR STATE (Variation 2)
       const selectAllBtn = document.getElementById('mb-select-all-btn');
@@ -6100,55 +6225,77 @@
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
       }
 
+      // DYNAMIC ACTION ISLAND: AUTO-HIDE ON 0 SELECTED (NO CLOSE BUTTON NEEDED)
+      if (!islandCapsule) return;
+
+      if (count === 0) {
+        islandCapsule.classList.add('island-hidden');
+        islandCapsule.classList.remove('island-visible');
+        if (approveDrawer) {
+          approveDrawer.classList.add('drawer-closed');
+          approveDrawer.classList.remove('drawer-open');
+        }
+        return;
+      }
+
+      // 1+ items selected: Show island
+      islandCapsule.classList.remove('island-hidden', 'hidden');
+      islandCapsule.classList.add('island-visible');
+
       // FLOATING APPROVE BUTTON VISIBILITY:
       // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
-      // DISAPPEARS COMPLETELY if ANY RED (PENDING) item is selected or count is 0
+      // Smoothly glides out from the left (Variation 1 Slower & Smoother)
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
       const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
-      const approveContainer = document.getElementById('floating-approve-container');
-      const approveLabel = document.getElementById('floating-approve-label');
-      const countPill = document.getElementById('floating-approve-count-pill');
+      
+      let allGreen = false;
+      if (isIngestedView && count > 0) {
+        const selectedStaging = (state.staging || []).filter(s =>
+          state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
+        );
 
-      if (approveContainer) {
-        if (isIngestedView && count > 0) {
-          const selectedStaging = (state.staging || []).filter(s =>
-            state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
-          );
+        const hasNonApprovable = selectedStaging.some(s =>
+          s.status === 'PENDING' ||
+          s.status === 'PENDING_REVALIDATION' ||
+          s.code === 'PENDING' ||
+          s.code === 'Pending revalidation' ||
+          /revalidation/i.test(s.code) ||
+          !s.code
+        );
+        allGreen = selectedStaging.length > 0 && !hasNonApprovable && selectedStaging.length === count && selectedStaging.every(s =>
+          s.status === 'ACTIVE' &&
+          s.code !== 'PENDING' &&
+          s.code !== 'Pending revalidation' &&
+          !/revalidation/i.test(s.code) &&
+          !!s.code
+        );
+      }
 
-          const hasNonApprovable = selectedStaging.some(s =>
-            s.status === 'PENDING' ||
-            s.status === 'PENDING_REVALIDATION' ||
-            s.code === 'PENDING' ||
-            s.code === 'Pending revalidation' ||
-            /revalidation/i.test(s.code) ||
-            !s.code
-          );
-          const allGreen = selectedStaging.length > 0 && selectedStaging.every(s =>
-            s.status === 'ACTIVE' &&
-            s.code !== 'PENDING' &&
-            s.code !== 'Pending revalidation' &&
-            !/revalidation/i.test(s.code) &&
-            !!s.code
-          );
-
-          if (allGreen && !hasNonApprovable && selectedStaging.length === count) {
-            approveContainer.classList.remove('hidden', '-translate-y-2', 'opacity-0', 'pointer-events-none');
-            approveContainer.classList.add('translate-y-0', 'opacity-100');
-            if (approveLabel) approveLabel.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve ${count} to Brand Tab${count > 1 ? 's' : ''}</span>`;
-            if (countPill) countPill.textContent = `${count} Ready`;
-          } else {
-            approveContainer.classList.add('-translate-y-2', 'opacity-0', 'pointer-events-none');
-            approveContainer.classList.remove('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-              if (approveContainer.classList.contains('opacity-0')) {
-                approveContainer.classList.add('hidden');
-              }
-            }, 250);
-          }
-        } else {
-          approveContainer.classList.add('-translate-y-2', 'opacity-0', 'pointer-events-none');
-          approveContainer.classList.remove('translate-y-0', 'opacity-100');
-          approveContainer.classList.add('hidden');
+      if (allGreen) {
+        // Slide out drawer from left & condense action icons
+        if (approveDrawer) {
+          approveDrawer.classList.remove('drawer-closed', 'hidden');
+          approveDrawer.classList.add('drawer-open');
+        }
+        if (actionsCluster) {
+          actionsCluster.classList.remove('actions-expanded');
+          actionsCluster.classList.add('actions-condensed');
+        }
+        if (approveLabel) {
+          approveLabel.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve ${count} to Brand Tab${count > 1 ? 's' : ''}</span>`;
+        }
+        if (countPill) {
+          countPill.textContent = `${count} Ready`;
+        }
+      } else {
+        // Slide closed drawer to left & expand action icons
+        if (approveDrawer) {
+          approveDrawer.classList.add('drawer-closed');
+          approveDrawer.classList.remove('drawer-open');
+        }
+        if (actionsCluster) {
+          actionsCluster.classList.remove('actions-condensed');
+          actionsCluster.classList.add('actions-expanded');
         }
       }
     }
