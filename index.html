@@ -4641,10 +4641,7 @@
             <div class="w-8 h-8 rounded-lg bg-[#0C8C46] text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
             </div>
-            <div>
-              <div class="ws-switch-title text-xs font-bold text-white">Voucher Manager</div>
-              <div class="ws-switch-sub text-[10px] text-emerald-400/80 font-mono-apple">Passes &amp; Entitlements</div>
-            </div>
+            <div class="ws-switch-title text-xs font-bold text-white">Voucher Manager</div>
           </div>
           <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -4656,10 +4653,7 @@
             <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
             </div>
-            <div>
-              <div class="ws-switch-title text-xs font-bold text-white">Card Portfolio Manager</div>
-              <div class="ws-switch-sub text-[10px] text-blue-400/80 font-mono-apple">RuPay Platinum &amp; Select</div>
-            </div>
+            <div class="ws-switch-title text-xs font-bold text-white">Card Manager</div>
           </div>
           <svg class="w-4 h-4 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -4671,10 +4665,7 @@
             <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
             </div>
-            <div>
-              <div class="ws-switch-title text-xs font-bold text-white">Bank Accounts Manager</div>
-              <div class="ws-switch-sub text-[10px] text-rose-300/80 font-mono-apple">30 Family Accounts &middot; 6 Members</div>
-            </div>
+            <div class="ws-switch-title text-xs font-bold text-white">Bank Accounts Manager</div>
           </div>
           <svg class="w-4 h-4 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -8299,11 +8290,26 @@
         });
     }
 
-    // Horizontal Physics Swiping on Bank Accounts List (Between Family Members)
-    function initBankMemberSwipeGestures() {
-      const container = document.getElementById('view-bank-accounts');
+    // Helper to get all unique bank codes available for the selected member (Layer 2 filter chips)
+    function getAvailableBankCodesForMember(memberId) {
+      const allAccounts = getBankAccountsList();
+      let memberAccounts = allAccounts;
+      if (memberId !== 'all') {
+        memberAccounts = allAccounts.filter(a => a.memberId === memberId);
+      }
+      const bankMap = new Map();
+      memberAccounts.forEach(a => {
+        if (!bankMap.has(a.code)) {
+          bankMap.set(a.code, true);
+        }
+      });
+      return ['all', ...Array.from(bankMap.keys())];
+    }
+
+    // Horizontal Physics Swiping on Bank Accounts List (Scrolls through 2nd filter: Bank Institutions)
+    function initBankInstSwipeGestures() {
       const list = document.getElementById('bank-accounts-card-list');
-      if (!container || !list) return;
+      if (!list) return;
 
       let startX = 0, startY = 0;
       let currentX = 0, currentY = 0;
@@ -8313,6 +8319,8 @@
 
       function onTouchStart(e) {
         if (state.activeWorkspace !== 'banks') return;
+        // Never hijack touches on subheader carousel tracks or interactive buttons
+        if (e.target.closest('button, input, select, textarea, a, .bank-subheader-bar, #bank-member-carousel-track, #bank-inst-carousel-track')) return;
         const touch = e.touches[0];
         startDrag(touch.clientX, touch.clientY);
       }
@@ -8330,7 +8338,8 @@
 
       function onMouseDown(e) {
         if (state.activeWorkspace !== 'banks') return;
-        if (e.target.closest('button, input, select, textarea, a, .bank-subheader-bar')) return;
+        // Never hijack mouse clicks on carousels or controls
+        if (e.target.closest('button, input, select, textarea, a, .bank-subheader-bar, #bank-member-carousel-track, #bank-inst-carousel-track')) return;
         startDrag(e.clientX, e.clientY);
       }
 
@@ -8366,6 +8375,7 @@
           const absY = Math.abs(deltaY);
           if (absX > 8 && absX > absY * 1.1) {
             isHorizontalGesture = true;
+            window.__rupayBankSwipingActive = true;
           } else if (absY > 12 && absY > absX * 1.4) {
             isDragging = false;
             return;
@@ -8374,8 +8384,17 @@
 
         if (isHorizontalGesture) {
           if (event && event.cancelable) event.preventDefault();
-          list.style.transform = `translate3d(${deltaX * 0.75}px, 0, 0)`;
-          list.style.opacity = `${1 - Math.min(0.2, Math.abs(deltaX) / 800)}`;
+
+          // Calculate boundary resistance on the 2nd filter (bank institutions)
+          const bankOrder = getAvailableBankCodesForMember(selectedBankMember);
+          const curIdx = Math.max(0, bankOrder.indexOf(selectedBankInst));
+          let effectiveDelta = deltaX;
+          if ((curIdx === 0 && deltaX > 0) || (curIdx === bankOrder.length - 1 && deltaX < 0)) {
+            effectiveDelta = deltaX * 0.3; // Rubber-band resistance at boundary
+          }
+
+          list.style.transform = `translate3d(${effectiveDelta * 0.75}px, 0, 0)`;
+          list.style.opacity = `${1 - Math.min(0.2, Math.abs(effectiveDelta) / 800)}`;
         }
       }
 
@@ -8385,6 +8404,8 @@
         const timeMs = Math.max(1, Date.now() - startTime);
         const velocity = Math.abs(deltaX) / timeMs;
 
+        setTimeout(() => { window.__rupayBankSwipingActive = false; }, 150);
+
         if (!isHorizontalGesture) {
           list.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s ease-out';
           list.style.transform = 'translate3d(0, 0, 0)';
@@ -8392,27 +8413,27 @@
           return;
         }
 
-        const containerWidth = container.clientWidth || window.innerWidth;
+        const containerWidth = list.clientWidth || window.innerWidth;
         const threshold = containerWidth * 0.18;
 
-        const memberOrder = ['all', 'vibhav', 'sanjay', 'aruna', 'smiti', 'shakuntala', 'nishita'];
-        const curIdx = memberOrder.indexOf(selectedBankMember);
+        const bankOrder = getAvailableBankCodesForMember(selectedBankMember);
+        const curIdx = Math.max(0, bankOrder.indexOf(selectedBankInst));
 
-        let targetMember = null;
+        let targetBank = null;
         if (Math.abs(deltaX) > threshold || (velocity > 0.32 && Math.abs(deltaX) > 20)) {
-          if (deltaX < 0 && curIdx < memberOrder.length - 1) {
-            targetMember = memberOrder[curIdx + 1];
+          if (deltaX < 0 && curIdx < bankOrder.length - 1) {
+            targetBank = bankOrder[curIdx + 1];
           } else if (deltaX > 0 && curIdx > 0) {
-            targetMember = memberOrder[curIdx - 1];
+            targetBank = bankOrder[curIdx - 1];
           }
         }
 
-        if (targetMember) {
+        if (targetBank) {
           list.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease-out';
           list.style.transform = `translate3d(${deltaX > 0 ? '100%' : '-100%'}, 0, 0)`;
           list.style.opacity = '0';
           setTimeout(() => {
-            selectBankMember(targetMember);
+            selectBankInst(targetBank);
             list.style.transition = 'none';
             list.style.transform = `translate3d(${deltaX > 0 ? '-100%' : '100%'}, 0, 0)`;
             requestAnimationFrame(() => {
@@ -8429,12 +8450,21 @@
         list.style.opacity = '1';
       }
 
-      container.addEventListener('touchstart', onTouchStart, { passive: true });
-      container.addEventListener('touchmove', onTouchMove, { passive: false });
-      container.addEventListener('touchend', onTouchEnd, { passive: true });
-      container.addEventListener('mousedown', onMouseDown);
+      // Attach only to list container - carousels remain 100% untouched for native scrolling
+      list.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+      list.addEventListener('mousedown', onMouseDown);
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
+
+      // Prevent accidental click triggering on cards after swiping
+      list.addEventListener('click', (e) => {
+        if (window.__rupayBankSwipingActive) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }, true);
     }
 
     /* --- ACTIONS: MULTI-SELECT & WHATSAPP --- */
@@ -9534,8 +9564,8 @@
       // 7. Initialize Physics 1:1 Debit / Credit Card Swipe Gestures
       initCardCategorySwipeGestures();
 
-      // 8. Initialize Physics 1:1 Bank Accounts Member Swipe Gestures
-      initBankMemberSwipeGestures();
+      // 8. Initialize Physics 1:1 Bank Accounts Institution (2nd filter) Swipe Gestures
+      initBankInstSwipeGestures();
     });
   </script>
 </body>
