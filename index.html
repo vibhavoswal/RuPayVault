@@ -8100,10 +8100,16 @@
       renderBankCardsList();
     }
 
-    // Inline Placard Field Editor (Option A: In-Place Morph)
+    // Inline Placard Field Editor (Option A: In-Place Morph for Missing Fields Only)
     let bankInlineEditing = { cardId: null, field: null };
 
     function startBankInlineEdit(cardId, field) {
+      const accounts = getBankAccountsList();
+      const targetAcc = accounts.find(a => a.id === cardId);
+      // If field already exists, it is immutable
+      if (targetAcc && targetAcc[field]) {
+        return;
+      }
       bankInlineEditing = { cardId, field };
       renderBankCardsList();
       setTimeout(() => {
@@ -8290,18 +8296,13 @@
                     <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
                   </div>
                 ` : acc.custId ? `
-                  <div class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all flex items-center justify-between">
-                    <div onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this.parentElement)" title="Tap to copy Customer ID" class="flex-1 cursor-pointer truncate mr-1.5">
-                      <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
-                      <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                        <span class="truncate copy-target-text">${acc.custId}</span>
-                        ${BA_MICRO_COPY_SVG}
-                      </div>
+                  <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                    <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                      <span class="truncate copy-target-text">${acc.custId}</span>
+                      ${BA_MICRO_COPY_SVG}
                     </div>
-                    <button onclick="startBankInlineEdit('${acc.id}', 'custId')" title="Edit Customer ID" class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/20 text-white/40 hover:text-amber-300 flex items-center justify-center transition-all shrink-0 active:scale-95">
-                      <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                  </div>
+                  </button>
                 ` : `
                   <button onclick="startBankInlineEdit('${acc.id}', 'custId')" title="Add Customer ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
                     <div>
@@ -8330,18 +8331,13 @@
                   <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
                 </div>
               ` : acc.upi ? `
-                <div class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all flex items-center justify-between">
-                  <div onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this.parentElement)" title="Tap to copy UPI ID" class="flex-1 cursor-pointer truncate mr-1.5">
-                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
-                    <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                      <span class="truncate copy-target-text">${acc.upi}</span>
-                      ${BA_MICRO_COPY_SVG}
-                    </div>
+                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
+                  <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${acc.upi}</span>
+                    ${BA_MICRO_COPY_SVG}
                   </div>
-                  <button onclick="startBankInlineEdit('${acc.id}', 'upi')" title="Edit UPI ID" class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/20 text-white/40 hover:text-amber-300 flex items-center justify-center transition-all shrink-0 active:scale-95">
-                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </button>
-                </div>
+                </button>
               ` : `
                 <button onclick="startBankInlineEdit('${acc.id}', 'upi')" title="Add UPI ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
                   <div>
