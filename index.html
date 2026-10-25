@@ -2022,10 +2022,7 @@
     </div>
   </div>
 
-  <!-- Notification Toast -->
-  <div id="toast" class="fixed bottom-28 md:bottom-8 left-1/2 -translate-x-1/2 z-[110] px-4 py-2 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-200" style="background: var(--bg-secondary); border: 0.5px solid var(--separator); color: var(--label-primary);">
-    <span id="toast-msg"></span>
-  </div>
+  <!-- Notification Toast (Removed per user request: redundant overlay) -->
 
   <!-- ======================================================== -->
   <!-- NAVIGATION DRAWER: VARIATION 1 (iOS Native Grouped Inset) -->
@@ -7305,10 +7302,7 @@
     }
 
     function showToast(msg) {
-      const t = document.getElementById('toast');
-      document.getElementById('toast-msg').textContent = msg;
-      t.style.opacity = '1';
-      setTimeout(() => { t.style.opacity = '0'; }, 2200);
+      // Redundant text layover popups removed per user request
     }
 
     function renderAll() {
