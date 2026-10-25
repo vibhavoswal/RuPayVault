@@ -1228,6 +1228,60 @@
       background-color: #e2e8f0 !important;
       color: #1e293b !important;
     }
+
+    /* ======================================================== */
+    /* APPROACH 4A: EXECUTIVE UPPER BAR & DROPDOWN STYLING       */
+    /* ======================================================== */
+    [data-theme="light"] #mb-top-header,
+    [data-theme="light"] #view-card-manager header,
+    html.light #mb-top-header,
+    html.light #view-card-manager header {
+      background-color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    [data-theme="light"] #mb-brand-capsule-btn,
+    [data-theme="light"] #cm-brand-capsule-btn,
+    html.light #mb-brand-capsule-btn,
+    html.light #cm-brand-capsule-btn {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #mb-capsule-brand-title,
+    [data-theme="light"] #cm-capsule-brand-title,
+    html.light #mb-capsule-brand-title,
+    html.light #cm-capsule-brand-title {
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover,
+    html.light #executive-dropdown-popover {
+      background-color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+      color: #0f172a !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12) !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .bg-neutral-900,
+    html.light #executive-dropdown-popover .bg-neutral-900 {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .text-white,
+    html.light #executive-dropdown-popover .text-white {
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #mb-floating-select-fab.bg-neutral-800,
+    html.light #mb-floating-select-fab.bg-neutral-800 {
+      background-color: #ffffff !important;
+      color: #0f172a !important;
+      border-color: #cbd5e1 !important;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+    }
+    @media (max-width: 839px) {
+      #floating-dock-container {
+        padding-right: 5.5rem !important;
+      }
+    }
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
@@ -1435,16 +1489,22 @@
   <!-- ======================================================== -->
   <div id="mobile-app-container" class="hidden mobile-view flex-1 h-full w-full overflow-hidden flex flex-col relative bg-[#0D0D11]">
     
-    <!-- Top Bar with Safe Area Top Padding (Apple Native Selection Toolbar) -->
+    <!-- Top Bar with Safe Area Top Padding (Approach 4A: Executive Capsule) -->
     <header id="mb-top-header" class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
-      <!-- Left Cell: Menu Button (Default) OR [Select All] Button (Select Mode) -->
-      <div class="flex items-center h-9 min-w-[70px]">
+      <!-- Left Cell: Menu Button + Brand Capsule Dropdown -->
+      <div class="flex items-center gap-2 h-9">
         <button id="mb-menu-btn" onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
           <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="12" x2="17" y2="12"></line>
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
+        </button>
+        <!-- 4A Executive Capsule Dropdown Button -->
+        <button id="mb-brand-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-bold active:scale-95 transition-all shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-[#F47A21] shadow-[0_0_8px_rgba(244,122,33,0.4)]"></span>
+          <span id="mb-capsule-brand-title" class="truncate max-w-[125px]">Activity Log</span>
+          <svg id="mb-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <!-- Apple Native Select All / Deselect All Button -->
         <button id="mb-select-all-btn" onclick="toggleSelectAll()" class="hidden h-9 items-center text-xs font-bold text-emerald-400 hover:text-emerald-300 active:scale-95 transition-all">
@@ -1457,22 +1517,19 @@
         <span id="mb-counter-text">0 Selected</span>
       </div>
 
-      <!-- Right Cell: Standard Icons (Default) OR Done Button (Select Mode) -->
-      <div class="flex items-center gap-2 h-9 min-w-[70px] justify-end">
-        <div id="mb-header-tools" class="flex items-center gap-2">
-          <span id="mb-sync-time" class="text-[10px] text-neutral-400 font-mono-apple">Synced at 12:25 AM</span>
-          <button onclick="syncWithGoogleSheets()" class="p-1 rounded-full text-[#0C8C46] hover:text-white active:scale-90 transition-transform" title="Sync Sheets">
-            <svg id="mb-sync-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+      <!-- Right Cell: Sync Time + Spinner, Home, Lock -->
+      <div class="flex items-center gap-1.5 h-9 justify-end">
+        <div id="mb-header-tools" class="flex items-center gap-1.5">
+          <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+            <svg id="mb-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span id="mb-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
           </button>
           <button onclick="switchWorkspace('hub')" class="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all text-xs flex items-center justify-center shadow-sm" title="Return to Front Hub">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
           </button>
           <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs flex items-center justify-center shadow-sm" title="Lock Vault">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          </button>
-          <!-- ONLY ONE SELECT BUTTON AT THE TOP (in normal mode) -->
-          <button id="mb-select-btn" onclick="toggleSelectMode()" class="px-3 py-1 rounded-lg text-xs font-bold bg-neutral-800 text-[#F47A21] border border-[#F47A21]/30 hover:bg-neutral-700 active:scale-95 transition-all">
-            Select
           </button>
         </div>
         <!-- Done Button in Select Mode -->
@@ -1616,6 +1673,20 @@
 
       </div>
     </div>
+
+    <!-- Floating Select / Done Action Pill at Bottom Right -->
+    <button id="mb-floating-select-fab" onclick="toggleSelectMode()" class="fixed z-40 pointer-events-auto flex items-center gap-1.5 px-4 py-2.5 rounded-full font-bold text-xs shadow-xl active:scale-95 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14]" style="bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); right: 1rem;">
+      <svg id="mb-floating-select-icon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="mb-floating-select-label">Select</span>
+    </button>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- EXECUTIVE DROPDOWN POPOVER (VOUCHERS & CARDS WORKSPACES) -->
+  <!-- ======================================================== -->
+  <div id="executive-dropdown-backdrop" onclick="closeExecutiveDropdown()" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200"></div>
+  <div id="executive-dropdown-popover" class="hidden fixed z-50 rounded-2xl p-3 shadow-2xl transition-all duration-200" style="top: 56px; left: 12px; right: 12px; max-width: 440px; margin: 0 auto; background: #16161d; border: 1px solid rgba(255,255,255,0.12);">
+    <!-- Dynamically rendered via renderExecutiveDropdown() -->
   </div>
 
 
@@ -1795,9 +1866,10 @@
   <!-- 2. FULL-SCREEN CARD PORTFOLIO MANAGER VIEW               -->
   <!-- ======================================================== -->
   <section id="view-card-manager" class="hidden flex-1 flex flex-col h-full w-full bg-[#0d0c0d] overflow-hidden select-none">
-    <!-- Card Manager Header -->
+    <!-- Card Manager Header (Approach 4A: Persistent Executive Capsule) -->
     <header class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-neutral-800 bg-neutral-950 z-30 transition-all">
-      <div class="flex items-center">
+      <!-- Left Cell: Menu Button + Card Manager Capsule Dropdown -->
+      <div class="flex items-center gap-2 h-9">
         <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
           <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -1805,14 +1877,28 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
+        <!-- 4A Executive Capsule Dropdown Button (Card Manager) -->
+        <button id="cm-brand-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-bold active:scale-95 transition-all shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+          <span id="cm-capsule-brand-title" class="truncate max-w-[125px]">Card Manager</span>
+          <svg id="cm-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button onclick="switchWorkspace('hub')" class="px-2.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 active:scale-95 text-xs font-semibold text-neutral-300 hover:text-white transition-all flex items-center gap-1.5 shadow-sm" title="Return to Front Hub">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-          <span>Hub</span>
+      <!-- Right Cell: Sync Time + Spinner, Home, Lock, + Add Card -->
+      <div class="flex items-center gap-1.5 h-9 justify-end">
+        <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
+          <svg id="cm-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="cm-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
         </button>
-        <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm">
+        <button onclick="switchWorkspace('hub')" class="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all text-xs flex items-center justify-center shadow-sm" title="Return to Front Hub">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </button>
+        <button onclick="lockVaultManual()" class="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-[#F47A21] hover:text-white active:scale-90 transition-all text-xs flex items-center justify-center shadow-sm" title="Lock Vault">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </button>
+        <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm" title="Add RuPay Card">
           <span>+ Add</span>
         </button>
       </div>
@@ -4109,30 +4195,201 @@
       const hubEl = document.getElementById('view-hub');
       const cardEl = document.getElementById('view-card-manager');
       const voucherEl = document.getElementById('mobile-app-container');
+      const fabBtn = document.getElementById('mb-floating-select-fab');
+
+      closeExecutiveDropdown();
 
       if (state.activeWorkspace === 'hub') {
         isCardManagerOpen = false;
         if (hubEl) hubEl.classList.remove('hidden');
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.add('hidden');
+        if (fabBtn) fabBtn.classList.add('hidden');
         updateHubStats();
       } else if (state.activeWorkspace === 'cards') {
         isCardManagerOpen = true;
         if (hubEl) hubEl.classList.add('hidden');
         if (cardEl) cardEl.classList.remove('hidden');
         if (voucherEl) voucherEl.classList.add('hidden');
+        if (fabBtn) fabBtn.classList.add('hidden');
         renderCardManagerList(currentCardCategoryFilter || 'Debit');
         updateDrawerCardCount();
+
+        const cmTitle = document.getElementById('cm-capsule-brand-title');
+        if (cmTitle) cmTitle.textContent = `${currentCardCategoryFilter || 'Debit'} Cards`;
+
+        const cmSync = document.getElementById('cm-sync-time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        if (cmSync && savedSyncTime) cmSync.textContent = savedSyncTime;
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
         if (hubEl) hubEl.classList.add('hidden');
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.remove('hidden');
+        if (fabBtn) fabBtn.classList.remove('hidden');
+
+        const bConfig = BRAND_CONFIG.find(x => x.key === normalizeBrandKey(state.activeFilterBrand));
+        const mbTitle = document.getElementById('mb-capsule-brand-title');
+        if (mbTitle && bConfig) mbTitle.textContent = bConfig.name;
+
+        const mbSync = document.getElementById('mb-sync-time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        if (mbSync && savedSyncTime) mbSync.textContent = savedSyncTime;
+
         renderDeckSelector();
         renderVault();
       }
 
       updateDrawerSwitcherUI();
+    }
+
+    /* --- EXECUTIVE DROPDOWN & WORKSPACE SWITCHER (APPROACH 4A) --- */
+    let isExecutiveDropdownOpen = false;
+
+    function toggleExecutiveDropdown() {
+      isExecutiveDropdownOpen = !isExecutiveDropdownOpen;
+      const popover = document.getElementById('executive-dropdown-popover');
+      const backdrop = document.getElementById('executive-dropdown-backdrop');
+      const mbChevron = document.getElementById('mb-capsule-chevron');
+      const cmChevron = document.getElementById('cm-capsule-chevron');
+
+      if (isExecutiveDropdownOpen) {
+        renderExecutiveDropdown();
+        if (popover) popover.classList.remove('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+        if (mbChevron) mbChevron.style.transform = 'rotate(180deg)';
+        if (cmChevron) cmChevron.style.transform = 'rotate(180deg)';
+      } else {
+        closeExecutiveDropdown();
+      }
+    }
+
+    function closeExecutiveDropdown() {
+      isExecutiveDropdownOpen = false;
+      const popover = document.getElementById('executive-dropdown-popover');
+      const backdrop = document.getElementById('executive-dropdown-backdrop');
+      const mbChevron = document.getElementById('mb-capsule-chevron');
+      const cmChevron = document.getElementById('cm-capsule-chevron');
+
+      if (popover) popover.classList.add('hidden');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (mbChevron) mbChevron.style.transform = 'rotate(0deg)';
+      if (cmChevron) cmChevron.style.transform = 'rotate(0deg)';
+    }
+
+    function renderExecutiveDropdown() {
+      const popover = document.getElementById('executive-dropdown-popover');
+      if (!popover) return;
+
+      if (state.activeWorkspace === 'cards') {
+        popover.innerHTML = `
+          <div class="space-y-3">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
+              <div onclick="switchWorkspace('vouchers'); closeExecutiveDropdown();" class="mt-1.5 p-3 rounded-xl bg-gradient-to-r from-emerald-950/70 to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-[#0C8C46] text-white flex items-center justify-center font-bold">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">Change workspace to Voucher Manager</div>
+                    <div class="text-[10.5px] text-neutral-400">Voucher passes, Ingested &amp; Shared queue</div>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Filter Cards</span>
+              <div class="mt-1.5 space-y-1">
+                <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">💳</span>
+                    <span class="text-xs font-bold text-white">Credit Cards</span>
+                  </div>
+                  <span class="text-[11px] font-bold text-neutral-400" id="dd-count-cc">4 Cards</span>
+                </div>
+                <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">🏦</span>
+                    <span class="text-xs font-bold text-white">Debit Cards</span>
+                  </div>
+                  <span class="text-[11px] font-bold text-neutral-400" id="dd-count-dc">16 Cards</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        updateDrawerCardCount();
+        const badgeDc = document.getElementById('badge-count-dc');
+        const badgeCc = document.getElementById('badge-count-cc');
+        const ddCc = document.getElementById('dd-count-cc');
+        const ddDc = document.getElementById('dd-count-dc');
+        if (ddCc && badgeCc) ddCc.textContent = `${badgeCc.textContent} Cards`;
+        if (ddDc && badgeDc) ddDc.textContent = `${badgeDc.textContent} Cards`;
+      } else {
+        const normActive = normalizeBrandKey(state.activeFilterBrand);
+        popover.innerHTML = `
+          <div class="space-y-3">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
+              <div onclick="switchWorkspace('cards'); closeExecutiveDropdown();" class="mt-1.5 p-3 rounded-xl bg-gradient-to-r from-blue-950/70 to-indigo-900/50 border border-blue-500/40 hover:border-blue-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">Change workspace to Card Manager</div>
+                    <div class="text-[10.5px] text-neutral-400">Debit, Credit cards &amp; lounge quota</div>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+              </div>
+            </div>
+
+            <div>
+              <div class="relative">
+                <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700">
+                <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+            </div>
+
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Brand Passes &amp; Queues</span>
+              <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5" id="executive-brands-list">
+                ${BRAND_CONFIG.map(item => {
+                  const isSel = (normActive === item.key);
+                  return `
+                    <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="p-2 rounded-xl ${isSel ? 'bg-neutral-800 border border-emerald-500/40 text-emerald-400' : 'bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300'} flex items-center justify-between cursor-pointer transition-all">
+                      <div class="flex items-center gap-2 truncate">
+                        <span class="w-6 h-6 rounded-md bg-neutral-800 flex items-center justify-center text-xs font-bold">${item.key === 'ActivityLog' ? '📥' : item.key === 'Redeemed' ? '✓' : item.name.charAt(0)}</span>
+                        <span class="text-xs font-bold truncate">${item.name}</span>
+                      </div>
+                      <span class="text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-neutral-500'}">Pass</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function filterExecutiveDropdownBrands(query) {
+      const q = String(query || '').toLowerCase();
+      const list = document.getElementById('executive-brands-list');
+      if (!list) return;
+      list.querySelectorAll('div[onclick]').forEach(el => {
+        const text = el.textContent.toLowerCase();
+        el.style.display = text.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    function updateCardCapsuleTitle(title) {
+      const el = document.getElementById('cm-capsule-brand-title');
+      if (el) el.textContent = title;
     }
 
     function updateHubStats() {
@@ -5418,6 +5675,13 @@
       localStorage.setItem('rupay_active_brand', brand);
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = brand;
+
+      const bConfig = BRAND_CONFIG.find(x => x.key === normalizeBrandKey(brand));
+      const capTitle = document.getElementById('mb-capsule-brand-title');
+      if (capTitle && bConfig) {
+        capTitle.textContent = bConfig.name;
+      }
+
       const mbScroll = document.querySelector('.mobile-scroll-container');
       if (mbScroll) mbScroll.scrollTop = 0;
       renderVault();
@@ -5550,6 +5814,10 @@
       } else {
         if (btnCc) btnCc.className = "px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white transition-all";
         if (btnDc) btnDc.className = "px-3 py-1 rounded-lg text-xs font-bold text-neutral-400 hover:text-white transition-all";
+      }
+      const cmTitle = document.getElementById('cm-capsule-brand-title');
+      if (cmTitle) {
+        cmTitle.textContent = (category === 'All') ? 'Card Manager' : `${category} Cards`;
       }
       renderCardManagerList(category);
     }
@@ -6223,6 +6491,24 @@
           doneBtn.classList.remove('flex');
         }
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
+      }
+
+      // Update Floating Bottom-Right Select FAB
+      const fabBtn = document.getElementById('mb-floating-select-fab');
+      const fabLabel = document.getElementById('mb-floating-select-label');
+      const fabIcon = document.getElementById('mb-floating-select-icon');
+      if (fabBtn && fabLabel) {
+        if (state.isSelectMode) {
+          fabBtn.classList.remove('bg-[#F47A21]', 'hover:bg-[#E06A14]');
+          fabBtn.classList.add('bg-neutral-800', 'border', 'border-neutral-600', 'text-white');
+          fabLabel.textContent = count > 0 ? `Done (${count})` : 'Done';
+          if (fabIcon) fabIcon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>`;
+        } else {
+          fabBtn.classList.remove('bg-neutral-800', 'border', 'border-neutral-600');
+          fabBtn.classList.add('bg-[#F47A21]', 'hover:bg-[#E06A14]');
+          fabLabel.textContent = 'Select';
+          if (fabIcon) fabIcon.innerHTML = `<polyline points="20 6 9 17 4 12"></polyline>`;
+        }
       }
 
       // DYNAMIC ACTION ISLAND: AUTO-HIDE ON 0 SELECTED (NO CLOSE BUTTON NEEDED)
