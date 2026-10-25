@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>RuPayVault - Bank Accounts Manager Prototypes</title>
+  <title>RuPayVault - Bank Accounts Manager (Dual Carousel Prototypes)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
   <script>
@@ -48,21 +48,21 @@
 
     /* Prototype Switcher Navigation */
     .proto-nav-pill {
-      padding: 7px 13px;
+      padding: 6px 12px;
       border-radius: 9999px;
       font-size: 11px;
       font-weight: 700;
       white-space: nowrap;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .light .proto-nav-pill.active {
       background: #0f172a;
       color: #ffffff;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
     }
     .light .proto-nav-pill.inactive {
       background: rgba(255, 255, 255, 0.95);
@@ -76,7 +76,7 @@
     .dark .proto-nav-pill.active {
       background: #38bdf8;
       color: #041322;
-      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
     }
     .dark .proto-nav-pill.inactive {
       background: rgba(30, 41, 59, 0.85);
@@ -88,39 +88,91 @@
       color: #ffffff;
     }
 
-    /* Sub-tabs / Segments */
-    .segment-tab {
-      padding: 7px 14px;
-      border-radius: 12px;
+    /* Carousel 1: Member Pill Chips */
+    .member-chip {
+      padding: 7px 13px;
+      border-radius: 9999px;
       font-size: 12px;
       font-weight: 700;
+      white-space: nowrap;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      white-space: nowrap;
+      gap: 7px;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
     }
-    .light .segment-tab.active {
+    .light .member-chip.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    }
+    .light .member-chip.inactive {
+      background: #ffffff;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .light .member-chip.inactive:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .dark .member-chip.active {
+      background: #38bdf8;
+      color: #031323;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+    }
+    .dark .member-chip.inactive {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    .dark .member-chip.inactive:hover {
+      background: #334155;
+      color: #f8fafc;
+    }
+
+    /* Carousel 2: Bank Pill Chips */
+    .bank-chip {
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+    .light .bank-chip.active {
       background: #ffffff;
       color: #0f172a;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+      border: 1.5px solid #0f172a;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
-    .light .segment-tab.inactive {
+    .light .bank-chip.inactive {
+      background: rgba(241, 245, 249, 0.85);
       color: #64748b;
+      border: 1px solid rgba(226, 232, 240, 0.8);
     }
-    .light .segment-tab.inactive:hover {
+    .light .bank-chip.inactive:hover {
+      background: #e2e8f0;
       color: #0f172a;
     }
-    .dark .segment-tab.active {
+    .dark .bank-chip.active {
       background: #1e293b;
       color: #38bdf8;
+      border: 1.5px solid #38bdf8;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
-    .dark .segment-tab.inactive {
+    .dark .bank-chip.inactive {
+      background: rgba(30, 41, 59, 0.6);
       color: #94a3b8;
+      border: 1px solid rgba(51, 65, 85, 0.7);
     }
-    .dark .segment-tab.inactive:hover {
+    .dark .bank-chip.inactive:hover {
+      background: #334155;
       color: #f1f5f9;
     }
 
@@ -174,31 +226,6 @@
     .micro-copy-btn.copied {
       background: #10b981 !important;
       border-color: #10b981 !important;
-    }
-
-    /* Swipe Track Styles */
-    .swipe-container {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      touch-action: pan-y;
-    }
-    .swipe-track {
-      display: flex;
-      width: 100%;
-      will-change: transform;
-      transform: translate3d(0, 0, 0);
-      backface-visibility: hidden;
-      perspective: 1000px;
-    }
-    .swipe-panel {
-      flex: 0 0 100%;
-      width: 100%;
-      min-width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      will-change: transform;
-      backface-visibility: hidden;
     }
 
     /* Luxury Bank Card Shimmer & Gradients */
@@ -332,19 +359,23 @@
       color: #fef3c7;
       border: 1px solid rgba(245, 158, 11, 0.4);
     }
+    .holder-family {
+      background: rgba(168, 85, 247, 0.22);
+      color: #f3e8ff;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
   </style>
 </head>
 <body class="min-h-screen">
 
   <!-- Top Sticky Control Header -->
-  <header class="sticky top-0 z-50 backdrop-blur-xl border-b transition-colors light:bg-white/90 light:border-slate-200/90 dark:bg-slate-900/90 dark:border-slate-800">
+  <header class="sticky top-0 z-50 backdrop-blur-xl border-b transition-colors light:bg-white/92 light:border-slate-200/90 dark:bg-slate-900/92 dark:border-slate-800">
     <div class="max-w-md mx-auto px-4 py-2.5">
       
       <!-- App / Workspace Banner & Theme Toggle -->
-      <div class="flex items-center justify-between mb-2.5">
+      <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20">
-            <!-- Inline Bank SVG -->
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="21" x2="21" y2="21"></line>
               <line x1="3" y1="10" x2="21" y2="10"></line>
@@ -369,7 +400,6 @@
         <div class="flex items-center gap-1.5">
           <button id="toggleEyeBtn" onclick="toggleGlobalEye()" title="Toggle Mask Account Numbers" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-slate-700 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 hover:dark:bg-slate-700">
             <span id="eyeIconSlot">
-              <!-- Masked Eye SVG -->
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                 <line x1="1" y1="1" x2="23" y2="23"></line>
@@ -378,7 +408,6 @@
           </button>
           <button id="toggleThemeBtn" onclick="toggleTheme()" title="Toggle Light / Dark Mode" class="w-8 h-8 rounded-full flex items-center justify-center border transition-all light:bg-slate-100 light:border-slate-200 light:text-amber-600 hover:light:bg-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-amber-400 hover:dark:bg-slate-700">
             <span id="themeIconSlot">
-              <!-- Moon SVG -->
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
               </svg>
@@ -387,20 +416,20 @@
         </div>
       </div>
 
-      <!-- Prototype Selector Pills -->
+      <!-- Prototype Variant Switcher -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         <button onclick="switchPrototype(1)" id="protoPill1" class="proto-nav-pill active">
-          <span>1. Tier Passbook</span>
+          <span>1. Executive Ribbon</span>
           <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-white font-bold">Pick</span>
         </button>
         <button onclick="switchPrototype(2)" id="protoPill2" class="proto-nav-pill inactive">
-          <span>2. Bank Carousel</span>
+          <span>2. Segmented Chips</span>
         </button>
         <button onclick="switchPrototype(3)" id="protoPill3" class="proto-nav-pill inactive">
-          <span>3. Wire Terminal</span>
+          <span>3. Wire Ledger</span>
         </button>
         <button onclick="switchPrototype(4)" id="protoPill4" class="proto-nav-pill inactive">
-          <span>4. Entity Split</span>
+          <span>4. Family Overview</span>
         </button>
       </div>
 
@@ -419,186 +448,61 @@
   <main class="max-w-md mx-auto px-4 pt-3 pb-24">
 
     <!-- ======================================================== -->
-    <!-- PROTOTYPE 1: TIER PASSBOOK WITH 1:1 HORIZONTAL SWIPE     -->
+    <!-- DUAL CAROUSEL HEADER FILTER (LAYERS 1 & 2)                -->
     <!-- ======================================================== -->
-    <section id="prototype1" class="proto-view block">
+    <div class="mb-4">
       
-      <!-- Sub-Segment Pill Bar -->
-      <div class="flex items-center justify-between p-1 rounded-2xl mb-3 light:bg-slate-200/70 dark:bg-slate-800/80 border light:border-slate-300/60 dark:border-slate-700/60">
-        <button onclick="proto1GoToTab(0)" id="p1Tab0" class="segment-tab active flex-1 justify-center">
-          <span>HNI & Private</span>
-          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">7</span>
-        </button>
-        <button onclick="proto1GoToTab(1)" id="p1Tab1" class="segment-tab inactive flex-1 justify-center">
-          <span>Wealth & Priority</span>
-          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">3</span>
-        </button>
-        <button onclick="proto1GoToTab(2)" id="p1Tab2" class="segment-tab inactive flex-1 justify-center">
-          <span>Digital & SFB</span>
-          <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">6</span>
-        </button>
-      </div>
-
-      <!-- Gesture Helper Hint -->
-      <div class="flex items-center justify-between px-1 mb-2 text-[11px] light:text-slate-500 dark:text-slate-400 font-medium">
-        <span class="flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-          <span>Swipe horizontally between tiers</span>
-          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </span>
-        <span class="font-mono text-[10px]">1:1 Physics Drag</span>
-      </div>
-
-      <!-- Swipe Track Container -->
-      <div class="swipe-container" id="proto1SwipeContainer">
-        <div class="swipe-track" id="proto1SwipeTrack">
-
-          <!-- PANEL 0: HNI & Private (7 Accounts) -->
-          <div class="swipe-panel pr-1 space-y-3" id="panel0-content"></div>
-
-          <!-- PANEL 1: Wealth & Priority (3 Accounts) -->
-          <div class="swipe-panel pr-1 space-y-3" id="panel1-content"></div>
-
-          <!-- PANEL 2: Digital & SFB (6 Accounts) -->
-          <div class="swipe-panel pr-1 space-y-3" id="panel2-content"></div>
-
+      <!-- LAYER 1: MEMBER CAROUSEL -->
+      <div class="mb-2">
+        <div class="flex items-center justify-between mb-1.5 px-0.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Layer 1 • Family Member</span>
+          <span id="memberCountBadge" class="text-[10px] font-mono text-slate-500">5 Members Linked</span>
+        </div>
+        
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" id="memberCarouselTrack">
+          <!-- Dynamically generated or interactive member chips -->
         </div>
       </div>
-    </section>
 
-    <!-- ======================================================== -->
-    <!-- PROTOTYPE 2: INSTITUTION CAROUSEL WITH STACKED DECK      -->
-    <!-- ======================================================== -->
-    <section id="prototype2" class="proto-view hidden">
-      
-      <!-- Bank Chip Carousel Navigation -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none" id="bankChipsBar">
-        <button onclick="proto2SelectBank('indusind')" id="chip-indusind" class="segment-tab active">
-          <span>IndusInd</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono font-bold">2</span>
-        </button>
-        <button onclick="proto2SelectBank('axis')" id="chip-axis" class="segment-tab inactive">
-          <span>Axis</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 font-mono font-bold">2</span>
-        </button>
-        <button onclick="proto2SelectBank('hdfc')" id="chip-hdfc" class="segment-tab inactive">
-          <span>HDFC</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('kotak')" id="chip-kotak" class="segment-tab inactive">
-          <span>Kotak</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('idfc')" id="chip-idfc" class="segment-tab inactive">
-          <span>IDFC</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-700 dark:text-rose-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('federal')" id="chip-federal" class="segment-tab inactive">
-          <span>Federal</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-mono font-bold">2</span>
-        </button>
-        <button onclick="proto2SelectBank('canara')" id="chip-canara" class="segment-tab inactive">
-          <span>Canara</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-sky-500/20 text-sky-700 dark:text-sky-400 font-mono font-bold">2</span>
-        </button>
-        <button onclick="proto2SelectBank('pnb')" id="chip-pnb" class="segment-tab inactive">
-          <span>PNB</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">2</span>
-        </button>
-        <button onclick="proto2SelectBank('hsbc')" id="chip-hsbc" class="segment-tab inactive">
-          <span>HSBC</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('union')" id="chip-union" class="segment-tab inactive">
-          <span>Union</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('jana')" id="chip-jana" class="segment-tab inactive">
-          <span>Jana</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-700 dark:text-teal-400 font-mono font-bold">1</span>
-        </button>
-        <button onclick="proto2SelectBank('equitas')" id="chip-equitas" class="segment-tab inactive">
-          <span>Equitas</span>
-          <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono font-bold">1</span>
-        </button>
+      <!-- LAYER 2: BANK CAROUSEL -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5 px-0.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Layer 2 • Bank Institution</span>
+          <span id="bankCountBadge" class="text-[10px] font-mono text-slate-500">12 Banks</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" id="bankCarouselTrack">
+          <!-- Dynamically generated based on selected member -->
+        </div>
       </div>
 
-      <!-- Bank Details Dynamic Container -->
-      <div id="bankDetailsContainer" class="space-y-3"></div>
-    </section>
+    </div>
 
-    <!-- ======================================================== -->
-    <!-- PROTOTYPE 3: HIGH-SPEED WIRE & RTGS TERMINAL             -->
-    <!-- ======================================================== -->
-    <section id="prototype3" class="proto-view hidden">
-      
-      <!-- Instant Search Filter Box -->
-      <div class="relative mb-3">
-        <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="terminalSearchInput" oninput="filterTerminalList()" placeholder="Quick filter by Bank, IFSC, UPI, or Holder..." 
-          class="w-full pl-9 pr-8 py-2 rounded-xl text-xs font-medium border transition-colors outline-none light:bg-white light:border-slate-200 light:text-slate-900 focus:light:border-indigo-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white focus:dark:border-sky-400">
-        <button onclick="clearTerminalSearch()" id="clearSearchBtn" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-
-      <!-- Filter Chips: All, UPI Active, High Value -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
-        <button onclick="filterTerminalCategory('all')" id="termCat-all" class="segment-tab active text-[11px] py-1 px-3">
-          <span>All 16 Accounts</span>
-        </button>
-        <button onclick="filterTerminalCategory('upi')" id="termCat-upi" class="segment-tab inactive text-[11px] py-1 px-3">
-          <span>UPI Enabled (8)</span>
-        </button>
-        <button onclick="filterTerminalCategory('private')" id="termCat-private" class="segment-tab inactive text-[11px] py-1 px-3">
-          <span>Pioneer / Burgundy</span>
-        </button>
-        <button onclick="filterTerminalCategory('sanjay')" id="termCat-sanjay" class="segment-tab inactive text-[11px] py-1 px-3">
-          <span>Family (Sanjay)</span>
-        </button>
-      </div>
-
-      <!-- Compact Ledger Table Cards -->
-      <div id="terminalList" class="space-y-2"></div>
-    </section>
-
-    <!-- ======================================================== -->
-    <!-- PROTOTYPE 4: DUAL-OWNER SPLIT (VIBHAV VS SANJAY)         -->
-    <!-- ======================================================== -->
-    <section id="prototype4" class="proto-view hidden">
-      
-      <!-- Owner Segment Switcher -->
-      <div class="flex items-center p-1 rounded-2xl mb-3 light:bg-slate-200/70 dark:bg-slate-800/80 border light:border-slate-300/60 dark:border-slate-700/60">
-        <button onclick="proto4SwitchOwner('vibhav')" id="p4OwnerVibhav" class="segment-tab active flex-1 justify-center">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-sky-500"></span>
-            <span>Vibhav Oswal</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">15</span>
-          </div>
-        </button>
-        <button onclick="proto4SwitchOwner('sanjay')" id="p4OwnerSanjay" class="segment-tab inactive flex-1 justify-center">
-          <div class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-            <span>Sanjay Oswal</span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full light:bg-slate-100 dark:bg-slate-700 font-mono">1</span>
-          </div>
-        </button>
-      </div>
-
-      <!-- Owner Container -->
-      <div id="proto4Container" class="space-y-3"></div>
-    </section>
+    <!-- Dynamic Content Area For Prototype Views -->
+    <div id="dynamicContentArea" class="space-y-3">
+      <!-- Injected by JavaScript based on active prototype and dual-carousel filters -->
+    </div>
 
   </main>
 
   <!-- ======================================================== -->
-  <!-- JAVASCRIPT DATA & LOGIC ENGINE                           -->
+  <!-- JAVASCRIPT DATA & DUAL CAROUSEL ENGINE                   -->
   <!-- ======================================================== -->
   <script>
     const COPY_SVG = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     const CHECK_SVG = `<svg class="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 
-    // 16 Accounts Master Database
+    // Family Members Master List
+    const MEMBERS = [
+      { id: "all", name: "All Members", short: "All", avatarBg: "bg-indigo-500", count: 16 },
+      { id: "vibhav", name: "Vibhav Oswal", short: "VO", avatarBg: "bg-sky-500", count: 15 },
+      { id: "sanjay", name: "Sanjay Oswal", short: "SO", avatarBg: "bg-amber-500", count: 1 },
+      { id: "aruna", name: "Aruna Oswal", short: "AO", avatarBg: "bg-rose-500", count: 0 },
+      { id: "smiti", name: "Smiti Oswal", short: "SM", avatarBg: "bg-emerald-500", count: 0 },
+      { id: "nishita", name: "Nishita Bhalekar", short: "NB", avatarBg: "bg-purple-500", count: 0 }
+    ];
+
+    // Bank Accounts Master Database (16 Real Accounts)
     const BANK_ACCOUNTS = [
       {
         id: "indusind_1",
@@ -608,6 +512,7 @@
         tier: "Pioneer Private",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "159247538499",
         maskedNumber: "1592 •••• 8499",
         ifsc: "INDB0002169",
@@ -629,6 +534,7 @@
         tier: "Pioneer Private",
         category: "hni",
         holder: "Sanjay Oswal",
+        memberId: "sanjay",
         accNumber: "159823470448",
         maskedNumber: "1598 •••• 0448",
         ifsc: "INDB0001103",
@@ -650,6 +556,7 @@
         tier: "Burgundy",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "921010018051356",
         maskedNumber: "9210 •••• •••• 1356",
         ifsc: "UTIB0002366",
@@ -671,6 +578,7 @@
         tier: "Burgundy",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "924010040061771",
         maskedNumber: "9240 •••• •••• 1771",
         ifsc: "UTIB0000194",
@@ -692,6 +600,7 @@
         tier: "Premier",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "074532227006",
         maskedNumber: "0745 •••• 7006",
         ifsc: "HSBC0560002",
@@ -713,6 +622,7 @@
         tier: "HNI Prime",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "028912250000002",
         maskedNumber: "0289 •••• •••• 0002",
         ifsc: "UBIN0802891",
@@ -734,6 +644,7 @@
         tier: "Elite Executive",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "1057100100006650",
         maskedNumber: "1057 •••• •••• 6650",
         ifsc: "PUNB0105710",
@@ -755,6 +666,7 @@
         tier: "Elite Executive",
         category: "hni",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "1057100100007482",
         maskedNumber: "1057 •••• •••• 7482",
         ifsc: "PUNB0105710",
@@ -776,6 +688,7 @@
         tier: "Imperia / Preferred",
         category: "wealth",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "50100272080801",
         maskedNumber: "5010 •••• •••• 0801",
         ifsc: "HDFC0000827",
@@ -797,6 +710,7 @@
         tier: "Privy League",
         category: "wealth",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "9113615811",
         maskedNumber: "9113 •••• 5811",
         ifsc: "KKBK0002020",
@@ -818,6 +732,7 @@
         tier: "FIRST Wealth",
         category: "wealth",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "10064054118",
         maskedNumber: "1006 •••• 4118",
         ifsc: "IDFB0040101",
@@ -839,6 +754,7 @@
         tier: "Fi Neo",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "55550107473710",
         maskedNumber: "5555 •••• •••• 3710",
         ifsc: "FDRL0005555",
@@ -860,6 +776,7 @@
         tier: "Jupiter Pro",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "77770106660497",
         maskedNumber: "7777 •••• •••• 0497",
         ifsc: "FDRL0007777",
@@ -881,6 +798,7 @@
         tier: "Canara Crest",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "110267332562",
         maskedNumber: "1102 •••• 2562",
         ifsc: "CNRB0000492",
@@ -902,6 +820,7 @@
         tier: "Basic Savings",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "110181739491",
         maskedNumber: "1101 •••• 9491",
         ifsc: "CNRB0010754",
@@ -923,6 +842,7 @@
         tier: "Small Finance",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "4800010052985502",
         maskedNumber: "4800 •••• •••• 5502",
         ifsc: "JSFB0004800",
@@ -944,6 +864,7 @@
         tier: "Small Finance",
         category: "digital",
         holder: "Vibhav Oswal",
+        memberId: "vibhav",
         accNumber: "100021374863",
         maskedNumber: "1000 •••• 4863",
         ifsc: "ESFB0009021",
@@ -959,13 +880,13 @@
       }
     ];
 
-    // Global States
+    // Global Interactive State
     let currentProto = 1;
+    let selectedMember = 'vibhav'; // Default to Vibhav Oswal
+    let selectedBank = 'all';      // 'all' or specific bank code
     let isMasked = true;
-    let p1CurrentIndex = 0;
-    let activeTerminalCat = 'all';
 
-    // Theme Toggle Function
+    // Theme Switcher
     function toggleTheme() {
       const html = document.documentElement;
       const isDark = html.classList.toggle('dark');
@@ -978,7 +899,7 @@
       }
     }
 
-    // Global Eye Mask Toggle
+    // Eye Mask Toggle
     function toggleGlobalEye() {
       isMasked = !isMasked;
       const slot = document.getElementById('eyeIconSlot');
@@ -987,16 +908,7 @@
       } else {
         slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
       }
-
-      document.querySelectorAll('.account-num-display').forEach(el => {
-        const full = el.getAttribute('data-full');
-        const masked = el.getAttribute('data-masked');
-        el.textContent = isMasked ? masked : full;
-      });
-
-      if (currentProto === 2) renderProto2();
-      if (currentProto === 3) renderTerminalList();
-      if (currentProto === 4) renderProto4(currentOwner);
+      renderContent();
     }
 
     // 1-Click Fast Copy Feedback
@@ -1027,345 +939,406 @@
       });
     }
 
-    // HTML Generator for Luxury Bank Card
-    function renderCardHTML(acc) {
-      const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
-      return `
-        <div class="bank-card ${acc.gradient}">
-          <div class="flex items-start justify-between mb-2.5">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="tier-badge ${acc.accent}">${acc.tier}</span>
-                <span class="holder-badge ${acc.holder.includes('Sanjay') ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
-              </div>
-              <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
-              ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
-              ${acc.alias ? `<div class="text-[11px] font-mono text-white/80">Alias: ${acc.alias}</div>` : ''}
-            </div>
-            <div class="text-right">
-              <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider">${acc.label}</span>
-            </div>
-          </div>
+    // Switch between the 4 Prototype Variants
+    function switchPrototype(num) {
+      currentProto = num;
+      for (let i = 1; i <= 4; i++) {
+        const pill = document.getElementById(`protoPill${i}`);
+        if (i === num) {
+          pill.classList.remove('inactive');
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+          pill.classList.add('inactive');
+        }
+      }
+      renderContent();
+    }
 
-          <!-- Account Number and Copy Pill -->
-          <div class="flex items-center justify-between py-2 border-y border-white/10 mb-2.5">
-            <div>
-              <div class="text-[9px] text-white/70 font-semibold uppercase tracking-wider">Account Number</div>
-              <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
-                ${displayNumber}
-              </div>
+    // ========================================================
+    // LAYER 1: MEMBER CAROUSEL RENDERER
+    // ========================================================
+    function renderMemberCarousel() {
+      const track = document.getElementById('memberCarouselTrack');
+      let html = '';
+
+      MEMBERS.forEach(m => {
+        const isActive = m.id === selectedMember;
+        html += `
+          <button onclick="selectMember('${m.id}')" class="member-chip ${isActive ? 'active' : 'inactive'}">
+            <span class="w-5 h-5 rounded-full ${m.avatarBg} text-white flex items-center justify-center text-[10px] font-extrabold shadow-sm">
+              ${m.short}
+            </span>
+            <span>${m.name}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}">
+              ${m.count}
+            </span>
+          </button>
+        `;
+      });
+
+      track.innerHTML = html;
+    }
+
+    function selectMember(memberId) {
+      selectedMember = memberId;
+      selectedBank = 'all'; // reset to all banks under this member
+      renderMemberCarousel();
+      renderBankCarousel();
+      renderContent();
+
+      // Auto scroll selected member into view
+      setTimeout(() => {
+        const activeChip = document.querySelector('#memberCarouselTrack .member-chip.active');
+        if (activeChip) {
+          activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }, 50);
+    }
+
+    // ========================================================
+    // LAYER 2: BANK CAROUSEL RENDERER (DYNAMIC PER MEMBER)
+    // ========================================================
+    function renderBankCarousel() {
+      const track = document.getElementById('bankCarouselTrack');
+      
+      // Determine accounts accessible under selected member
+      let memberAccounts = BANK_ACCOUNTS;
+      if (selectedMember !== 'all') {
+        memberAccounts = BANK_ACCOUNTS.filter(a => a.memberId === selectedMember);
+      }
+
+      // Group unique banks with counts
+      const bankMap = new Map();
+      memberAccounts.forEach(a => {
+        if (!bankMap.has(a.code)) {
+          bankMap.set(a.code, { code: a.code, name: a.shortBank, count: 0 });
+        }
+        bankMap.get(a.code).count++;
+      });
+
+      const uniqueBanks = Array.from(bankMap.values());
+
+      let html = '';
+
+      // "All Banks" chip
+      const isAllActive = selectedBank === 'all';
+      html += `
+        <button onclick="selectBank('all')" class="bank-chip ${isAllActive ? 'active' : 'inactive'}">
+          <span>All Banks</span>
+          <span class="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${isAllActive ? 'bg-indigo-500 text-white' : 'bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
+            ${memberAccounts.length}
+          </span>
+        </button>
+      `;
+
+      uniqueBanks.forEach(b => {
+        const isActive = b.code === selectedBank;
+        html += `
+          <button onclick="selectBank('${b.code}')" class="bank-chip ${isActive ? 'active' : 'inactive'}">
+            <span>${b.name}</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${isActive ? 'bg-sky-500 text-white' : 'bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">
+              ${b.count}
+            </span>
+          </button>
+        `;
+      });
+
+      track.innerHTML = html;
+      document.getElementById('bankCountBadge').textContent = `${uniqueBanks.length} Banks Available`;
+    }
+
+    function selectBank(bankCode) {
+      selectedBank = bankCode;
+      renderBankCarousel();
+      renderContent();
+
+      // Auto scroll selected bank into view
+      setTimeout(() => {
+        const activeChip = document.querySelector('#bankCarouselTrack .bank-chip.active');
+        if (activeChip) {
+          activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+      }, 50);
+    }
+
+    // ========================================================
+    // CONTENT RENDERER (DISPATCHES TO ACTIVE PROTOTYPE VARIANT)
+    // ========================================================
+    function renderContent() {
+      const container = document.getElementById('dynamicContentArea');
+
+      // Filter accounts based on both Layer 1 and Layer 2
+      let filtered = BANK_ACCOUNTS;
+      if (selectedMember !== 'all') {
+        filtered = filtered.filter(a => a.memberId === selectedMember);
+      }
+      if (selectedBank !== 'all') {
+        filtered = filtered.filter(a => a.code === selectedBank);
+      }
+
+      // Check empty state
+      if (!filtered.length) {
+        const memObj = MEMBERS.find(m => m.id === selectedMember) || { name: 'Member' };
+        container.innerHTML = `
+          <div class="py-12 px-6 text-center rounded-2xl border light:bg-white light:border-slate-200 dark:bg-slate-800/60 dark:border-slate-700">
+            <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
-            <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
-              ${COPY_SVG}
-              <span>Copy</span>
+            <h3 class="text-sm font-extrabold light:text-slate-900 dark:text-white mb-1">No Accounts Found for ${memObj.name}</h3>
+            <p class="text-xs text-slate-500 mb-4 max-w-xs mx-auto">No bank accounts have been registered under this family profile yet.</p>
+            <button onclick="simulateAddAccount('${memObj.name}')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-sky-500 hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-md">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Add Bank Account for ${memObj.short}</span>
             </button>
           </div>
+        `;
+        return;
+      }
 
-          <!-- Quick Chips Grid -->
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-              <div class="overflow-hidden">
-                <div class="text-[9px] text-white/60 font-medium">IFSC CODE</div>
-                <div class="font-mono font-bold text-[11px] truncate">${acc.ifsc}</div>
+      if (currentProto === 1) {
+        renderVariant1(container, filtered);
+      } else if (currentProto === 2) {
+        renderVariant2(container, filtered);
+      } else if (currentProto === 3) {
+        renderVariant3(container, filtered);
+      } else if (currentProto === 4) {
+        renderVariant4(container, filtered);
+      }
+    }
+
+    // ========================================================
+    // VARIANT 1: EXECUTIVE RIBBON + LUXURY STACKING CARDS
+    // ========================================================
+    function renderVariant1(container, accounts) {
+      let html = `
+        <div class="flex items-center justify-between text-xs px-1 mb-1">
+          <span class="font-extrabold light:text-slate-800 dark:text-slate-200">
+            ${accounts.length} Account${accounts.length > 1 ? 's' : ''} Listed
+          </span>
+          <span class="text-[11px] text-slate-500">Tap cards to copy details</span>
+        </div>
+      `;
+
+      accounts.forEach(acc => {
+        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        html += `
+          <div class="bank-card ${acc.gradient}">
+            <div class="flex items-start justify-between mb-2.5">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="tier-badge ${acc.accent}">${acc.tier}</span>
+                  <span class="holder-badge ${acc.memberId === 'sanjay' ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
+                </div>
+                <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
+                ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
+                ${acc.alias ? `<div class="text-[11px] font-mono text-white/80">Alias: ${acc.alias}</div>` : ''}
               </div>
-              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
+              <div class="text-right">
+                <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider">${acc.label}</span>
+              </div>
+            </div>
+
+            <!-- Account Number and Copy Pill -->
+            <div class="flex items-center justify-between py-2 border-y border-white/10 mb-2.5">
+              <div>
+                <div class="text-[9px] text-white/70 font-semibold uppercase tracking-wider">Account Number</div>
+                <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
+                  ${displayNumber}
+                </div>
+              </div>
+              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
                 ${COPY_SVG}
                 <span>Copy</span>
               </button>
             </div>
 
-            ${acc.upi ? `
+            <!-- Quick Chips Grid -->
+            <div class="grid grid-cols-2 gap-2 text-xs">
               <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
                 <div class="overflow-hidden">
-                  <div class="text-[9px] text-white/60 font-medium">UPI VPA</div>
-                  <div class="font-mono font-bold text-[11px] truncate">${acc.upi}</div>
+                  <div class="text-[9px] text-white/60 font-medium">IFSC CODE</div>
+                  <div class="font-mono font-bold text-[11px] truncate">${acc.ifsc}</div>
                 </div>
-                <button onclick="copyField('${acc.upi}', this, 'UPI')" class="micro-copy-btn">
+                <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
                   ${COPY_SVG}
                   <span>Copy</span>
                 </button>
               </div>
-            ` : (acc.custId ? `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                <div class="overflow-hidden">
-                  <div class="text-[9px] text-white/60 font-medium">CUSTOMER ID</div>
-                  <div class="font-mono font-bold text-[11px] truncate">${acc.custId}</div>
+
+              ${acc.upi ? `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                  <div class="overflow-hidden">
+                    <div class="text-[9px] text-white/60 font-medium">UPI VPA</div>
+                    <div class="font-mono font-bold text-[11px] truncate">${acc.upi}</div>
+                  </div>
+                  <button onclick="copyField('${acc.upi}', this, 'UPI')" class="micro-copy-btn">
+                    ${COPY_SVG}
+                    <span>Copy</span>
+                  </button>
                 </div>
-                <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="micro-copy-btn">
-                  ${COPY_SVG}
-                  <span>Copy</span>
-                </button>
-              </div>
-            ` : (acc.crn ? `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                <div class="overflow-hidden">
-                  <div class="text-[9px] text-white/60 font-medium">CRN</div>
-                  <div class="font-mono font-bold text-[11px] truncate">${acc.crn}</div>
+              ` : (acc.custId ? `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                  <div class="overflow-hidden">
+                    <div class="text-[9px] text-white/60 font-medium">CUSTOMER ID</div>
+                    <div class="font-mono font-bold text-[11px] truncate">${acc.custId}</div>
+                  </div>
+                  <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="micro-copy-btn">
+                    ${COPY_SVG}
+                    <span>Copy</span>
+                  </button>
                 </div>
-                <button onclick="copyField('${acc.crn}', this, 'CRN')" class="micro-copy-btn">
-                  ${COPY_SVG}
-                  <span>Copy</span>
-                </button>
-              </div>
-            ` : `
-              <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
-                <div class="overflow-hidden">
-                  <div class="text-[9px] text-white/60 font-medium">STATUS</div>
-                  <div class="font-mono font-bold text-[11px] text-emerald-300">ACTIVE</div>
+              ` : (acc.crn ? `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                  <div class="overflow-hidden">
+                    <div class="text-[9px] text-white/60 font-medium">CRN</div>
+                    <div class="font-mono font-bold text-[11px] truncate">${acc.crn}</div>
+                  </div>
+                  <button onclick="copyField('${acc.crn}', this, 'CRN')" class="micro-copy-btn">
+                    ${COPY_SVG}
+                    <span>Copy</span>
+                  </button>
                 </div>
-              </div>
-            `))}
+              ` : `
+                <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 backdrop-blur-sm border border-white/10">
+                  <div class="overflow-hidden">
+                    <div class="text-[9px] text-white/60 font-medium">STATUS</div>
+                    <div class="font-mono font-bold text-[11px] text-emerald-300">ACTIVE</div>
+                  </div>
+                </div>
+              `))}
+            </div>
           </div>
+        `;
+      });
+
+      // Bottom Add Account Action Button
+      html += `
+        <button onclick="simulateAddAccount()" class="w-full py-3 rounded-2xl border-2 border-dashed transition-all flex items-center justify-center gap-2 text-xs font-bold light:border-slate-300 light:text-slate-600 hover:light:border-slate-400 dark:border-slate-700 dark:text-slate-400 hover:dark:border-slate-600 mt-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+          <span>Link Another Bank Account</span>
+        </button>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    // ========================================================
+    // VARIANT 2: EXPANDABLE ACCORDION LEDGER
+    // ========================================================
+    function renderVariant2(container, accounts) {
+      let html = `
+        <div class="p-3 rounded-2xl light:bg-slate-100 dark:bg-slate-800/50 border light:border-slate-200 dark:border-slate-700 mb-2 flex items-center justify-between text-xs font-bold">
+          <span>Accordion Quick-View (${accounts.length} Accounts)</span>
+          <span class="text-[10px] text-sky-500 font-mono">Tap to Expand Details</span>
         </div>
       `;
-    }
 
-    // Switch between the 4 prototypes
-    function switchPrototype(num) {
-      currentProto = num;
-      for (let i = 1; i <= 4; i++) {
-        const view = document.getElementById(`prototype${i}`);
-        const pill = document.getElementById(`protoPill${i}`);
-        if (i === num) {
-          view.classList.remove('hidden');
-          pill.classList.remove('inactive');
-          pill.classList.add('active');
-        } else {
-          view.classList.add('hidden');
-          pill.classList.remove('active');
-          pill.classList.add('inactive');
-        }
-      }
-
-      if (num === 2) {
-        proto2SelectBank('indusind');
-      } else if (num === 3) {
-        renderTerminalList();
-      } else if (num === 4) {
-        proto4SwitchOwner('vibhav');
-      }
-    }
-
-    // ========================================================
-    // PROTOTYPE 1 LOGIC: 1:1 HORIZONTAL PHYSICS DRAG
-    // ========================================================
-    const p1Track = document.getElementById('proto1SwipeTrack');
-    const p1Container = document.getElementById('proto1SwipeContainer');
-
-    function renderProto1() {
-      // Panel 0: HNI
-      const hniAccs = BANK_ACCOUNTS.filter(a => a.category === 'hni');
-      document.getElementById('panel0-content').innerHTML = hniAccs.map(renderCardHTML).join('');
-
-      // Panel 1: Wealth
-      const wealthAccs = BANK_ACCOUNTS.filter(a => a.category === 'wealth');
-      document.getElementById('panel1-content').innerHTML = wealthAccs.map(renderCardHTML).join('');
-
-      // Panel 2: Digital & SFB
-      const digitalAccs = BANK_ACCOUNTS.filter(a => a.category === 'digital');
-      document.getElementById('panel2-content').innerHTML = digitalAccs.map(renderCardHTML).join('');
-    }
-
-    function proto1GoToTab(index, animate = true) {
-      p1CurrentIndex = Math.max(0, Math.min(2, index));
-      [0, 1, 2].forEach(i => {
-        const tab = document.getElementById(`p1Tab${i}`);
-        if (i === p1CurrentIndex) {
-          tab.classList.remove('inactive');
-          tab.classList.add('active');
-        } else {
-          tab.classList.remove('active');
-          tab.classList.add('inactive');
-        }
-      });
-
-      const containerWidth = p1Container.offsetWidth || 358;
-      const targetX = -p1CurrentIndex * containerWidth;
-
-      if (animate) {
-        p1Track.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
-      } else {
-        p1Track.style.transition = 'none';
-      }
-      p1Track.style.transform = `translate3d(${targetX}px, 0, 0)`;
-    }
-
-    // 1:1 Touch Drag Engine for Prototype 1
-    (function initP1SwipeEngine() {
-      let startX = 0, startY = 0, currentDeltaX = 0;
-      let isDragging = false, isHorizontal = null;
-
-      function onStart(e) {
-        const touch = e.touches ? e.touches[0] : e;
-        startX = touch.clientX;
-        startY = touch.clientY;
-        currentDeltaX = 0;
-        isDragging = true;
-        isHorizontal = null;
-        p1Track.style.transition = 'none';
-      }
-
-      function onMove(e) {
-        if (!isDragging) return;
-        const touch = e.touches ? e.touches[0] : e;
-        const deltaX = touch.clientX - startX;
-        const deltaY = touch.clientY - startY;
-
-        if (isHorizontal === null) {
-          if (Math.abs(deltaX) > 6 || Math.abs(deltaY) > 6) {
-            isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
-            if (!isHorizontal) {
-              isDragging = false;
-              return;
-            }
-          } else {
-            return;
-          }
-        }
-
-        if (!isHorizontal) return;
-
-        if (e.cancelable && e.type.startsWith('touch')) {
-          e.preventDefault();
-        }
-
-        const containerWidth = p1Container.offsetWidth || 358;
-        let effectiveDelta = deltaX;
-        if ((p1CurrentIndex === 0 && deltaX > 0) || (p1CurrentIndex === 2 && deltaX < 0)) {
-          effectiveDelta = deltaX * 0.25;
-        }
-
-        currentDeltaX = effectiveDelta;
-        const baseX = -p1CurrentIndex * containerWidth;
-        p1Track.style.transform = `translate3d(${baseX + effectiveDelta}px, 0, 0)`;
-      }
-
-      function onEnd(e) {
-        if (!isDragging || !isHorizontal) {
-          isDragging = false;
-          return;
-        }
-        isDragging = false;
-        const containerWidth = p1Container.offsetWidth || 358;
-        const threshold = containerWidth * 0.22;
-
-        if (currentDeltaX < -threshold && p1CurrentIndex < 2) {
-          proto1GoToTab(p1CurrentIndex + 1);
-        } else if (currentDeltaX > threshold && p1CurrentIndex > 0) {
-          proto1GoToTab(p1CurrentIndex - 1);
-        } else {
-          proto1GoToTab(p1CurrentIndex);
-        }
-      }
-
-      p1Container.addEventListener('touchstart', onStart, { passive: true });
-      p1Container.addEventListener('touchmove', onMove, { passive: false });
-      p1Container.addEventListener('touchend', onEnd);
-      p1Container.addEventListener('touchcancel', onEnd);
-
-      // Desktop mouse drag
-      p1Container.addEventListener('mousedown', onStart);
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onEnd);
-    })();
-
-    // ========================================================
-    // PROTOTYPE 2 LOGIC: INSTITUTION CAROUSEL
-    // ========================================================
-    let p2SelectedBankCode = 'indusind';
-    function proto2SelectBank(bankCode) {
-      p2SelectedBankCode = bankCode;
-      const allCodes = ['indusind', 'axis', 'hdfc', 'kotak', 'idfc', 'federal', 'canara', 'pnb', 'hsbc', 'union', 'jana', 'equitas'];
-      allCodes.forEach(c => {
-        const chip = document.getElementById(`chip-${c}`);
-        if (chip) {
-          if (c === bankCode) {
-            chip.classList.remove('inactive');
-            chip.classList.add('active');
-            chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-          } else {
-            chip.classList.remove('active');
-            chip.classList.add('inactive');
-          }
-        }
-      });
-      renderProto2();
-    }
-
-    function renderProto2() {
-      const container = document.getElementById('bankDetailsContainer');
-      const accounts = BANK_ACCOUNTS.filter(a => a.code === p2SelectedBankCode);
-      if (!accounts.length) {
-        container.innerHTML = `<div class="p-4 text-center text-sm text-slate-500">No accounts found.</div>`;
-        return;
-      }
-      container.innerHTML = accounts.map(renderCardHTML).join('');
-    }
-
-    // ========================================================
-    // PROTOTYPE 3 LOGIC: INSTANT WIRE & RTGS TERMINAL
-    // ========================================================
-    function filterTerminalCategory(cat) {
-      activeTerminalCat = cat;
-      ['all', 'upi', 'private', 'sanjay'].forEach(c => {
-        const tab = document.getElementById(`termCat-${c}`);
-        if (c === cat) {
-          tab.classList.remove('inactive');
-          tab.classList.add('active');
-        } else {
-          tab.classList.remove('active');
-          tab.classList.add('inactive');
-        }
-      });
-      renderTerminalList();
-    }
-
-    function clearTerminalSearch() {
-      document.getElementById('terminalSearchInput').value = '';
-      document.getElementById('clearSearchBtn').classList.add('hidden');
-      renderTerminalList();
-    }
-
-    function filterTerminalList() {
-      const query = document.getElementById('terminalSearchInput').value.trim();
-      document.getElementById('clearSearchBtn').classList.toggle('hidden', query.length === 0);
-      renderTerminalList();
-    }
-
-    function renderTerminalList() {
-      const query = (document.getElementById('terminalSearchInput')?.value || '').toLowerCase().trim();
-      const listEl = document.getElementById('terminalList');
-
-      let filtered = BANK_ACCOUNTS.filter(acc => {
-        if (activeTerminalCat === 'upi' && !acc.upi) return false;
-        if (activeTerminalCat === 'private' && !(acc.code === 'indusind' || acc.code === 'axis' || acc.code === 'hsbc')) return false;
-        if (activeTerminalCat === 'sanjay' && !acc.holder.includes('Sanjay')) return false;
-
-        if (query) {
-          const matchBank = acc.bank.toLowerCase().includes(query);
-          const matchIfsc = acc.ifsc.toLowerCase().includes(query);
-          const matchAcc = acc.accNumber.includes(query);
-          const matchUpi = acc.upi && acc.upi.toLowerCase().includes(query);
-          const matchHolder = acc.holder.toLowerCase().includes(query);
-          return matchBank || matchIfsc || matchAcc || matchUpi || matchHolder;
-        }
-        return true;
-      });
-
-      if (!filtered.length) {
-        listEl.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">No bank accounts match "${query}".</div>`;
-        return;
-      }
-
-      let html = '';
-      filtered.forEach(acc => {
+      accounts.forEach((acc, idx) => {
         const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
         html += `
-          <div class="p-3 rounded-xl border transition-all light:bg-white light:border-slate-200/90 hover:light:border-slate-300 dark:bg-slate-800/80 dark:border-slate-700/80 hover:dark:border-slate-600 shadow-sm">
+          <div class="rounded-2xl border transition-all light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 overflow-hidden shadow-sm">
+            <div class="p-3.5 flex items-center justify-between cursor-pointer" onclick="toggleAccordion('acc-${idx}')">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-xs text-white ${acc.gradient}">
+                  ${acc.shortBank.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-extrabold light:text-slate-900 dark:text-white">${acc.shortBank}</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${acc.memberId === 'sanjay' ? 'bg-amber-500/15 text-amber-600' : 'bg-sky-500/15 text-sky-600'}">${acc.holder}</span>
+                  </div>
+                  <div class="text-[11px] font-mono font-bold text-slate-500">${displayNumber}</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button onclick="event.stopPropagation(); copyField('${acc.accNumber}', this, 'Acc No')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold light:bg-slate-100 light:text-slate-700 dark:bg-slate-700 dark:text-slate-200 flex items-center gap-1">
+                  ${COPY_SVG}
+                  <span>Copy</span>
+                </button>
+                <svg id="chevron-acc-${idx}" class="w-4 h-4 text-slate-400 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </div>
+
+            <!-- Expandable Drawer -->
+            <div id="drawer-acc-${idx}" class="px-3.5 pb-3.5 pt-1 border-t light:border-slate-100 dark:border-slate-700/60 text-xs space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400 font-medium">IFSC Code:</span>
+                <div class="flex items-center gap-1 font-mono font-bold light:text-slate-800 dark:text-slate-200">
+                  <span>${acc.ifsc}</span>
+                  <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="text-sky-500 hover:text-sky-600 ml-1 font-sans font-bold">Copy</button>
+                </div>
+              </div>
+
+              ${acc.upi ? `
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400 font-medium">UPI VPA:</span>
+                  <div class="flex items-center gap-1 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <span class="truncate max-w-[170px]">${acc.upi}</span>
+                    <button onclick="copyField('${acc.upi}', this, 'UPI')" class="text-emerald-500 hover:text-emerald-600 ml-1 font-sans font-bold">Copy</button>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${acc.custId ? `
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400 font-medium">Customer ID:</span>
+                  <div class="flex items-center gap-1 font-mono font-bold light:text-slate-700 dark:text-slate-300">
+                    <span>${acc.custId}</span>
+                    <button onclick="copyField('${acc.custId}', this, 'Cust ID')" class="text-sky-500 hover:text-sky-600 ml-1 font-sans font-bold">Copy</button>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${acc.branch ? `
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400 font-medium">Branch:</span>
+                  <span class="font-medium light:text-slate-700 dark:text-slate-300 text-right truncate max-w-[200px]">${acc.branch}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleAccordion(id) {
+      const drawer = document.getElementById(`drawer-${id}`);
+      const chevron = document.getElementById(`chevron-${id}`);
+      if (drawer.classList.contains('hidden')) {
+        drawer.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        drawer.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    // ========================================================
+    // VARIANT 3: WIRE TRANSFER DIRECT LEDGER (RAPID NEFT/RTGS)
+    // ========================================================
+    function renderVariant3(container, accounts) {
+      let html = `
+        <div class="p-3 rounded-xl border light:bg-sky-50/70 light:border-sky-200 dark:bg-sky-950/20 dark:border-sky-900/40 mb-2 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <span class="text-xs font-bold light:text-sky-900 dark:text-sky-200">Wire Transfer Desk (${accounts.length} Destination Accounts)</span>
+          </div>
+          <span class="text-[10px] font-mono text-sky-600 font-bold">1-Click Copy</span>
+        </div>
+      `;
+
+      accounts.forEach(acc => {
+        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        html += `
+          <div class="p-3 rounded-xl border transition-all light:bg-white light:border-slate-200/90 dark:bg-slate-800/80 dark:border-slate-700/80 shadow-sm">
             <div class="flex items-center justify-between mb-1.5">
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold light:text-slate-900 dark:text-white">${acc.shortBank}</span>
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${acc.holder.includes('Sanjay') ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400'}">${acc.holder}</span>
+                <span class="text-xs font-extrabold light:text-slate-900 dark:text-white">${acc.shortBank}</span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${acc.memberId === 'sanjay' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-sky-500/10 text-sky-600 dark:text-sky-400'}">${acc.holder}</span>
               </div>
               <span class="text-[10px] font-mono text-slate-400">${acc.tier}</span>
             </div>
@@ -1409,65 +1382,78 @@
           </div>
         `;
       });
-      listEl.innerHTML = html;
-    }
 
-    // ========================================================
-    // PROTOTYPE 4 LOGIC: DUAL-OWNER PARTITION
-    // ========================================================
-    let currentOwner = 'vibhav';
-    function proto4SwitchOwner(owner) {
-      currentOwner = owner;
-      const isVibhav = owner === 'vibhav';
-      const p4Vibhav = document.getElementById('p4OwnerVibhav');
-      const p4Sanjay = document.getElementById('p4OwnerSanjay');
-
-      if (isVibhav) {
-        p4Vibhav.classList.remove('inactive');
-        p4Vibhav.classList.add('active');
-        p4Sanjay.classList.remove('active');
-        p4Sanjay.classList.add('inactive');
-      } else {
-        p4Sanjay.classList.remove('inactive');
-        p4Sanjay.classList.add('active');
-        p4Vibhav.classList.remove('active');
-        p4Vibhav.classList.add('inactive');
-      }
-
-      renderProto4(owner);
-    }
-
-    function renderProto4(owner) {
-      const container = document.getElementById('proto4Container');
-      const targetName = owner === 'vibhav' ? 'Vibhav Oswal' : 'Sanjay Oswal';
-      const accounts = BANK_ACCOUNTS.filter(a => a.holder.includes(owner === 'vibhav' ? 'Vibhav' : 'Sanjay'));
-
-      let html = `
-        <div class="p-3 rounded-2xl light:bg-sky-50 dark:bg-slate-800/60 border light:border-sky-100 dark:border-slate-700 mb-3 flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full ${owner === 'vibhav' ? 'bg-sky-500' : 'bg-amber-500'} flex items-center justify-center text-white font-bold text-xs">
-              ${owner === 'vibhav' ? 'VO' : 'SO'}
-            </div>
-            <div>
-              <div class="text-xs font-extrabold light:text-slate-900 dark:text-white">${targetName}</div>
-              <div class="text-[10px] text-slate-500">${accounts.length} Bank Account${accounts.length > 1 ? 's' : ''} Linked</div>
-            </div>
-          </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${owner === 'vibhav' ? 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'}">
-            Verified KYB/KYC
-          </span>
-        </div>
-      `;
-
-      html += accounts.map(renderCardHTML).join('');
       container.innerHTML = html;
     }
 
-    // Initialize default states on load
+    // ========================================================
+    // VARIANT 4: FAMILY PORTFOLIO OVERVIEW
+    // ========================================================
+    function renderVariant4(container, accounts) {
+      let html = `
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="p-3 rounded-xl border light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 text-center">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Total Accounts</div>
+            <div class="text-xl font-extrabold text-indigo-500 font-mono">16</div>
+            <div class="text-[10px] text-slate-500">Across 12 Banks</div>
+          </div>
+          <div class="p-3 rounded-xl border light:bg-white light:border-slate-200 dark:bg-slate-800 dark:border-slate-700 text-center">
+            <div class="text-[10px] font-bold text-slate-400 uppercase">Active UPI VPAs</div>
+            <div class="text-xl font-extrabold text-emerald-500 font-mono">8</div>
+            <div class="text-[10px] text-slate-500">Direct Routing</div>
+          </div>
+        </div>
+      `;
+
+      // Render cards as normal under summary
+      accounts.forEach(acc => {
+        const displayNumber = isMasked ? acc.maskedNumber : acc.accNumber;
+        html += `
+          <div class="bank-card ${acc.gradient}">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <span class="tier-badge ${acc.accent} mb-1 inline-block">${acc.tier}</span>
+                <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
+              </div>
+              <span class="holder-badge ${acc.memberId === 'sanjay' ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
+            </div>
+
+            <div class="flex items-center justify-between py-1.5 border-y border-white/10 mb-2">
+              <div>
+                <div class="text-[9px] text-white/70 font-semibold uppercase">Account Number</div>
+                <div class="text-sm font-extrabold font-mono tracking-wider account-num-display" data-full="${acc.accNumber}" data-masked="${acc.maskedNumber}">
+                  ${displayNumber}
+                </div>
+              </div>
+              <button onclick="copyField('${acc.accNumber}', this, 'Acc No')" class="card-copy-chip">
+                ${COPY_SVG}
+                <span>Copy</span>
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-white/80">IFSC: ${acc.ifsc}</span>
+              <button onclick="copyField('${acc.ifsc}', this, 'IFSC')" class="micro-copy-btn">
+                ${COPY_SVG}
+                <span>Copy</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function simulateAddAccount(memberName) {
+      alert(`Add Bank Account form modal will open pre-configured for: ${memberName || 'Selected Family Member'}`);
+    }
+
+    // Initialize default states on DOM Load
     window.addEventListener('DOMContentLoaded', () => {
-      renderProto1();
-      proto1GoToTab(0, false);
-      renderTerminalList();
+      renderMemberCarousel();
+      renderBankCarousel();
+      renderContent();
     });
   </script>
 </body>
