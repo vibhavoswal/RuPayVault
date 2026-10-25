@@ -498,11 +498,7 @@
       <div class="alignment-crosshair vert"></div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="absolute top-16 inset-x-6 z-50 transform -translate-y-12 opacity-0 transition-all duration-300 pointer-events-none p-3 rounded-2xl bg-neutral-900 text-white border border-neutral-700 text-xs font-semibold shadow-2xl flex items-center justify-between">
-      <span id="toast-text">Toast</span>
-      <span class="text-emerald-400 font-mono-code">✓</span>
-    </div>
+    <!-- Toast Notification (Removed per user request) -->
 
   </div>
 
@@ -515,14 +511,7 @@
     let isGuideVisible = true;
 
     function toast(msg) {
-      const el = document.getElementById('toast');
-      document.getElementById('toast-text').textContent = msg;
-      el.classList.remove('-translate-y-12', 'opacity-0');
-      el.classList.add('translate-y-0', 'opacity-100');
-      setTimeout(() => {
-        el.classList.remove('translate-y-0', 'opacity-100');
-        el.classList.add('-translate-y-12', 'opacity-0');
-      }, 2000);
+      // Redundant text layovers removed per user request
     }
 
     function toggleSlowMo() {
