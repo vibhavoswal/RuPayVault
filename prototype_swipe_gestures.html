@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault - Brand Voucher Swipe Gesture Prototypes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Hide scrollbars */
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Interactive Prototype Selector Bar */
+    .proto-nav-pill {
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+    .proto-nav-pill.active {
+      background: #0f172a;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    }
+    .proto-nav-pill.inactive {
+      background: rgba(255, 255, 255, 0.8);
+      color: #64748b;
+      border: 1px solid rgba(203, 213, 225, 0.8);
+    }
+    .proto-nav-pill.inactive:hover {
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    /* Brand Top Tab Chips */
+    .brand-tab-chip {
+      padding: 10px 16px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+    }
+    .brand-tab-chip.active {
+      background: #0C8C46;
+      color: #ffffff;
+      box-shadow: 0 8px 20px -4px rgba(12, 140, 70, 0.35);
+      transform: translateY(-1px);
+    }
+    .brand-tab-chip.inactive {
+      background: #ffffff;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+    .brand-tab-chip.inactive:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    /* Voucher Card in Light Theme */
+    .voucher-card-light {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .voucher-card-light:hover {
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Code inner box */
+    .code-box-light {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Two-Pill Dock Styles */
+    .action-pill-mock {
+      height: 56px;
+      padding: 4px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(28px);
+      border: 1px solid rgba(203, 213, 225, 0.9);
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06);
+      margin-right: 8px;
+    }
+    .action-circle-mock {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+    .dock-sat-mock {
+      width: 56px;
+      height: 56px;
+      border-radius: 9999px;
+      background: #F47A21;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 28px -4px rgba(244, 122, 33, 0.45);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Swipe Indicator Hint */
+    .swipe-hint-pill {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #e2e8f0;
+      backdrop-filter: blur(16px);
+      border-radius: 9999px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    /* CSS Scroll Snap Container */
+    .snap-viewport {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      width: 100%;
+    }
+    .snap-slide {
+      flex: 0 0 100%;
+      width: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      padding: 0 16px;
+    }
+
+    /* 3D Depth Peel Container */
+    .perspective-container {
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+
+    /* Touch grab helper */
+    .grab-surface {
+      cursor: grab;
+      touch-action: pan-y;
+    }
+    .grab-surface:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-28">
+
+  <!-- Top Fixed Prototype Switcher Bar -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-sm">
+    <div class="max-w-md mx-auto">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#0C8C46] animate-pulse"></div>
+          <span class="text-xs font-black uppercase tracking-wider text-slate-800">Swipe Gesture Lab</span>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-[#F47A21]">Light Mode</span>
+      </div>
+
+      <!-- 5 Prototype Tabs -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1">
+        <button onclick="setPrototype(1)" id="p-btn-1" class="proto-nav-pill active">1. Physics 1:1 Drag</button>
+        <button onclick="setPrototype(2)" id="p-btn-2" class="proto-nav-pill inactive">2. Native Scroll-Snap</button>
+        <button onclick="setPrototype(3)" id="p-btn-3" class="proto-nav-pill inactive">3. Whitespace Guard</button>
+        <button onclick="setPrototype(4)" id="p-btn-4" class="proto-nav-pill inactive">4. 3D Card Peel</button>
+        <button onclick="setPrototype(5)" id="p-btn-5" class="proto-nav-pill inactive">5. Flick Velocity</button>
+      </div>
+
+      <!-- Prototype Description Banner -->
+      <div id="proto-desc-box" class="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+        <span id="proto-desc-text">Drag anywhere horizontally with mouse or finger to slide between brands with real-time 1:1 finger tracking.</span>
+        <span id="proto-badge" class="ml-2 font-mono-code font-bold text-[10px] bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded shrink-0">1:1 Physics</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Screen Simulation Container -->
+  <main class="max-w-md mx-auto px-4 pt-4">
+
+    <!-- Top Brand Tabs Horizontal Scroller -->
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-xs font-extrabold uppercase text-slate-400 tracking-wider">Brand Vaults</span>
+        <span id="active-brand-indicator" class="text-xs font-black text-[#0C8C46]">Lakmé Salon (1 / 5)</span>
+      </div>
+      <div id="brand-tabs-container" class="flex items-center gap-2 overflow-x-auto pb-1 scroll-smooth">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+
+    <!-- Denomination Summary Banner -->
+    <div id="denom-banner" class="mb-4 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Brand Total</span>
+        <h3 id="brand-name-title" class="text-sm font-extrabold text-slate-900">Lakmé Salon</h3>
+      </div>
+      <div class="text-right">
+        <span id="brand-count-pill" class="text-[11px] font-bold text-slate-500">3 vouchers</span>
+        <div id="brand-denom-total" class="text-base font-black text-[#F47A21] font-mono-code">₹4,500</div>
+      </div>
+    </div>
+
+    <!-- Gesture Interactive Area -->
+    <div id="gesture-arena" class="relative overflow-hidden rounded-3xl bg-slate-100/70 p-1 border border-slate-200/80 min-h-[460px]">
+      
+      <!-- Real-time HUD Indicator -->
+      <div class="absolute top-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-none">
+        <div class="swipe-hint-pill shadow-sm">
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          <span id="hud-status">Swipe left/right anywhere</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div id="hud-metrics" class="text-[10px] font-mono-code font-bold bg-white/90 border border-slate-200 px-2 py-1 rounded-full text-slate-500 shadow-sm">
+          ΔX: 0px
+        </div>
+      </div>
+
+      <!-- Mode 1, 3, 4, 5: Dynamic Track Container -->
+      <div id="track-container" class="grab-surface w-full h-full pt-12 pb-6 px-3">
+        <!-- Voucher Cards Container -->
+        <div id="vouchers-render-slot" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Mode 2: Native Scroll-Snap Container (Hidden unless Prototype 2 active) -->
+      <div id="snap-container" class="snap-viewport hidden pt-12 pb-6">
+        <!-- 5 Full snap slides rendered dynamically -->
+      </div>
+
+      <!-- Left / Right Edge Peeking Indicators -->
+      <div id="edge-peek-left" class="absolute left-1 top-1/2 -translate-y-1/2 w-8 h-16 rounded-r-xl bg-slate-900/10 backdrop-blur-sm flex items-center justify-start pl-1 opacity-0 transition-opacity pointer-events-none z-20">
+        <svg class="w-4 h-4 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+      </div>
+      <div id="edge-peek-right" class="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-16 rounded-l-xl bg-slate-900/10 backdrop-blur-sm flex items-center justify-end pr-1 opacity-0 transition-opacity pointer-events-none z-20">
+        <svg class="w-4 h-4 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </div>
+
+    <!-- Directional Quick Switch Bar -->
+    <div class="mt-3 flex items-center justify-between px-2">
+      <button onclick="prevBrand()" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        <span id="prev-btn-label">Prev</span>
+      </button>
+
+      <div class="flex items-center gap-1.5" id="dots-indicator">
+        <!-- Dots rendered dynamically -->
+      </div>
+
+      <button onclick="nextBrand()" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-1">
+        <span id="next-btn-label">Next</span>
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Two-Pill Dock Simulator at Bottom Right -->
+  <div class="fixed bottom-5 right-5 z-40 flex items-center pointer-events-none">
+    <!-- Action Pill Mock -->
+    <div id="dock-action-pill" class="action-pill-mock pointer-events-auto">
+      <div class="action-circle-mock" style="background: #f59e0b;" title="Tag Card">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+      </div>
+      <div class="action-circle-mock" style="background: #25D366;" title="Share">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+      </div>
+      <div class="action-circle-mock" style="background: #0C8C46;" title="Redeem">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </div>
+    <!-- Satellite Cross / Select Mock -->
+    <div class="dock-sat-mock pointer-events-auto" title="Select Multiple">
+      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 11 12 14 22 4"></polyline>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    // 5 Brands Dataset
+    const BRANDS = [
+      {
+        key: 'Lakme',
+        name: 'Lakmé Salon',
+        tag: 'Wellness',
+        denom: 1500,
+        vouchers: [
+          { id: 'l1', code: 'LAK-1001-XXXX', pin: '4582', card: 'PNB Rupay Platinum (••8821)' },
+          { id: 'l2', code: 'LAK-1002-XXXX', pin: '9120', card: 'HDFC Rupay Select (••1042)' },
+          { id: 'l3', code: 'LAK-1003-XXXX', pin: '3341', card: 'SBI Rupay Prime (••5509)' }
+        ]
+      },
+      {
+        key: 'FourFountains',
+        name: 'Four Fountains',
+        tag: 'Strict 30D Expiry',
+        denom: 1500,
+        warning: 'Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.',
+        vouchers: [
+          { id: 'ff1', code: 'FF-SPA-8831', pin: '7721', card: 'PNB Rupay Platinum (••8821)' },
+          { id: 'ff2', code: 'FF-SPA-9904', pin: '1109', card: 'ICICI Coral Rupay (••9912)' }
+        ]
+      },
+      {
+        key: 'Kalyan',
+        name: 'Kalyan Jewellers',
+        tag: 'Jewellery',
+        denom: 2000,
+        vouchers: [
+          { id: 'kj1', code: 'KJ-GOLD-5501', pin: '8832', card: 'Axis Rupay Platinum (••4419)' },
+          { id: 'kj2', code: 'KJ-GOLD-5502', pin: '6620', card: 'BOB Premier Rupay (••3381)' }
+        ]
+      },
+      {
+        key: 'Myntra',
+        name: 'Myntra',
+        tag: 'Fashion',
+        denom: 500,
+        vouchers: [
+          { id: 'my1', code: 'MYN-500-A912', pin: '3301', card: 'HDFC Rupay Select (••1042)' },
+          { id: 'my2', code: 'MYN-500-B404', pin: '8821', card: 'PNB Rupay Platinum (••8821)' },
+          { id: 'my3', code: 'MYN-500-C719', pin: '4490', card: 'SBI Rupay Prime (••5509)' }
+        ]
+      },
+      {
+        key: 'Reliance',
+        name: 'Reliance Digital',
+        tag: 'Electronics',
+        denom: 500,
+        vouchers: [
+          { id: 'rd1', code: 'RD-DIG-1182', pin: null, card: 'Kotak Rupay (••7701)' },
+          { id: 'rd2', code: 'RD-DIG-9930', pin: null, card: 'PNB Rupay Platinum (••8821)' }
+        ]
+      }
+    ];
+
+    let currentProto = 1;
+    let activeBrandIndex = 0;
+
+    const PROTO_CONFIG = {
+      1: {
+        badge: '1:1 Physics',
+        desc: 'Direct 1:1 finger/mouse tracking. The voucher deck follows your gesture with spring tension and automatically switches at 25% drag.'
+      },
+      2: {
+        badge: 'CSS Scroll-Snap',
+        desc: 'Native hardware-accelerated horizontal scroll container with scroll-snap-type: x mandatory. 120Hz smooth ProMotion swipe.'
+      },
+      3: {
+        badge: 'Whitespace Guard',
+        desc: 'Horizontal swipe is guarded to prevent conflict with vertical scrolling. Peeking arrows reveal next brand before snapping.'
+      },
+      4: {
+        badge: '3D Depth Peel',
+        desc: '3D card perspective tilt (rotateY & scale) creates a tactile, physical card deck transition as you swipe between brands.'
+      },
+      5: {
+        badge: 'Flick Velocity',
+        desc: 'Velocity-sensitive detection. Even a swift 15px micro-flick instantly snaps to the next brand; slow drags preview content.'
+      }
+    };
+
+    // Initialize UI
+    function init() {
+      renderBrandTabs();
+      renderActiveBrandContent();
+      renderDots();
+      setupGestureListeners();
+      setupSnapViewport();
+    }
+
+    function setPrototype(id) {
+      currentProto = id;
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById(`p-btn-${i}`);
+        if (btn) {
+          btn.className = (i === id) ? 'proto-nav-pill active' : 'proto-nav-pill inactive';
+        }
+      }
+      document.getElementById('proto-badge').textContent = PROTO_CONFIG[id].badge;
+      document.getElementById('proto-desc-text').textContent = PROTO_CONFIG[id].desc;
+
+      const track = document.getElementById('track-container');
+      const snap = document.getElementById('snap-container');
+
+      if (id === 2) {
+        track.classList.add('hidden');
+        snap.classList.remove('hidden');
+        syncSnapSlide(activeBrandIndex);
+      } else {
+        track.classList.remove('hidden');
+        snap.classList.add('hidden');
+        resetTrackTransform();
+        renderActiveBrandContent();
+      }
+
+      document.getElementById('hud-status').textContent = `Prototype ${id} Active · Swipe left/right`;
+    }
+
+    function renderBrandTabs() {
+      const c = document.getElementById('brand-tabs-container');
+      c.innerHTML = BRANDS.map((b, idx) => {
+        const isActive = (idx === activeBrandIndex);
+        return `
+          <div onclick="selectBrand(${idx})" id="tab-chip-${idx}" class="brand-tab-chip ${isActive ? 'active' : 'inactive'}">
+            <span>${b.name}</span>
+            <span class="text-[10px] opacity-80">${b.vouchers.length} vouchers</span>
+          </div>
+        `;
+      }).join('');
+      scrollActiveTabIntoView();
+    }
+
+    function scrollActiveTabIntoView() {
+      const el = document.getElementById(`tab-chip-${activeBrandIndex}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+
+    function renderActiveBrandContent() {
+      const b = BRANDS[activeBrandIndex];
+      document.getElementById('brand-name-title').textContent = b.name;
+      document.getElementById('brand-count-pill').textContent = `${b.vouchers.length} voucher${b.vouchers.length > 1 ? 's' : ''}`;
+      document.getElementById('brand-denom-total').textContent = `₹${(b.vouchers.length * b.denom).toLocaleString('en-IN')}`;
+      document.getElementById('active-brand-indicator').textContent = `${b.name} (${activeBrandIndex + 1} / ${BRANDS.length})`;
+
+      // Prev / Next button labels
+      const prevIdx = (activeBrandIndex - 1 + BRANDS.length) % BRANDS.length;
+      const nextIdx = (activeBrandIndex + 1) % BRANDS.length;
+      document.getElementById('prev-btn-label').textContent = BRANDS[prevIdx].name.split(' ')[0];
+      document.getElementById('next-btn-label').textContent = BRANDS[nextIdx].name.split(' ')[0];
+
+      // Render cards
+      const slot = document.getElementById('vouchers-render-slot');
+      let html = '';
+
+      if (b.warning) {
+        html += `
+          <div class="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2 shadow-sm">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <div>
+              <strong class="font-bold">Strict 30-Day Expiry:</strong>
+              <p class="text-[11px] text-amber-700 mt-0.5">${b.warning}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      b.vouchers.forEach((v, i) => {
+        html += `
+          <div class="voucher-card-light">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono-code">PASS #${i + 1}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0C8C46] border border-emerald-200/60">₹${b.denom.toLocaleString('en-IN')}</span>
+            </div>
+            
+            <div class="code-box-light mb-2">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 block font-mono-code">CODE</span>
+                <span class="text-sm font-extrabold font-mono-code text-slate-800">${v.code}</span>
+              </div>
+              <button onclick="navigator.clipboard?.writeText('${v.code}');" class="px-3 py-1.5 rounded-xl bg-[#0C8C46] hover:bg-[#0a7a3d] text-white text-xs font-bold shadow-sm active:scale-95 transition-all">Copy</button>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+              <span>${v.pin ? `PIN: <strong class="text-slate-800 font-mono-code">${v.pin}</strong>` : '<span class="italic text-slate-400">Direct Code · No PIN</span>'}</span>
+              <span class="truncate max-w-[170px] text-slate-400">${v.card}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      slot.innerHTML = html;
+      renderDots();
+      renderBrandTabs();
+    }
+
+    function renderDots() {
+      const container = document.getElementById('dots-indicator');
+      container.innerHTML = BRANDS.map((_, i) => `
+        <span onclick="selectBrand(${i})" class="h-2 rounded-full transition-all duration-300 cursor-pointer ${i === activeBrandIndex ? 'w-6 bg-[#0C8C46]' : 'w-2 bg-slate-300'}"></span>
+      `).join('');
+    }
+
+    function selectBrand(index) {
+      if (index === activeBrandIndex) return;
+      activeBrandIndex = index;
+      renderActiveBrandContent();
+      if (currentProto === 2) {
+        syncSnapSlide(activeBrandIndex);
+      }
+    }
+
+    function nextBrand() {
+      const nextIdx = (activeBrandIndex + 1) % BRANDS.length;
+      animateTransition('left', () => selectBrand(nextIdx));
+    }
+
+    function prevBrand() {
+      const prevIdx = (activeBrandIndex - 1 + BRANDS.length) % BRANDS.length;
+      animateTransition('right', () => selectBrand(prevIdx));
+    }
+
+    function animateTransition(direction, callback) {
+      const track = document.getElementById('track-container');
+      const offset = direction === 'left' ? -220 : 220;
+      
+      track.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
+      track.style.transform = `translateX(${offset}px) scale(0.96)`;
+      track.style.opacity = '0';
+
+      setTimeout(() => {
+        callback();
+        track.style.transition = 'none';
+        track.style.transform = `translateX(${-offset}px) scale(0.96)`;
+        
+        requestAnimationFrame(() => {
+          track.style.transition = 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.32s ease';
+          track.style.transform = 'translateX(0) scale(1)';
+          track.style.opacity = '1';
+        });
+      }, 220);
+    }
+
+    function resetTrackTransform() {
+      const track = document.getElementById('track-container');
+      track.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+      track.style.transform = 'translateX(0) scale(1)';
+      track.style.opacity = '1';
+    }
+
+    // -------------------------------------------------------------
+    // GESTURE RECOGNITION ENGINE (TOUCH & MOUSE DRAG)
+    // -------------------------------------------------------------
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let startTime = 0;
+    let isDragging = false;
+    let isHorizontalGesture = false;
+
+    function setupGestureListeners() {
+      const arena = document.getElementById('gesture-arena');
+      const track = document.getElementById('track-container');
+
+      // Touch events
+      arena.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+
+      // Mouse drag simulation for desktop testing
+      arena.addEventListener('mousedown', onMouseDown);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+
+    function onTouchStart(e) {
+      if (currentProto === 2) return; // Native scroll handled by CSS snap
+      const touch = e.touches[0];
+      startDrag(touch.clientX, touch.clientY);
+    }
+    function onTouchMove(e) {
+      if (!isDragging || currentProto === 2) return;
+      const touch = e.touches[0];
+      handleDragMove(touch.clientX, touch.clientY, e);
+    }
+    function onTouchEnd(e) {
+      if (!isDragging || currentProto === 2) return;
+      endDrag();
+    }
+
+    function onMouseDown(e) {
+      if (currentProto === 2) return;
+      startDrag(e.clientX, e.clientY);
+    }
+    function onMouseMove(e) {
+      if (!isDragging || currentProto === 2) return;
+      handleDragMove(e.clientX, e.clientY, e);
+    }
+    function onMouseUp(e) {
+      if (!isDragging || currentProto === 2) return;
+      endDrag();
+    }
+
+    function startDrag(x, y) {
+      isDragging = true;
+      isHorizontalGesture = false;
+      startX = x;
+      startY = y;
+      currentX = x;
+      currentY = y;
+      startTime = Date.now();
+      const track = document.getElementById('track-container');
+      track.style.transition = 'none';
+    }
+
+    function handleDragMove(x, y, event) {
+      currentX = x;
+      currentY = y;
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+
+      // Intent detection: Guard vertical scrolling vs horizontal swipe
+      if (!isHorizontalGesture) {
+        if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+          isHorizontalGesture = true;
+        } else if (Math.abs(deltaY) > 8) {
+          isDragging = false;
+          return;
+        }
+      }
+
+      if (isHorizontalGesture) {
+        if (event.cancelable) event.preventDefault();
+        applyGesturePhysics(deltaX);
+      }
+    }
+
+    function applyGesturePhysics(deltaX) {
+      const track = document.getElementById('track-container');
+      const hud = document.getElementById('hud-metrics');
+      const peekL = document.getElementById('edge-peek-left');
+      const peekR = document.getElementById('edge-peek-right');
+
+      hud.textContent = `ΔX: ${Math.round(deltaX)}px`;
+
+      // Edge resistance if at first or last brand
+      let effectiveDelta = deltaX;
+      if ((activeBrandIndex === 0 && deltaX > 0) || (activeBrandIndex === BRANDS.length - 1 && deltaX < 0)) {
+        effectiveDelta = deltaX * 0.35; // rubber-band dampening
+      }
+
+      // Visual Edge Peeking Indicators
+      if (deltaX > 20) {
+        peekL.style.opacity = Math.min(1, deltaX / 100);
+        peekR.style.opacity = '0';
+      } else if (deltaX < -20) {
+        peekR.style.opacity = Math.min(1, Math.abs(deltaX) / 100);
+        peekL.style.opacity = '0';
+      } else {
+        peekL.style.opacity = '0';
+        peekR.style.opacity = '0';
+      }
+
+      switch (currentProto) {
+        case 1: // Physics 1:1 Drag
+          track.style.transform = `translateX(${effectiveDelta}px)`;
+          track.style.opacity = `${1 - Math.min(0.4, Math.abs(effectiveDelta) / 600)}`;
+          break;
+
+        case 3: // Whitespace Guarded
+          track.style.transform = `translateX(${effectiveDelta * 0.9}px) scale(${1 - Math.min(0.04, Math.abs(effectiveDelta) / 1000)})`;
+          break;
+
+        case 4: // 3D Depth Card Peel
+          const rotateAngle = Math.max(-14, Math.min(14, effectiveDelta * 0.04));
+          const scale = 1 - Math.min(0.08, Math.abs(effectiveDelta) / 800);
+          track.style.transform = `perspective(800px) translateX(${effectiveDelta}px) rotateY(${rotateAngle}deg) scale(${scale})`;
+          break;
+
+        case 5: // Flick Velocity Drag
+          track.style.transform = `translateX(${effectiveDelta * 0.85}px)`;
+          break;
+      }
+    }
+
+    function endDrag() {
+      isDragging = false;
+      const deltaX = currentX - startX;
+      const timeMs = Math.max(1, Date.now() - startTime);
+      const velocity = Math.abs(deltaX) / timeMs; // px/ms
+
+      document.getElementById('edge-peek-left').style.opacity = '0';
+      document.getElementById('edge-peek-right').style.opacity = '0';
+
+      const arenaWidth = document.getElementById('gesture-arena').clientWidth;
+      const threshold = arenaWidth * 0.22; // 22% drag threshold
+
+      let shouldAdvance = false;
+      let direction = 0;
+
+      if (currentProto === 5) {
+        // High-velocity flick sensitive
+        if (velocity > 0.35 || Math.abs(deltaX) > threshold) {
+          shouldAdvance = true;
+          direction = deltaX < 0 ? 1 : -1;
+        }
+      } else {
+        // Standard drag threshold
+        if (Math.abs(deltaX) > threshold || (velocity > 0.5 && Math.abs(deltaX) > 30)) {
+          shouldAdvance = true;
+          direction = deltaX < 0 ? 1 : -1;
+        }
+      }
+
+      if (shouldAdvance) {
+        const targetIdx = activeBrandIndex + direction;
+        if (targetIdx >= 0 && targetIdx < BRANDS.length) {
+          animateTransition(direction > 0 ? 'left' : 'right', () => selectBrand(targetIdx));
+        } else {
+          // Spring back (boundary bounce)
+          resetTrackTransform();
+        }
+      } else {
+        // Snap back to current
+        resetTrackTransform();
+      }
+
+      document.getElementById('hud-metrics').textContent = 'ΔX: 0px';
+    }
+
+    // -------------------------------------------------------------
+    // PROTOTYPE 2: CSS SCROLL-SNAP VIEWPORT INITIALIZER
+    // -------------------------------------------------------------
+    function setupSnapViewport() {
+      const container = document.getElementById('snap-container');
+      container.innerHTML = BRANDS.map((b, idx) => {
+        let cardsHtml = '';
+        if (b.warning) {
+          cardsHtml += `
+            <div class="mb-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2 shadow-sm">
+              <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <div><strong class="font-bold">Strict 30-Day Expiry:</strong><p class="text-[11px] text-amber-700 mt-0.5">${b.warning}</p></div>
+            </div>
+          `;
+        }
+        b.vouchers.forEach((v, i) => {
+          cardsHtml += `
+            <div class="voucher-card-light mb-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-black uppercase text-slate-400 font-mono-code">PASS #${i + 1}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0C8C46] border border-emerald-200/60">₹${b.denom.toLocaleString('en-IN')}</span>
+              </div>
+              <div class="code-box-light mb-2">
+                <div>
+                  <span class="text-[10px] font-bold text-slate-400 block font-mono-code">CODE</span>
+                  <span class="text-sm font-extrabold font-mono-code text-slate-800">${v.code}</span>
+                </div>
+                <button class="px-3 py-1.5 rounded-xl bg-[#0C8C46] text-white text-xs font-bold">Copy</button>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                <span>${v.pin ? `PIN: <strong class="text-slate-800 font-mono-code">${v.pin}</strong>` : '<span class="italic text-slate-400">Direct Code</span>'}</span>
+                <span class="truncate max-w-[170px] text-slate-400">${v.card}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        return `
+          <div class="snap-slide" id="snap-slide-${idx}">
+            ${cardsHtml}
+          </div>
+        `;
+      }).join('');
+
+      // Scroll listener for snapping updates
+      let isScrollingTimer;
+      container.addEventListener('scroll', () => {
+        clearTimeout(isScrollingTimer);
+        isScrollingTimer = setTimeout(() => {
+          const slideWidth = container.clientWidth;
+          const newIdx = Math.round(container.scrollLeft / slideWidth);
+          if (newIdx !== activeBrandIndex && newIdx >= 0 && newIdx < BRANDS.length) {
+            activeBrandIndex = newIdx;
+            renderActiveBrandContent();
+          }
+        }, 80);
+      }, { passive: true });
+    }
+
+    function syncSnapSlide(index) {
+      const container = document.getElementById('snap-container');
+      const slide = document.getElementById(`snap-slide-${index}`);
+      if (slide) {
+        slide.scrollIntoView({ behavior: 'smooth', inline: 'start' });
+      }
+    }
+
+    // Run on load
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
