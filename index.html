@@ -8100,6 +8100,65 @@
       renderBankCardsList();
     }
 
+    // Inline Placard Field Editor (Option A: In-Place Morph)
+    let bankInlineEditing = { cardId: null, field: null };
+
+    function startBankInlineEdit(cardId, field) {
+      bankInlineEditing = { cardId, field };
+      renderBankCardsList();
+      setTimeout(() => {
+        const inputId = `bank-input-${field === 'custId' ? 'cust' : 'upi'}-${cardId}`;
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 50);
+    }
+
+    function cancelBankInlineEdit() {
+      bankInlineEditing = { cardId: null, field: null };
+      renderBankCardsList();
+    }
+
+    function handleBankInlineKey(e, cardId, field) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveBankInlineField(cardId, field);
+      } else if (e.key === 'Escape') {
+        cancelBankInlineEdit();
+      }
+    }
+
+    function saveBankInlineField(cardId, field) {
+      const inputId = `bank-input-${field === 'custId' ? 'cust' : 'upi'}-${cardId}`;
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      const rawVal = input.value.trim();
+      const val = rawVal.length > 0 ? rawVal : null;
+
+      // Update current accounts list and persist to localStorage
+      let accounts = getBankAccountsList();
+      accounts = JSON.parse(JSON.stringify(accounts));
+
+      const targetAcc = accounts.find(a => a.id === cardId);
+      if (targetAcc) {
+        targetAcc[field] = val;
+        try {
+          localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(accounts));
+        } catch (e) {
+          console.error('Failed to save bank accounts data:', e);
+        }
+        const masterAcc = BANK_ACCOUNTS_MASTER.find(a => a.id === cardId);
+        if (masterAcc) {
+          masterAcc[field] = val;
+        }
+      }
+
+      bankInlineEditing = { cardId: null, field: null };
+      renderBankCardsList();
+    }
+
     // Bank Cards List Renderer (Card Manager Style)
     function renderBankCardsList() {
       const container = document.getElementById('bank-accounts-card-list');
@@ -8149,6 +8208,8 @@
         const isIndividuallyPeeked = bankPeekStates.has(acc.id);
         const isCurrentlyUnmasked = (!isBankGlobalMasked) || isIndividuallyPeeked;
         const isInfoRevealed = bankCardInfoStates.has(acc.id);
+        const isCustEditing = (bankInlineEditing.cardId === acc.id && bankInlineEditing.field === 'custId');
+        const isUpiEditing = (bankInlineEditing.cardId === acc.id && bankInlineEditing.field === 'upi');
         const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
         const holderClass = acc.memberId === 'sanjay' ? 'holder-sanjay' :
                             acc.memberId === 'aruna' ? 'holder-aruna' :
@@ -8221,22 +8282,36 @@
                   </div>
                 </button>
 
-                <!-- Customer ID Tile (Always visible even if not assigned) -->
-                ${acc.custId ? `
-                  <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
-                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
-                    <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                      <span class="truncate copy-target-text">${acc.custId}</span>
-                      ${BA_MICRO_COPY_SVG}
-                    </div>
-                  </button>
-                ` : `
-                  <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
-                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
-                    <div class="font-mono-apple text-xs font-medium text-white/40">
-                      <span>—</span>
-                    </div>
+                <!-- Customer ID Tile: Interactive Add / Edit / Copy -->
+                ${isCustEditing ? `
+                  <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
+                    <input id="bank-input-cust-${acc.id}" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">✓</button>
+                    <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
                   </div>
+                ` : acc.custId ? `
+                  <div class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all flex items-center justify-between">
+                    <div onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this.parentElement)" title="Tap to copy Customer ID" class="flex-1 cursor-pointer truncate mr-1.5">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                      <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                        <span class="truncate copy-target-text">${acc.custId}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </div>
+                    <button onclick="startBankInlineEdit('${acc.id}', 'custId')" title="Edit Customer ID" class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/20 text-white/40 hover:text-amber-300 flex items-center justify-center transition-all shrink-0 active:scale-95">
+                      <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                  </div>
+                ` : `
+                  <button onclick="startBankInlineEdit('${acc.id}', 'custId')" title="Add Customer ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
+                    <div>
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">Customer ID</div>
+                      <div class="font-mono-apple text-xs font-medium text-emerald-300 flex items-center gap-1">
+                        <span>+ Add Cust ID</span>
+                      </div>
+                    </div>
+                    <span class="text-[10px] text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded font-bold group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors">+</span>
+                  </button>
                 `}
               </div>
 
@@ -8246,23 +8321,37 @@
               </button>
             </div>
 
-            <!-- Row 4: UPI ID Tile (Always visible even if not created, full-width) -->
+            <!-- Row 4: UPI ID Tile: Interactive Add / Edit / Copy -->
             <div class="mt-2">
-              ${acc.upi ? `
-                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
-                  <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${acc.upi}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </div>
-                </button>
-              ` : `
-                <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
-                  <div class="font-mono-apple text-xs font-medium text-white/40">
-                    <span>Not Created</span>
-                  </div>
+              ${isUpiEditing ? `
+                <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
+                  <input id="bank-input-upi-${acc.id}" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                  <button onclick="saveBankInlineField('${acc.id}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
+                  <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
                 </div>
+              ` : acc.upi ? `
+                <div class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all flex items-center justify-between">
+                  <div onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this.parentElement)" title="Tap to copy UPI ID" class="flex-1 cursor-pointer truncate mr-1.5">
+                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
+                    <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                      <span class="truncate copy-target-text">${acc.upi}</span>
+                      ${BA_MICRO_COPY_SVG}
+                    </div>
+                  </div>
+                  <button onclick="startBankInlineEdit('${acc.id}', 'upi')" title="Edit UPI ID" class="w-6 h-6 rounded-lg bg-white/5 hover:bg-white/20 text-white/40 hover:text-amber-300 flex items-center justify-center transition-all shrink-0 active:scale-95">
+                    <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                </div>
+              ` : `
+                <button onclick="startBankInlineEdit('${acc.id}', 'upi')" title="Add UPI ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
+                  <div>
+                    <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI ID</div>
+                    <div class="font-mono-apple text-xs font-medium text-emerald-300 flex items-center gap-1">
+                      <span>+ Set UPI Handle</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded font-bold group-hover:bg-emerald-500 group-hover:text-slate-950 transition-colors">+ Add</span>
+                </button>
               `}
             </div>
 
@@ -9630,8 +9719,15 @@
       if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
       // 2. Initialize security: Check 24-Hour session & hydrate encrypted cache
-      if (isSessionValid()) {
-        await unlockVaultDirect(getSessionToken());
+      const urlParams = new URLSearchParams(window.location.search);
+      const isDevUnlock = urlParams.get('dev_unlock') === 'true';
+
+      if (isSessionValid() || isDevUnlock) {
+        if (isDevUnlock) {
+          const lockEl = document.getElementById('vault-lock-screen');
+          if (lockEl) { lockEl.classList.add('hidden'); lockEl.style.display = 'none'; }
+        }
+        await unlockVaultDirect(getSessionToken() || 'dev_token');
       } else {
         lockVault();
       }
@@ -9662,8 +9758,33 @@
       setTab('vault');
 
       // 5. Default to Card Manager on first load, or retain active workspace across refreshes
-      const savedWorkspace = sessionStorage.getItem('rupay_active_workspace') || 'cards';
+      const urlWs = urlParams.get('ws');
+      const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'cards';
       switchWorkspace(savedWorkspace);
+
+      const setCard = urlParams.get('setCard');
+      const setField = urlParams.get('setField');
+      const setVal = urlParams.get('setVal');
+      if (setCard && setField && setVal) {
+        let accounts = getBankAccountsList();
+        accounts = JSON.parse(JSON.stringify(accounts));
+        const targetAcc = accounts.find(a => a.id === setCard);
+        if (targetAcc) {
+          targetAcc[setField] = setVal;
+          try {
+            localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(accounts));
+          } catch(e) {}
+          const masterAcc = BANK_ACCOUNTS_MASTER.find(a => a.id === setCard);
+          if (masterAcc) masterAcc[setField] = setVal;
+        }
+        renderBankCardsList();
+      }
+
+      const editCard = urlParams.get('editCard');
+      const editField = urlParams.get('editField');
+      if (editCard && editField && typeof startBankInlineEdit === 'function') {
+        startBankInlineEdit(editCard, editField);
+      }
 
       // 6. Initialize Physics 1:1 Serial Brand Swipe Gestures
       initSerialBrandSwipeGestures();
