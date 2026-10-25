@@ -279,6 +279,11 @@
       background: linear-gradient(135deg, #042426 0%, #08484d 50%, #0d9488 100%);
       border: 1px solid rgba(45, 212, 191, 0.28);
     }
+    .bg-bob-advantage {
+      background: linear-gradient(135deg, #2b1103 0%, #692906 50%, #ea580c 100%);
+      border: 1px solid rgba(251, 146, 60, 0.35);
+      box-shadow: 0 10px 25px -5px rgba(105, 41, 6, 0.38);
+    }
     .bg-equitas-sfb {
       background: linear-gradient(135deg, #1f1404 0%, #4a2f09 50%, #d97706 100%);
       border: 1px solid rgba(251, 191, 36, 0.28);
@@ -314,6 +319,21 @@
       background: rgba(245, 158, 11, 0.22);
       color: #fef3c7;
       border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .holder-aruna {
+      background: rgba(244, 63, 94, 0.22);
+      color: #ffe4e6;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+    .holder-smiti {
+      background: rgba(16, 185, 129, 0.22);
+      color: #d1fae5;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .holder-shakuntala {
+      background: rgba(168, 85, 247, 0.22);
+      color: #f3e8ff;
+      border: 1px solid rgba(168, 85, 247, 0.4);
     }
   </style>
 </head>
@@ -442,16 +462,18 @@
 
     // Family Members Master List
     const MEMBERS = [
-      { id: "all", name: "All Members", short: "All", avatarBg: "bg-indigo-500", count: 16 },
-      { id: "vibhav", name: "Vibhav Oswal", short: "VO", avatarBg: "bg-sky-500", count: 15 },
-      { id: "sanjay", name: "Sanjay Oswal", short: "SO", avatarBg: "bg-amber-500", count: 1 },
-      { id: "aruna", name: "Aruna Oswal", short: "AO", avatarBg: "bg-rose-500", count: 0 },
-      { id: "smiti", name: "Smiti Oswal", short: "SM", avatarBg: "bg-emerald-500", count: 0 },
-      { id: "nishita", name: "Nishita Bhalekar", short: "NB", avatarBg: "bg-purple-500", count: 0 }
+      { id: "all", name: "All Members", short: "All", avatarBg: "bg-indigo-500", count: 30 },
+      { id: "vibhav", name: "Vibhav Oswal", short: "VO", avatarBg: "bg-sky-500", count: 17 },
+      { id: "sanjay", name: "Sanjay Oswal", short: "SO", avatarBg: "bg-amber-500", count: 5 },
+      { id: "aruna", name: "Aruna Oswal", short: "AO", avatarBg: "bg-rose-500", count: 4 },
+      { id: "smiti", name: "Smiti Oswal", short: "SM", avatarBg: "bg-emerald-500", count: 3 },
+      { id: "shakuntala", name: "Shakuntala Oswal", short: "SK", avatarBg: "bg-purple-500", count: 1 },
+      { id: "nishita", name: "Nishita Bhalekar", short: "NB", avatarBg: "bg-pink-500", count: 0 }
     ];
 
-    // Bank Accounts Master Database (16 Real Accounts)
+    // Bank Accounts Master Database (30 Complete Accounts Across Family)
     const BANK_ACCOUNTS = [
+      // === VIBHAV OSWAL (17 ACCOUNTS) ===
       {
         id: "indusind_1",
         bank: "IndusInd Bank",
@@ -468,33 +490,14 @@
         alias: "vibhavoswal",
         upi: null,
         branch: null,
-        tpin: null,
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
         gradient: "bg-indusind-pioneer",
         accent: "text-amber-300",
         label: "Account #1"
-      },
-      {
-        id: "indusind_2",
-        bank: "IndusInd Bank",
-        shortBank: "IndusInd",
-        code: "indusind",
-        tier: "Pioneer Private",
-        category: "hni",
-        holder: "Sanjay Oswal",
-        memberId: "sanjay",
-        accNumber: "159823470448",
-        maskedNumber: "1598 •••• 0448",
-        ifsc: "INDB0001103",
-        custId: "55855930",
-        alias: null,
-        upi: null,
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-indusind-pioneer",
-        accent: "text-amber-300",
-        label: "Account #2"
       },
       {
         id: "axis_1",
@@ -512,8 +515,11 @@
         alias: null,
         upi: "vibhavoswal@axisbank",
         branch: null,
-        tpin: null,
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
         gradient: "bg-axis-burgundy",
         accent: "text-rose-300",
         label: "Burgundy #1"
@@ -534,55 +540,190 @@
         alias: null,
         upi: "vibhavoswal3@axisbank",
         branch: null,
-        tpin: null,
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
         gradient: "bg-axis-burgundy",
         accent: "text-rose-300",
         label: "Burgundy #2"
       },
       {
-        id: "hsbc_1",
-        bank: "HSBC India",
-        shortBank: "HSBC",
-        code: "hsbc",
-        tier: "Premier",
-        category: "hni",
+        id: "hdfc_1",
+        bank: "HDFC Bank",
+        shortBank: "HDFC",
+        code: "hdfc",
+        tier: "Imperia / Preferred",
+        category: "wealth",
         holder: "Vibhav Oswal",
         memberId: "vibhav",
-        accNumber: "074532227006",
-        maskedNumber: "0745 •••• 7006",
-        ifsc: "HSBC0560002",
-        custId: "254315831",
+        accNumber: "50100272080801",
+        maskedNumber: "5010 •••• •••• 0801",
+        ifsc: "HDFC0000827",
+        custId: "128271043",
         alias: null,
-        upi: null,
+        upi: "vibhavoswal@hdfcbank",
         branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-hsbc-premier",
-        accent: "text-red-400",
-        label: "HSBC Premier"
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-hdfc-preferred",
+        accent: "text-sky-300",
+        label: "HDFC Savings"
       },
       {
-        id: "union_1",
-        bank: "Union Bank of India",
-        shortBank: "Union",
-        code: "union",
-        tier: "HNI Prime",
-        category: "hni",
+        id: "kotak_1",
+        bank: "Kotak Mahindra Bank",
+        shortBank: "Kotak",
+        code: "kotak",
+        tier: "Privy League",
+        category: "wealth",
         holder: "Vibhav Oswal",
         memberId: "vibhav",
-        accNumber: "028912250000002",
-        maskedNumber: "0289 •••• •••• 0002",
-        ifsc: "UBIN0802891",
-        custId: "652214823",
+        accNumber: "9113615811",
+        maskedNumber: "9113 •••• 5811",
+        ifsc: "KKBK0002020",
+        custId: "391549346",
+        alias: null,
+        upi: "9983692067@kotak",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-kotak-privy",
+        accent: "text-rose-300",
+        label: "Privy League"
+      },
+      {
+        id: "idfc_1",
+        bank: "IDFC FIRST Bank",
+        shortBank: "IDFC FIRST",
+        code: "idfc",
+        tier: "FIRST Wealth",
+        category: "wealth",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "10064054118",
+        maskedNumber: "1006 •••• 4118",
+        ifsc: "IDFB0040101",
+        custId: "5587071737",
+        alias: null,
+        upi: "9983692067@idfcfirst",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-idfc-wealth",
+        accent: "text-rose-300",
+        label: "FIRST Wealth"
+      },
+      {
+        id: "equitas_1",
+        bank: "Equitas Small Finance Bank",
+        shortBank: "Equitas SFB",
+        code: "equitas",
+        tier: "Small Finance",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "100021374863",
+        maskedNumber: "1000 •••• 4863",
+        ifsc: "ESFB0009021",
+        custId: null,
+        alias: null,
+        upi: "vibhavoswal@equitasbank",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-equitas-sfb",
+        accent: "text-amber-300",
+        label: "Equitas SFB"
+      },
+      {
+        id: "federal_fi",
+        bank: "Federal Bank (Fi)",
+        shortBank: "Fi Money",
+        code: "federal",
+        tier: "Fi Neo",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "55550107473710",
+        maskedNumber: "5555 •••• •••• 3710",
+        ifsc: "FDRL0005555",
+        custId: null,
+        alias: null,
+        upi: "vibhav@fbl",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-federal-fi",
+        accent: "text-emerald-300",
+        label: "Fi Digital"
+      },
+      {
+        id: "federal_jupiter",
+        bank: "Federal Bank (Jupiter)",
+        shortBank: "Jupiter",
+        code: "federal",
+        tier: "Jupiter Pro",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "77770106660497",
+        maskedNumber: "7777 •••• •••• 0497",
+        ifsc: "FDRL0007777",
+        custId: "9823812",
+        alias: null,
+        upi: "9983692067@jupiteraxis",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-federal-jupiter",
+        accent: "text-purple-300",
+        label: "Jupiter 1% UPI"
+      },
+      {
+        id: "jana_1",
+        bank: "Jana Small Finance Bank",
+        shortBank: "Jana SFB",
+        code: "jana",
+        tier: "Small Finance",
+        category: "digital",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "4800010052985502",
+        maskedNumber: "4800 •••• •••• 5502",
+        ifsc: "JSFB0004800",
+        custId: null,
         alias: null,
         upi: null,
-        branch: "Indiranagar-CMH Road Bangalore",
-        tpin: null,
-        crn: null,
-        gradient: "bg-union-prime",
-        accent: "text-blue-300",
-        label: "HNI Prime"
+        branch: "BANASHANKARI BRANCH",
+        crn: "2420042415002382",
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-jana-sfb",
+        accent: "text-teal-300",
+        label: "Jana SFB"
       },
       {
         id: "pnb_1",
@@ -601,7 +742,11 @@
         upi: null,
         branch: "Defence Colony Indiranagar",
         tpin: "4625",
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: "4625",
+        loginPin: null,
+        password: null,
         gradient: "bg-pnb-elite",
         accent: "text-red-300",
         label: "PNB Elite (Acc 1)"
@@ -623,146 +768,43 @@
         upi: null,
         branch: "Defence Colony Indiranagar",
         tpin: "4625",
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: "4625",
+        loginPin: null,
+        password: null,
         gradient: "bg-pnb-elite",
         accent: "text-red-300",
         label: "PNB Elite (Acc 2)"
       },
       {
-        id: "hdfc_1",
-        bank: "HDFC Bank",
-        shortBank: "HDFC",
-        code: "hdfc",
-        tier: "Imperia / Preferred",
-        category: "wealth",
+        id: "union_1",
+        bank: "Union Bank of India",
+        shortBank: "Union",
+        code: "union",
+        tier: "HNI Prime",
+        category: "hni",
         holder: "Vibhav Oswal",
         memberId: "vibhav",
-        accNumber: "50100272080801",
-        maskedNumber: "5010 •••• •••• 0801",
-        ifsc: "HDFC0000827",
-        custId: "128271043",
-        alias: null,
-        upi: "vibhavoswal@hdfcbank",
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-hdfc-preferred",
-        accent: "text-sky-300",
-        label: "HDFC Savings"
-      },
-      {
-        id: "kotak_1",
-        bank: "Kotak Mahindra Bank",
-        shortBank: "Kotak",
-        code: "kotak",
-        tier: "Privy League",
-        category: "wealth",
-        holder: "Vibhav Oswal",
-        memberId: "vibhav",
-        accNumber: "9113615811",
-        maskedNumber: "9113 •••• 5811",
-        ifsc: "KKBK0002020",
-        custId: "391549346",
-        alias: null,
-        upi: "9983692067@kotak",
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-kotak-privy",
-        accent: "text-rose-300",
-        label: "Privy League"
-      },
-      {
-        id: "idfc_1",
-        bank: "IDFC FIRST Bank",
-        shortBank: "IDFC FIRST",
-        code: "idfc",
-        tier: "FIRST Wealth",
-        category: "wealth",
-        holder: "Vibhav Oswal",
-        memberId: "vibhav",
-        accNumber: "10064054118",
-        maskedNumber: "1006 •••• 4118",
-        ifsc: "IDFB0040101",
-        custId: "5587071737",
-        alias: null,
-        upi: "9983692067@idfcfirst",
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-idfc-wealth",
-        accent: "text-rose-300",
-        label: "FIRST Wealth"
-      },
-      {
-        id: "federal_fi",
-        bank: "Federal Bank (Fi)",
-        shortBank: "Fi Money",
-        code: "federal",
-        tier: "Fi Neo",
-        category: "digital",
-        holder: "Vibhav Oswal",
-        memberId: "vibhav",
-        accNumber: "55550107473710",
-        maskedNumber: "5555 •••• •••• 3710",
-        ifsc: "FDRL0005555",
-        custId: null,
-        alias: null,
-        upi: "vibhav@fbl",
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-federal-fi",
-        accent: "text-emerald-300",
-        label: "Fi Digital"
-      },
-      {
-        id: "federal_jupiter",
-        bank: "Federal Bank (Jupiter)",
-        shortBank: "Jupiter",
-        code: "federal",
-        tier: "Jupiter Pro",
-        category: "digital",
-        holder: "Vibhav Oswal",
-        memberId: "vibhav",
-        accNumber: "77770106660497",
-        maskedNumber: "7777 •••• •••• 0497",
-        ifsc: "FDRL0007777",
-        custId: "9823812",
-        alias: null,
-        upi: "9983692067@jupiteraxis",
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-federal-jupiter",
-        accent: "text-purple-300",
-        label: "Jupiter 1% UPI"
-      },
-      {
-        id: "canara_crest",
-        bank: "Canara Bank (Crest)",
-        shortBank: "Canara Crest",
-        code: "canara",
-        tier: "Canara Crest",
-        category: "digital",
-        holder: "Vibhav Oswal",
-        memberId: "vibhav",
-        accNumber: "110267332562",
-        maskedNumber: "1102 •••• 2562",
-        ifsc: "CNRB0000492",
-        custId: "325184532",
+        accNumber: "028912250000002",
+        maskedNumber: "0289 •••• •••• 0002",
+        ifsc: "UBIN0802891",
+        custId: "652214823",
         alias: null,
         upi: null,
-        branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-canara-crest",
-        accent: "text-sky-300",
-        label: "Canara Crest"
+        branch: "Indiranagar-CMH Road Bangalore",
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-union-prime",
+        accent: "text-blue-300",
+        label: "HNI Prime"
       },
       {
         id: "canara_basic",
-        bank: "Canara Bank (Basic)",
+        bank: "Canara Bank",
         shortBank: "Canara Basic",
         code: "canara",
         tier: "Basic Savings",
@@ -776,55 +818,422 @@
         alias: null,
         upi: null,
         branch: null,
-        tpin: null,
-        crn: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
         gradient: "bg-canara-crest",
         accent: "text-sky-200",
         label: "Basic Savings"
       },
       {
-        id: "jana_1",
-        bank: "Jana Small Finance Bank",
-        shortBank: "Jana SFB",
-        code: "jana",
-        tier: "Small Finance",
+        id: "canara_crest",
+        bank: "Canara Bank",
+        shortBank: "Canara Crest",
+        code: "canara",
+        tier: "Canara Crest",
         category: "digital",
         holder: "Vibhav Oswal",
         memberId: "vibhav",
-        accNumber: "4800010052985502",
-        maskedNumber: "4800 •••• •••• 5502",
-        ifsc: "JSFB0004800",
-        custId: null,
+        accNumber: "110267332562",
+        maskedNumber: "1102 •••• 2562",
+        ifsc: "CNRB0000492",
+        custId: "325184532",
         alias: null,
         upi: null,
-        branch: "BANASHANKARI BRANCH",
-        tpin: null,
-        crn: "2420042415002382",
-        gradient: "bg-jana-sfb",
-        accent: "text-teal-300",
-        label: "Jana SFB"
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-canara-crest",
+        accent: "text-sky-300",
+        label: "Canara Crest"
       },
       {
-        id: "equitas_1",
-        bank: "Equitas Small Finance Bank",
-        shortBank: "Equitas SFB",
-        code: "equitas",
-        tier: "Small Finance",
-        category: "digital",
+        id: "hsbc_1",
+        bank: "HSBC India",
+        shortBank: "HSBC",
+        code: "hsbc",
+        tier: "Premier",
+        category: "hni",
         holder: "Vibhav Oswal",
         memberId: "vibhav",
-        accNumber: "100021374863",
-        maskedNumber: "1000 •••• 4863",
-        ifsc: "ESFB0009021",
+        accNumber: "074532227006",
+        maskedNumber: "0745 •••• 7006",
+        ifsc: "HSBC0560002",
+        custId: "254315831",
+        alias: null,
+        upi: null,
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-hsbc-premier",
+        accent: "text-red-400",
+        label: "HSBC Premier"
+      },
+      {
+        id: "bob_vibhav",
+        bank: "Bank of Baroda",
+        shortBank: "Bank of Baroda",
+        code: "bob",
+        tier: "Advantage Savings",
+        category: "wealth",
+        holder: "Vibhav Oswal",
+        memberId: "vibhav",
+        accNumber: "99870100008545",
+        maskedNumber: "9987 •••• •••• 8545",
+        ifsc: "BARB0DBKHOP",
+        custId: "MT3D09485",
+        alias: "MT3D09485",
+        upi: null,
+        branch: "Khopoli Branch",
+        signOnPass: "t@rgetEU2026",
+        txnPass: "t@rgetEU26",
+        txnPin: "5358",
+        loginPin: "4505",
+        password: null,
+        gradient: "bg-bob-advantage",
+        accent: "text-orange-300",
+        label: "BoB Advantage"
+      },
+
+      // === SANJAY OSWAL (5 ACCOUNTS) ===
+      {
+        id: "indusind_2",
+        bank: "IndusInd Bank",
+        shortBank: "IndusInd",
+        code: "indusind",
+        tier: "Pioneer Private",
+        category: "hni",
+        holder: "Sanjay Oswal",
+        memberId: "sanjay",
+        accNumber: "159823470448",
+        maskedNumber: "1598 •••• 0448",
+        ifsc: "INDB0001103",
+        custId: "55855930",
+        alias: null,
+        upi: null,
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-indusind-pioneer",
+        accent: "text-amber-300",
+        label: "Account #2"
+      },
+      {
+        id: "axis_sanjay",
+        bank: "Axis Bank",
+        shortBank: "Axis",
+        code: "axis",
+        tier: "Burgundy",
+        category: "hni",
+        holder: "Sanjay Oswal",
+        memberId: "sanjay",
+        accNumber: "926010016663332",
+        maskedNumber: "9260 •••• •••• 3332",
+        ifsc: "UTIB0000114",
+        custId: "982451359",
+        alias: null,
+        upi: null,
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: "S@runj@y963",
+        gradient: "bg-axis-burgundy",
+        accent: "text-rose-300",
+        label: "Burgundy Sanjay"
+      },
+      {
+        id: "hdfc_sanjay",
+        bank: "HDFC Bank",
+        shortBank: "HDFC",
+        code: "hdfc",
+        tier: "Imperia / Preferred",
+        category: "wealth",
+        holder: "Sanjay Oswal",
+        memberId: "sanjay",
+        accNumber: "50100456446803",
+        maskedNumber: "5010 •••• •••• 6803",
+        ifsc: "HDFC0000827",
+        custId: "177426223",
+        alias: "sanjayoswal",
+        upi: "sanjayoswal@hdfcbank",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-hdfc-preferred",
+        accent: "text-sky-300",
+        label: "HDFC Sanjay"
+      },
+      {
+        id: "bob_sanjay",
+        bank: "Bank of Baroda",
+        shortBank: "Bank of Baroda",
+        code: "bob",
+        tier: "Advantage Savings",
+        category: "wealth",
+        holder: "Sanjay Oswal",
+        memberId: "sanjay",
+        accNumber: "99870100004059",
+        maskedNumber: "9987 •••• •••• 4059",
+        ifsc: "BARB0DBKHOP",
+        custId: "MT3D01692",
+        alias: "MT3D01692",
+        upi: null,
+        branch: "Khopoli Branch",
+        signOnPass: "sarunjay#321",
+        txnPass: "sarunjay#123",
+        txnPin: "6417",
+        loginPin: "2302",
+        password: null,
+        gradient: "bg-bob-advantage",
+        accent: "text-orange-300",
+        label: "BoB Sanjay"
+      },
+      {
+        id: "federal_sanjay",
+        bank: "Federal Bank",
+        shortBank: "Federal",
+        code: "federal",
+        tier: "Savings",
+        category: "digital",
+        holder: "Sanjay Oswal",
+        memberId: "sanjay",
+        accNumber: "55550111917124",
+        maskedNumber: "5555 •••• •••• 7124",
+        ifsc: "FDRL0005555",
         custId: null,
         alias: null,
-        upi: "vibhavoswal@equitasbank",
+        upi: "sanjayoswal@fbl",
         branch: null,
-        tpin: null,
-        crn: null,
-        gradient: "bg-equitas-sfb",
-        accent: "text-amber-300",
-        label: "Equitas SFB"
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-federal-fi",
+        accent: "text-emerald-300",
+        label: "Federal Sanjay"
+      },
+
+      // === ARUNA OSWAL (4 ACCOUNTS) ===
+      {
+        id: "axis_aruna",
+        bank: "Axis Bank",
+        shortBank: "Axis",
+        code: "axis",
+        tier: "Burgundy",
+        category: "hni",
+        holder: "Aruna Oswal",
+        memberId: "aruna",
+        accNumber: "926010016657793",
+        maskedNumber: "9260 •••• •••• 7793",
+        ifsc: "UTIB0000114",
+        custId: "982450167",
+        alias: null,
+        upi: null,
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: "S@runj@y369",
+        gradient: "bg-axis-burgundy",
+        accent: "text-rose-300",
+        label: "Burgundy Aruna"
+      },
+      {
+        id: "hdfc_aruna",
+        bank: "HDFC Bank",
+        shortBank: "HDFC",
+        code: "hdfc",
+        tier: "Imperia / Preferred",
+        category: "wealth",
+        holder: "Aruna Oswal",
+        memberId: "aruna",
+        accNumber: "50100456446816",
+        maskedNumber: "5010 •••• •••• 6816",
+        ifsc: "HDFC0000827",
+        custId: "177426224",
+        alias: "arunaoswal",
+        upi: "arunaoswal@hdfcbank",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-hdfc-preferred",
+        accent: "text-sky-300",
+        label: "HDFC Aruna"
+      },
+      {
+        id: "bob_aruna",
+        bank: "Bank of Baroda",
+        shortBank: "Bank of Baroda",
+        code: "bob",
+        tier: "Advantage Savings",
+        category: "wealth",
+        holder: "Aruna Oswal",
+        memberId: "aruna",
+        accNumber: "99870100005014",
+        maskedNumber: "9987 •••• •••• 5014",
+        ifsc: "BARB0DBKHOP",
+        custId: "MT3D03173",
+        alias: "MT3D03173",
+        upi: null,
+        branch: "Khopoli Branch",
+        signOnPass: "sarunjay#123",
+        txnPass: "sarunjay#321",
+        txnPin: "5358",
+        loginPin: "4505",
+        password: null,
+        gradient: "bg-bob-advantage",
+        accent: "text-orange-300",
+        label: "BoB Aruna"
+      },
+      {
+        id: "federal_aruna",
+        bank: "Federal Bank",
+        shortBank: "Federal",
+        code: "federal",
+        tier: "Savings",
+        category: "digital",
+        holder: "Aruna Oswal",
+        memberId: "aruna",
+        accNumber: "55550112011364",
+        maskedNumber: "5555 •••• •••• 1364",
+        ifsc: "FDRL0005555",
+        custId: null,
+        alias: null,
+        upi: "arunaoswal@fbl",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-federal-fi",
+        accent: "text-emerald-300",
+        label: "Federal Aruna"
+      },
+
+      // === SMITI OSWAL (3 ACCOUNTS) ===
+      {
+        id: "axis_smiti",
+        bank: "Axis Bank",
+        shortBank: "Axis",
+        code: "axis",
+        tier: "Burgundy",
+        category: "hni",
+        holder: "Smiti Oswal",
+        memberId: "smiti",
+        accNumber: "923010014752754",
+        maskedNumber: "9230 •••• •••• 2754",
+        ifsc: "UTIB0002366",
+        custId: "949545156",
+        alias: null,
+        upi: "vibhavoswal@axisbank",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: "Benedict@123",
+        gradient: "bg-axis-burgundy",
+        accent: "text-rose-300",
+        label: "Burgundy Smiti"
+      },
+      {
+        id: "hdfc_smiti",
+        bank: "HDFC Bank",
+        shortBank: "HDFC",
+        code: "hdfc",
+        tier: "Imperia / Preferred",
+        category: "wealth",
+        holder: "Smiti Oswal",
+        memberId: "smiti",
+        accNumber: "50100591004352",
+        maskedNumber: "5010 •••• •••• 4352",
+        ifsc: "HDFC0000827",
+        custId: "222800319",
+        alias: "smitioswal",
+        upi: "vibhavoswal@hdfcbank",
+        branch: null,
+        signOnPass: null,
+        txnPass: null,
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-hdfc-preferred",
+        accent: "text-sky-300",
+        label: "HDFC Smiti"
+      },
+      {
+        id: "bob_smiti",
+        bank: "Bank of Baroda",
+        shortBank: "Bank of Baroda",
+        code: "bob",
+        tier: "Advantage Savings",
+        category: "wealth",
+        holder: "Smiti Oswal",
+        memberId: "smiti",
+        accNumber: "99870100013818",
+        maskedNumber: "9987 •••• •••• 3818",
+        ifsc: "BARB0DBKHOP",
+        custId: "MT3063389",
+        alias: "MT3063389",
+        upi: null,
+        branch: "Khopoli Branch",
+        signOnPass: "Smiti@bob$123",
+        txnPass: "Smiti@trsc$123",
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-bob-advantage",
+        accent: "text-orange-300",
+        label: "BoB Smiti"
+      },
+
+      // === SHAKUNTALA OSWAL (1 ACCOUNT) ===
+      {
+        id: "bob_shakuntala",
+        bank: "Bank of Baroda",
+        shortBank: "Bank of Baroda",
+        code: "bob",
+        tier: "Advantage Savings",
+        category: "wealth",
+        holder: "Shakuntala Oswal",
+        memberId: "shakuntala",
+        accNumber: "99870100009094",
+        maskedNumber: "9987 •••• •••• 9094",
+        ifsc: "BARB0DBKHOP",
+        custId: "MT3D01699",
+        alias: "MT3D01699",
+        upi: null,
+        branch: "Khopoli Branch",
+        signOnPass: "S@runj@y12345",
+        txnPass: "S@runj@y54321",
+        txnPin: null,
+        loginPin: null,
+        password: null,
+        gradient: "bg-bob-advantage",
+        accent: "text-orange-300",
+        label: "BoB Shakuntala"
       }
     ];
 
@@ -1085,6 +1494,10 @@
         const isIndividuallyPeeked = individualPeekStates.has(acc.id);
         const isCurrentlyUnmasked = (!isGlobalMasked) || isIndividuallyPeeked;
         const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
+        const holderClass = acc.memberId === 'sanjay' ? 'holder-sanjay' :
+                            acc.memberId === 'aruna' ? 'holder-aruna' :
+                            acc.memberId === 'smiti' ? 'holder-smiti' :
+                            acc.memberId === 'shakuntala' ? 'holder-shakuntala' : 'holder-vibhav';
 
         html += `
           <div class="bank-card ${acc.gradient}">
@@ -1094,8 +1507,8 @@
               <div>
                 <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span class="tier-badge ${acc.accent}">${acc.tier}</span>
-                  <span class="holder-badge ${acc.memberId === 'sanjay' ? 'holder-sanjay' : 'holder-vibhav'}">${acc.holder}</span>
-                  ${acc.alias ? `<span class="px-1.5 py-0.5 rounded bg-black/40 text-amber-200 font-mono-apple text-[10px] border border-amber-500/30">Alias: ${acc.alias}</span>` : ''}
+                  <span class="holder-badge ${holderClass}">${acc.holder}</span>
+                  ${acc.alias ? `<span class="px-1.5 py-0.5 rounded bg-black/40 text-amber-200 font-mono-apple text-[10px] border border-amber-500/30">User: ${acc.alias}</span>` : ''}
                 </div>
                 <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
                 ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
@@ -1122,7 +1535,7 @@
                 </button>
 
                 <!-- Eye Peek Toggle Button (Exact Card Manager Style) -->
-                <button onclick="toggleCardPeek('${acc.id}')" title="Reveal / Mask Account Number" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white flex items-center justify-center transition-all shrink-0">
+                <button onclick="toggleCardPeek('${acc.id}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white flex items-center justify-center transition-all shrink-0">
                   ${isCurrentlyUnmasked ? `
                     <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
@@ -1132,7 +1545,7 @@
               </div>
             </div>
 
-            <!-- Details Grid: IFSC, UPI VPA, Customer ID (Tactile Quick-Copy, No explicit buttons) -->
+            <!-- Details Grid: IFSC, UPI VPA, Customer ID, Passwords -->
             <div class="grid grid-cols-2 gap-2 mt-2">
               
               <!-- IFSC Quick-Copy Tile -->
@@ -1179,12 +1592,46 @@
                 </div>
               `))}
 
+              ${(acc.signOnPass || acc.password) ? `
+                <!-- Sign On Password Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.signOnPass || acc.password}', 'Sign On Password', this)" title="Tap to copy Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">Sign On Password</div>
+                  <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.signOnPass || acc.password) : '••••••••'}</span>
+                    ${MICRO_COPY_SVG}
+                  </div>
+                </button>
+              ` : ''}
+
+              ${acc.txnPass ? `
+                <!-- Transaction Password Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.txnPass}', 'Transaction Password', this)" title="Tap to copy Transaction Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-rose-300/80 mb-0.5">Txn Password</div>
+                  <div class="font-mono-apple text-xs font-bold text-rose-200 group-hover:text-rose-100 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.txnPass : '••••••••'}</span>
+                    ${MICRO_COPY_SVG}
+                  </div>
+                </button>
+              ` : ''}
+
             </div>
 
-            ${acc.tpin ? `
-              <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono-apple text-white/70">
-                <span>TPIN: <span class="font-bold text-amber-300">${acc.tpin}</span></span>
-                <span class="text-[10px] text-white/50 font-sans">Defence Colony Branch</span>
+            ${(acc.txnPin || acc.loginPin) ? `
+              <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center gap-2 flex-wrap text-[11px] font-mono-apple">
+                ${acc.txnPin ? `
+                  <button onclick="quickCopyCardField('${acc.txnPin}', 'Transaction PIN', this)" class="tactile-copy-field px-2.5 py-1 rounded-lg bg-black/30 hover:bg-black/50 border border-white/10 flex items-center gap-1.5 text-amber-300">
+                    <span class="text-[9px] text-white/50 uppercase font-sans font-bold">Txn PIN:</span>
+                    <span class="font-bold copy-target-text">${isCurrentlyUnmasked ? acc.txnPin : '••••'}</span>
+                    ${MICRO_COPY_SVG}
+                  </button>
+                ` : ''}
+                ${acc.loginPin ? `
+                  <button onclick="quickCopyCardField('${acc.loginPin}', 'Login PIN', this)" class="tactile-copy-field px-2.5 py-1 rounded-lg bg-black/30 hover:bg-black/50 border border-white/10 flex items-center gap-1.5 text-sky-300">
+                    <span class="text-[9px] text-white/50 uppercase font-sans font-bold">Login PIN:</span>
+                    <span class="font-bold copy-target-text">${isCurrentlyUnmasked ? acc.loginPin : '••••'}</span>
+                    ${MICRO_COPY_SVG}
+                  </button>
+                ` : ''}
               </div>
             ` : ''}
 

@@ -1045,6 +1045,46 @@ function doGet(e) {
     }
   }
 
+  // Administrative Setup: Initialize "Bank Accounts" tab with full family multi-bank accounts
+  if (e && e.parameter && e.parameter.action === "SETUP_BANK_ACCOUNTS_TAB") {
+    try {
+      const ss = getSpreadsheet();
+      const res = setupBankAccountsTab(ss);
+      return ContentService.createTextOutput(JSON.stringify(res)).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Fetch all Bank Accounts in JSON format
+  if (e && e.parameter && e.parameter.action === "GET_BANK_ACCOUNTS") {
+    try {
+      const ss = getSpreadsheet();
+      let sheet = ss.getSheetByName("Bank Accounts");
+      if (!sheet) {
+        setupBankAccountsTab(ss);
+        sheet = ss.getSheetByName("Bank Accounts");
+      }
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) {
+        return ContentService.createTextOutput(JSON.stringify({ success: true, accounts: [] })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const headers = data[0];
+      const accounts = [];
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const acc = {};
+        for (let j = 0; j < headers.length; j++) {
+          acc[headers[j]] = row[j];
+        }
+        accounts.push(acc);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: true, count: accounts.length, accounts: accounts })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative One-Off: Setup SwiggyOne brand tab & update target brand in New tab
   if (e && e.parameter && e.parameter.action === "SETUP_SWIGGY_ONE") {
     try {
@@ -2549,3 +2589,92 @@ function getEligibleBenefitsArray(bank, type, name) {
     }
   }
 }
+
+/**
+ * Administrative Setup: Initialize "Bank Accounts" Tab
+ * Seeds 30 multi-bank accounts across all 6 family members with complete credentials.
+ */
+function setupBankAccountsTab(ss) {
+  let sheet = ss.getSheetByName("Bank Accounts");
+  let created = false;
+  if (!sheet) {
+    sheet = ss.insertSheet("Bank Accounts");
+    created = true;
+  } else {
+    sheet.clear();
+  }
+
+  const headers = [
+    "Account_ID", "Holder_Name", "Bank_Name", "Bank_Code", "Account_Label",
+    "Account_Tier", "Tier_Category", "Account_Number", "IFSC_Code", "UPI_VPA",
+    "Customer_ID", "Customer_ID_Alias", "Sign_On_Password", "Transaction_Password",
+    "Transaction_PIN", "Login_PIN", "Branch_Name", "Status", "Notes", "Last_Updated"
+  ];
+
+  sheet.appendRow(headers);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setFontWeight("bold")
+    .setBackground("#0C8C46")
+    .setFontColor("#FFFFFF");
+  sheet.setFrozenRows(1);
+
+  // Set plain text format on sensitive/numeric columns to prevent scientific notation truncation
+  sheet.getRange("H:H").setNumberFormat('@'); // Account_Number
+  sheet.getRange("K:K").setNumberFormat('@'); // Customer_ID
+  sheet.getRange("O:O").setNumberFormat('@'); // Transaction_PIN
+  sheet.getRange("P:P").setNumberFormat('@'); // Login_PIN
+
+  const nowStr = formatISTTimestamp(new Date());
+
+  const accounts = [
+    // --- VIBHAV OSWAL (17 ACCOUNTS) ---
+    ["acc_indusind_vibhav_1", "Vibhav Oswal", "IndusInd Bank", "indusind", "Pioneer Private #1", "Pioneer Private", "HNI & Private", "'159247538499", "INDB0002169", "", "'41544412", "vibhavoswal", "", "", "", "", "", "ACTIVE", "Primary Pioneer Account", nowStr],
+    ["acc_axis_vibhav_1", "Vibhav Oswal", "Axis Bank", "axis", "Burgundy #1", "Burgundy", "HNI & Private", "'921010018051356", "UTIB0002366", "vibhavoswal@axisbank", "'908507230", "", "", "", "", "", "", "ACTIVE", "Primary Burgundy", nowStr],
+    ["acc_axis_vibhav_2", "Vibhav Oswal", "Axis Bank", "axis", "Burgundy #2", "Burgundy", "HNI & Private", "'924010040061771", "UTIB0000194", "vibhavoswal3@axisbank", "'908507230", "", "", "", "", "", "", "ACTIVE", "Secondary Burgundy", nowStr],
+    ["acc_hdfc_vibhav_1", "Vibhav Oswal", "HDFC Bank", "hdfc", "HDFC Savings", "Imperia / Preferred", "Wealth & Priority", "'50100272080801", "HDFC0000827", "vibhavoswal@hdfcbank", "'128271043", "", "", "", "", "", "", "ACTIVE", "Primary HDFC Account", nowStr],
+    ["acc_kotak_vibhav_1", "Vibhav Oswal", "Kotak Mahindra Bank", "kotak", "Privy League", "Privy League", "Wealth & Priority", "'9113615811", "KKBK0002020", "9983692067@kotak", "'391549346", "", "", "", "", "", "", "ACTIVE", "Privy Priority Account", nowStr],
+    ["acc_idfc_vibhav_1", "Vibhav Oswal", "IDFC FIRST Bank", "idfc", "FIRST Wealth", "FIRST Wealth", "Wealth & Priority", "'10064054118", "IDFB0040101", "9983692067@idfcfirst", "'5587071737", "", "", "", "", "", "", "ACTIVE", "FIRST Wealth Account", nowStr],
+    ["acc_equitas_vibhav_1", "Vibhav Oswal", "Equitas SFB", "equitas", "Equitas Wings", "Small Finance", "Digital & SFB", "'100021374863", "ESFB0009021", "vibhavoswal@equitasbank", "", "", "", "", "", "", "", "ACTIVE", "Wings Account", nowStr],
+    ["acc_federal_fi_vibhav", "Vibhav Oswal", "Federal Bank (Fi)", "federal", "Fi Digital", "Fi Neo", "Digital & SFB", "'55550107473710", "FDRL0005555", "vibhav@fbl", "", "", "", "", "", "", "", "ACTIVE", "Fi Neo Salary Account", nowStr],
+    ["acc_federal_jupiter_vibhav", "Vibhav Oswal", "Federal Bank (Jupiter)", "federal", "Jupiter 1% UPI", "Jupiter Pro", "Digital & SFB", "'77770106660497", "FDRL0007777", "9983692067@jupiteraxis", "'9823812", "", "", "", "", "", "", "ACTIVE", "Jupiter Pro Account", nowStr],
+    ["acc_jana_vibhav_1", "Vibhav Oswal", "Jana SFB", "jana", "Jana SFB", "Small Finance", "Digital & SFB", "'4800010052985502", "JSFB0004800", "", "", "", "", "", "", "", "BANASHANKARI BRANCH", "ACTIVE", "CRN: 2420042415002382", nowStr],
+    ["acc_pnb_vibhav_1", "Vibhav Oswal", "Punjab National Bank", "pnb", "PNB Elite (Acc 1)", "Elite Executive", "HNI & Private", "'1057100100006650", "PUNB0105710", "", "'R67653832", "", "", "", "'4625", "", "Defence Colony Indiranagar Branch", "ACTIVE", "Linked to PNB Imperial RSDC", nowStr],
+    ["acc_pnb_vibhav_2", "Vibhav Oswal", "Punjab National Bank", "pnb", "PNB Elite (Acc 2)", "Elite Executive", "HNI & Private", "'1057100100007482", "PUNB0105710", "", "'R67653832", "", "", "", "'4625", "", "Defence Colony Indiranagar Branch", "ACTIVE", "Elite Executive Account 2", nowStr],
+    ["acc_union_vibhav_1", "Vibhav Oswal", "Union Bank of India", "union", "HNI Prime", "HNI Prime", "HNI & Private", "'028912250000002", "UBIN0802891", "", "'652214823", "", "", "", "", "", "Indiranagar-CMH Road Bangalore", "ACTIVE", "Union HNI Prime Account", nowStr],
+    ["acc_canara_basic_vibhav", "Vibhav Oswal", "Canara Bank", "canara", "Basic Savings", "Basic Savings", "Digital & SFB", "'110181739491", "CNRB0010754", "", "'325184532", "", "", "", "", "", "", "ACTIVE", "Basic Savings Account", nowStr],
+    ["acc_canara_crest_vibhav", "Vibhav Oswal", "Canara Bank", "canara", "Canara Crest", "Canara Crest", "Digital & SFB", "'110267332562", "CNRB0000492", "", "'325184532", "", "", "", "", "", "", "ACTIVE", "Canara Crest Account", nowStr],
+    ["acc_hsbc_vibhav_1", "Vibhav Oswal", "HSBC India", "hsbc", "HSBC Premier", "Premier", "HNI & Private", "'074532227006", "HSBC0560002", "", "'254315831", "", "", "", "", "", "", "ACTIVE", "HSBC Premier Account", nowStr],
+    ["acc_bob_vibhav_1", "Vibhav Oswal", "Bank of Baroda", "bob", "BoB Advantage", "Advantage Savings", "Wealth & Priority", "'99870100008545", "BARB0DBKHOP", "", "'MT3D09485", "MT3D09485", "t@rgetEU2026", "t@rgetEU26", "'5358", "'4505", "Khopoli Branch", "ACTIVE", "BoB NetBanking", nowStr],
+
+    // --- SANJAY OSWAL (5 ACCOUNTS) ---
+    ["acc_indusind_sanjay_2", "Sanjay Oswal", "IndusInd Bank", "indusind", "Pioneer Private #2", "Pioneer Private", "HNI & Private", "'159823470448", "INDB0001103", "", "'55855930", "", "", "", "", "", "", "ACTIVE", "Pioneer Private Account #2", nowStr],
+    ["acc_axis_sanjay_1", "Sanjay Oswal", "Axis Bank", "axis", "Burgundy Sanjay", "Burgundy", "HNI & Private", "'926010016663332", "UTIB0000114", "", "'982451359", "", "S@runj@y963", "", "", "", "", "ACTIVE", "Burgundy Sanjay Account", nowStr],
+    ["acc_hdfc_sanjay_1", "Sanjay Oswal", "HDFC Bank", "hdfc", "HDFC Sanjay", "Imperia / Preferred", "Wealth & Priority", "'50100456446803", "HDFC0000827", "sanjayoswal@hdfcbank", "'177426223", "sanjayoswal", "", "", "", "", "", "ACTIVE", "HDFC Sanjay Account", nowStr],
+    ["acc_bob_sanjay_1", "Sanjay Oswal", "Bank of Baroda", "bob", "BoB Sanjay", "Advantage Savings", "Wealth & Priority", "'99870100004059", "BARB0DBKHOP", "", "'MT3D01692", "MT3D01692", "sarunjay#321", "sarunjay#123", "'6417", "'2302", "Khopoli Branch", "ACTIVE", "BoB NetBanking Sanjay", nowStr],
+    ["acc_federal_sanjay_1", "Sanjay Oswal", "Federal Bank", "federal", "Federal Sanjay", "Savings", "Digital & SFB", "'55550111917124", "FDRL0005555", "sanjayoswal@fbl", "", "", "", "", "", "", "", "ACTIVE", "Federal Account (Sanjay Himatmal Oswal)", nowStr],
+
+    // --- ARUNA OSWAL (4 ACCOUNTS) ---
+    ["acc_axis_aruna_1", "Aruna Oswal", "Axis Bank", "axis", "Burgundy Aruna", "Burgundy", "HNI & Private", "'926010016657793", "UTIB0000114", "", "'982450167", "", "S@runj@y369", "", "", "", "", "ACTIVE", "Burgundy Aruna Account", nowStr],
+    ["acc_hdfc_aruna_1", "Aruna Oswal", "HDFC Bank", "hdfc", "HDFC Aruna", "Imperia / Preferred", "Wealth & Priority", "'50100456446816", "HDFC0000827", "arunaoswal@hdfcbank", "'177426224", "arunaoswal", "", "", "", "", "", "ACTIVE", "HDFC Aruna Account", nowStr],
+    ["acc_bob_aruna_1", "Aruna Oswal", "Bank of Baroda", "bob", "BoB Aruna", "Advantage Savings", "Wealth & Priority", "'99870100005014", "BARB0DBKHOP", "", "'MT3D03173", "MT3D03173", "sarunjay#123", "sarunjay#321", "'5358", "'4505", "Khopoli Branch", "ACTIVE", "BoB NetBanking Aruna", nowStr],
+    ["acc_federal_aruna_1", "Aruna Oswal", "Federal Bank", "federal", "Federal Aruna", "Savings", "Digital & SFB", "'55550112011364", "FDRL0005555", "arunaoswal@fbl", "", "", "", "", "", "", "", "ACTIVE", "Federal Account (Aruna Sanjay Oswal)", nowStr],
+
+    // --- SMITI OSWAL (3 ACCOUNTS) ---
+    ["acc_axis_smiti_1", "Smiti Oswal", "Axis Bank", "axis", "Burgundy Smiti", "Burgundy", "HNI & Private", "'923010014752754", "UTIB0002366", "vibhavoswal@axisbank", "'949545156", "", "Benedict@123", "", "", "", "", "ACTIVE", "Burgundy Smiti Account", nowStr],
+    ["acc_hdfc_smiti_1", "Smiti Oswal", "HDFC Bank", "hdfc", "HDFC Smiti", "Imperia / Preferred", "Wealth & Priority", "'50100591004352", "HDFC0000827", "vibhavoswal@hdfcbank", "'222800319", "smitioswal", "", "", "", "", "", "ACTIVE", "HDFC Smiti Account", nowStr],
+    ["acc_bob_smiti_1", "Smiti Oswal", "Bank of Baroda", "bob", "BoB Smiti", "Advantage Savings", "Wealth & Priority", "'99870100013818", "BARB0DBKHOP", "", "'MT3063389", "MT3063389", "Smiti@bob$123", "Smiti@trsc$123", "", "", "Khopoli Branch", "ACTIVE", "BoB NetBanking Smiti", nowStr],
+
+    // --- SHAKUNTALA OSWAL (1 ACCOUNT) ---
+    ["acc_bob_shakuntala_1", "Shakuntala Oswal", "Bank of Baroda", "bob", "BoB Shakuntala", "Advantage Savings", "Wealth & Priority", "'99870100009094", "BARB0DBKHOP", "", "'MT3D01699", "MT3D01699", "S@runj@y12345", "S@runj@y54321", "", "", "Khopoli Branch", "ACTIVE", "BoB NetBanking Shakuntala", nowStr]
+  ];
+
+  accounts.forEach(acc => sheet.appendRow(acc));
+
+  return {
+    success: true,
+    sheetName: "Bank Accounts",
+    created: created,
+    accountsCount: accounts.length
+  };
+}
+
