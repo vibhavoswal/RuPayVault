@@ -2461,6 +2461,9 @@
               if (verifyBtn) verifyBtn.disabled = false;
               if (verifyBtnText) verifyBtnText.textContent = 'Log In to Vault';
 
+              try {
+                sessionStorage.setItem('rupay_active_workspace', 'cards');
+              } catch (e) {}
               await unlockVaultDirect(String(data.token));
 
               // Replay queued mutation if mid-operation re-auth
@@ -2765,7 +2768,8 @@
         renderAll();
         flushUncommittedRedeems();
         syncWithGoogleSheets();
-        switchWorkspace('cards');
+        const savedWorkspace = sessionStorage.getItem('rupay_active_workspace') || 'cards';
+        switchWorkspace(savedWorkspace);
       }
     }
 
@@ -4028,6 +4032,9 @@
     /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS) --- */
     function switchWorkspace(target) {
       state.activeWorkspace = (target === 'hub' ? 'cards' : target) || 'cards';
+      try {
+        sessionStorage.setItem('rupay_active_workspace', state.activeWorkspace);
+      } catch (e) {}
       const cardEl = document.getElementById('view-card-manager');
       const voucherEl = document.getElementById('mobile-app-container');
       const fabBtn = document.getElementById('unified-floating-dock');
@@ -7263,8 +7270,9 @@
 
       setTab('vault');
 
-      // 5. Always default to Card Manager once authenticated
-      switchWorkspace('cards');
+      // 5. Default to Card Manager on first load, or retain active workspace across refreshes
+      const savedWorkspace = sessionStorage.getItem('rupay_active_workspace') || 'cards';
+      switchWorkspace(savedWorkspace);
     });
   </script>
 </body>
