@@ -6841,7 +6841,8 @@
       if (navigator.vibrate) {
         try { navigator.vibrate(12); } catch (_) {}
       }
-      const valStr = String(value).replace(/['\s]/g, '');
+      const isNumOrCode = /card|account|ifsc|cvv|expiry|pin|tpin/i.test(fieldLabel);
+      const valStr = isNumOrCode ? String(value).replace(/['\s]/g, '') : String(value).trim();
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(valStr)
           .then(() => {
@@ -7918,6 +7919,7 @@
     let selectedBankInst = 'all';
     let isBankGlobalMasked = true;
     const bankPeekStates = new Set();
+    const bankCardInfoStates = new Set();
 
     const BA_COPY_SVG = `<svg class="w-3.5 h-3.5 text-white/50 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     const BA_MICRO_COPY_SVG = `<svg class="w-2.5 h-2.5 text-white/40 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
@@ -8067,6 +8069,16 @@
       renderBankCardsList();
     }
 
+    // Individual Info Drawer Toggle (Card Manager Style)
+    function toggleBankCardInfo(accId) {
+      if (bankCardInfoStates.has(accId)) {
+        bankCardInfoStates.delete(accId);
+      } else {
+        bankCardInfoStates.add(accId);
+      }
+      renderBankCardsList();
+    }
+
     // Bank Cards List Renderer (Card Manager Style)
     function renderBankCardsList() {
       const container = document.getElementById('bank-accounts-card-list');
@@ -8115,28 +8127,48 @@
       filtered.forEach(acc => {
         const isIndividuallyPeeked = bankPeekStates.has(acc.id);
         const isCurrentlyUnmasked = (!isBankGlobalMasked) || isIndividuallyPeeked;
+        const isInfoRevealed = bankCardInfoStates.has(acc.id);
         const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
         const holderClass = acc.memberId === 'sanjay' ? 'holder-sanjay' :
                             acc.memberId === 'aruna' ? 'holder-aruna' :
                             acc.memberId === 'smiti' ? 'holder-smiti' :
                             acc.memberId === 'shakuntala' ? 'holder-shakuntala' : 'holder-vibhav';
 
+        const hasExtraInfo = Boolean(
+          acc.branch || 
+          acc.alias || 
+          acc.signOnPass || 
+          acc.password || 
+          acc.txnPass || 
+          acc.txnPin || 
+          acc.loginPin || 
+          acc.tpin || 
+          acc.crn
+        );
+
         html += `
           <div class="bank-card ${acc.gradient}">
-            <!-- Top Row: Bank Badge, Tier Badge, Holder & Account Label -->
-            <div class="flex items-start justify-between mb-2">
+            <!-- Top Row: Bank Badge, Tier Badge, Holder & Account Label + (i) Info SVG -->
+            <div class="flex items-center justify-between mb-2">
               <div>
                 <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span class="tier-badge ${acc.accent}">${acc.tier}</span>
                   <span class="holder-badge ${holderClass}">${acc.holder}</span>
-                  ${acc.alias ? `<span class="px-1.5 py-0.5 rounded bg-black/40 text-amber-200 font-mono-apple text-[10px] border border-amber-500/30">User: ${acc.alias}</span>` : ''}
                 </div>
-                <h3 class="text-base font-extrabold tracking-tight">${acc.bank}</h3>
-                ${acc.branch ? `<div class="text-[11px] text-white/70">${acc.branch}</div>` : ''}
+                <h3 class="text-base font-extrabold tracking-tight text-white">${acc.bank}</h3>
               </div>
 
-              <div class="text-right shrink-0">
+              <div class="flex items-center gap-2 shrink-0">
                 <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider whitespace-nowrap">${acc.label}</span>
+                ${hasExtraInfo ? `
+                  <button onclick="toggleBankCardInfo('${acc.id}')" title="Additional Details &amp; Credentials" class="w-6 h-6 rounded-md ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  </button>
+                ` : `<div class="w-6 h-6"></div>`}
               </div>
             </div>
 
@@ -8165,10 +8197,10 @@
               </div>
             </div>
 
-            <!-- Details Grid: IFSC, UPI VPA, Customer ID, Passwords -->
+            <!-- Details Grid: IFSC, Customer ID, UPI ID (Strictly Uniform Dimensions across all placards) -->
             <div class="grid grid-cols-2 gap-2 mt-2">
               <!-- IFSC Quick-Copy Tile -->
-              <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+              <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                 <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">IFSC Code</div>
                 <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
                   <span class="truncate copy-target-text">${acc.ifsc}</span>
@@ -8176,80 +8208,126 @@
                 </div>
               </button>
 
-              ${acc.upi ? `
-                <!-- UPI VPA Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.upi}', 'UPI VPA', this)" title="Tap to copy UPI VPA" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI VPA</div>
-                  <div class="font-mono-apple text-xs font-bold text-emerald-300 group-hover:text-emerald-200 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text max-w-[130px]">${acc.upi}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </div>
-                </button>
-              ` : (acc.custId ? `
-                <!-- Customer ID Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
+              <!-- Customer ID Tile (Always visible even if not assigned) -->
+              ${acc.custId ? `
+                <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                   <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
                   <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
                     <span class="truncate copy-target-text">${acc.custId}</span>
                     ${BA_MICRO_COPY_SVG}
                   </div>
                 </button>
-              ` : (acc.crn ? `
-                <!-- CRN Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.crn}', 'CRN Number', this)" title="Tap to copy CRN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">CRN Number</div>
-                  <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${acc.crn}</span>
+              ` : `
+                <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                  <div class="font-mono-apple text-xs font-medium text-white/40">
+                    <span>—</span>
+                  </div>
+                </div>
+              `}
+
+              <!-- UPI ID Tile (Always visible even if not created, full-width) -->
+              ${acc.upi ? `
+                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="col-span-2 tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI ID</div>
+                  <div class="font-mono-apple text-xs font-bold text-emerald-300 group-hover:text-emerald-200 transition-colors flex items-center justify-between">
+                    <span class="truncate copy-target-text">${acc.upi}</span>
                     ${BA_MICRO_COPY_SVG}
                   </div>
                 </button>
               ` : `
-                <!-- Status Tile -->
-                <div class="p-2 rounded-xl bg-black/25 border border-white/10 w-full">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Account Status</div>
-                  <div class="font-mono-apple text-xs font-bold text-emerald-300">ACTIVE</div>
+                <div class="col-span-2 text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
+                  <div class="font-mono-apple text-xs font-medium text-white/40">
+                    <span>Not Created</span>
+                  </div>
                 </div>
-              `))}
-
-              ${(acc.signOnPass || acc.password) ? `
-                <!-- Sign On Password Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.signOnPass || acc.password}', 'Sign On Password', this)" title="Tap to copy Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">Sign On Password</div>
-                  <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.signOnPass || acc.password) : '••••••••'}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </div>
-                </button>
-              ` : ''}
-
-              ${acc.txnPass ? `
-                <!-- Transaction Password Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.txnPass}', 'Transaction Password', this)" title="Tap to copy Transaction Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-rose-300/80 mb-0.5">Txn Password</div>
-                  <div class="font-mono-apple text-xs font-bold text-rose-200 group-hover:text-rose-100 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.txnPass : '••••••••'}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </div>
-                </button>
-              ` : ''}
+              `}
             </div>
 
-            ${(acc.txnPin || acc.loginPin) ? `
-              <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center gap-2 flex-wrap text-[11px] font-mono-apple">
-                ${acc.txnPin ? `
-                  <button onclick="quickCopyCardField('${acc.txnPin}', 'Transaction PIN', this)" class="tactile-copy-field px-2.5 py-1 rounded-lg bg-black/30 hover:bg-black/50 border border-white/10 flex items-center gap-1.5 text-amber-300">
-                    <span class="text-[9px] text-white/50 uppercase font-sans font-bold">Txn PIN:</span>
-                    <span class="font-bold copy-target-text">${isCurrentlyUnmasked ? acc.txnPin : '••••'}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </button>
+            <!-- Non-uniform Fields Drawer (Hidden behind (i) SVG icon button) -->
+            ${(hasExtraInfo && isInfoRevealed) ? `
+              <div class="mt-2.5 pt-2.5 border-t border-white/10 bg-black/35 -mx-4 -mb-4 p-3 rounded-b-2xl transition-all space-y-2">
+                <div class="flex items-center justify-between text-[11px] font-bold text-amber-300/90 pb-1 border-b border-white/10">
+                  <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <span>Security &amp; Branch Credentials</span>
+                  </div>
+                  <span class="text-[10px] text-white/50 font-normal">Tap field to copy</span>
+                </div>
+
+                ${acc.branch ? `
+                  <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 border border-white/10 text-xs">
+                    <span class="text-[9px] uppercase font-bold tracking-wider text-white/50">Branch</span>
+                    <span class="font-medium text-white/90 text-right text-xs truncate max-w-[220px]">${acc.branch}</span>
+                  </div>
                 ` : ''}
-                ${acc.loginPin ? `
-                  <button onclick="quickCopyCardField('${acc.loginPin}', 'Login PIN', this)" class="tactile-copy-field px-2.5 py-1 rounded-lg bg-black/30 hover:bg-black/50 border border-white/10 flex items-center gap-1.5 text-sky-300">
-                    <span class="text-[9px] text-white/50 uppercase font-sans font-bold">Login PIN:</span>
-                    <span class="font-bold copy-target-text">${isCurrentlyUnmasked ? acc.loginPin : '••••'}</span>
-                    ${BA_MICRO_COPY_SVG}
-                  </button>
-                ` : ''}
+
+                <div class="grid grid-cols-2 gap-2">
+                  ${acc.alias ? `
+                    <button onclick="quickCopyCardField('${acc.alias}', 'User ID / Alias', this)" title="Tap to copy User ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">User ID / Alias</div>
+                      <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${acc.alias}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${acc.crn ? `
+                    <button onclick="quickCopyCardField('${acc.crn}', 'CRN Number', this)" title="Tap to copy CRN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">CRN Number</div>
+                      <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${acc.crn}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${(acc.signOnPass || acc.password) ? `
+                    <button onclick="quickCopyCardField('${acc.signOnPass || acc.password}', 'Sign On Password', this)" title="Tap to copy Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">Sign On Pass</div>
+                      <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.signOnPass || acc.password) : '••••••••'}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${acc.txnPass ? `
+                    <button onclick="quickCopyCardField('${acc.txnPass}', 'Transaction Password', this)" title="Tap to copy Txn Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-rose-300/80 mb-0.5">Txn Password</div>
+                      <div class="font-mono-apple text-xs font-bold text-rose-200 group-hover:text-rose-100 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.txnPass : '••••••••'}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${(acc.tpin || acc.txnPin) ? `
+                    <button onclick="quickCopyCardField('${acc.tpin || acc.txnPin}', 'Transaction PIN / TPIN', this)" title="Tap to copy PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">${acc.tpin ? 'TPIN' : 'Txn PIN'}</div>
+                      <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.tpin || acc.txnPin) : '••••'}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+
+                  ${acc.loginPin ? `
+                    <button onclick="quickCopyCardField('${acc.loginPin}', 'Login PIN', this)" title="Tap to copy Login PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                      <div class="text-[9px] uppercase font-bold tracking-wider text-sky-300/80 mb-0.5">Login PIN</div>
+                      <div class="font-mono-apple text-xs font-bold text-sky-200 group-hover:text-sky-100 flex items-center justify-between">
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.loginPin : '••••'}</span>
+                        ${BA_MICRO_COPY_SVG}
+                      </div>
+                    </button>
+                  ` : ''}
+                </div>
               </div>
             ` : ''}
           </div>
