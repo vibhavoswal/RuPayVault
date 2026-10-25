@@ -632,7 +632,7 @@
     /* ======================================================== */
     #unified-floating-dock {
       background: transparent !important;
-      pointer-events: auto;
+      pointer-events: none;
     }
 
     .contiguous-pill {
@@ -646,19 +646,21 @@
       border: none !important;
       padding: 0 !important;
       box-shadow: none !important;
+      width: auto !important;
     }
 
-    /* Contiguous Stadium Pill Expanded (Dark Mode) */
+    /* Contiguous Stadium Pill Expanded (Dark Mode) - Full Width */
     .contiguous-pill.contiguous-pill-expanded {
-      background: rgba(24, 21, 24, 0.92) !important;
+      width: 100% !important;
+      background: rgba(24, 21, 24, 0.94) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(255, 255, 255, 0.16) !important;
       box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-      padding: 5px !important;
+      padding: 6px 8px !important;
     }
 
-    /* Contiguous Stadium Pill Expanded (Light Mode) */
+    /* Contiguous Stadium Pill Expanded (Light Mode) - Full Width */
     [data-theme="light"] .contiguous-pill.contiguous-pill-expanded,
     html.light .contiguous-pill.contiguous-pill-expanded {
       background: rgba(255, 255, 255, 0.96) !important;
@@ -682,10 +684,10 @@
       color: #0f172a !important;
     }
 
-    /* Action Circle Buttons inside Contiguous Pill */
+    /* All Action Circle Buttons inside Contiguous Pill (Same 48px Size) */
     .action-circle-btn {
-      width: 38px;
-      height: 38px;
+      width: 48px;
+      height: 48px;
       border-radius: 9999px;
       border: none;
       color: #ffffff;
@@ -695,7 +697,7 @@
       justify-content: center;
       position: relative;
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
       user-select: none;
       flex-shrink: 0;
     }
@@ -703,8 +705,8 @@
       transform: scale(0.92);
     }
     .action-circle-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
     }
 
     .btn-tag { background: #f59e0b !important; }
@@ -718,19 +720,19 @@
       position: absolute;
       top: -3px;
       right: -3px;
-      min-width: 16px;
-      height: 16px;
-      padding: 0 3px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
       border-radius: 9999px;
       background: #000000;
       color: #ffffff;
-      font-size: 9px;
+      font-size: 10px;
       font-family: -apple-system, BlinkMacSystemFont, monospace;
-      font-weight: 700;
+      font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
       box-shadow: 0 1px 3px rgba(0,0,0,0.5);
       pointer-events: none;
     }
@@ -739,17 +741,17 @@
     .btn-approve-pill {
       background: #0C8C46 !important;
       color: #ffffff !important;
-      padding: 7px 12px !important;
+      padding: 8px 14px !important;
       border-radius: 9999px !important;
       border: none !important;
       cursor: pointer;
-      font-size: 11px !important;
+      font-size: 12px !important;
       font-weight: 700 !important;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       white-space: nowrap;
-      height: 38px;
+      height: 48px;
       box-shadow: 0 4px 14px rgba(12, 140, 70, 0.4) !important;
       transition: background 0.2s ease, transform 0.15s ease;
       flex-shrink: 0;
@@ -759,6 +761,10 @@
     }
     .btn-approve-pill:active {
       transform: scale(0.95);
+    }
+    .btn-approve-pill svg {
+      width: 16px;
+      height: 16px;
     }
     .pulse-dot {
       width: 7px;
@@ -863,7 +869,9 @@
         box-shadow: 0 0 70px rgba(0, 0, 0, 0.75);
       }
       #unified-floating-dock {
+        left: calc(50% - 240px + 1rem) !important;
         right: calc(50% - 240px + 1rem) !important;
+        max-width: 448px !important;
       }
     }
 
@@ -1520,41 +1528,41 @@
       <div id="mb-view-cards" class="hidden"></div>
     </main>
 
-    <!-- Unified Floating Action Dock: One Contiguous Pill at Bottom Right -->
-    <div id="unified-floating-dock" class="fixed z-40 pointer-events-auto flex items-center justify-end" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); right: 1rem;">
-      <div id="floating-contiguous-pill" class="contiguous-pill contiguous-pill-collapsed flex items-center">
+    <!-- Unified Floating Action Dock: One Contiguous Pill at Bottom (Full Width when expanded) -->
+    <div id="unified-floating-dock" class="fixed z-40 pointer-events-none flex items-center justify-end" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); left: 1rem; right: 1rem; max-width: 440px; margin: 0 auto;">
+      <div id="floating-contiguous-pill" class="contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center">
         
         <!-- Action Cluster (Approve, Tag, WhatsApp, Redeem) - Visible only when count > 0 -->
-        <div id="dock-actions-container" class="hidden items-center gap-1.5 pr-1.5">
+        <div id="dock-actions-container" class="hidden items-center justify-around flex-1">
           <!-- Ingest Approve Button -->
           <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="hidden btn-approve-pill" title="Approve Vouchers to Brand Tab">
             <span class="pulse-dot"></span>
-            <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1 text-xs">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Approve</span>
             </span>
           </button>
 
           <!-- Tag Card -->
           <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
             <span id="tag-badge-count" class="tag-count-bubble">0</span>
           </button>
 
           <!-- WhatsApp -->
           <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-whatsapp" title="Share via WhatsApp">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
           </button>
 
           <!-- Redeem -->
           <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         </div>
 
         <!-- Circular Action Button: Select in normal mode, Circular Cross (✕) in select mode -->
-        <button id="dock-select-toggle-btn" onclick="toggleSelectMode()" class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer" title="Select Multiple">
-          <svg id="dock-select-toggle-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <button id="dock-select-toggle-btn" onclick="toggleSelectMode()" class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer shrink-0" title="Select Multiple">
+          <svg id="dock-select-toggle-icon" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 11 12 14 22 4"></polyline>
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
           </svg>
@@ -6302,45 +6310,45 @@
 
       if (!state.isSelectMode) {
         // Normal Mode: Floating Circular Select button in bottom right
-        dockPill.className = 'contiguous-pill contiguous-pill-collapsed flex items-center';
+        dockPill.className = 'contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center';
         if (actionsContainer) {
           actionsContainer.classList.add('hidden');
           actionsContainer.classList.remove('flex');
         }
-        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer';
+        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] btn-select-mode cursor-pointer shrink-0';
         toggleBtn.title = 'Select Multiple';
         toggleBtn.onclick = toggleSelectMode;
         if (toggleIcon) {
-          toggleIcon.className = 'w-5 h-5';
+          toggleIcon.className = 'w-6 h-6';
           toggleIcon.innerHTML = `<polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>`;
         }
       } else if (count === 0) {
         // Select Mode with 0 selected: Floating Circular Cross (✕) button
-        dockPill.className = 'contiguous-pill contiguous-pill-collapsed flex items-center';
+        dockPill.className = 'contiguous-pill contiguous-pill-collapsed pointer-events-auto flex items-center';
         if (actionsContainer) {
           actionsContainer.classList.add('hidden');
           actionsContainer.classList.remove('flex');
         }
-        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 btn-cross-mode cursor-pointer';
+        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-xl active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 btn-cross-mode cursor-pointer shrink-0';
         toggleBtn.title = 'Exit Select Mode';
         toggleBtn.onclick = exitSelectMode;
         if (toggleIcon) {
-          toggleIcon.className = 'w-5 h-5';
+          toggleIcon.className = 'w-6 h-6';
           toggleIcon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>`;
         }
       } else {
-        // Select Mode with count > 0: One Contiguous Pill with Action Buttons + Cross Button
-        dockPill.className = 'contiguous-pill contiguous-pill-expanded flex items-center';
+        // Select Mode with count > 0: One Contiguous Pill with Action Buttons + Cross Button (Full Width)
+        dockPill.className = 'contiguous-pill contiguous-pill-expanded w-full flex items-center justify-between pointer-events-auto';
         if (actionsContainer) {
           actionsContainer.classList.remove('hidden');
           actionsContainer.classList.add('flex');
         }
-        // In the contiguous pill, the cross button is compact (38px x 38px)
-        toggleBtn.className = 'w-[38px] h-[38px] rounded-full flex items-center justify-center font-bold text-xs shadow active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/80 btn-cross-mode shrink-0 cursor-pointer';
+        // In the contiguous pill, ALL circular buttons are the exact same size (w-12 h-12 / 48px)
+        toggleBtn.className = 'w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow active:scale-90 transition-all text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 border border-neutral-700/80 btn-cross-mode shrink-0 cursor-pointer';
         toggleBtn.title = 'Exit Select Mode';
         toggleBtn.onclick = exitSelectMode;
         if (toggleIcon) {
-          toggleIcon.className = 'w-4 h-4';
+          toggleIcon.className = 'w-6 h-6';
           toggleIcon.innerHTML = `<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>`;
         }
 
