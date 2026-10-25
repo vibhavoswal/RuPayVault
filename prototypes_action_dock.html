@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault - Action Dock Prototypes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Pulse dot */
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 9999px;
+      background: #ffffff;
+      animation: pulseAnim 1.8s infinite;
+      flex-shrink: 0;
+    }
+    .pulse-amber {
+      width: 7px;
+      height: 7px;
+      border-radius: 9999px;
+      background: #f59e0b;
+      animation: pulseAnim 1.5s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulseAnim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.7); }
+    }
+
+    /* Common Transitions */
+    .dock-transition {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .tap-scale {
+      transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, opacity 0.2s ease;
+    }
+    .tap-scale:active {
+      transform: scale(0.92);
+    }
+
+    /* ======================================================== */
+    /* SLEEK APPROVE BUTTON SLIDING DRAWER ANIMATION            */
+    /* ======================================================== */
+    .approve-track {
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      will-change: max-width, opacity, transform, margin;
+      transition: max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                  margin 0.35s ease;
+    }
+    .approve-track.approve-open {
+      max-width: 175px;
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      margin-right: 6px;
+      pointer-events: auto;
+    }
+    .approve-track.approve-closed {
+      max-width: 0 !important;
+      opacity: 0 !important;
+      transform: translateX(-24px) scale(0.9) !important;
+      margin-right: 0 !important;
+      pointer-events: none;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 1: DYNAMIC ISLAND GLASS (Apple iOS 18 Vision)  */
+    /* ======================================================== */
+    .p1-dock-expanded {
+      background: rgba(18, 18, 22, 0.88);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p1-dock-expanded {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+    .p1-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .p1-btn-subtle {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .light .p1-btn-subtle {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+    .p1-btn-subtle:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+    .light .p1-btn-subtle:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .p1-approve-pill {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #0C8C46 0%, #097339 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 4px 14px rgba(12, 140, 70, 0.35);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 2: SEGMENTED BENTO STADIUM (Linear App Style)  */
+    /* ======================================================== */
+    .p2-dock-expanded {
+      background: #141419;
+      border: 1px solid #272730;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p2-dock-expanded {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.12);
+    }
+    .p2-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      background: #1e1e26;
+      color: #94a3b8;
+      border: 1px solid #2e2e38;
+      flex-shrink: 0;
+    }
+    .light .p2-circle-btn {
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .p2-circle-btn:hover {
+      background: #2a2a36;
+      color: #ffffff;
+    }
+    .light .p2-circle-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .p2-approve-btn {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: #0C8C46;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 3: HERO ACTION ISLAND (Stripe / Apple Pay UI)  */
+    /* ======================================================== */
+    .p3-dock-expanded {
+      background: rgba(22, 22, 28, 0.95);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 18px 45px -6px rgba(0, 0, 0, 0.7);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p3-dock-expanded {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.15);
+    }
+    .p3-hero-approve {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      flex-shrink: 0;
+    }
+    .p3-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #272732;
+      color: #e2e8f0;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .light .p3-circle-btn {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 4: COMMAND DOCK (Arc Search / Notion Native)   */
+    /* ======================================================== */
+    .p4-dock-expanded {
+      background: #111115;
+      border: 1px solid #2a2a33;
+      box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.85);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p4-dock-expanded {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.14);
+    }
+    .p4-btn-tag {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .p4-btn-share {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+    .p4-btn-redeem {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .p4-btn-close {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .light .p4-btn-close {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+    .p4-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s ease;
+      flex-shrink: 0;
+    }
+    .p4-approve-btn {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: #0C8C46;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 5: VISION PRO SPECULAR REFRACTION PILL         */
+    /* ======================================================== */
+    .p5-dock-expanded {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(36px) saturate(220%);
+      -webkit-backdrop-filter: blur(36px) saturate(220%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p5-dock-expanded {
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 20px 45px -8px rgba(15, 23, 42, 0.15), inset 0 1px 1px #ffffff;
+    }
+    .p5-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .light .p5-circle-btn {
+      background: rgba(241, 245, 249, 0.9);
+      border: 1px solid #e2e8f0;
+      color: #0f172a;
+    }
+    .p5-approve-btn {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: #0C8C46;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 4px 15px rgba(12, 140, 70, 0.4);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ======================================================== */
+    /* PROTOTYPE 6: EXECUTIVE MONOCHROME (Quiet Luxury)         */
+    /* ======================================================== */
+    .p6-dock-expanded {
+      background: #09090b;
+      border: 1px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+      border-radius: 9999px;
+      padding: 6px;
+    }
+    .light .p6-dock-expanded {
+      background: #18181b;
+      border: 1px solid #27272a;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+    .p6-circle-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #fafafa;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .p6-circle-btn:hover {
+      background: #27272a;
+      border-color: #3f3f46;
+    }
+    .p6-approve-btn {
+      height: 48px;
+      padding: 0 18px;
+      border-radius: 9999px;
+      background: #ffffff;
+      color: #09090b;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+    }
+    .p6-approve-btn:hover {
+      background: #f4f4f5;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-3 sm:p-6 select-none">
+
+  <!-- TOP SHOWCASE CONTROL BAR -->
+  <header class="w-full max-w-4xl bg-slate-800/90 backdrop-blur-md rounded-2xl p-4 border border-slate-700/80 mb-6 shadow-xl">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono-code text-[11px] font-bold">SMOOTH ANIMATION LAB</span>
+          <span class="text-xs text-slate-400">RuPayVault Action Dock</span>
+        </div>
+        <h1 class="text-lg font-bold text-white mt-1">Select Mode & Sliding Approve Animation</h1>
+      </div>
+
+      <!-- Quick Toggles -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="btn-theme-toggle" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-medium flex items-center gap-1.5 transition-all">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <span id="theme-label">Light Mode</span>
+        </button>
+
+        <!-- View Mode: Ingested vs Brand Tab -->
+        <button onclick="toggleViewMode()" id="btn-view-toggle" class="px-3 py-1.5 rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 font-bold flex items-center gap-1.5 transition-all">
+          <span>View: Ingested (With Approve)</span>
+        </button>
+
+        <!-- Select All Toggle -->
+        <button onclick="toggleSelectAll()" class="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 font-medium flex items-center gap-1.5 transition-all">
+          <span id="label-top-sel">Select All (3)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Prototype Selectors (P1 to P6) -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mt-4 pt-4 border-t border-slate-700/60">
+      <button onclick="switchProto(1)" id="p-tab-1" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm">
+        <div class="font-bold">1. Dynamic Glass</div>
+        <div class="text-[10px] text-slate-400 truncate">Apple iOS 18 Blur</div>
+      </button>
+
+      <button onclick="switchProto(2)" id="p-tab-2" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700">
+        <div class="font-bold">2. Bento Stadium</div>
+        <div class="text-[10px] text-slate-400 truncate">Linear App Style</div>
+      </button>
+
+      <button onclick="switchProto(3)" id="p-tab-3" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700">
+        <div class="font-bold">3. Hero Island</div>
+        <div class="text-[10px] text-slate-400 truncate">Stripe / Apple Pay</div>
+      </button>
+
+      <button onclick="switchProto(4)" id="p-tab-4" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700">
+        <div class="font-bold">4. Command Dock</div>
+        <div class="text-[10px] text-slate-400 truncate">Arc Search / Notion</div>
+      </button>
+
+      <button onclick="switchProto(5)" id="p-tab-5" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700">
+        <div class="font-bold">5. Vision Pro</div>
+        <div class="text-[10px] text-slate-400 truncate">Specular Refraction</div>
+      </button>
+
+      <button onclick="switchProto(6)" id="p-tab-6" class="proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700">
+        <div class="font-bold">6. Quiet Luxury</div>
+        <div class="text-[10px] text-slate-400 truncate">Executive Mono</div>
+      </button>
+    </div>
+  </header>
+
+  <!-- LIVE PHONE PREVIEW FRAME (iPhone 16 Pro Dimensions: 430px) -->
+  <div class="relative w-full max-w-[420px] h-[870px] rounded-[44px] shadow-[0_25px_70px_rgba(0,0,0,0.85)] border-[8px] border-slate-800 overflow-hidden bg-white dark:bg-[#09090c] transition-colors flex flex-col">
+    
+    <!-- iPhone Top Dynamic Island & Status Bar -->
+    <div class="h-10 px-6 shrink-0 flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-white pt-1">
+      <span>7:54</span>
+      <div class="w-24 h-4 bg-black rounded-full mx-auto -mt-1 flex items-center justify-center"></div>
+      <div class="flex items-center gap-1.5 text-[11px]">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 22l7.03-4.39C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+        <span>5G</span>
+        <div class="w-5 h-2.5 rounded border border-current p-0.5 flex items-center">
+          <div class="h-full w-full bg-current rounded-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Header Top Bar (Clean iOS Layout) -->
+    <header class="h-[52px] px-3.5 shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 transition-colors">
+      <!-- Left: Brand Capsule -->
+      <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-900 dark:text-white text-xs font-bold shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-[#F47A21]"></span>
+          <span id="top-bar-title">Activity Log</span>
+          <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Right: Select All (when select mode on) OR Sync Pill -->
+      <div class="flex items-center gap-1.5">
+        <button id="top-sync-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 text-[11px] font-mono-code">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]"></span>
+          <svg class="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span class="text-[10px] text-slate-500 dark:text-neutral-400">12:25 AM</span>
+        </button>
+        <button id="top-select-all-btn" onclick="toggleSelectAll()" class="hidden h-9 px-2.5 items-center text-xs font-bold text-[#0C8C46] hover:opacity-80 active:scale-95 transition-all">
+          <span id="top-select-all-label">Select All</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Subheader Filter Deck & Ingested Chips -->
+    <div class="p-3 border-b border-slate-100 dark:border-neutral-800/80 bg-slate-50/50 dark:bg-neutral-900/40">
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1 text-xs">
+        <div class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold shrink-0 flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Activity Log</span>
+          <span class="px-1.5 py-0.2 rounded-full bg-black/20 text-[10px]">3</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold shrink-0">
+          <span>Cult.fit</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-neutral-300 font-semibold shrink-0">
+          <span>Thyrocare</span>
+        </div>
+      </div>
+
+      <!-- Ingested / Shared Sub-pill -->
+      <div class="flex items-center gap-2 mt-2 text-[11px] font-semibold">
+        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+          <span>⚡ Ingested</span>
+          <span class="font-bold">3</span>
+        </span>
+        <span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-400">
+          Shared 0
+        </span>
+        <span class="text-[10px] text-slate-400 dark:text-neutral-500 ml-auto font-mono-code">2 Arrived &middot; 1 Pending</span>
+      </div>
+    </div>
+
+    <!-- Voucher Cards Feed -->
+    <main class="flex-1 overflow-y-auto p-3.5 space-y-3 pb-28">
+      
+      <!-- Card 1: Cult.fit Elite (ARRIVED - ACTIVE) -->
+      <div onclick="toggleCard(1)" id="voucher-card-1" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-1" class="w-5 h-5 rounded-md bg-[#0C8C46] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Cult.fit Elite</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-mono-code font-bold">Arrived</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 font-mono-code font-bold border border-slate-200 dark:border-neutral-700">Canara DC 6463</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code font-bold text-xs text-slate-800 dark:text-neutral-200">RUPS–6D886B70</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-neutral-700 font-medium">Copy</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">@vibhavoswal3 &middot; 26m ago</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></span>
+        </div>
+      </div>
+
+      <!-- Card 2: Thyrocare (ARRIVED - ACTIVE) -->
+      <div onclick="toggleCard(2)" id="voucher-card-2" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-2" class="w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Thyrocare</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-mono-code font-bold">Arrived</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 font-mono-code font-bold border border-slate-200 dark:border-neutral-700">Canara DC 5297</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code font-bold text-xs text-slate-800 dark:text-neutral-200">RUPS–439E9689</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-neutral-700 font-medium">Copy</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-neutral-400 mt-1">@madhuribhalekar369 &middot; 21h ago</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5"></span>
+        </div>
+      </div>
+
+      <!-- Card 3: Swiggy ₹500 (NOT ARRIVED YET - PENDING) -->
+      <div onclick="toggleCard(3)" id="voucher-card-3" class="rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-amber-500/30 shadow-sm relative">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start gap-2.5">
+            <div id="check-box-3" class="w-5 h-5 rounded-md border border-amber-400/60 dark:border-amber-500/60 flex items-center justify-center shrink-0 mt-0.5"></div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-slate-900 dark:text-white">Swiggy ₹500</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono-code font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span>Awaiting Arrival</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="font-mono-code text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded">PENDING GENERATION</span>
+              </div>
+              <p class="text-[11px] text-amber-600/80 dark:text-amber-400/80 mt-1">⚡ Ingest Rule: Selecting this hides Approve button</p>
+            </div>
+          </div>
+          <span class="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></span>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ======================================================== -->
+    <!-- DYNAMIC PROTOTYPE DOCK CONTAINER (Anchored Bottom Frame) -->
+    <!-- ======================================================== -->
+    <div id="proto-dock-wrapper" class="absolute bottom-5 inset-x-3.5 z-40 flex items-center justify-end pointer-events-none">
+      <!-- Container rendered dynamically via JavaScript based on chosen prototype -->
+      <div id="live-dock-element" class="pointer-events-auto"></div>
+    </div>
+
+    <!-- Live Toast Message -->
+    <div id="toast-msg" class="absolute top-16 inset-x-6 z-50 transform -translate-y-12 opacity-0 transition-all duration-300 pointer-events-none p-3 rounded-2xl bg-neutral-900/95 text-white border border-neutral-700/80 text-xs font-semibold shadow-2xl flex items-center justify-between">
+      <span id="toast-text">Toast message</span>
+      <span class="text-[10px] text-emerald-400 font-mono-code">✓</span>
+    </div>
+
+  </div>
+
+  <!-- PROTOTYPE DESIGN NOTES & HIGHLIGHTS -->
+  <footer class="w-full max-w-4xl mt-6 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-xs text-slate-300">
+    <div class="flex items-center justify-between mb-2">
+      <span class="font-bold text-white uppercase tracking-wider text-[11px]">Design Highlights for Selected Prototype</span>
+      <span id="proto-badge-name" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono-code font-bold">P1: Dynamic Island Glass</span>
+    </div>
+    <p id="proto-description" class="text-slate-400 leading-relaxed">
+      Apple Vision/iOS 18 style specular frosted glass stadium with cohesive action circles, Google Material Design Share SVG, and full-width edge-to-edge docking.
+    </p>
+  </footer>
+
+  <script>
+    // State of selected cards (Set of card IDs: 1, 2, 3)
+    let selectedSet = new Set([1]); // Initially Card 1 (Arrived) is selected
+    let currentProto = 1;
+    let isDark = false;
+    let isIngested = true;
+    let isSelectMode = true;
+
+    const PROTO_INFO = {
+      1: {
+        name: "1. Dynamic Island Glass (VisionOS)",
+        desc: "Specular frosted glass stadium. When arrived vouchers are selected, Approve smoothly slides out from the left. Selecting the pending voucher smoothly slides Approve closed while keeping all 4 action circles (Tag, Share, Redeem, Close) evenly balanced across the full width."
+      },
+      2: {
+        name: "2. Segmented Bento Stadium (Linear)",
+        desc: "Linear app style: crisp dark slate segments with recessed icon buttons and smooth spring slide for the forest-green Approve button. The Select/Close button is permanently anchored at the bottom right."
+      },
+      3: {
+        name: "3. Hero Action Island (Stripe / Apple Pay)",
+        desc: "Primary visual hierarchy: The 'Approve' button acts as the wide hero pill with subtle green gradient and drop-shadow, while Tag, Share, Redeem, and Close are neatly bundled in an adjacent tactile cluster."
+      },
+      4: {
+        name: "4. Tactile Command Dock (Arc Search)",
+        desc: "High-contrast modern floating dock. Each circular button features a subtle colored tint background (Amber for Tag, Blue for Share, Emerald for Redeem, Slate for Close) with exact 48px circular touch targets."
+      },
+      5: {
+        name: "5. Vision Pro Specular Refraction (Glassmorphism)",
+        desc: "Deep frosted blur with double-border refraction and inner specular highlight. Buttons glow softly on hover, with smooth slide-drawer animation."
+      },
+      6: {
+        name: "6. Executive Monochrome (Quiet Luxury)",
+        desc: "High-end luxury aesthetic: Dark graphite and pure white contrast. Eliminates bright rainbow colors for a calm, professional, executive look with pure Material Design vectors."
+      }
+    };
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-msg');
+      const text = document.getElementById('toast-text');
+      if (!toast || !text) return;
+      text.textContent = msg;
+      toast.classList.remove('-translate-y-12', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-12', 'opacity-0');
+      }, 2200);
+    }
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.classList.toggle('light', !isDark);
+      document.getElementById('theme-label').textContent = isDark ? 'Dark Mode' : 'Light Mode';
+      renderDock();
+    }
+
+    function toggleViewMode() {
+      isIngested = !isIngested;
+      document.getElementById('btn-view-toggle').innerHTML = isIngested
+        ? `<span>View: Ingested (With Approve)</span>`
+        : `<span>View: Brand Tab (No Approve)</span>`;
+      document.getElementById('top-bar-title').textContent = isIngested ? 'Activity Log' : 'Cult.fit';
+      renderDock();
+    }
+
+    // Toggle card selection
+    function toggleCard(cardId) {
+      if (selectedSet.has(cardId)) {
+        selectedSet.delete(cardId);
+      } else {
+        selectedSet.add(cardId);
+      }
+      isSelectMode = selectedSet.size > 0;
+      updateCards();
+      renderDock();
+    }
+
+    function toggleSelectAll() {
+      if (selectedSet.size === 3) {
+        selectedSet.clear();
+        isSelectMode = false;
+      } else {
+        selectedSet = new Set([1, 2, 3]);
+        isSelectMode = true;
+      }
+      updateCards();
+      renderDock();
+    }
+
+    function updateCards() {
+      const count = selectedSet.size;
+      const topSync = document.getElementById('top-sync-pill');
+      const topSelectAll = document.getElementById('top-select-all-btn');
+      const topSelectAllLabel = document.getElementById('top-select-all-label');
+
+      if (isSelectMode) {
+        if (topSync) topSync.classList.add('hidden');
+        if (topSelectAll) {
+          topSelectAll.classList.remove('hidden');
+          topSelectAll.classList.add('flex');
+        }
+        if (topSelectAllLabel) {
+          topSelectAllLabel.textContent = (count === 3) ? 'Deselect All' : 'Select All';
+        }
+      } else {
+        if (topSync) topSync.classList.remove('hidden');
+        if (topSelectAll) {
+          topSelectAll.classList.add('hidden');
+          topSelectAll.classList.remove('flex');
+        }
+      }
+
+      // Update Card 1 (Arrived)
+      const c1 = document.getElementById('voucher-card-1');
+      const b1 = document.getElementById('check-box-1');
+      if (selectedSet.has(1)) {
+        c1.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm relative";
+        b1.className = "w-5 h-5 rounded-md bg-[#0C8C46] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm";
+        b1.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      } else {
+        c1.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative";
+        b1.className = "w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5";
+        b1.innerHTML = "";
+      }
+
+      // Update Card 2 (Arrived)
+      const c2 = document.getElementById('voucher-card-2');
+      const b2 = document.getElementById('check-box-2');
+      if (selectedSet.has(2)) {
+        c2.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm relative";
+        b2.className = "w-5 h-5 rounded-md bg-[#0C8C46] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm";
+        b2.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      } else {
+        c2.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-sm relative";
+        b2.className = "w-5 h-5 rounded-md border border-slate-300 dark:border-neutral-600 flex items-center justify-center shrink-0 mt-0.5";
+        b2.innerHTML = "";
+      }
+
+      // Update Card 3 (Pending arrival)
+      const c3 = document.getElementById('voucher-card-3');
+      const b3 = document.getElementById('check-box-3');
+      if (selectedSet.has(3)) {
+        c3.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-amber-50/70 dark:bg-amber-950/20 border-amber-500 shadow-sm relative";
+        b3.className = "w-5 h-5 rounded-md bg-amber-500 text-black flex items-center justify-center shrink-0 mt-0.5 shadow-sm";
+        b3.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      } else {
+        c3.className = "rounded-2xl p-3.5 border transition-all cursor-pointer bg-white dark:bg-neutral-900 border-amber-500/30 shadow-sm relative";
+        b3.className = "w-5 h-5 rounded-md border border-amber-400/60 dark:border-amber-500/60 flex items-center justify-center shrink-0 mt-0.5";
+        b3.innerHTML = "";
+      }
+    }
+
+    function switchProto(id) {
+      currentProto = id;
+      document.querySelectorAll('.proto-tab').forEach((el, idx) => {
+        if (idx + 1 === id) {
+          el.className = "proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm";
+        } else {
+          el.className = "proto-tab px-2.5 py-2 rounded-xl text-left font-medium text-xs transition-all bg-slate-700/50 text-slate-300 border border-slate-600 hover:bg-slate-700";
+        }
+      });
+
+      const info = PROTO_INFO[id];
+      document.getElementById('proto-badge-name').textContent = info.name;
+      document.getElementById('proto-description').textContent = info.desc;
+
+      renderDock();
+    }
+
+    // Material Design SVG Vectors
+    const SVG_SHARE = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>`;
+    const SVG_TAG = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>`;
+    const SVG_REDEEM = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>`;
+    const SVG_CLOSE = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    const SVG_SELECT = `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`;
+
+    function renderDock() {
+      const container = document.getElementById('live-dock-element');
+      const wrapper = document.getElementById('proto-dock-wrapper');
+      if (!container) return;
+
+      const count = selectedSet.size;
+
+      // Ingest Rule Check:
+      // Approve appears ONLY if:
+      // 1. We are in Ingested view (isIngested === true)
+      // 2. Count > 0
+      // 3. Card 3 (Pending arrival) is NOT selected (All selected items are arrived!)
+      const allSelectedArrived = count > 0 && !selectedSet.has(3);
+      const isApproveOpen = isIngested && allSelectedArrived;
+
+      // 1. Collapsed mode (0 items selected): Single circular Select button permanently at Bottom Right
+      if (count === 0) {
+        wrapper.className = "absolute bottom-5 inset-x-3.5 z-40 flex items-center justify-end pointer-events-none";
+        container.innerHTML = `
+          <button onclick="toggleCard(1)" class="w-12 h-12 rounded-full flex items-center justify-center font-bold text-xs shadow-2xl active:scale-90 transition-all text-white bg-[#F47A21] hover:bg-[#E06A14] tap-scale pointer-events-auto" title="Select Multiple">
+            ${SVG_SELECT}
+          </button>
+        `;
+        return;
+      }
+
+      // 2. Expanded Mode: Contiguous pill occupying full width, with Select/Cross button always on Bottom Right
+      wrapper.className = "absolute bottom-5 inset-x-3.5 z-40 flex items-center justify-center pointer-events-none";
+
+      // Common helper to wrap the sliding Approve button
+      function getApproveTrackHTML(approveBtnHTML) {
+        return `
+          <div class="approve-track ${isApproveOpen ? 'approve-open' : 'approve-closed'}">
+            ${approveBtnHTML}
+          </div>
+        `;
+      }
+
+      if (currentProto === 1) {
+        // PROTOTYPE 1: Dynamic Island Glass (VisionOS)
+        container.className = "w-full p1-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          <!-- Sliding Approve Button on Left -->
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s) to Brand Tab')" class="p1-approve-pill tap-scale">
+              <span class="pulse-dot"></span>
+              <span>Approve${count > 1 ? ` (${count})` : ''}</span>
+            </button>
+          `)}
+
+          <!-- Action Circles + Cross Button (Always on Bottom Right) -->
+          <div class="flex items-center ${isApproveOpen ? 'gap-1.5' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card for ${count} voucher(s)')" class="p1-circle-btn p1-btn-subtle tap-scale relative" title="Tag Payment Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-black font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p1-circle-btn p1-btn-subtle tap-scale" title="Share via Material SVG">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Marked as Redeemed')" class="p1-circle-btn p1-btn-subtle tap-scale text-emerald-400 hover:text-emerald-300" title="Mark Redeemed">
+              ${SVG_REDEEM}
+            </button>
+
+            <!-- Permanent Bottom-Right Cross (✕) Button -->
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p1-circle-btn p1-btn-subtle tap-scale text-slate-400 hover:text-white" title="Exit Select Mode">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      } else if (currentProto === 2) {
+        // PROTOTYPE 2: Segmented Bento Stadium (Linear App Style)
+        container.className = "w-full p2-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s)')" class="p2-approve-btn tap-scale">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Approve${count > 1 ? ` (${count})` : ''}</span>
+            </button>
+          `)}
+
+          <div class="flex items-center ${isApproveOpen ? 'gap-1.5' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card')" class="p2-circle-btn tap-scale relative" title="Tag Payment Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-black font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p2-circle-btn tap-scale" title="Share Material SVG">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Marked as Redeemed')" class="p2-circle-btn tap-scale text-emerald-400" title="Redeem">
+              ${SVG_REDEEM}
+            </button>
+
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p2-circle-btn tap-scale text-rose-400" title="Exit Select Mode">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      } else if (currentProto === 3) {
+        // PROTOTYPE 3: Hero Action Island (Stripe / Apple Pay UI)
+        container.className = "w-full p3-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s)')" class="p3-hero-approve tap-scale">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Approve${count > 1 ? ` (${count})` : ''}</span>
+            </button>
+          `)}
+
+          <div class="flex items-center ${isApproveOpen ? 'gap-1.5' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card')" class="p3-circle-btn tap-scale relative" title="Tag Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-black font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p3-circle-btn tap-scale" title="Share">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Redeem')" class="p3-circle-btn tap-scale text-emerald-400" title="Redeem">
+              ${SVG_REDEEM}
+            </button>
+
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p3-circle-btn tap-scale text-slate-400 hover:text-white" title="Exit">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      } else if (currentProto === 4) {
+        // PROTOTYPE 4: Command Dock (Arc Search / Notion Native)
+        container.className = "w-full p4-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s)')" class="p4-approve-btn tap-scale">
+              <span class="pulse-dot"></span>
+              <span>Approve</span>
+            </button>
+          `)}
+
+          <div class="flex items-center ${isApproveOpen ? 'gap-1.5' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card')" class="p4-circle-btn p4-btn-tag tap-scale relative" title="Tag Payment Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-black text-amber-300 font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p4-circle-btn p4-btn-share tap-scale" title="Share">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Mark Redeemed')" class="p4-circle-btn p4-btn-redeem tap-scale" title="Redeem">
+              ${SVG_REDEEM}
+            </button>
+
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p4-circle-btn p4-btn-close tap-scale" title="Exit Select Mode">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      } else if (currentProto === 5) {
+        // PROTOTYPE 5: Vision Pro Specular Refraction
+        container.className = "w-full p5-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s)')" class="p5-approve-btn tap-scale">
+              <span class="pulse-dot"></span>
+              <span>Approve</span>
+            </button>
+          `)}
+
+          <div class="flex items-center ${isApproveOpen ? 'gap-2' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card')" class="p5-circle-btn tap-scale relative" title="Tag Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-black font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p5-circle-btn tap-scale" title="Share">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Redeem')" class="p5-circle-btn tap-scale text-emerald-300" title="Redeem">
+              ${SVG_REDEEM}
+            </button>
+
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p5-circle-btn tap-scale text-slate-300" title="Exit">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      } else if (currentProto === 6) {
+        // PROTOTYPE 6: Executive Monochrome (Quiet Luxury)
+        container.className = "w-full p6-dock-expanded flex items-center justify-between pointer-events-auto dock-transition";
+        container.innerHTML = `
+          ${getApproveTrackHTML(`
+            <button onclick="showToast('Approved ${count} voucher(s)')" class="p6-approve-btn tap-scale">
+              <span>APPROVE (${count})</span>
+            </button>
+          `)}
+
+          <div class="flex items-center ${isApproveOpen ? 'gap-2' : 'justify-between w-full'}">
+            <button onclick="showToast('Tag Card')" class="p6-circle-btn tap-scale relative" title="Tag Card">
+              ${SVG_TAG}
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black font-mono-code text-[9px] font-bold flex items-center justify-center">${count}</span>
+            </button>
+
+            <button onclick="showToast('Share via Material SVG')" class="p6-circle-btn tap-scale" title="Share">
+              ${SVG_SHARE}
+            </button>
+
+            <button onclick="showToast('Redeem')" class="p6-circle-btn tap-scale" title="Redeem">
+              ${SVG_REDEEM}
+            </button>
+
+            <button onclick="selectedSet.clear(); isSelectMode = false; updateCards(); renderDock();" class="p6-circle-btn tap-scale text-zinc-400 hover:text-white" title="Exit">
+              ${SVG_CLOSE}
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Initialize
+    updateCards();
+    renderDock();
+  </script>
+</body>
+</html>
