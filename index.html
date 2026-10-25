@@ -354,13 +354,35 @@
     }
     [data-theme="light"] .mobile-view #mb-menu-btn,
     html.light .mobile-view #mb-menu-btn {
-      background-color: #ffffff !important;
-      border-color: rgba(12, 140, 70, 0.15) !important;
-      color: #141212 !important;
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #334155 !important;
     }
-    [data-theme="light"] .mobile-view #mb-sync-time,
-    html.light .mobile-view #mb-sync-time {
-      color: #5e5959 !important;
+    [data-theme="light"] .mobile-view #mb-menu-btn:hover,
+    html.light .mobile-view #mb-menu-btn:hover {
+      background-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #mb-sync-pill-btn,
+    [data-theme="light"] #cm-sync-pill-btn,
+    html.light #mb-sync-pill-btn,
+    html.light #cm-sync-pill-btn {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #334155 !important;
+    }
+    [data-theme="light"] #mb-sync-pill-btn:hover,
+    [data-theme="light"] #cm-sync-pill-btn:hover,
+    html.light #mb-sync-pill-btn:hover,
+    html.light #cm-sync-pill-btn:hover {
+      background-color: #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #mb-sync-time,
+    [data-theme="light"] #cm-sync-time,
+    html.light #mb-sync-time,
+    html.light #cm-sync-time {
+      color: #64748b !important;
     }
     [data-theme="light"] .mobile-view #mb-select-btn,
     html.light .mobile-view #mb-select-btn {
@@ -1183,6 +1205,12 @@
       border-color: #e2e8f0 !important;
       color: #0f172a !important;
     }
+    [data-theme="light"] #mb-brand-capsule-btn:hover,
+    [data-theme="light"] #cm-brand-capsule-btn:hover,
+    html.light #mb-brand-capsule-btn:hover,
+    html.light #cm-brand-capsule-btn:hover {
+      background-color: #e2e8f0 !important;
+    }
     [data-theme="light"] #mb-capsule-brand-title,
     [data-theme="light"] #cm-capsule-brand-title,
     html.light #mb-capsule-brand-title,
@@ -1455,7 +1483,7 @@
       <!-- Right Cell: Sync Time + Spinner -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <div id="mb-header-tools" class="flex items-center gap-1.5">
-          <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
             <svg id="mb-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span id="mb-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
@@ -1816,7 +1844,7 @@
 
       <!-- Right Cell: Sync Time + Spinner, + Add Card -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
-        <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
           <svg id="cm-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="cm-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
