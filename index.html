@@ -1253,22 +1253,131 @@
     html.light #cm-capsule-brand-title {
       color: #0f172a !important;
     }
+    /* Executive Dropdown Base Styling */
+    #executive-dropdown-popover {
+      background-color: #16161d;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+    }
+
+    /* Executive Dropdown Light Mode Overrides */
     [data-theme="light"] #executive-dropdown-popover,
     html.light #executive-dropdown-popover {
       background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.12) !important;
+      border: 1px solid #e2e8f0 !important;
       color: #0f172a !important;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
     }
-    [data-theme="light"] #executive-dropdown-popover .bg-neutral-900,
-    html.light #executive-dropdown-popover .bg-neutral-900 {
+
+    /* Switcher Banner in Light Mode */
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-card,
+    html.light #executive-dropdown-popover .ws-switch-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%) !important;
+      border: 1px solid #a7f3d0 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-card:hover,
+    html.light #executive-dropdown-popover .ws-switch-card:hover {
+      background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%) !important;
+      border-color: #6ee7b7 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-card-blue,
+    html.light #executive-dropdown-popover .ws-switch-card-blue {
+      background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+      border: 1px solid #bfdbfe !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-card-blue:hover,
+    html.light #executive-dropdown-popover .ws-switch-card-blue:hover {
+      background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%) !important;
+      border-color: #93c5fd !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-title,
+    html.light #executive-dropdown-popover .ws-switch-title {
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .ws-switch-sub,
+    html.light #executive-dropdown-popover .ws-switch-sub {
+      color: #64748b !important;
+    }
+
+    /* Section Headers */
+    [data-theme="light"] #executive-dropdown-popover .dd-section-header,
+    html.light #executive-dropdown-popover .dd-section-header {
+      color: #64748b !important;
+    }
+
+    /* Search Box */
+    [data-theme="light"] #executive-dropdown-popover .dd-search-input,
+    html.light #executive-dropdown-popover .dd-search-input {
       background-color: #f8fafc !important;
-      border-color: #e2e8f0 !important;
+      border: 1px solid #cbd5e1 !important;
       color: #0f172a !important;
     }
-    [data-theme="light"] #executive-dropdown-popover .text-white,
-    html.light #executive-dropdown-popover .text-white {
+    [data-theme="light"] #executive-dropdown-popover .dd-search-input::placeholder,
+    html.light #executive-dropdown-popover .dd-search-input::placeholder {
+      color: #94a3b8 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-search-icon,
+    html.light #executive-dropdown-popover .dd-search-icon {
+      color: #64748b !important;
+    }
+
+    /* Items (Unselected) */
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal,
+    html.light #executive-dropdown-popover .dd-item-normal {
+      background-color: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #1e293b !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal:hover,
+    html.light #executive-dropdown-popover .dd-item-normal:hover {
+      background-color: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal .dd-item-label,
+    html.light #executive-dropdown-popover .dd-item-normal .dd-item-label {
       color: #0f172a !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal .dd-item-icon-box,
+    html.light #executive-dropdown-popover .dd-item-normal .dd-item-icon-box {
+      background-color: #e2e8f0 !important;
+      color: #475569 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal .dd-item-icon-purple,
+    html.light #executive-dropdown-popover .dd-item-normal .dd-item-icon-purple {
+      background-color: #f3e8ff !important;
+      color: #7e22ce !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-normal .dd-item-icon-blue,
+    html.light #executive-dropdown-popover .dd-item-normal .dd-item-icon-blue {
+      background-color: #dbeafe !important;
+      color: #1d4ed8 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-count-text,
+    html.light #executive-dropdown-popover .dd-count-text {
+      color: #64748b !important;
+    }
+
+    /* Items (Active / Selected) */
+    [data-theme="light"] #executive-dropdown-popover .dd-item-active,
+    html.light #executive-dropdown-popover .dd-item-active {
+      background-color: #ecfdf5 !important;
+      border: 1px solid #6ee7b7 !important;
+      color: #065f46 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-active .dd-item-label,
+    html.light #executive-dropdown-popover .dd-item-active .dd-item-label {
+      color: #065f46 !important;
+      font-weight: 700 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-active .dd-item-badge,
+    html.light #executive-dropdown-popover .dd-item-active .dd-item-badge {
+      color: #059669 !important;
+      font-weight: 700 !important;
+    }
+    [data-theme="light"] #executive-dropdown-popover .dd-item-active .dd-item-icon-box,
+    html.light #executive-dropdown-popover .dd-item-active .dd-item-icon-box {
+      background-color: #a7f3d0 !important;
+      color: #047857 !important;
     }
     [data-theme="light"] #mb-floating-select-fab.bg-neutral-800,
     html.light #mb-floating-select-fab.bg-neutral-800 {
@@ -1679,7 +1788,7 @@
   <!-- EXECUTIVE DROPDOWN POPOVER (VOUCHERS & CARDS WORKSPACES) -->
   <!-- ======================================================== -->
   <div id="executive-dropdown-backdrop" onclick="closeExecutiveDropdown()" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200"></div>
-  <div id="executive-dropdown-popover" class="hidden fixed z-50 rounded-2xl p-3 shadow-2xl transition-all duration-200" style="top: 56px; left: 12px; right: 12px; max-width: 440px; margin: 0 auto; background: #16161d; border: 1px solid rgba(255,255,255,0.12);">
+  <div id="executive-dropdown-popover" class="hidden fixed z-50 rounded-2xl p-3 shadow-2xl transition-all duration-200" style="top: 56px; left: 12px; right: 12px; max-width: 440px; margin: 0 auto;">
     <!-- Dynamically rendered via renderExecutiveDropdown() -->
   </div>
 
@@ -4273,37 +4382,41 @@
         popover.innerHTML = `
           <div class="space-y-3">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
-              <div onclick="switchWorkspace('vouchers'); closeExecutiveDropdown();" class="mt-1.5 p-3 rounded-xl bg-gradient-to-r from-emerald-950/70 to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
+              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
+              <div onclick="switchWorkspace('vouchers'); closeExecutiveDropdown();" class="ws-switch-card mt-1.5 p-3 rounded-xl bg-gradient-to-r from-emerald-950/70 to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-[#0C8C46] text-white flex items-center justify-center font-bold">
+                  <div class="w-8 h-8 rounded-lg bg-[#0C8C46] text-white flex items-center justify-center font-bold shrink-0">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                   </div>
                   <div>
-                    <div class="text-xs font-bold text-white">Change workspace to Voucher Manager</div>
-                    <div class="text-[10.5px] text-neutral-400">Voucher passes, Ingested &amp; Shared queue</div>
+                    <div class="ws-switch-title text-xs font-bold text-white">Change workspace to Voucher Manager</div>
+                    <div class="ws-switch-sub text-[10.5px] text-neutral-400">Voucher passes, Ingested &amp; Shared queue</div>
                   </div>
                 </div>
-                <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
               </div>
             </div>
 
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Filter Cards</span>
+              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Filter Cards</span>
               <div class="mt-1.5 space-y-1">
-                <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
-                  <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs">💳</span>
-                    <span class="text-xs font-bold text-white">Credit Cards</span>
+                <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="dd-item-normal p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
+                  <div class="flex items-center gap-2.5">
+                    <span class="dd-item-icon-box dd-item-icon-purple w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </span>
+                    <span class="dd-item-label text-xs font-bold text-white">Credit Cards</span>
                   </div>
-                  <span class="text-[11px] font-bold text-neutral-400" id="dd-count-cc">4 Cards</span>
+                  <span class="dd-count-text text-[11px] font-bold text-neutral-400" id="dd-count-cc">4 Cards</span>
                 </div>
-                <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
-                  <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">🏦</span>
-                    <span class="text-xs font-bold text-white">Debit Cards</span>
+                <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="dd-item-normal p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
+                  <div class="flex items-center gap-2.5">
+                    <span class="dd-item-icon-box dd-item-icon-blue w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
+                    </span>
+                    <span class="dd-item-label text-xs font-bold text-white">Debit Cards</span>
                   </div>
-                  <span class="text-[11px] font-bold text-neutral-400" id="dd-count-dc">16 Cards</span>
+                  <span class="dd-count-text text-[11px] font-bold text-neutral-400" id="dd-count-dc">16 Cards</span>
                 </div>
               </div>
             </div>
@@ -4321,40 +4434,45 @@
         popover.innerHTML = `
           <div class="space-y-3">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
-              <div onclick="switchWorkspace('cards'); closeExecutiveDropdown();" class="mt-1.5 p-3 rounded-xl bg-gradient-to-r from-blue-950/70 to-indigo-900/50 border border-blue-500/40 hover:border-blue-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
+              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
+              <div onclick="switchWorkspace('cards'); closeExecutiveDropdown();" class="ws-switch-card-blue mt-1.5 p-3 rounded-xl bg-gradient-to-r from-blue-950/70 to-indigo-900/50 border border-blue-500/40 hover:border-blue-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                  <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                   </div>
                   <div>
-                    <div class="text-xs font-bold text-white">Change workspace to Card Manager</div>
-                    <div class="text-[10.5px] text-neutral-400">Debit, Credit cards &amp; lounge quota</div>
+                    <div class="ws-switch-title text-xs font-bold text-white">Change workspace to Card Manager</div>
+                    <div class="ws-switch-sub text-[10.5px] text-neutral-400">Debit, Credit cards &amp; lounge quota</div>
                   </div>
                 </div>
-                <svg class="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                <svg class="w-4 h-4 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
               </div>
             </div>
 
             <div>
               <div class="relative">
-                <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700">
-                <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="dd-search-input w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700">
+                <svg class="dd-search-icon w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               </div>
             </div>
 
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Brand Passes &amp; Queues</span>
+              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Brand Passes &amp; Queues</span>
               <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5" id="executive-brands-list">
                 ${BRAND_CONFIG.map(item => {
                   const isSel = (normActive === item.key);
+                  const iconSvg = item.key === 'ActivityLog'
+                    ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`
+                    : item.key === 'Redeemed'
+                    ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+                    : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>`;
                   return `
-                    <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="p-2 rounded-xl ${isSel ? 'bg-neutral-800 border border-emerald-500/40 text-emerald-400' : 'bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300'} flex items-center justify-between cursor-pointer transition-all">
-                      <div class="flex items-center gap-2 truncate">
-                        <span class="w-6 h-6 rounded-md bg-neutral-800 flex items-center justify-center text-xs font-bold">${item.key === 'ActivityLog' ? '📥' : item.key === 'Redeemed' ? '✓' : item.name.charAt(0)}</span>
-                        <span class="text-xs font-bold truncate">${item.name}</span>
+                    <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="${isSel ? 'dd-item-active bg-neutral-800 border border-emerald-500/40 text-emerald-400 font-semibold' : 'dd-item-normal bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
+                      <div class="flex items-center gap-2.5 truncate">
+                        <span class="dd-item-icon-box w-6 h-6 rounded-md bg-neutral-800 flex items-center justify-center shrink-0 ${isSel ? 'text-emerald-400' : 'text-neutral-400'}">${iconSvg}</span>
+                        <span class="dd-item-label text-xs font-bold truncate">${item.name}</span>
                       </div>
-                      <span class="text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-neutral-500'}">Pass</span>
+                      <span class="dd-item-badge text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-neutral-500'}">Pass</span>
                     </div>
                   `;
                 }).join('')}
@@ -4760,8 +4878,8 @@
             .map((s, idx) => ({
             id: 'staging-' + (s.bookingId || idx),
             bookingId: s.bookingId || ('#S' + (idx + 1)),
-            brand: s.brand || s.targetBrand || '⚡ Unassigned',
-            targetBrand: s.targetBrand || s.brand || '⚡ Unassigned',
+            brand: s.brand || s.targetBrand || 'Unassigned',
+            targetBrand: s.targetBrand || s.brand || 'Unassigned',
             code: s.code || 'PENDING',
             pin: s.pin || null,
             amount: Number(s.amount) || 500,
@@ -6603,7 +6721,7 @@
 
       // 1. Optimistic UI: Add to state.vouchers with isRecent = true
       selectedStaging.forEach(s => {
-        const canonicalBrand = s.targetBrand || s.brand || '⚡ Unassigned';
+        const canonicalBrand = s.targetBrand || s.brand || 'Unassigned';
         state.vouchers.unshift({
           id: 'v-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
           bookingId: s.bookingId,
