@@ -8169,29 +8169,18 @@
 
         html += `
           <div class="bank-card ${acc.gradient}">
-            <!-- Top Row: Bank Badge, Tier Badge, Holder & Account Label + (i) Info SVG -->
+            <!-- Top Row: Clean Bank Name & (i) Info SVG Button -->
             <div class="flex items-center justify-between mb-2">
-              <div>
-                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
-                  <span class="tier-badge ${acc.accent}">${acc.tier}</span>
-                  <span class="holder-badge ${holderClass}">${acc.holder}</span>
-                </div>
-                <h3 class="text-base font-extrabold tracking-tight text-white">${acc.bank}</h3>
-              </div>
+              <h3 class="text-base font-extrabold tracking-tight text-white">${acc.bank}</h3>
 
-              <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider whitespace-nowrap">${acc.label}</span>
-                <div class="w-8 flex items-center justify-center">
-                  ${hasExtraInfo ? `
-                    <button onclick="toggleBankCardInfo('${acc.id}')" title="Additional Details &amp; Credentials" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                      </svg>
-                    </button>
-                  ` : ''}
-                </div>
+              <div class="w-8 flex items-center justify-center">
+                <button onclick="toggleBankCardInfo('${acc.id}')" title="Account Details &amp; Additional Info" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -8277,8 +8266,8 @@
               `}
             </div>
 
-            <!-- Non-uniform Fields Drawer (Hidden behind (i) SVG icon button) -->
-            ${(hasExtraInfo && isInfoRevealed) ? `
+            <!-- Info Drawer: Tier, Label & Non-uniform Credentials (Hidden behind (i) SVG icon button) -->
+            ${isInfoRevealed ? `
               <div class="mt-2.5 pt-2.5 border-t border-white/10 bg-black/35 -mx-4 -mb-4 p-3 rounded-b-2xl transition-all space-y-2">
                 <div class="flex items-center justify-between text-[11px] font-bold text-amber-300/90 pb-1 border-b border-white/10">
                   <div class="flex items-center gap-1.5">
@@ -8287,9 +8276,17 @@
                       <line x1="12" y1="16" x2="12" y2="12"></line>
                       <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    <span>Security &amp; Branch Credentials</span>
+                    <span>Account Tier &amp; Security Credentials</span>
                   </div>
                   <span class="text-[10px] text-white/50 font-normal">Tap field to copy</span>
+                </div>
+
+                <!-- Account Tier & Tag Badges (Moved from Placard Header) -->
+                <div class="flex items-center gap-2 flex-wrap pt-0.5">
+                  <span class="tier-badge ${acc.accent}">${acc.tier}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-black/40 text-amber-200 border border-amber-500/30">
+                    ${acc.label}
+                  </span>
                 </div>
 
                 ${acc.branch ? `
