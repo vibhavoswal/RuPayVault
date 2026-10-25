@@ -288,6 +288,12 @@
       border-color: rgba(12, 140, 70, 0.15) !important;
       color: #374151 !important;
     }
+    [data-theme="light"] #mb-ingested-subfilters button.bg-\[\#0C8C46\],
+    html.light #mb-ingested-subfilters button.bg-\[\#0C8C46\],
+    [data-theme="light"] #dt-ingested-subfilters button.bg-\[\#0C8C46\],
+    html.light #dt-ingested-subfilters button.bg-\[\#0C8C46\] {
+      color: #ffffff !important;
+    }
     [data-theme="light"] #voucher-detail-sheet > div,
     html.light #voucher-detail-sheet > div {
       background-color: #ffffff !important;
@@ -1365,19 +1371,18 @@
         </button>
       </div>
 
-      <!-- Tier 2: Ingested Sub-Filters (Strictly Untagged vs Tagged) - Hidden when Shared is selected -->
+      <!-- Tier 2: Ingested Sub-Filters (Tagged vs Untagged) - Hidden when Shared is selected -->
       <div id="mb-ingested-subfilters" class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-black/50 border border-neutral-800/80">
         <div class="flex items-center gap-1.5 text-xs">
-          <span class="text-[10px] text-neutral-400 font-mono-apple mr-0.5">Filter Ingested:</span>
-          <button onclick="setIngestFilter('untagged')" id="mb-subfilter-untagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
+          <button onclick="setIngestFilter('tagged')" id="mb-subfilter-tagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
+            <svg class="w-3.5 h-3.5 inline-block text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span>Tagged</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-black/30 text-white font-bold" id="mb-sub-count-tagged">0</span>
+          </button>
+          <button onclick="setIngestFilter('untagged')" id="mb-subfilter-untagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5 inline-block text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span>Untagged</span>
             <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-black font-black" id="mb-sub-count-untagged">0</span>
-          </button>
-          <button onclick="setIngestFilter('tagged')" id="mb-subfilter-tagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 inline-block text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <span>Tagged</span>
-            <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-neutral-800 text-emerald-400 font-bold" id="mb-sub-count-tagged">0</span>
           </button>
         </div>
       </div>
@@ -3639,24 +3644,24 @@
     }
 
     function updateIngestFilterUI() {
-      const isUntagged = state.ingestFilter === 'untagged';
+      const isTagged = state.ingestFilter === 'tagged';
       ['mb', 'dt'].forEach(prefix => {
         const uBtn = document.getElementById(`${prefix}-subfilter-untagged`);
         const tBtn = document.getElementById(`${prefix}-subfilter-tagged`);
         if (uBtn && tBtn) {
-          if (isUntagged) {
-            uBtn.className = prefix === 'mb'
-              ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow'
-              : 'px-3 py-1 rounded-lg font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
+          if (isTagged) {
             tBtn.className = prefix === 'mb'
-              ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5'
+              ? 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow'
+              : 'px-3 py-1 rounded-lg font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
+            uBtn.className = prefix === 'mb'
+              ? 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5'
               : 'px-3 py-1 rounded-lg font-bold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-all';
           } else {
-            tBtn.className = prefix === 'mb'
-              ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow'
-              : 'px-3 py-1 rounded-lg font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
             uBtn.className = prefix === 'mb'
-              ? 'px-3 py-1.5 rounded-lg text-[11px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5'
+              ? 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow'
+              : 'px-3 py-1 rounded-lg font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
+            tBtn.className = prefix === 'mb'
+              ? 'px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5'
               : 'px-3 py-1 rounded-lg font-bold text-neutral-400 hover:text-white flex items-center gap-1.5 transition-all';
           }
         }
@@ -3959,7 +3964,7 @@
       selectedIds: new Set(),
       searchQuery: '',
       activeFilterBrand: 'ActivityLog',
-      ingestFilter: 'untagged',
+      ingestFilter: 'tagged',
       targetCardToBlock: null,
       pendingShareVoucher: null,
       accounts: [],
