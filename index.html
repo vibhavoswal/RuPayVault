@@ -866,15 +866,13 @@
       display: none !important;
     }
     #mobile-app-container:not(.hidden),
-    #view-card-manager:not(.hidden),
-    #view-hub:not(.hidden) {
+    #view-card-manager:not(.hidden) {
       display: flex !important;
       width: 100%;
       height: 100%;
     }
     #mobile-app-container.hidden,
-    #view-card-manager.hidden,
-    #view-hub.hidden {
+    #view-card-manager.hidden {
       display: none !important;
     }
 
@@ -883,8 +881,7 @@
         background-color: #050507;
       }
       #mobile-app-container,
-      #view-card-manager,
-      #view-hub {
+      #view-card-manager {
         max-width: 480px;
         margin-left: auto;
         margin-right: auto;
@@ -907,71 +904,10 @@
     }
     [data-theme="light"] #mobile-app-container,
     [data-theme="light"] #view-card-manager,
-    [data-theme="light"] #view-hub,
     html.light #mobile-app-container,
-    html.light #view-card-manager,
-    html.light #view-hub {
+    html.light #view-card-manager {
       border-color: rgba(0, 0, 0, 0.08);
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.06);
-    }
-
-    /* Hub View (Card & Voucher Hub) Light & Dark Mode */
-    #view-hub {
-      background-color: #09080a;
-    }
-    [data-theme="light"] #view-hub,
-    html.light #view-hub {
-      background-color: #f8fafc !important;
-      color: #0f172a !important;
-    }
-    [data-theme="light"] #view-hub .hub-title,
-    html.light #view-hub .hub-title {
-      color: #0f172a !important;
-    }
-    [data-theme="light"] #view-hub .hub-bento-card,
-    html.light #view-hub .hub-bento-card {
-      background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
-    }
-    [data-theme="light"] #view-hub .hub-bento-card:hover,
-    html.light #view-hub .hub-bento-card:hover {
-      background-color: #fdfdfd !important;
-      border-color: rgba(12, 140, 70, 0.4) !important;
-    }
-    [data-theme="light"] #view-hub .hub-bento-title,
-    html.light #view-hub .hub-bento-title {
-      color: #0f172a !important;
-    }
-    [data-theme="light"] #view-hub .hub-watermark,
-    html.light #view-hub .hub-watermark {
-      color: #0f172a !important;
-      opacity: 0.04 !important;
-    }
-    [data-theme="light"] #view-hub .hub-arrow-btn,
-    html.light #view-hub .hub-arrow-btn {
-      background-color: #f1f5f9 !important;
-      border-color: #e2e8f0 !important;
-      color: #475569 !important;
-    }
-    [data-theme="light"] #view-hub .hub-bottom-bar,
-    html.light #view-hub .hub-bottom-bar {
-      border-top-color: rgba(0, 0, 0, 0.08) !important;
-    }
-    [data-theme="light"] #view-hub .hub-lock-btn,
-    html.light #view-hub .hub-lock-btn {
-      background-color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      color: #334155 !important;
-    }
-    [data-theme="light"] #view-hub .hub-lock-btn:hover,
-    html.light #view-hub .hub-lock-btn:hover {
-      color: #e11d48 !important;
-      border-color: rgba(225, 29, 72, 0.3) !important;
-    }
-    [data-theme="light"] #view-hub .hub-status-text,
-    html.light #view-hub .hub-status-text {
-      color: #64748b !important;
     }
 
     /* ======================================================== */
@@ -1482,116 +1418,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ======================================================== -->
-  <!-- 1. PORTAL HUB / FRONT PAGE VIEW (#view-hub)              -->
-  <!-- ======================================================== -->
-  <section id="view-hub" class="flex-1 flex flex-col justify-between p-6 sm:p-8 w-full h-full overflow-y-auto relative select-none">
-    
-    <!-- Top Header (Clean Typography, No Subheaders, No Emojis) -->
-    <header class="w-full pt-4 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 rounded-xl bg-[#0C8C46]/15 border border-[#0C8C46]/30 flex items-center justify-center text-[#0C8C46]">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-            <polyline points="2 17 12 22 22 17"></polyline>
-            <polyline points="2 12 12 17 22 12"></polyline>
-          </svg>
-        </div>
-        <h1 class="hub-title text-base sm:text-lg font-black tracking-tight text-white">Card &amp; Voucher Hub</h1>
-      </div>
-
-      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 font-mono-apple text-[10px] text-emerald-400 font-bold">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>LIVE</span>
-      </div>
-    </header>
-
-    <!-- Center Bento Stack (Only 2 Options, Zero Subheaders, Clean SVGs) -->
-    <div class="w-full space-y-4 my-auto py-6">
-      
-      <!-- Option 1: Card Manager -->
-      <button onclick="switchWorkspace('cards')" class="hub-bento-card w-full h-44 p-5 rounded-3xl bg-[#131215] border border-white/10 hover:border-emerald-500/60 active:scale-[0.98] transition-all flex flex-col justify-between group text-left relative overflow-hidden shadow-2xl">
-        <!-- Subtle Watermark SVG (No Emoji) -->
-        <svg class="hub-watermark absolute -right-6 -bottom-6 w-36 h-36 text-white/5 pointer-events-none select-none transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-          <rect x="2" y="5" width="20" height="14" rx="3"></rect>
-          <line x1="2" y1="10" x2="22" y2="10"></line>
-        </svg>
-
-        <!-- Top Row: Icon Chip + Arrow Action -->
-        <div class="flex items-center justify-between z-10">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="5" width="20" height="14" rx="2.5"></rect>
-              <line x1="2" y1="10" x2="22" y2="10"></line>
-            </svg>
-          </div>
-          <div class="hub-arrow-btn w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 group-hover:text-emerald-400 group-hover:border-emerald-500/40 transition-all">
-            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Bottom Row: Title + Large Numeral Count -->
-        <div class="flex items-end justify-between z-10">
-          <h2 class="hub-bento-title text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">Card Manager</h2>
-          <span id="hub-cards-badge" class="text-3xl font-black font-mono-apple text-emerald-400 tracking-tight">20</span>
-        </div>
-      </button>
-
-      <!-- Option 2: Voucher Manager -->
-      <button onclick="switchWorkspace('vouchers')" class="hub-bento-card w-full h-44 p-5 rounded-3xl bg-[#131215] border border-white/10 hover:border-amber-500/60 active:scale-[0.98] transition-all flex flex-col justify-between group text-left relative overflow-hidden shadow-2xl">
-        <!-- Subtle Watermark SVG (No Emoji) -->
-        <svg class="hub-watermark absolute -right-6 -bottom-6 w-36 h-36 text-white/5 pointer-events-none select-none transition-transform group-hover:scale-105" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-          <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
-          <line x1="9" y1="9" x2="9.01" y2="9"></line>
-          <line x1="15" y1="9" x2="15.01" y2="9"></line>
-        </svg>
-
-        <!-- Top Row: Icon Chip + Arrow Action -->
-        <div class="flex items-center justify-between z-10">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
-              <line x1="9" y1="9" x2="9.01" y2="9"></line>
-              <line x1="15" y1="9" x2="15.01" y2="9"></line>
-            </svg>
-          </div>
-          <div class="hub-arrow-btn w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 group-hover:text-amber-400 group-hover:border-amber-500/40 transition-all">
-            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="7" y1="17" x2="17" y2="7"></line>
-              <polyline points="7 7 17 7 17 17"></polyline>
-            </svg>
-          </div>
-        </div>
-
-        <!-- Bottom Row: Title + Large Numeral Count -->
-        <div class="flex items-end justify-between z-10">
-          <h2 class="hub-bento-title text-lg font-bold text-white group-hover:text-amber-400 transition-colors">Voucher Manager</h2>
-          <span id="hub-vouchers-badge" class="text-3xl font-black font-mono-apple text-amber-400 tracking-tight">154</span>
-        </div>
-      </button>
-
-    </div>
-
-    <!-- Bottom Actions / Minimalist Footer -->
-    <div class="hub-bottom-bar w-full pt-3 pb-2 shrink-0 flex items-center justify-between text-xs border-t border-white/10">
-      <div class="flex items-center gap-2 font-mono-apple text-[11px] hub-status-text text-neutral-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-        <span>Sheets Synced</span>
-      </div>
-      <button onclick="lockVaultManual()" class="hub-lock-btn px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-rose-500/40 text-neutral-300 hover:text-rose-400 font-semibold text-xs active:scale-95 transition-all flex items-center gap-1.5 shadow-sm">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        <span>Lock Vault</span>
-      </button>
-    </div>
-  </section>
-
 
   <!-- ======================================================== -->
   <!-- 3. MOBILE VIEW (Full-Screen iPhone 16 Pro Layout: < 840px) -->
@@ -2197,13 +2023,6 @@
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Quick Shortcuts</div>
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] divide-y divide-[var(--theme-border)] text-xs text-[var(--theme-text-muted)] overflow-hidden shadow-sm">
-            <button onclick="switchWorkspace('hub'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
-              <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                <span>Return to Front Hub</span>
-              </span>
-              <span class="text-[10px] font-mono-apple">›</span>
-            </button>
             <button onclick="switchWorkspace('cards'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between group">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
@@ -3025,8 +2844,7 @@
         renderAll();
         flushUncommittedRedeems();
         syncWithGoogleSheets();
-        switchWorkspace('hub');
-        updateHubStats();
+        switchWorkspace('cards');
       }
     }
 
@@ -4271,7 +4089,7 @@
 
     const state = {
       isDark: true,
-      activeWorkspace: 'hub',
+      activeWorkspace: 'cards',
       activeTab: 'vault',
       isSelectMode: false,
       selectedIds: new Set(),
@@ -4286,26 +4104,17 @@
       staging: []
     };
 
-    /* --- WORKSPACE NAVIGATION (HUB, CARDS, VOUCHERS) --- */
+    /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS) --- */
     function switchWorkspace(target) {
-      state.activeWorkspace = target || 'hub';
-      const hubEl = document.getElementById('view-hub');
+      state.activeWorkspace = (target === 'hub' ? 'cards' : target) || 'cards';
       const cardEl = document.getElementById('view-card-manager');
       const voucherEl = document.getElementById('mobile-app-container');
       const fabBtn = document.getElementById('mb-floating-select-fab');
 
       closeExecutiveDropdown();
 
-      if (state.activeWorkspace === 'hub') {
-        isCardManagerOpen = false;
-        if (hubEl) hubEl.classList.remove('hidden');
-        if (cardEl) cardEl.classList.add('hidden');
-        if (voucherEl) voucherEl.classList.add('hidden');
-        if (fabBtn) fabBtn.classList.add('hidden');
-        updateHubStats();
-      } else if (state.activeWorkspace === 'cards') {
+      if (state.activeWorkspace === 'cards') {
         isCardManagerOpen = true;
-        if (hubEl) hubEl.classList.add('hidden');
         if (cardEl) cardEl.classList.remove('hidden');
         if (voucherEl) voucherEl.classList.add('hidden');
         if (fabBtn) fabBtn.classList.add('hidden');
@@ -4320,7 +4129,6 @@
         if (cmSync && savedSyncTime) cmSync.textContent = savedSyncTime;
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
-        if (hubEl) hubEl.classList.add('hidden');
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.remove('hidden');
         if (fabBtn) fabBtn.classList.remove('hidden');
@@ -5907,7 +5715,7 @@
     }
 
     function closeCardManagerModal() {
-      switchWorkspace('hub');
+      switchWorkspace('vouchers');
     }
 
     function setCardCategoryFilter(category) {
@@ -7560,9 +7368,8 @@
 
       setTab('vault');
 
-      // 5. Always boot directly to Front Page Hub view (even upon refresh)
-      switchWorkspace('hub');
-      updateHubStats();
+      // 5. Always default to Card Manager once authenticated
+      switchWorkspace('cards');
     });
   </script>
 </body>
