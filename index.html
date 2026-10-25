@@ -6898,6 +6898,28 @@
       }
     }
 
+    function triggerBankAccountShare(bank, holder, accNumber, ifsc) {
+      const title = `${bank} Account Details:`;
+      const payload = `${title}\nName: ${holder}\nBank Account: ${accNumber}\nIFSC: ${ifsc}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: title,
+          text: payload
+        }).then(() => {
+          showToast('Shared via iOS Share Sheet!');
+        }).catch((err) => {
+          if (err && err.name !== 'AbortError') {
+            copyToClipboard(payload);
+            showToast('Bank account details copied to clipboard');
+          }
+        });
+      } else {
+        copyToClipboard(payload);
+        showToast('Bank account details copied to clipboard');
+      }
+    }
+
     // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block
     function swipeBlockCard(cardNum, cardName) {
       const cardEl = document.getElementById(`card-box-${cardNum}`);
@@ -8160,15 +8182,17 @@
 
               <div class="flex items-center gap-2 shrink-0">
                 <span class="text-[10px] font-bold ${acc.accent} uppercase tracking-wider whitespace-nowrap">${acc.label}</span>
-                ${hasExtraInfo ? `
-                  <button onclick="toggleBankCardInfo('${acc.id}')" title="Additional Details &amp; Credentials" class="w-6 h-6 rounded-md ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="12" y1="16" x2="12" y2="12"></line>
-                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                  </button>
-                ` : `<div class="w-6 h-6"></div>`}
+                <div class="w-8 flex items-center justify-center">
+                  ${hasExtraInfo ? `
+                    <button onclick="toggleBankCardInfo('${acc.id}')" title="Additional Details &amp; Credentials" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                    </button>
+                  ` : ''}
+                </div>
               </div>
             </div>
 
@@ -8187,7 +8211,7 @@
                 </button>
 
                 <!-- Eye Peek Toggle Button (Exact Card Manager Style) -->
-                <button onclick="toggleBankCardPeek('${acc.id}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white flex items-center justify-center transition-all shrink-0">
+                <button onclick="toggleBankCardPeek('${acc.id}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
                   ${isCurrentlyUnmasked ? `
                     <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
@@ -8197,38 +8221,47 @@
               </div>
             </div>
 
-            <!-- Details Grid: IFSC, Customer ID, UPI ID (Strictly Uniform Dimensions across all placards) -->
-            <div class="grid grid-cols-2 gap-2 mt-2">
-              <!-- IFSC Quick-Copy Tile -->
-              <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
-                <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">IFSC Code</div>
-                <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                  <span class="truncate copy-target-text">${acc.ifsc}</span>
-                  ${BA_MICRO_COPY_SVG}
-                </div>
-              </button>
-
-              <!-- Customer ID Tile (Always visible even if not assigned) -->
-              ${acc.custId ? `
-                <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+            <!-- Row 3: Details Grid (IFSC, Customer ID) + iOS Share Button (Aligned Vertically with Eye & Info) -->
+            <div class="flex items-center gap-2 mt-2">
+              <div class="flex-1 grid grid-cols-2 gap-2">
+                <!-- IFSC Quick-Copy Tile -->
+                <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">IFSC Code</div>
                   <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${acc.custId}</span>
+                    <span class="truncate copy-target-text">${acc.ifsc}</span>
                     ${BA_MICRO_COPY_SVG}
                   </div>
                 </button>
-              ` : `
-                <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
-                  <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
-                  <div class="font-mono-apple text-xs font-medium text-white/40">
-                    <span>—</span>
-                  </div>
-                </div>
-              `}
 
-              <!-- UPI ID Tile (Always visible even if not created, full-width) -->
+                <!-- Customer ID Tile (Always visible even if not assigned) -->
+                ${acc.custId ? `
+                  <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                    <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
+                      <span class="truncate copy-target-text">${acc.custId}</span>
+                      ${BA_MICRO_COPY_SVG}
+                    </div>
+                  </button>
+                ` : `
+                  <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
+                    <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
+                    <div class="font-mono-apple text-xs font-medium text-white/40">
+                      <span>—</span>
+                    </div>
+                  </div>
+                `}
+              </div>
+
+              <!-- iOS Share Button (Directly Below Eye Icon in One Continuous Vertical Line) -->
+              <button onclick="triggerBankAccountShare('${acc.bank}', '${acc.holder}', '${acc.accNumber}', '${acc.ifsc}')" title="Share Bank Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </button>
+            </div>
+
+            <!-- Row 4: UPI ID Tile (Always visible even if not created, full-width) -->
+            <div class="mt-2">
               ${acc.upi ? `
-                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="col-span-2 tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                   <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI ID</div>
                   <div class="font-mono-apple text-xs font-bold text-emerald-300 group-hover:text-emerald-200 transition-colors flex items-center justify-between">
                     <span class="truncate copy-target-text">${acc.upi}</span>
@@ -8236,7 +8269,7 @@
                   </div>
                 </button>
               ` : `
-                <div class="col-span-2 text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
+                <div class="text-left p-2 rounded-xl bg-black/25 border border-white/10 w-full opacity-60">
                   <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
                   <div class="font-mono-apple text-xs font-medium text-white/40">
                     <span>Not Created</span>
