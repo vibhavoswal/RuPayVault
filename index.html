@@ -636,6 +636,15 @@
     }
 
     /* ======================================================== */
+    /* SERIAL BRAND VOUCHER SWIPE GESTURES (PHYSICS 1:1 DRAG)    */
+    /* ======================================================== */
+    #mb-vouchers-list {
+      will-change: transform, opacity;
+      touch-action: pan-y;
+      transform-origin: center center;
+    }
+
+    /* ======================================================== */
     /* TWO-PILL DOCK ARCHITECTURE (ACTION PILL + SATELLITE EXIT) */
     /* ======================================================== */
     #unified-floating-dock {
@@ -5655,6 +5664,195 @@
       }
     }
 
+    /* --- SERIAL BRAND VOUCHER SWIPE GESTURES (PHYSICS 1:1 DRAG) --- */
+    function getSerialBrandIndex() {
+      const currentKey = normalizeBrandKey(state.activeFilterBrand);
+      const idx = BRAND_CONFIG.findIndex(b => b.key === currentKey);
+      return idx >= 0 ? idx : 0;
+    }
+
+    function getNextSerialBrand(direction) {
+      // direction: +1 for next (swipe left), -1 for prev (swipe right)
+      const idx = getSerialBrandIndex();
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= BRAND_CONFIG.length) return null;
+      return BRAND_CONFIG[targetIdx];
+    }
+
+    function transitionToSerialBrand(direction, targetBrand) {
+      const list = document.getElementById('mb-vouchers-list');
+      if (!list) {
+        filterVaultBrand(targetBrand.key);
+        return;
+      }
+
+      const exitOffset = direction > 0 ? -220 : 220;
+      list.style.transition = 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease';
+      list.style.transform = `translateX(${exitOffset}px) scale(0.96)`;
+      list.style.opacity = '0';
+
+      setTimeout(() => {
+        filterVaultBrand(targetBrand.key);
+        list.style.transition = 'none';
+        list.style.transform = `translateX(${-exitOffset}px) scale(0.96)`;
+
+        requestAnimationFrame(() => {
+          list.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+          list.style.transform = 'translateX(0) scale(1)';
+          list.style.opacity = '1';
+        });
+      }, 180);
+    }
+
+    function initSerialBrandSwipeGestures() {
+      const scrollContainer = document.querySelector('.mobile-scroll-container');
+      const list = document.getElementById('mb-vouchers-list');
+      if (!scrollContainer || !list) return;
+
+      let startX = 0, startY = 0;
+      let currentX = 0, currentY = 0;
+      let startTime = 0;
+      let isDragging = false;
+      let isHorizontalGesture = false;
+
+      function onTouchStart(e) {
+        // Guard: disable swipe in select mode or outside vouchers workspace
+        if (state.isSelectMode || state.activeWorkspace !== 'vouchers') return;
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+      }
+
+      function onTouchMove(e) {
+        if (!isDragging || state.isSelectMode || state.activeWorkspace !== 'vouchers') return;
+        const touch = e.touches[0];
+        handleDrag(touch.clientX, touch.clientY, e);
+      }
+
+      function onTouchEnd() {
+        if (!isDragging) return;
+        endDrag();
+      }
+
+      // Mouse drag handlers for desktop trackpad & mouse support
+      function onMouseDown(e) {
+        if (state.isSelectMode || state.activeWorkspace !== 'vouchers') return;
+        if (e.target.closest('button, input, select, textarea, a, .btn-action')) return;
+        startDrag(e.clientX, e.clientY);
+      }
+
+      function onMouseMove(e) {
+        if (!isDragging || state.isSelectMode || state.activeWorkspace !== 'vouchers') return;
+        handleDrag(e.clientX, e.clientY, e);
+      }
+
+      function onMouseUp() {
+        if (!isDragging) return;
+        endDrag();
+      }
+
+      function startDrag(x, y) {
+        isDragging = true;
+        isHorizontalGesture = false;
+        startX = x;
+        startY = y;
+        currentX = x;
+        currentY = y;
+        startTime = Date.now();
+        list.style.transition = 'none';
+      }
+
+      function handleDrag(x, y, event) {
+        currentX = x;
+        currentY = y;
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        // Intent detection: measure first 8px movement
+        if (!isHorizontalGesture) {
+          if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+            isHorizontalGesture = true;
+            window.__rupaySwipingActive = true;
+          } else if (Math.abs(deltaY) > 8) {
+            isDragging = false;
+            return;
+          }
+        }
+
+        if (isHorizontalGesture) {
+          if (event && event.cancelable) event.preventDefault();
+
+          // Rubber-band resistance at boundaries (first brand & last brand)
+          const idx = getSerialBrandIndex();
+          let effectiveDelta = deltaX;
+          if ((idx === 0 && deltaX > 0) || (idx === BRAND_CONFIG.length - 1 && deltaX < 0)) {
+            effectiveDelta = deltaX * 0.35;
+          }
+
+          list.style.transform = `translateX(${effectiveDelta}px)`;
+          list.style.opacity = `${1 - Math.min(0.25, Math.abs(effectiveDelta) / 800)}`;
+        }
+      }
+
+      function endDrag() {
+        isDragging = false;
+        const deltaX = currentX - startX;
+        const timeMs = Math.max(1, Date.now() - startTime);
+        const velocity = Math.abs(deltaX) / timeMs; // px/ms
+
+        setTimeout(() => { window.__rupaySwipingActive = false; }, 150);
+
+        if (!isHorizontalGesture) {
+          list.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease';
+          list.style.transform = 'translateX(0) scale(1)';
+          list.style.opacity = '1';
+          return;
+        }
+
+        const containerWidth = scrollContainer.clientWidth || window.innerWidth;
+        const threshold = containerWidth * 0.22; // 22% drag threshold
+
+        let shouldAdvance = false;
+        let direction = 0;
+
+        // Advance if past distance threshold OR high-velocity flick
+        if (Math.abs(deltaX) > threshold || (velocity > 0.45 && Math.abs(deltaX) > 25)) {
+          shouldAdvance = true;
+          direction = deltaX < 0 ? 1 : -1; // swipe left = next (+1), swipe right = prev (-1)
+        }
+
+        if (shouldAdvance) {
+          const targetBrand = getNextSerialBrand(direction);
+          if (targetBrand) {
+            transitionToSerialBrand(direction, targetBrand);
+            return;
+          }
+        }
+
+        // Snap spring back if not advanceable
+        list.style.transition = 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease';
+        list.style.transform = 'translateX(0) scale(1)';
+        list.style.opacity = '1';
+      }
+
+      // Suppress accidental click/tap on cards after dragging
+      scrollContainer.addEventListener('click', (e) => {
+        if (window.__rupaySwipingActive) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      }, true);
+
+      // Register touch listeners on scroll container
+      scrollContainer.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+
+      // Register mouse drag simulation for desktop
+      scrollContainer.addEventListener('mousedown', onMouseDown);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+
     /* --- BENEFIT RULES & MATRIX MODAL --- */
     const BENEFIT_CARDS = [
       { key: 'pnb_imp', name: 'PNB Imperial RSDC' },
@@ -7373,6 +7571,9 @@
       // 5. Default to Card Manager on first load, or retain active workspace across refreshes
       const savedWorkspace = sessionStorage.getItem('rupay_active_workspace') || 'cards';
       switchWorkspace(savedWorkspace);
+
+      // 6. Initialize Physics 1:1 Serial Brand Swipe Gestures
+      initSerialBrandSwipeGestures();
     });
   </script>
 </body>
