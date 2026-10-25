@@ -635,33 +635,46 @@
       pointer-events: none;
     }
 
-    .contiguous-pill {
+    /* ======================================================== */
+    /* TWO-PILL DOCK ARCHITECTURE (ACTION PILL + SATELLITE EXIT) */
+    /* ======================================================== */
+    #unified-floating-dock {
+      background: transparent !important;
+      pointer-events: none;
+    }
+
+    /* Pill 1: Floating Action Pill (Hugs actions with zero dead space) */
+    .action-pill {
       height: 56px !important;
       padding: 4px !important;
       border-radius: 9999px !important;
-      transform-origin: right center !important;
-      display: flex !important;
+      display: inline-flex !important;
       align-items: center !important;
-      justify-content: flex-end !important;
-      overflow: hidden !important;
-      will-change: width, transform, background-color, box-shadow;
-      transition: width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+      justify-content: center !important;
+      gap: 6px !important;
+      max-width: 0;
+      opacity: 0;
+      transform: translateX(18px) scale(0.9);
+      margin-right: 0;
+      pointer-events: none;
+      overflow: hidden;
+      will-change: max-width, opacity, transform, margin;
+      transition: max-width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  margin 0.42s cubic-bezier(0.16, 1, 0.3, 1),
                   background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  border-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                  box-shadow 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
-    /* Collapsed State: Perfect 56px circle anchored on bottom right */
-    .contiguous-pill.contiguous-pill-collapsed {
-      width: 56px !important;
-      background: #F47A21 !important;
-      border: 1px solid rgba(255, 255, 255, 0.18) !important;
-      box-shadow: 0 12px 28px -4px rgba(244, 122, 33, 0.45), 0 4px 10px rgba(0, 0, 0, 0.15) !important;
-    }
-
-    /* Expanded State: Stretches right-to-left to fill full width */
-    .contiguous-pill.contiguous-pill-expanded {
-      width: 100% !important;
+    .action-pill.expanded {
+      max-width: 380px !important;
+      opacity: 1 !important;
+      transform: translateX(0) scale(1) !important;
+      margin-right: 8px !important;
+      pointer-events: auto !important;
+      overflow: visible !important; /* ensures badges never clip */
       background: rgba(24, 21, 24, 0.94) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
@@ -669,8 +682,8 @@
       box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
     }
 
-    [data-theme="light"] .contiguous-pill.contiguous-pill-expanded,
-    html.light .contiguous-pill.contiguous-pill-expanded {
+    [data-theme="light"] .action-pill.expanded,
+    html.light .action-pill.expanded {
       background: rgba(255, 255, 255, 0.96) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
@@ -678,32 +691,10 @@
       box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
     }
 
-    /* Content Drawer inside Contiguous Pill */
-    .dock-action-drawer {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 6px;
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      padding-left: 2px;
-      opacity: 0;
-      transform: translateX(20px);
-      transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
-      pointer-events: none;
-    }
-    .contiguous-pill.contiguous-pill-expanded .dock-action-drawer {
-      opacity: 1;
-      transform: translateX(0);
-      pointer-events: auto;
-    }
-
-    /* Rightmost Toggle Button: Locked at exact coordinate, 48px circle */
-    .dock-toggle-btn {
-      width: 48px !important;
-      height: 48px !important;
+    /* Pill 2: Detached Satellite Button (Select in collapsed, Cross ✕ in expanded) */
+    .dock-satellite-btn {
+      width: 56px !important;
+      height: 56px !important;
       border-radius: 9999px !important;
       flex-shrink: 0 !important;
       display: flex !important;
@@ -713,42 +704,51 @@
       cursor: pointer !important;
       margin: 0 !important;
       user-select: none !important;
-      transition: background-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  border-color 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.15s ease !important;
+      transition: all 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
-    .dock-toggle-btn:active {
+    .dock-satellite-btn:active {
       transform: scale(0.92) !important;
     }
-    .contiguous-pill.contiguous-pill-collapsed .dock-toggle-btn {
-      background: transparent !important;
-      border: none !important;
+
+    /* Collapsed: Orange floating circular action button */
+    .dock-satellite-btn.collapsed {
+      background: #F47A21 !important;
       color: #ffffff !important;
-      box-shadow: none !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 12px 28px -4px rgba(244, 122, 33, 0.45), 0 4px 10px rgba(0, 0, 0, 0.15) !important;
     }
-    .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn {
-      background: rgba(255, 255, 255, 0.08) !important;
+    .dock-satellite-btn.collapsed:hover {
+      background: #e06a14 !important;
+    }
+
+    /* Expanded: Satellite circular cross button */
+    .dock-satellite-btn.expanded {
+      background: rgba(24, 21, 24, 0.94) !important;
       color: #cbd5e1 !important;
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      backdrop-filter: blur(28px) saturate(190%) !important;
     }
-    .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover {
+    .dock-satellite-btn.expanded:hover {
       background: rgba(255, 255, 255, 0.16) !important;
       color: #ffffff !important;
     }
-    [data-theme="light"] .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn,
-    html.light .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn {
-      background: #f1f5f9 !important;
+
+    [data-theme="light"] .dock-satellite-btn.expanded,
+    html.light .dock-satellite-btn.expanded {
+      background: rgba(255, 255, 255, 0.96) !important;
       color: #475569 !important;
-      border: 1px solid #e2e8f0 !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+      border: 1px solid rgba(203, 213, 225, 0.9) !important;
+      box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
     }
-    [data-theme="light"] .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover,
-    html.light .contiguous-pill.contiguous-pill-expanded .dock-toggle-btn:hover {
-      background: #e2e8f0 !important;
+    [data-theme="light"] .dock-satellite-btn.expanded:hover,
+    html.light .dock-satellite-btn.expanded:hover {
+      background: #f1f5f9 !important;
       color: #0f172a !important;
     }
 
-    /* Icon morph layers inside toggle button */
+    /* Icon morph layers inside satellite button */
     .dock-icon-layer {
       position: absolute;
       inset: 0;
@@ -758,19 +758,19 @@
       transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
                   opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .contiguous-pill.contiguous-pill-collapsed .layer-select {
+    .dock-satellite-btn.collapsed .layer-select {
       opacity: 1;
       transform: rotate(0deg) scale(1);
     }
-    .contiguous-pill.contiguous-pill-collapsed .layer-cross {
+    .dock-satellite-btn.collapsed .layer-cross {
       opacity: 0;
       transform: rotate(-90deg) scale(0.6);
     }
-    .contiguous-pill.contiguous-pill-expanded .layer-select {
+    .dock-satellite-btn.expanded .layer-select {
       opacity: 0;
       transform: rotate(90deg) scale(0.6);
     }
-    .contiguous-pill.contiguous-pill-expanded .layer-cross {
+    .dock-satellite-btn.expanded .layer-cross {
       opacity: 1;
       transform: rotate(0deg) scale(1);
     }
@@ -801,7 +801,7 @@
       pointer-events: none;
     }
 
-    /* All Action Circle Buttons inside Contiguous Pill (Same 48px Size) */
+    /* All Action Circle Buttons inside Action Pill (Same 48px Size) */
     .action-circle-btn {
       width: 48px !important;
       height: 48px !important;
@@ -833,10 +833,11 @@
     .btn-redeem { background: #0C8C46 !important; }
     .btn-redeem:hover { background: #0a7a3d !important; }
 
+    /* Tag count bubble - unclipped with overflow: visible on action-pill */
     .tag-count-bubble {
       position: absolute;
-      top: -3px;
-      right: -3px;
+      top: -2px;
+      right: -2px;
       min-width: 18px;
       height: 18px;
       padding: 0 4px;
@@ -849,12 +850,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1.5px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      border: 1.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
       pointer-events: none;
+      z-index: 10;
     }
 
-    /* Approve Button inside Contiguous Pill */
+    /* Approve Button inside Action Pill */
     .btn-approve-pill {
       background: #0C8C46 !important;
       color: #ffffff !important;
@@ -1572,9 +1574,9 @@
     </div>
 
     <!-- Activity Log Sub-Filters (Variation 5A: 2-Tier Nested Hierarchy) -->
-    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex flex-col gap-1.5 shrink-0">
+    <div id="mb-activity-filters-bar" class="hidden mx-3 mb-2 flex flex-col gap-1.5 shrink-0 pt-1 overflow-visible">
       <!-- Tier 1: Primary Tabs (Ingested vs Shared) + Clear Button -->
-      <div class="flex items-center justify-between gap-1.5">
+      <div class="flex items-center justify-between gap-1.5 overflow-visible">
         <div class="flex-1 grid grid-cols-2 p-0.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs">
           <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow">
             <svg class="w-3.5 h-3.5 inline-block text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
@@ -1591,7 +1593,7 @@
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
           </svg>
-          <span id="mb-clear-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
+          <span id="mb-clear-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
         </button>
       </div>
 
@@ -1645,60 +1647,56 @@
       <div id="mb-view-cards" class="hidden"></div>
     </main>
 
-    <!-- Unified Floating Action Dock: One Contiguous Pill at Bottom (Expands Right to Left) -->
+    <!-- Unified Floating Action Dock: Two-Pill Split Architecture (Expands Right to Left) -->
     <div id="unified-floating-dock" class="fixed z-40 pointer-events-none flex items-center justify-end" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); left: 1rem; right: 1rem; max-width: 440px; margin: 0 auto;">
-      <div id="floating-contiguous-pill" class="contiguous-pill contiguous-pill-collapsed pointer-events-auto">
-        
-        <!-- Action Drawer: Action Buttons reveal as pill expands to the left -->
-        <div id="dock-actions-container" class="dock-action-drawer">
-          <!-- Ingest Approve Button in Sliding Drawer -->
-          <div id="approve-track" class="approve-slot closed">
-            <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="btn-approve-pill" title="Approve Vouchers to Brand Tab">
-              <span class="pulse-dot"></span>
-              <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
-                <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                <span>Approve</span>
-              </span>
-            </button>
-          </div>
-
-          <!-- Tag Card -->
-          <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
-            <span id="tag-badge-count" class="tag-count-bubble">0</span>
-          </button>
-
-          <!-- Google Material Design Share SVG -->
-          <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-share" title="Share Voucher">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
-          </button>
-
-          <!-- Redeem -->
-          <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+      <!-- Pill 1: Floating Action Pill (Hugs actions with zero dead space) -->
+      <div id="floating-action-pill" class="action-pill pointer-events-auto">
+        <!-- Ingest Approve Button in Sliding Drawer -->
+        <div id="approve-track" class="approve-slot closed">
+          <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="btn-approve-pill" title="Approve Vouchers to Brand Tab">
+            <span class="pulse-dot"></span>
+            <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Approve</span>
+            </span>
           </button>
         </div>
 
-        <!-- Rightmost Toggle Button: Locked at exact coordinate, morphs from Select to Cross -->
-        <button id="dock-select-toggle-btn" onclick="handleDockToggleClick()" class="dock-toggle-btn shrink-0" title="Select Multiple">
-          <!-- Layer 1: Select Icon (Visible when collapsed) -->
-          <div class="dock-icon-layer layer-select">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-          </div>
-
-          <!-- Layer 2: Cross (✕) Icon (Visible when expanded) -->
-          <div class="dock-icon-layer layer-cross">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </div>
+        <!-- Tag Card -->
+        <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+          <span id="tag-badge-count" class="tag-count-bubble">0</span>
         </button>
 
+        <!-- Google Material Design Share SVG -->
+        <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-share" title="Share Voucher">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
+
+        <!-- Redeem -->
+        <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
       </div>
+
+      <!-- Pill 2: Detached Satellite Button (Select in collapsed, Cross ✕ in expanded) -->
+      <button id="dock-select-toggle-btn" onclick="handleDockToggleClick()" class="dock-satellite-btn collapsed shrink-0 pointer-events-auto" title="Select Multiple">
+        <!-- Layer 1: Select Icon (Visible when collapsed) -->
+        <div class="dock-icon-layer layer-select">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+
+        <!-- Layer 2: Cross (✕) Icon (Visible when expanded) -->
+        <div class="dock-icon-layer layer-cross">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
+      </button>
     </div>
   </div>
 
@@ -6400,7 +6398,6 @@
         exitSelectMode();
       } else {
         toggleSelectMode();
-        showToast('Select mode active: tap cards or "Select All"');
       }
     }
 
@@ -6441,23 +6438,27 @@
         if (dtBtn) dtBtn.textContent = 'Select Multiple';
       }
 
-      // UPDATE UNIFIED CONTIGUOUS BOTTOM DOCK (Expands strictly from right to left)
-      const dockPill = document.getElementById('floating-contiguous-pill');
+      // UPDATE TWO-PILL BOTTOM DOCK (Expands strictly from right to left)
+      const actionPill = document.getElementById('floating-action-pill');
       const toggleBtn = document.getElementById('dock-select-toggle-btn');
       const approveTrack = document.getElementById('approve-track');
       const approveLabel = document.getElementById('floating-approve-label');
 
-      if (!dockPill || !toggleBtn) return;
+      if (!toggleBtn) return;
 
       if (!state.isSelectMode) {
-        // Collapsed mode: 56px circle anchored on bottom right
-        dockPill.classList.remove('contiguous-pill-expanded');
-        dockPill.classList.add('contiguous-pill-collapsed');
+        // Collapsed mode: only satellite button visible on bottom right
+        if (actionPill) {
+          actionPill.classList.remove('expanded');
+        }
+        toggleBtn.className = 'dock-satellite-btn collapsed shrink-0 pointer-events-auto';
         toggleBtn.title = 'Select Multiple';
       } else {
-        // Expanded mode: stretches smoothly from right to left across full width
-        dockPill.classList.remove('contiguous-pill-collapsed');
-        dockPill.classList.add('contiguous-pill-expanded');
+        // Expanded mode: action pill slides out to the left; satellite button morphs to Cross
+        if (actionPill) {
+          actionPill.classList.add('expanded');
+        }
+        toggleBtn.className = 'dock-satellite-btn expanded shrink-0 pointer-events-auto';
         toggleBtn.title = 'Exit Select Mode';
 
         // FLOATING APPROVE BUTTON VISIBILITY (Sliding Drawer):
