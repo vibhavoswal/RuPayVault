@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault — Apple Design E2E Prototype</title>
+  <script>
+    if (new URLSearchParams(window.location.search).get('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <!-- Apple System Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
+            mono: ['"SF Mono"', '"JetBrains Mono"', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Apple Design Foundations: Optical sizing, tracking, spring curves */
+    :root {
+      --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+      
+      --bg-canvas: #f2f2f7;
+      --bg-surface: rgba(255, 255, 255, 0.85);
+      --bg-surface-elevated: rgba(255, 255, 255, 0.95);
+      --bg-secondary: #e5e5ea;
+      --bg-tertiary: #d1d1d6;
+      --text-primary: #1c1c1e;
+      --text-secondary: #636366;
+      --text-tertiary: #8e8e93;
+      --separator: rgba(60, 60, 67, 0.12);
+      --specular: rgba(255, 255, 255, 0.7);
+      --card-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .dark {
+      --bg-canvas: #000000;
+      --bg-surface: rgba(28, 28, 30, 0.82);
+      --bg-surface-elevated: rgba(44, 44, 46, 0.88);
+      --bg-secondary: #1c1c1e;
+      --bg-tertiary: #2c2c2e;
+      --text-primary: #f5f5f7;
+      --text-secondary: #aeaeb2;
+      --text-tertiary: #636366;
+      --separator: rgba(255, 255, 255, 0.12);
+      --specular: rgba(255, 255, 255, 0.18);
+      --card-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+    }
+
+    html.dark, html.dark body {
+      background-color: #000000 !important;
+      color: #f5f5f7 !important;
+    }
+
+    html:not(.dark), html:not(.dark) body {
+      background-color: #f2f2f7 !important;
+      color: #1c1c1e !important;
+    }
+
+    body {
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      touch-action: manipulation;
+    }
+
+    /* Spring Active Down-Press Feedback (Kills Latency) */
+    .apple-press {
+      transition: transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.16s ease;
+      will-change: transform;
+    }
+    .apple-press:active {
+      transform: scale(0.96);
+      opacity: 0.85;
+    }
+
+    /* Apple Glass / Translucent Materials */
+    .apple-glass-header {
+      background: var(--bg-surface);
+      backdrop-filter: blur(24px) saturate(190%);
+      -webkit-backdrop-filter: blur(24px) saturate(190%);
+      border-bottom: 0.5px solid var(--separator);
+    }
+
+    .apple-glass-popover {
+      background: var(--bg-surface-elevated);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
+      border: 0.5px solid var(--separator);
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5), 0 0 1px 1px var(--specular);
+    }
+
+    /* Scroll Edge Mask for Filter Carousels */
+    .scroll-edge-mask {
+      mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 14px), transparent 100%);
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Physical Card Passbook Depth & Light Sheen */
+    .physical-card {
+      border-radius: 20px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.28s ease;
+    }
+    .physical-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(125deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 40%, transparent 65%);
+      pointer-events: none;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    /* Passbook Voucher Card Styling */
+    .voucher-card {
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+      border: 0.5px solid var(--separator);
+    }
+    .voucher-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--brand-accent, #10b981);
+    }
+
+    /* EMV Metallic Chip Graphic */
+    .emv-chip {
+      width: 36px;
+      height: 26px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fcd34d 0%, #b45309 60%, #fef08a 100%);
+      position: relative;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.6), 0 2px 4px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .emv-chip::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(0,0,0,0.35);
+    }
+    .emv-chip::after {
+      content: '';
+      position: absolute;
+      left: 38%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(0,0,0,0.35);
+      box-shadow: 7px 0 0 rgba(0,0,0,0.35);
+    }
+
+    .pill-slider {
+      transition: all 0.28s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Optical Kerning */
+    .tracking-headline { letter-spacing: -0.024em; }
+    .tracking-subhead { letter-spacing: -0.012em; }
+    .tracking-mono-card { letter-spacing: 0.05em; font-feature-settings: "tnum" 1; }
+
+    /* Light mode specific pill styles */
+    html:not(.dark) .light-pill-subtle {
+      background-color: #ffffff !important;
+      color: #1c1c1e !important;
+      border: 0.5px solid rgba(0, 0, 0, 0.12) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body class="transition-colors duration-200 min-h-screen pb-28 select-none overflow-x-hidden">
+
+  <!-- ========================================== -->
+  <!-- TOP BAR: Translucent Apple Navigation Bar  -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-40 apple-glass-header px-4 pt-3 pb-2.5">
+    <div class="max-w-[410px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <!-- Main Hamburger / Workspace Trigger -->
+        <button onclick="toggleWorkspaceDropdown()" class="apple-press w-9 h-9 rounded-full bg-neutral-200/60 dark:bg-neutral-800/70 border border-black/5 dark:border-white/10 flex items-center justify-center text-neutral-800 dark:text-neutral-200">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="16" y2="17"></line></svg>
+        </button>
+
+        <!-- Dynamic Workspace Capsule Pill (Interactive Dropdown Trigger) -->
+        <button onclick="toggleWorkspaceDropdown()" id="workspace-capsule-btn" class="apple-press flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-200/70 dark:bg-neutral-800/80 border border-black/5 dark:border-white/10 text-xs font-semibold shadow-sm">
+          <span id="capsule-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]"></span>
+          <span id="capsule-title" class="font-bold tracking-tight text-neutral-900 dark:text-white">Debit Cards</span>
+          <svg id="capsule-chevron" class="w-3.5 h-3.5 opacity-60 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- Header Right Controls -->
+      <div class="flex items-center gap-2">
+        <!-- Live Sync Time Indicator -->
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-200/50 dark:bg-neutral-800/50 text-[10px] font-mono font-medium text-neutral-500 dark:text-neutral-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>03:38 PM</span>
+        </div>
+
+        <!-- Light / Dark Theme Toggle -->
+        <button onclick="toggleTheme()" class="apple-press p-2 rounded-full bg-neutral-200/60 dark:bg-neutral-800/80 border border-black/5 dark:border-white/10 text-neutral-600 dark:text-neutral-300" title="Toggle Light/Dark Theme">
+          <svg id="theme-icon-sun" class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg id="theme-icon-moon" class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <!-- + Add Action Button (Pre-fills active filters) -->
+        <button onclick="openAddModal()" class="apple-press px-3.5 py-1.5 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 text-xs font-bold shadow-sm flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Add</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================== -->
+  <!-- EXECUTIVE WORKSPACE SWITCHER (Apple Frosted Sheet Popover) -->
+  <!-- ======================================================== -->
+  <div id="ws-dropdown-backdrop" onclick="closeWorkspaceDropdown()" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden transition-opacity duration-200 opacity-0 pointer-events-none"></div>
+
+  <div id="ws-dropdown-popover" class="fixed top-14 left-4 right-4 z-50 max-w-[390px] mx-auto apple-glass-popover rounded-[24px] p-3 hidden transition-all duration-300 transform -translate-y-2 opacity-0 pointer-events-none">
+    
+    <div class="px-2 pt-1 pb-2 flex items-center justify-between border-b border-black/5 dark:border-white/10">
+      <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500 dark:text-neutral-400">
+        Choose Workspace
+      </div>
+      <button onclick="closeWorkspaceDropdown()" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-white p-1">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Workspace Options -->
+    <div class="mt-2 space-y-1.5">
+      <!-- 1. Voucher Manager Option -->
+      <div onclick="switchWorkspace('vouchers')" class="apple-press p-2.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-emerald-600/10 hover:from-emerald-500/25 border border-emerald-500/30 flex items-center justify-between cursor-pointer transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+              <span>Voucher Manager</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">Live</span>
+            </div>
+            <div class="text-[10px] text-neutral-500 dark:text-neutral-400">Brand Passes &amp; Redemptions</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">₹14,500</span>
+          <div class="text-[9px] text-neutral-400">12 Active</div>
+        </div>
+      </div>
+
+      <!-- 2. Card Manager Option -->
+      <div onclick="switchWorkspace('cards')" class="apple-press p-2.5 rounded-2xl bg-gradient-to-r from-rose-500/15 to-amber-600/10 hover:from-rose-500/25 border border-rose-500/30 flex items-center justify-between cursor-pointer transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-[#881337] to-[#4c0519] text-white flex items-center justify-center font-bold shadow-md">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+              <span>Card Manager</span>
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500/20 text-rose-700 dark:text-rose-300">Apple Wallet</span>
+            </div>
+            <div class="text-[10px] text-neutral-500 dark:text-neutral-400">Debit &amp; Credit Cards</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-mono font-bold text-rose-600 dark:text-rose-400">20 Cards</span>
+          <div class="text-[9px] text-neutral-400">16 Debit &middot; 4 Credit</div>
+        </div>
+      </div>
+
+      <!-- 3. Bank Accounts Option -->
+      <div onclick="switchWorkspace('banks')" class="apple-press p-2.5 rounded-2xl bg-neutral-200/70 dark:bg-neutral-800/70 hover:bg-neutral-300/80 dark:hover:bg-neutral-800 border border-black/5 dark:border-white/10 flex items-center justify-between cursor-pointer transition-all">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-neutral-800 dark:bg-neutral-700 text-white flex items-center justify-center font-bold shadow-md">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-neutral-900 dark:text-white">Bank Accounts</div>
+            <div class="text-[10px] text-neutral-500 dark:text-neutral-400">Family Profiles &amp; NetBanking</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-mono font-bold text-neutral-700 dark:text-neutral-300">7 Accounts</span>
+          <div class="text-[9px] text-neutral-400">5 Members</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Brand Shortcut Strip inside Popover -->
+    <div class="mt-3 pt-2 border-t border-black/5 dark:border-white/10">
+      <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5 px-1">
+        Featured Brand Passes
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold">
+        <button onclick="selectBrandQuick('Lakme')" class="apple-press p-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 truncate">Lakmé Salon</button>
+        <button onclick="selectBrandQuick('Kalyan')" class="apple-press p-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 truncate">Kalyan Jewellers</button>
+        <button onclick="selectBrandQuick('BigBasket')" class="apple-press p-1.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 text-neutral-800 dark:text-neutral-200 truncate">BigBasket</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- WORKSPACE 1: VOUCHER MANAGER (Apple Passbook Revamp)     -->
+  <!-- ======================================================== -->
+  <main id="view-vouchers" class="w-full max-w-[410px] mx-auto px-4 pt-3 space-y-3.5 hidden">
+
+    <!-- Cumulative Math Placard (Apple Dynamic Island style) -->
+    <div class="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-teal-950/80 border border-emerald-500/30 text-white shadow-lg backdrop-blur-md">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+          <span id="voucher-brand-placard-title" class="text-xs font-bold uppercase tracking-wider text-emerald-300">Lakmé Salon Passbook</span>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+          Q4 Ready
+        </span>
+      </div>
+
+      <div class="mt-2 flex items-baseline justify-between">
+        <div>
+          <div class="text-[9px] uppercase tracking-widest text-white/60 font-bold">Cumulative Available</div>
+          <div id="voucher-cumulative-calc" class="text-xl font-bold font-mono tracking-tight text-white flex items-center gap-1.5">
+            <span>₹4,500</span>
+            <span class="text-xs text-emerald-300/80 font-normal">(3 × ₹1,500 Passes)</span>
+          </div>
+        </div>
+        <button onclick="selectAllVouchers()" class="apple-press text-xs font-semibold text-emerald-300 hover:text-white underline">
+          Select All
+        </button>
+      </div>
+    </div>
+
+    <!-- Liquid Horizontal Brand Passes Carousel (iOS Photos style) -->
+    <div class="relative scroll-edge-mask">
+      <div id="brand-pill-strip" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+        <button onclick="switchVoucherBrand('All')" class="apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-brand="All">
+          All (12)
+        </button>
+        <button onclick="switchVoucherBrand('Lakme')" class="apple-press brand-filter-pill px-3.5 py-1 rounded-full text-xs font-bold shrink-0 bg-emerald-600 text-white shadow-sm flex items-center gap-1.5" data-brand="Lakme">
+          <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+          <span>Lakmé (3)</span>
+        </button>
+        <button onclick="switchVoucherBrand('FourFountains')" class="apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-brand="FourFountains">
+          Four Fountains (2)
+        </button>
+        <button onclick="switchVoucherBrand('Kalyan')" class="apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-brand="Kalyan">
+          Kalyan (2)
+        </button>
+        <button onclick="switchVoucherBrand('BigBasket')" class="apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-brand="BigBasket">
+          BigBasket (3)
+        </button>
+        <button onclick="switchVoucherBrand('Decathlon')" class="apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-brand="Decathlon">
+          Decathlon (2)
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Summary Line -->
+    <div class="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 px-1">
+      <div id="voucher-count-label" class="font-bold text-neutral-900 dark:text-white">Showing 3 Lakmé Passes</div>
+      <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Tap code to copy
+      </span>
+    </div>
+
+    <!-- Vouchers Passbook List -->
+    <div id="vouchers-cards-container" class="space-y-3">
+      <!-- Dynamically injected via renderVouchersList() -->
+    </div>
+
+  </main>
+
+
+  <!-- ======================================================== -->
+  <!-- WORKSPACE 2: CARD MANAGER (Apple Wallet Revamp)          -->
+  <!-- ======================================================== -->
+  <main id="view-cards" class="w-full max-w-[410px] mx-auto px-4 pt-3 space-y-4">
+
+    <!-- 1. Apple-Style Segmented Control (Smooth Sliding Pill Thumb) -->
+    <div class="relative p-1 rounded-2xl bg-neutral-200/80 dark:bg-neutral-800/70 border border-black/5 dark:border-white/5 flex items-center text-xs font-bold">
+      <div id="segment-thumb" class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white dark:bg-neutral-900 shadow-[0_2px_8px_rgba(0,0,0,0.12),0_1px_2px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.5)] pill-slider"></div>
+
+      <button onclick="switchCategory('debit')" id="tab-debit" class="relative z-10 flex-1 py-1.5 text-center text-neutral-900 dark:text-white transition-colors duration-200 flex items-center justify-center gap-1.5">
+        <span>Debit Cards</span>
+        <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-900/10 dark:bg-white/15">16</span>
+      </button>
+      <button onclick="switchCategory('credit')" id="tab-credit" class="relative z-10 flex-1 py-1.5 text-center text-neutral-500 dark:text-neutral-400 transition-colors duration-200 flex items-center justify-center gap-1.5">
+        <span>Credit Cards</span>
+        <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-900/10 dark:bg-white/15">4</span>
+      </button>
+    </div>
+
+    <!-- 2. Apple Liquid Carousel Filter Strip -->
+    <div id="filter-container" class="space-y-2">
+      <!-- Network Carousel -->
+      <div class="relative scroll-edge-mask">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+          <button onclick="setFilter('network', 'All')" class="apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm" data-val="All">
+            All
+          </button>
+          <button onclick="setFilter('network', 'RuPay')" class="apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5" data-val="RuPay">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <span>RuPay</span>
+          </button>
+          <button onclick="setFilter('network', 'Visa')" class="apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5" data-val="Visa">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            <span>Visa</span>
+          </button>
+          <button onclick="setFilter('network', 'Mastercard')" class="apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5" data-val="Mastercard">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span>Mastercard</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bank Carousel -->
+      <div class="relative scroll-edge-mask">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+          <button onclick="setFilter('bank', 'All')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="All">
+            All
+          </button>
+          <button onclick="setFilter('bank', 'PNB')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-emerald-600 text-white shadow-sm" data-val="PNB">
+            PNB
+          </button>
+          <button onclick="setFilter('bank', 'Jana')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="Jana">
+            Jana
+          </button>
+          <button onclick="setFilter('bank', 'BoB')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="BoB">
+            BoB
+          </button>
+          <button onclick="setFilter('bank', 'Canara')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="Canara">
+            Canara
+          </button>
+          <button onclick="setFilter('bank', 'Union')" class="apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="Union">
+            Union
+          </button>
+        </div>
+      </div>
+
+      <!-- Account Carousel (Conditional on Bank) -->
+      <div id="account-pill-row" class="relative scroll-edge-mask transition-all duration-300">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+          <button onclick="setFilter('acc', 'All')" class="apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="All">
+            All
+          </button>
+          <button onclick="setFilter('acc', '6650')" class="apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-emerald-600 text-white shadow-sm" data-val="6650">
+            ••6650
+          </button>
+          <button onclick="setFilter('acc', '7482')" class="apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="7482">
+            ••7482
+          </button>
+          <button onclick="setFilter('acc', '8499')" class="apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300" data-val="8499">
+            ••8499
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Filter Summary Breadcrumb -->
+    <div class="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 px-1 pt-1">
+      <div class="flex items-center gap-1.5">
+        <span class="font-bold text-neutral-900 dark:text-white">Showing 2 Cards</span>
+        <span>&middot;</span>
+        <span>PNB Account ••6650</span>
+      </div>
+      <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Tap number to copy
+      </span>
+    </div>
+
+    <!-- 3. Apple Wallet Physical Cards Stack -->
+    <div class="space-y-4">
+
+      <!-- Card 1: PNB Imperial (5409) -->
+      <div class="physical-card text-white p-5 bg-gradient-to-br from-[#881337] via-[#5c0b24] to-[#340212] select-none">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2 py-0.8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 text-[11px] font-extrabold tracking-wider">
+              PNB
+            </span>
+            <div class="leading-tight">
+              <h2 class="text-sm font-bold tracking-headline">PNB Imperial</h2>
+              <div class="text-[10px] text-white/60 font-medium">Linked A/c ••6650</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="emv-chip"></div>
+            <button onclick="toggleCardInfo('5409')" class="apple-press w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="my-3">
+          <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-1">Card Number</div>
+          <div class="flex items-center justify-between">
+            <button onclick="copyField('6524 9710 4421 5409', 'Card Number')" class="apple-press text-left group flex items-center gap-1.5">
+              <span id="num-5409" class="font-mono text-[16px] font-bold tracking-mono-card text-white/95 group-hover:text-emerald-300 transition-colors">
+                6524 •••• •••• 5409
+              </span>
+              <svg class="w-3.5 h-3.5 text-white/40 group-hover:text-emerald-300 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+
+            <button onclick="toggleReveal('5409', '6524 9710 4421 5409', '6524 •••• •••• 5409')" class="apple-press w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80 shrink-0">
+              <svg id="eye-5409" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-end justify-between pt-1 pb-3">
+          <div class="flex items-center gap-6">
+            <button onclick="copyField('10/33', 'Expiry')" class="apple-press text-left group">
+              <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-0.5">Expires</div>
+              <div class="font-mono text-xs font-bold text-white/90 group-hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span>10/33</span>
+                <svg class="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </div>
+            </button>
+
+            <button onclick="copyField('312', 'CVV')" class="apple-press text-left group">
+              <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-0.5">CVV</div>
+              <div class="font-mono text-xs font-bold text-white/90 group-hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span id="cvv-5409">•••</span>
+                <svg class="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </div>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-black tracking-tight text-white/70 uppercase">RuPay Platinum</span>
+            <button onclick="triggerShare('PNB Imperial', '5409')" class="apple-press w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Capsules -->
+        <div class="flex items-center gap-2 pt-3 border-t border-white/15">
+          <button onclick="mockBlock('5409')" class="apple-press flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/15 text-xs font-semibold text-rose-300 flex items-center justify-center gap-1.5 backdrop-blur-md">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            <span>Block</span>
+          </button>
+          
+          <button onclick="toggleReplace('5409')" class="apple-press flex-[1.4] py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/90 to-rose-500/90 hover:from-amber-400 hover:to-rose-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(244,63,94,0.3)]">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Block &amp; Replace</span>
+          </button>
+        </div>
+
+        <!-- Inline Replacement Drawer -->
+        <div id="drawer-5409" class="hidden mt-3 pt-3 border-t border-white/15 bg-black/40 -mx-5 -mb-5 p-4 rounded-b-[20px] backdrop-blur-xl">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-300">Replacement Card Details</span>
+            <button onclick="toggleReplace('5409')" class="text-white/60 hover:text-white text-xs">Cancel</button>
+          </div>
+          <div class="space-y-2 text-xs">
+            <input type="text" placeholder="New 16-Digit Card Number" class="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" placeholder="MM/YY" class="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono">
+              <input type="password" placeholder="CVV" maxlength="3" class="bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-amber-400 font-mono">
+            </div>
+            <button onclick="saveReplace('5409')" class="apple-press w-full py-2 rounded-xl bg-white text-neutral-950 font-bold text-xs shadow-md mt-1">
+              Activate Card
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: PNB Imperial (3793) -->
+      <div class="physical-card text-white p-5 bg-gradient-to-br from-[#881337] via-[#5c0b24] to-[#340212] select-none">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="px-2 py-0.8 rounded-lg bg-white/15 backdrop-blur-md border border-white/20 text-[11px] font-extrabold tracking-wider">
+              PNB
+            </span>
+            <div class="leading-tight">
+              <h2 class="text-sm font-bold tracking-headline">PNB Imperial</h2>
+              <div class="text-[10px] text-white/60 font-medium">Linked A/c ••6650</div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="emv-chip"></div>
+            <button class="apple-press w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="my-3">
+          <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-1">Card Number</div>
+          <div class="flex items-center justify-between">
+            <button onclick="copyField('6524 9710 4421 3793', 'Card Number')" class="apple-press text-left group flex items-center gap-1.5">
+              <span id="num-3793" class="font-mono text-[16px] font-bold tracking-mono-card text-white/95 group-hover:text-emerald-300 transition-colors">
+                6524 •••• •••• 3793
+              </span>
+              <svg class="w-3.5 h-3.5 text-white/40 group-hover:text-emerald-300 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+
+            <button onclick="toggleReveal('3793', '6524 9710 4421 3793', '6524 •••• •••• 3793')" class="apple-press w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80 shrink-0">
+              <svg id="eye-3793" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-end justify-between pt-1 pb-3">
+          <div class="flex items-center gap-6">
+            <button onclick="copyField('10/33', 'Expiry')" class="apple-press text-left group">
+              <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-0.5">Expires</div>
+              <div class="font-mono text-xs font-bold text-white/90 group-hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span>10/33</span>
+                <svg class="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </div>
+            </button>
+
+            <button onclick="copyField('784', 'CVV')" class="apple-press text-left group">
+              <div class="text-[9px] uppercase font-bold tracking-widest text-white/50 mb-0.5">CVV</div>
+              <div class="font-mono text-xs font-bold text-white/90 group-hover:text-emerald-300 transition-colors flex items-center gap-1">
+                <span id="cvv-3793">•••</span>
+                <svg class="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </div>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-black tracking-tight text-white/70 uppercase">RuPay Platinum</span>
+            <button onclick="triggerShare('PNB Imperial', '3793')" class="apple-press w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white/80">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-3 border-t border-white/15">
+          <button class="apple-press flex-1 py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/15 text-xs font-semibold text-rose-300 flex items-center justify-center gap-1.5 backdrop-blur-md">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            <span>Block</span>
+          </button>
+          
+          <button class="apple-press flex-[1.4] py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/90 to-rose-500/90 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-[0_4px_12px_rgba(244,63,94,0.3)]">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Block &amp; Replace</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- ======================================================== -->
+  <!-- WORKSPACE 3: BANK ACCOUNTS (Family Portfolios)           -->
+  <!-- ======================================================== -->
+  <main id="view-banks" class="w-full max-w-[410px] mx-auto px-4 pt-3 space-y-3.5 hidden">
+    <div class="p-4 rounded-2xl bg-neutral-200/60 dark:bg-neutral-800/60 border border-black/5 dark:border-white/10 space-y-2">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-neutral-900 dark:text-white">Family Profiles</h3>
+        <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">7 Accounts</span>
+      </div>
+      <p class="text-xs text-neutral-500 dark:text-neutral-400">Tap any account row or IFSC code to copy directly to clipboard.</p>
+    </div>
+
+    <!-- Bank Accounts List -->
+    <div class="space-y-2.5">
+      <!-- PNB Vibhav -->
+      <div class="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-black/5 dark:border-white/10 shadow-sm space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-red-600 text-white font-extrabold text-[10px] flex items-center justify-center">PNB</span>
+            <div>
+              <div class="text-xs font-bold text-neutral-900 dark:text-white">Punjab National Bank</div>
+              <div class="text-[10px] text-neutral-500">Vibhav Oswal &middot; Savings</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Active</span>
+        </div>
+        <div class="flex items-center justify-between pt-1 border-t border-black/5 dark:border-white/10 text-xs font-mono">
+          <button onclick="copyField('0065000101856650', 'Account Number')" class="apple-press text-neutral-800 dark:text-neutral-200 font-bold hover:text-emerald-500">
+            •••• •••• •••• 6650
+          </button>
+          <button onclick="copyField('PUNB0006500', 'IFSC')" class="apple-press text-[11px] text-neutral-500 hover:text-emerald-500">
+            IFSC: PUNB0006500
+          </button>
+        </div>
+      </div>
+
+      <!-- BoB Aruna -->
+      <div class="p-3.5 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-black/5 dark:border-white/10 shadow-sm space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-orange-600 text-white font-extrabold text-[10px] flex items-center justify-center">BoB</span>
+            <div>
+              <div class="text-xs font-bold text-neutral-900 dark:text-white">Bank of Baroda</div>
+              <div class="text-[10px] text-neutral-500">Aruna Oswal &middot; Savings</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Active</span>
+        </div>
+        <div class="flex items-center justify-between pt-1 border-t border-black/5 dark:border-white/10 text-xs font-mono">
+          <button onclick="copyField('04280100017482', 'Account Number')" class="apple-press text-neutral-800 dark:text-neutral-200 font-bold hover:text-emerald-500">
+            •••• •••• •••• 7482
+          </button>
+          <button onclick="copyField('BARB0POONA', 'IFSC')" class="apple-press text-[11px] text-neutral-500 hover:text-emerald-500">
+            IFSC: BARB0POONA
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- ======================================================== -->
+  <!-- FLOATING ACTION DOCK (Apple Dynamic Island Style Pill)   -->
+  <!-- ======================================================== -->
+  <div id="unified-floating-dock" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-[380px] transition-all duration-300">
+    <div class="p-2 rounded-full bg-neutral-900/90 dark:bg-neutral-900/95 text-white shadow-2xl backdrop-blur-xl border border-white/15 flex items-center justify-between">
+      
+      <!-- Dock Left Info / Counter -->
+      <div class="flex items-center gap-2.5 pl-3">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+        <div class="leading-tight">
+          <div id="dock-status-label" class="text-xs font-bold text-white">Voucher Vault</div>
+          <div id="dock-counter-label" class="text-[10px] text-neutral-400">Ready to redeem</div>
+        </div>
+      </div>
+
+      <!-- Dock Right Action Pills -->
+      <div class="flex items-center gap-1.5 pr-1">
+        <button onclick="shareSelectedVouchers()" class="apple-press px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-neutral-200 text-xs font-semibold flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+          <span>Share</span>
+        </button>
+
+        <button onclick="redeemActiveBatch()" class="apple-press px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 text-xs font-bold shadow-md flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span>Redeem</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- MODAL: Apple Bottom Sheet for "+ Add Card / Voucher"     -->
+  <!-- ======================================================== -->
+  <div id="add-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-end justify-center transition-all duration-300 opacity-0 pointer-events-none">
+    <div id="add-sheet" class="w-full max-w-md bg-neutral-100 dark:bg-neutral-900 rounded-t-[28px] p-5 shadow-2xl border-t border-black/10 dark:border-white/10 transform translate-y-full transition-transform duration-300 ease-out">
+      <div class="w-10 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 mx-auto mb-4"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="modal-header-title" class="text-base font-bold text-neutral-900 dark:text-white">Add New Card</h3>
+        <button onclick="closeAddModal()" class="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 hover:text-neutral-900 dark:hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 mb-1">16-Digit Card / Voucher Code</label>
+          <input id="modal-num-input" type="text" placeholder="6524 9710 0000 0000" class="w-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-sm font-mono text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 mb-1">Bank / Brand</label>
+            <input id="modal-bank-input" type="text" value="PNB" readonly class="w-full bg-neutral-200/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase font-bold text-neutral-500 dark:text-neutral-400 mb-1">Linked Account (Last 4)</label>
+            <input id="modal-acc-input" type="text" value="6650" readonly class="w-full bg-neutral-200/60 dark:bg-neutral-800/60 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
+          </div>
+        </div>
+
+        <button onclick="saveAddModal()" class="apple-press w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md mt-2">
+          Save into Portfolio
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================== -->
+  <!-- FLOATING APPLE TOAST NOTIFICATION                        -->
+  <!-- ======================================================== -->
+  <div id="apple-toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 -translate-y-2">
+    <div class="px-4 py-2 rounded-full bg-neutral-900/90 dark:bg-white/90 text-white dark:text-neutral-900 text-xs font-semibold shadow-xl backdrop-blur-md flex items-center gap-2 border border-white/10 dark:border-black/10">
+      <svg class="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      <span id="toast-text">Copied to clipboard</span>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT: E2E Interactive Logic & Apple Motion Hooks   -->
+  <!-- ======================================================== -->
+  <script>
+    // Sample Vouchers Database for E2E interactivity
+    const SAMPLE_VOUCHERS = [
+      { id: 'v1', brand: 'Lakme', brandName: 'Lakmé Salon', denom: 1500, code: 'LAKM-9821-4491-01', pin: '4821', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v2', brand: 'Lakme', brandName: 'Lakmé Salon', denom: 1500, code: 'LAKM-7712-3094-02', pin: '1904', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v3', brand: 'Lakme', brandName: 'Lakmé Salon', denom: 1500, code: 'LAKM-6541-8820-03', pin: '9833', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v4', brand: 'FourFountains', brandName: 'Four Fountains Spa', denom: 1500, code: 'FFSP-2281-9941-01', pin: '7721', expiry: '24 Nov 2026', daysLeft: 25, status: 'AVAILABLE' },
+      { id: 'v5', brand: 'FourFountains', brandName: 'Four Fountains Spa', denom: 1500, code: 'FFSP-4410-1823-02', pin: '3319', expiry: '24 Nov 2026', daysLeft: 25, status: 'AVAILABLE' },
+      { id: 'v6', brand: 'Kalyan', brandName: 'Kalyan Jewellers', denom: 2000, code: 'KLYN-5591-3820-01', pin: '8820', expiry: '15 Jan 2027', daysLeft: 77, status: 'AVAILABLE' },
+      { id: 'v7', brand: 'Kalyan', brandName: 'Kalyan Jewellers', denom: 2000, code: 'KLYN-8824-7710-02', pin: '5512', expiry: '15 Jan 2027', daysLeft: 77, status: 'AVAILABLE' },
+      { id: 'v8', brand: 'BigBasket', brandName: 'BigBasket Grocery', denom: 250, code: 'BB-9921-4821-01', pin: '3310', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v9', brand: 'BigBasket', brandName: 'BigBasket Grocery', denom: 250, code: 'BB-6641-7719-02', pin: '4481', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v10', brand: 'BigBasket', brandName: 'BigBasket Grocery', denom: 250, code: 'BB-1120-8834-03', pin: '9901', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v11', brand: 'Decathlon', brandName: 'Decathlon Sports', denom: 500, code: 'DECA-3381-9920-01', pin: '5521', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' },
+      { id: 'v12', brand: 'Decathlon', brandName: 'Decathlon Sports', denom: 500, code: 'DECA-7714-2201-02', pin: '8814', expiry: '31 Dec 2026', daysLeft: 62, status: 'AVAILABLE' }
+    ];
+
+    let currentWorkspace = 'cards';
+    let currentVoucherBrand = 'Lakme';
+    const revealedPins = new Set();
+    const selectedVoucherIds = new Set();
+
+    // Theme Toggle
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    // Workspace Dropdown Toggle (Executive Popover)
+    let isDropdownOpen = false;
+    function toggleWorkspaceDropdown() {
+      if (isDropdownOpen) {
+        closeWorkspaceDropdown();
+      } else {
+        openWorkspaceDropdown();
+      }
+    }
+
+    function openWorkspaceDropdown() {
+      isDropdownOpen = true;
+      const popover = document.getElementById('ws-dropdown-popover');
+      const backdrop = document.getElementById('ws-dropdown-backdrop');
+      const chevron = document.getElementById('capsule-chevron');
+      backdrop.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+      popover.classList.remove('hidden', 'opacity-0', '-translate-y-2', 'pointer-events-none');
+      backdrop.style.opacity = '1';
+      backdrop.style.pointerEvents = 'auto';
+      popover.style.opacity = '1';
+      popover.style.transform = 'translateY(0)';
+      popover.style.pointerEvents = 'auto';
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+    }
+
+    function closeWorkspaceDropdown() {
+      isDropdownOpen = false;
+      const popover = document.getElementById('ws-dropdown-popover');
+      const backdrop = document.getElementById('ws-dropdown-backdrop');
+      const chevron = document.getElementById('capsule-chevron');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+      popover.classList.add('opacity-0', '-translate-y-2', 'pointer-events-none');
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        popover.classList.add('hidden');
+        backdrop.classList.add('hidden');
+      }, 200);
+    }
+
+    // Switch Workspace (Cards, Vouchers, Banks)
+    function switchWorkspace(target) {
+      currentWorkspace = target;
+      closeWorkspaceDropdown();
+
+      const viewCards = document.getElementById('view-cards');
+      const viewVouchers = document.getElementById('view-vouchers');
+      const viewBanks = document.getElementById('view-banks');
+      const dock = document.getElementById('unified-floating-dock');
+      const titleEl = document.getElementById('capsule-title');
+      const dotEl = document.getElementById('capsule-status-dot');
+
+      if (target === 'vouchers') {
+        viewCards.classList.add('hidden');
+        viewBanks.classList.add('hidden');
+        viewVouchers.classList.remove('hidden');
+        dock.classList.remove('hidden');
+        titleEl.textContent = 'Vouchers';
+        dotEl.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]';
+        renderVouchersList();
+        updateDockInfo();
+      } else if (target === 'cards') {
+        viewVouchers.classList.add('hidden');
+        viewBanks.classList.add('hidden');
+        viewCards.classList.remove('hidden');
+        dock.classList.add('hidden');
+        titleEl.textContent = 'Debit Cards';
+        dotEl.className = 'w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]';
+      } else if (target === 'banks') {
+        viewCards.classList.add('hidden');
+        viewVouchers.classList.add('hidden');
+        viewBanks.classList.remove('hidden');
+        dock.classList.add('hidden');
+        titleEl.textContent = 'Bank Accounts';
+        dotEl.className = 'w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.8)]';
+      }
+      showToast(`Switched to ${titleEl.textContent}`);
+    }
+
+    function selectBrandQuick(brandKey) {
+      switchWorkspace('vouchers');
+      switchVoucherBrand(brandKey);
+    }
+
+    // Switch Brand inside Voucher Manager
+    function switchVoucherBrand(brand) {
+      currentVoucherBrand = brand;
+      document.querySelectorAll('.brand-filter-pill').forEach(pill => {
+        const isMatch = pill.getAttribute('data-brand') === brand;
+        if (isMatch) {
+          pill.className = 'apple-press brand-filter-pill px-3.5 py-1 rounded-full text-xs font-bold shrink-0 bg-emerald-600 text-white shadow-sm flex items-center gap-1.5';
+        } else {
+          pill.className = 'apple-press brand-filter-pill px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300';
+        }
+      });
+      renderVouchersList();
+    }
+
+    // Render Vouchers List
+    function renderVouchersList() {
+      const container = document.getElementById('vouchers-cards-container');
+      const countLabel = document.getElementById('voucher-count-label');
+      const calcLabel = document.getElementById('voucher-cumulative-calc');
+      const placardTitle = document.getElementById('voucher-brand-placard-title');
+
+      let filtered = SAMPLE_VOUCHERS;
+      if (currentVoucherBrand !== 'All') {
+        filtered = SAMPLE_VOUCHERS.filter(v => v.brand === currentVoucherBrand);
+      }
+
+      const totalVal = filtered.reduce((acc, curr) => acc + curr.denom, 0);
+      const brandName = filtered.length ? filtered[0].brandName : currentVoucherBrand;
+
+      if (placardTitle) placardTitle.textContent = `${brandName} Passbook`;
+      if (calcLabel) {
+        calcLabel.innerHTML = `<span>₹${totalVal.toLocaleString('en-IN')}</span> <span class="text-xs text-emerald-300/80 font-normal">(${filtered.length} × ₹${filtered[0]?.denom || 0} Passes)</span>`;
+      }
+      if (countLabel) {
+        countLabel.textContent = `Showing ${filtered.length} ${brandName} Passes`;
+      }
+
+      container.innerHTML = filtered.map(v => {
+        const isPinRevealed = revealedPins.has(v.id);
+        const isSelected = selectedVoucherIds.has(v.id);
+        const pinText = isPinRevealed ? v.pin : '••••';
+
+        return `
+          <div class="voucher-card p-3.5 bg-neutral-100/90 dark:bg-neutral-900/90 shadow-sm transition-all" style="--brand-accent: ${v.brand === 'Lakme' ? '#d97706' : v.brand === 'FourFountains' ? '#10b981' : v.brand === 'Kalyan' ? '#e11d48' : '#2563eb'}">
+            
+            <!-- Top Line: Brand Logo, Denomination & Checkbox -->
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                <div>
+                  <span class="text-[9px] uppercase font-bold tracking-wider text-neutral-500 dark:text-neutral-400">${v.brandName}</span>
+                  <div class="text-sm font-bold text-neutral-900 dark:text-white">₹${v.denom.toLocaleString('en-IN')} Voucher</div>
+                </div>
+              </div>
+
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                ${v.daysLeft}d left
+              </span>
+            </div>
+
+            <!-- Middle Line: Code + PIN (Tactile Copy) -->
+            <div class="my-2 p-2 rounded-xl bg-black/5 dark:bg-black/40 border border-black/5 dark:border-white/5 flex items-center justify-between">
+              <div>
+                <div class="text-[9px] uppercase font-bold text-neutral-400">Voucher Code</div>
+                <button onclick="copyField('${v.code}', 'Voucher Code')" class="apple-press font-mono text-xs font-bold text-neutral-900 dark:text-white tracking-wide hover:text-emerald-500 flex items-center gap-1.5 text-left">
+                  <span>${v.code}</span>
+                  <svg class="w-3 h-3 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+
+              <!-- PIN with Reveal -->
+              <div class="text-right flex items-center gap-1.5">
+                <div>
+                  <div class="text-[9px] uppercase font-bold text-amber-500">PIN</div>
+                  <div class="font-mono text-xs font-bold text-neutral-800 dark:text-neutral-200">${pinText}</div>
+                </div>
+                <button onclick="togglePinReveal('${v.id}')" class="apple-press p-1 rounded-md bg-neutral-200 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-900 dark:hover:text-white">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Bottom Line: Apple Action Capsules (Copy All, Redeem, Share) -->
+            <div class="flex items-center gap-2 pt-1">
+              <button onclick="copyCodeAndPin('${v.code}', '${v.pin}')" class="apple-press flex-1 py-1.5 px-2 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/80 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 text-[11px] font-semibold flex items-center justify-center gap-1">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy Both</span>
+              </button>
+
+              <button onclick="redeemSingleVoucher('${v.id}')" class="apple-press flex-1 py-1.5 px-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold flex items-center justify-center gap-1">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span>Redeem</span>
+              </button>
+
+              <button onclick="shareSingleVoucher('${v.id}')" class="apple-press p-1.5 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300 hover:text-white">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </button>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function togglePinReveal(id) {
+      if (revealedPins.has(id)) revealedPins.delete(id);
+      else revealedPins.add(id);
+      renderVouchersList();
+    }
+
+    function toggleSelectVoucher(id) {
+      if (selectedVoucherIds.has(id)) selectedVoucherIds.delete(id);
+      else selectedVoucherIds.add(id);
+      updateDockInfo();
+    }
+
+    function selectAllVouchers() {
+      let filtered = SAMPLE_VOUCHERS;
+      if (currentVoucherBrand !== 'All') {
+        filtered = SAMPLE_VOUCHERS.filter(v => v.brand === currentVoucherBrand);
+      }
+      filtered.forEach(v => selectedVoucherIds.add(v.id));
+      renderVouchersList();
+      updateDockInfo();
+      showToast(`Selected ${filtered.length} passes`);
+    }
+
+    function updateDockInfo() {
+      const count = selectedVoucherIds.size;
+      const statusLabel = document.getElementById('dock-status-label');
+      const counterLabel = document.getElementById('dock-counter-label');
+      if (count > 0) {
+        statusLabel.textContent = `${count} Pass${count > 1 ? 'es' : ''} Selected`;
+        counterLabel.textContent = 'Tap Redeem or Share';
+      } else {
+        statusLabel.textContent = 'Voucher Vault';
+        counterLabel.textContent = 'Ready to redeem';
+      }
+    }
+
+    function copyCodeAndPin(code, pin) {
+      const text = `Voucher Code: ${code}\nPIN: ${pin}`;
+      navigator.clipboard?.writeText(text);
+      showToast('Code + PIN copied to clipboard');
+    }
+
+    function redeemSingleVoucher(id) {
+      showToast('Voucher marked as redeemed');
+    }
+
+    function redeemActiveBatch() {
+      if (selectedVoucherIds.size === 0) {
+        showToast('Select passes to redeem');
+        return;
+      }
+      showToast(`Redeemed ${selectedVoucherIds.size} passes`);
+      selectedVoucherIds.clear();
+      renderVouchersList();
+      updateDockInfo();
+    }
+
+    function shareSelectedVouchers() {
+      if (selectedVoucherIds.size === 0) {
+        showToast('Select vouchers to share');
+        return;
+      }
+      showToast(`Sharing ${selectedVoucherIds.size} vouchers via WhatsApp sheet...`);
+    }
+
+    function shareSingleVoucher(id) {
+      showToast('Sharing voucher pass...');
+    }
+
+    // Card Manager Interactions
+    function switchCategory(cat) {
+      const thumb = document.getElementById('segment-thumb');
+      const tabDebit = document.getElementById('tab-debit');
+      const tabCredit = document.getElementById('tab-credit');
+      const filterCont = document.getElementById('filter-container');
+
+      if (cat === 'debit') {
+        thumb.style.transform = 'translateX(0)';
+        tabDebit.className = 'relative z-10 flex-1 py-1.5 text-center text-neutral-900 dark:text-white transition-colors duration-200 flex items-center justify-center gap-1.5 font-bold';
+        tabCredit.className = 'relative z-10 flex-1 py-1.5 text-center text-neutral-500 dark:text-neutral-400 transition-colors duration-200 flex items-center justify-center gap-1.5';
+        filterCont.style.display = 'block';
+      } else {
+        thumb.style.transform = 'translateX(100%)';
+        tabCredit.className = 'relative z-10 flex-1 py-1.5 text-center text-neutral-900 dark:text-white transition-colors duration-200 flex items-center justify-center gap-1.5 font-bold';
+        tabDebit.className = 'relative z-10 flex-1 py-1.5 text-center text-neutral-500 dark:text-neutral-400 transition-colors duration-200 flex items-center justify-center gap-1.5';
+        filterCont.style.display = 'none';
+      }
+    }
+
+    let activeNet = 'All';
+    let activeBank = 'PNB';
+    let activeAcc = '6650';
+
+    function setFilter(type, val) {
+      if (type === 'network') {
+        activeNet = val;
+        document.querySelectorAll('.filter-pill-net').forEach(el => {
+          const match = el.getAttribute('data-val') === val;
+          el.className = match 
+            ? 'apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+            : 'apple-press filter-pill-net px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300';
+        });
+      } else if (type === 'bank') {
+        activeBank = val;
+        document.querySelectorAll('.filter-pill-bank').forEach(el => {
+          const match = el.getAttribute('data-val') === val;
+          el.className = match
+            ? 'apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-emerald-600 text-white shadow-sm'
+            : 'apple-press filter-pill-bank px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300';
+        });
+        const accRow = document.getElementById('account-pill-row');
+        if (val === 'All') {
+          accRow.style.opacity = '0';
+          accRow.style.pointerEvents = 'none';
+        } else {
+          accRow.style.opacity = '1';
+          accRow.style.pointerEvents = 'auto';
+        }
+      } else if (type === 'acc') {
+        activeAcc = val;
+        document.querySelectorAll('.filter-pill-acc').forEach(el => {
+          const match = el.getAttribute('data-val') === val;
+          el.className = match
+            ? 'apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-emerald-600 text-white shadow-sm'
+            : 'apple-press filter-pill-acc px-3 py-1 rounded-full text-xs font-medium shrink-0 bg-neutral-200/70 dark:bg-neutral-800/80 text-neutral-700 dark:text-neutral-300';
+        });
+      }
+    }
+
+    const revealedCards = {};
+    function toggleReveal(id, full, masked) {
+      revealedCards[id] = !revealedCards[id];
+      const el = document.getElementById('num-' + id);
+      const cvvEl = document.getElementById('cvv-' + id);
+      const eyeEl = document.getElementById('eye-' + id);
+      if (revealedCards[id]) {
+        el.innerText = full;
+        if (cvvEl) cvvEl.innerText = id === '5409' ? '312' : '784';
+        eyeEl.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+      } else {
+        el.innerText = masked;
+        if (cvvEl) cvvEl.innerText = '•••';
+        eyeEl.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+      }
+    }
+
+    function toggleReplace(id) {
+      const d = document.getElementById('drawer-' + id);
+      d.classList.toggle('hidden');
+    }
+
+    function toggleCardInfo(id) {
+      showToast(`Linked Account: Punjab National Bank ••6650`);
+    }
+
+    // Modal Sheet
+    function openAddModal() {
+      const m = document.getElementById('add-modal');
+      const s = document.getElementById('add-sheet');
+      const title = document.getElementById('modal-header-title');
+      const numInput = document.getElementById('modal-num-input');
+      const bankInput = document.getElementById('modal-bank-input');
+      const accInput = document.getElementById('modal-acc-input');
+
+      if (currentWorkspace === 'vouchers') {
+        title.textContent = 'Add New Voucher Pass';
+        numInput.placeholder = 'e.g. LAKM-9912-3001-01';
+        bankInput.value = currentVoucherBrand;
+        accInput.value = '₹1,500';
+      } else {
+        title.textContent = 'Add New Card';
+        numInput.placeholder = '6524 9710 0000 0000';
+        bankInput.value = activeBank !== 'All' ? activeBank : 'PNB';
+        accInput.value = activeAcc !== 'All' ? activeAcc : '';
+      }
+
+      m.classList.remove('hidden');
+      setTimeout(() => {
+        m.classList.remove('opacity-0', 'pointer-events-none');
+        s.classList.remove('translate-y-full');
+      }, 10);
+    }
+
+    function closeAddModal() {
+      const m = document.getElementById('add-modal');
+      const s = document.getElementById('add-sheet');
+      s.classList.add('translate-y-full');
+      m.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => m.classList.add('hidden'), 250);
+    }
+
+    function saveAddModal() {
+      closeAddModal();
+      showToast('Item saved into portfolio');
+    }
+
+    // Toast
+    let toastTimeout;
+    function showToast(msg) {
+      const t = document.getElementById('apple-toast');
+      document.getElementById('toast-text').innerText = msg;
+      t.classList.remove('opacity-0', '-translate-y-2');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        t.classList.add('opacity-0', '-translate-y-2');
+      }, 2000);
+    }
+
+    function copyField(val, label) {
+      navigator.clipboard?.writeText(val);
+      showToast(`${label} copied to clipboard`);
+    }
+
+    function triggerShare(name, id) {
+      showToast(`Sharing ${name} details...`);
+    }
+
+    function mockBlock(id) {
+      showToast(`Card •••• ${id} blocked`);
+    }
+
+    // Handle initial state from URL parameters
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const ws = params.get('ws') || 'cards';
+      switchWorkspace(ws);
+
+      if (params.get('brand')) {
+        switchVoucherBrand(params.get('brand'));
+      }
+      if (params.get('select') === 'all') {
+        selectAllVouchers();
+      }
+      if (params.get('pin') === 'reveal') {
+        togglePinReveal('v1');
+      }
+      if (params.get('dropdown') === 'true') {
+        openWorkspaceDropdown();
+      }
+      if (params.get('modal') === 'add') {
+        const m = document.getElementById('add-modal');
+        const s = document.getElementById('add-sheet');
+        m.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        s.classList.remove('translate-y-full');
+      }
+    });
+  </script>
+</body>
+</html>
