@@ -6813,39 +6813,43 @@
         }).join('');
       }
 
-      // --- Row 3: Account (Last 4) Carousel ---
+      // --- Row 3: Account (Last 4) Carousel (Shown ONLY when a specific bank is selected) ---
       const accCarousel = document.getElementById('card-account-carousel');
       if (accCarousel) {
-        // Narrow accounts pool to current selected bank (or all debit cards if 'All' bank selected)
-        let targetPool = allActiveCards;
-        if (currentCardBankFilter !== 'All') {
-          targetPool = targetPool.filter(c => c.bank === currentCardBankFilter);
+        if (currentCardBankFilter === 'All') {
+          // Hide account carousel completely when Bank is 'All'
+          accCarousel.classList.add('hidden');
+          accCarousel.innerHTML = '';
+        } else {
+          accCarousel.classList.remove('hidden');
+          // Narrow accounts pool strictly to current selected bank
+          const targetPool = allActiveCards.filter(c => c.bank === currentCardBankFilter);
+
+          // Collect distinct linked account digits (or fallback to last 4 of card number if linkedAccount is NA)
+          const accountDigits = [...new Set(targetPool.map(c => {
+            if (c.linkedAccount && c.linkedAccount !== 'NA') {
+              return String(c.linkedAccount).replace(/\D/g, '').slice(-4);
+            }
+            if (c.cardNumber) {
+              return String(c.cardNumber).replace(/\D/g, '').slice(-4);
+            }
+            return null;
+          }).filter(Boolean))];
+
+          const accList = ['All', ...accountDigits];
+          accCarousel.innerHTML = accList.map(acc => {
+            const isActive = (currentCardAccountFilter === acc);
+            const activeCls = 'card-filter-pill-active bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+            const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+            const label = (acc === 'All') ? 'All' : `••${acc}`;
+
+            return `
+              <button onclick="setCardAccountFilter('${acc}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap font-mono-apple transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
+                ${label}
+              </button>
+            `;
+          }).join('');
         }
-
-        // Collect distinct linked account digits (or fallback to last 4 of card number if linkedAccount is NA)
-        const accountDigits = [...new Set(targetPool.map(c => {
-          if (c.linkedAccount && c.linkedAccount !== 'NA') {
-            return String(c.linkedAccount).replace(/\D/g, '').slice(-4);
-          }
-          if (c.cardNumber) {
-            return String(c.cardNumber).replace(/\D/g, '').slice(-4);
-          }
-          return null;
-        }).filter(Boolean))];
-
-        const accList = ['All', ...accountDigits];
-        accCarousel.innerHTML = accList.map(acc => {
-          const isActive = (currentCardAccountFilter === acc);
-          const activeCls = 'card-filter-pill-active bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
-          const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
-          const label = (acc === 'All') ? 'All' : `••${acc}`;
-
-          return `
-            <button onclick="setCardAccountFilter('${acc}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap font-mono-apple transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
-              ${label}
-            </button>
-          `;
-        }).join('');
       }
     }
 
