@@ -443,6 +443,13 @@ function processRupayEmails() {
             receivedDate: parsed.receivedDate
           });
         }
+
+        // Mark processed email message as Read in Gmail (does not prevent future reprocessing)
+        try {
+          msg.markRead();
+        } catch (eMark) {
+          console.warn("Could not mark message as read:", eMark.message);
+        }
       }
     }
 
@@ -830,6 +837,7 @@ function reconcilePendingVouchers(ss) {
               newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(parsed.receivedDate || m.getDate()));
               newSheet.getRange(i + 1, 10).setValue(true);
               reconciled.push({ bookingId: bid, code: parsed.code, pin: parsed.pin });
+              try { m.markRead(); } catch (_) {}
               break;
             }
           }
