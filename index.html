@@ -7289,6 +7289,8 @@
 
     function openAddCardModal() {
       const numEl = document.getElementById('add-card-num');
+      const bankEl = document.getElementById('add-card-bank');
+      const typeEl = document.getElementById('add-card-type');
       const nameEl = document.getElementById('add-card-name');
       const accEl = document.getElementById('add-card-acc');
       const expEl = document.getElementById('add-card-exp');
@@ -7298,11 +7300,26 @@
 
       if (numEl) numEl.value = '';
       if (nameEl) nameEl.value = '';
-      if (accEl) accEl.value = '';
       if (expEl) expEl.value = '';
       if (cvvEl) cvvEl.value = '';
       if (notesEl) notesEl.value = '';
       if (badge) badge.classList.add('hidden');
+
+      // Smart prefill based on currently active Card Manager filters
+      if (typeEl && currentCardCategoryFilter) {
+        typeEl.value = currentCardCategoryFilter;
+      }
+      if (bankEl && currentCardBankFilter && currentCardBankFilter !== 'All') {
+        bankEl.value = currentCardBankFilter;
+      }
+      if (accEl) {
+        if (currentCardAccountFilter && currentCardAccountFilter !== 'All') {
+          // Pre-fill last 4 digits of selected account filter
+          accEl.value = currentCardAccountFilter;
+        } else {
+          accEl.value = '';
+        }
+      }
 
       document.getElementById('modal-add-card')?.classList.remove('hidden');
     }
