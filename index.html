@@ -2243,6 +2243,22 @@
       </div>
     </div>
 
+    <!-- 2nd-Level Filter Pill Carousel (Debit Cards only, no section titles) -->
+    <div id="card-secondary-filter-bar" class="bg-[#141214] border-b border-neutral-800/80 px-3 py-2 space-y-1.5 shrink-0">
+      <!-- Row 1: Network Carousel -->
+      <div id="card-network-carousel" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <!-- Rendered dynamically via renderCardFilterPills() -->
+      </div>
+      <!-- Row 2: Bank Carousel -->
+      <div id="card-bank-carousel" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <!-- Rendered dynamically via renderCardFilterPills() -->
+      </div>
+      <!-- Row 3: Account (Last 4) Carousel -->
+      <div id="card-account-carousel" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <!-- Rendered dynamically via renderCardFilterPills() -->
+      </div>
+    </div>
+
     <!-- Cards Scroll Container -->
     <div id="card-manager-list" class="flex-1 overflow-y-auto p-3.5 space-y-3.5 pb-20 no-scrollbar">
       <!-- Rendered dynamically via renderCardManagerList() -->
@@ -5139,6 +5155,7 @@
             .map(c => ({
               bank: c.bank || 'RuPay Card',
               type: c.type || 'Debit',
+              network: c.network || (String(c.name || '').includes('Visa') ? 'Visa' : String(c.name || '').includes('Mastercard') ? 'Mastercard' : 'RuPay'),
               name: c.name || 'RuPay Card',
               linkedAccount: c.linkedAccount || 'NA',
               cardNumber: c.cardNumber || '',
@@ -6407,6 +6424,10 @@
     };
 
     let currentCardCategoryFilter = 'Debit';
+    let currentCardNetworkFilter = 'All';
+    let currentCardBankFilter = 'All';
+    let currentCardAccountFilter = 'All';
+
     const cardPeekStates = new Set();
     const cardInfoStates = new Set();
     let isCardManagerOpen = false;
@@ -6667,14 +6688,159 @@
       return clean.replace(/(\d{4})/g, '$1 ').trim();
     }
 
+    function getCardNetwork(card) {
+      if (card && card.network) return card.network;
+      const name = String((card && card.name) || '');
+      if (name.includes('Visa')) return 'Visa';
+      if (name.includes('Mastercard')) return 'Mastercard';
+      return 'RuPay';
+    }
+
+    function setCardNetworkFilter(net) {
+      currentCardNetworkFilter = net;
+      renderCardFilterPills();
+      renderCardManagerList(currentCardCategoryFilter);
+    }
+
+    function setCardBankFilter(bank) {
+      currentCardBankFilter = bank;
+      // Reset account filter when bank changes so invalid accounts aren't kept selected
+      currentCardAccountFilter = 'All';
+      renderCardFilterPills();
+      renderCardManagerList(currentCardCategoryFilter);
+    }
+
+    function setCardAccountFilter(acc) {
+      currentCardAccountFilter = acc;
+      renderCardFilterPills();
+      renderCardManagerList(currentCardCategoryFilter);
+    }
+
+    function renderCardFilterPills() {
+      const bar = document.getElementById('card-secondary-filter-bar');
+      if (!bar) return;
+
+      const isDebit = (String(currentCardCategoryFilter || '').toLowerCase() === 'debit');
+      if (!isDebit) {
+        bar.classList.add('hidden');
+        return;
+      }
+      bar.classList.remove('hidden');
+
+      const allActiveCards = (state.cards || []).filter(c =>
+        String(c.type || '').toLowerCase() === 'debit' &&
+        String(c.status || '').toUpperCase() === 'ACTIVE'
+      );
+
+      // --- Row 1: Network Carousel ---
+      const netCarousel = document.getElementById('card-network-carousel');
+      if (netCarousel) {
+        const networks = ['All', 'RuPay', 'Visa', 'Mastercard'];
+        netCarousel.innerHTML = networks.map(net => {
+          const isActive = (currentCardNetworkFilter === net);
+          let dotHtml = '';
+          if (net === 'RuPay') dotHtml = '<span class="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block shrink-0"></span>';
+          else if (net === 'Visa') dotHtml = '<span class="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block shrink-0"></span>';
+          else if (net === 'Mastercard') dotHtml = '<span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block shrink-0"></span>';
+
+          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+
+          return `
+            <button onclick="setCardNetworkFilter('${net}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
+              ${dotHtml}<span>${net}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      // --- Row 2: Bank Carousel ---
+      const bankCarousel = document.getElementById('card-bank-carousel');
+      if (bankCarousel) {
+        // Collect distinct banks present in active debit cards (default to PNB, BoB, Canara, Union, Jana if empty)
+        let distinctBanks = [...new Set(allActiveCards.map(c => c.bank).filter(Boolean))];
+        if (distinctBanks.length === 0) {
+          distinctBanks = ['PNB', 'Bank of Baroda', 'Canara', 'Jana SFB', 'Union Bank'];
+        }
+        const bankList = ['All', ...distinctBanks];
+
+        bankCarousel.innerHTML = bankList.map(bank => {
+          const isActive = (currentCardBankFilter === bank);
+          const shortName = (bank === 'Bank of Baroda') ? 'BoB' : (bank === 'Union Bank') ? 'Union' : (bank === 'Jana SFB') ? 'Jana' : bank;
+          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+
+          return `
+            <button onclick="setCardBankFilter('${bank}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
+              ${shortName}
+            </button>
+          `;
+        }).join('');
+      }
+
+      // --- Row 3: Account (Last 4) Carousel ---
+      const accCarousel = document.getElementById('card-account-carousel');
+      if (accCarousel) {
+        // Narrow accounts pool to current selected bank (or all debit cards if 'All' bank selected)
+        let targetPool = allActiveCards;
+        if (currentCardBankFilter !== 'All') {
+          targetPool = targetPool.filter(c => c.bank === currentCardBankFilter);
+        }
+
+        // Collect distinct linked account digits (or fallback to last 4 of card number if linkedAccount is NA)
+        const accountDigits = [...new Set(targetPool.map(c => {
+          if (c.linkedAccount && c.linkedAccount !== 'NA') {
+            return String(c.linkedAccount).replace(/\D/g, '').slice(-4);
+          }
+          if (c.cardNumber) {
+            return String(c.cardNumber).replace(/\D/g, '').slice(-4);
+          }
+          return null;
+        }).filter(Boolean))];
+
+        const accList = ['All', ...accountDigits];
+        accCarousel.innerHTML = accList.map(acc => {
+          const isActive = (currentCardAccountFilter === acc);
+          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+          const label = (acc === 'All') ? 'All' : `••${acc}`;
+
+          return `
+            <button onclick="setCardAccountFilter('${acc}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap font-mono-apple transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
+              ${label}
+            </button>
+          `;
+        }).join('');
+      }
+    }
+
     function renderCardManagerList(category) {
       const container = document.getElementById('card-manager-list');
       if (!container) return;
 
-      const filtered = (state.cards || []).filter(c => 
+      renderCardFilterPills();
+
+      let filtered = (state.cards || []).filter(c => 
         String(c.type || '').toLowerCase() === String(category || '').toLowerCase() &&
         String(c.status || '').toUpperCase() === 'ACTIVE'
       );
+
+      // If viewing Debit Cards, apply the 3-level secondary filter pills
+      if (String(category || '').toLowerCase() === 'debit') {
+        if (currentCardNetworkFilter !== 'All') {
+          filtered = filtered.filter(c => getCardNetwork(c) === currentCardNetworkFilter);
+        }
+        if (currentCardBankFilter !== 'All') {
+          filtered = filtered.filter(c => c.bank === currentCardBankFilter);
+        }
+        if (currentCardAccountFilter !== 'All') {
+          filtered = filtered.filter(c => {
+            const linkedLast4 = (c.linkedAccount && c.linkedAccount !== 'NA') ? String(c.linkedAccount).replace(/\D/g, '').slice(-4) : '';
+            const cardLast4 = c.cardNumber ? String(c.cardNumber).replace(/\D/g, '').slice(-4) : '';
+            return linkedLast4 === currentCardAccountFilter || cardLast4 === currentCardAccountFilter;
+          });
+        }
+      }
 
       if (filtered.length === 0) {
         container.innerHTML = `

@@ -22,7 +22,7 @@ const UNIFIED_REDEEMED_HEADERS = [
 ];
 
 const UNIFIED_CARD_HEADERS = [
-  "Card ID", "Bank", "Card Type", "BIN", "Last 4", "Nickname", "Status", "Claimed Quota", "Total Quota", "Blocked Date", "Notes", "Last Updated (IST)"
+  "Card ID", "Bank", "Card Type", "Network", "BIN", "Last 4", "Nickname", "Status", "Claimed Quota", "Total Quota", "Blocked Date", "Notes", "Last Updated (IST)"
 ];
 
 const UNIFIED_SHARED_HEADERS = [
@@ -895,14 +895,14 @@ function getOrInitCardsSheet(ss) {
   const rows = sheet.getDataRange().getValues();
   if (rows.length <= 1) {
     const defaultCards = [
-      ["c1", "PNB", "PNB Imperial RSDC", "'65249710", "'9102", "PNB Imperial Primary", "active", 3, 6, "", "", formatISTTimestamp(new Date())],
-      ["c2", "Bank of Baroda", "BoB Bhoomi RSDC", "'652505", "'3314", "Vibhav BoB DC", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
-      ["c3", "Canara Bank", "Canara RSDC", "'652550", "'7828", "Canara DC 7828", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
-      ["c4", "Jana SFB", "Jana SFB RSDC", "'652520", "'7891", "Jana SFB DC", "active", 3, 5, "", "", formatISTTimestamp(new Date())],
-      ["c5", "Canara Bank", "Canara Select CC", "'653020", "'1109", "Canara CC Primary", "active", 1, 2, "", "", formatISTTimestamp(new Date())],
-      ["cx1", "PNB", "PNB Imperial RSDC", "'65249710", "'4821", "PNB Imperial (Old)", "blocked", 0, 0, "2026-10-14", "Q3 quotas exhausted", formatISTTimestamp(new Date())],
-      ["cx2", "Canara Bank", "Canara RSDC", "'652550", "'1120", "Canara DC 1 (Old)", "blocked", 0, 0, "2026-09-28", "Blocked via mobile app", formatISTTimestamp(new Date())],
-      ["cx3", "Bank of Baroda", "BoB Bhoomi RSDC", "'652505", "'2091", "Smiti BoB DC", "blocked", 0, 0, "2026-08-15", "Reissued new card number", formatISTTimestamp(new Date())]
+      ["c1", "PNB", "PNB Imperial RSDC", "RuPay", "'65249710", "'9102", "PNB Imperial Primary", "active", 3, 6, "", "", formatISTTimestamp(new Date())],
+      ["c2", "Bank of Baroda", "BoB Bhoomi RSDC", "RuPay", "'652505", "'3314", "Vibhav BoB DC", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
+      ["c3", "Canara Bank", "Canara RSDC", "RuPay", "'652550", "'7828", "Canara DC 7828", "active", 2, 5, "", "", formatISTTimestamp(new Date())],
+      ["c4", "Jana SFB", "Jana SFB RSDC", "RuPay", "'652520", "'7891", "Jana SFB DC", "active", 3, 5, "", "", formatISTTimestamp(new Date())],
+      ["c5", "Canara Bank", "Canara Select CC", "RuPay", "'653020", "'1109", "Canara CC Primary", "active", 1, 2, "", "", formatISTTimestamp(new Date())],
+      ["cx1", "PNB", "PNB Imperial RSDC", "RuPay", "'65249710", "'4821", "PNB Imperial (Old)", "blocked", 0, 0, "2026-10-14", "Q3 quotas exhausted", formatISTTimestamp(new Date())],
+      ["cx2", "Canara Bank", "Canara RSDC", "RuPay", "'652550", "'1120", "Canara DC 1 (Old)", "blocked", 0, 0, "2026-09-28", "Blocked via mobile app", formatISTTimestamp(new Date())],
+      ["cx3", "Bank of Baroda", "BoB Bhoomi RSDC", "RuPay", "'652505", "'2091", "Smiti BoB DC", "blocked", 0, 0, "2026-08-15", "Reissued new card number", formatISTTimestamp(new Date())]
     ];
     defaultCards.forEach(c => sheet.appendRow(c));
   }
@@ -1332,18 +1332,29 @@ function doGet(e) {
         if (result.cards.length === 0) {
           for (let i = 1; i < rows.length; i++) {
             if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
+            // Check if column 3 is Network (if rows[i].length >= 13) or BIN
+            const hasNetworkCol = rows[0] && rows[0][3] === "Network";
+            const netVal = hasNetworkCol ? String(rows[i][3] || 'RuPay') : (String(rows[i][5] || '').includes('Visa') ? 'Visa' : String(rows[i][5] || '').includes('Mastercard') ? 'Mastercard' : 'RuPay');
+            const binIdx = hasNetworkCol ? 4 : 3;
+            const last4Idx = hasNetworkCol ? 5 : 4;
+            const nickIdx = hasNetworkCol ? 6 : 5;
+            const statusIdx = hasNetworkCol ? 7 : 6;
+            const notesIdx = hasNetworkCol ? 11 : 10;
+            const updatedIdx = hasNetworkCol ? 12 : 11;
+
             result.cards.push({
               bank: String(rows[i][1] || ''),
               type: String(rows[i][2] || ''),
-              name: String(rows[i][5] || 'Card'),
+              network: netVal,
+              name: String(rows[i][nickIdx] || 'Card'),
               linkedAccount: 'NA',
-              cardNumber: String(rows[i][3] || '') + String(rows[i][4] || ''),
+              cardNumber: String(rows[i][binIdx] || '') + String(rows[i][last4Idx] || ''),
               expiry: '10/33',
               cvv: '000',
-              status: String(rows[i][6] || 'ACTIVE').toUpperCase(),
-              notes: rows[i][10] ? String(rows[i][10]) : '',
+              status: String(rows[i][statusIdx] || 'ACTIVE').toUpperCase(),
+              notes: rows[i][notesIdx] ? String(rows[i][notesIdx]) : '',
               benefits: {},
-              lastUpdated: rows[i][11] ? String(rows[i][11]) : ''
+              lastUpdated: rows[i][updatedIdx] ? String(rows[i][updatedIdx]) : ''
             });
           }
         }
@@ -2014,15 +2025,16 @@ function doPost(e) {
         if (String(rows[i][0]).trim() === cardId) {
           cSheet.getRange(i + 1, 2).setValue(card.bank || rows[i][1]);
           cSheet.getRange(i + 1, 3).setValue(card.type || rows[i][2]);
-          cSheet.getRange(i + 1, 4).setValue(card.bin ? `'${card.bin}` : rows[i][3]);
-          cSheet.getRange(i + 1, 5).setValue(card.last4 ? `'${card.last4}` : rows[i][4]);
-          cSheet.getRange(i + 1, 6).setValue(card.nick || rows[i][5]);
-          cSheet.getRange(i + 1, 7).setValue(card.status || rows[i][6]);
-          cSheet.getRange(i + 1, 8).setValue(card.claimed !== undefined ? Number(card.claimed) : rows[i][7]);
-          cSheet.getRange(i + 1, 9).setValue(card.total !== undefined ? Number(card.total) : rows[i][8]);
-          cSheet.getRange(i + 1, 10).setValue(card.blockedDate || rows[i][9]);
-          cSheet.getRange(i + 1, 11).setValue(card.notes || rows[i][10]);
-          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
+          cSheet.getRange(i + 1, 4).setValue(card.network || rows[i][3] || 'RuPay');
+          cSheet.getRange(i + 1, 5).setValue(card.bin ? `'${card.bin}` : rows[i][4]);
+          cSheet.getRange(i + 1, 6).setValue(card.last4 ? `'${card.last4}` : rows[i][5]);
+          cSheet.getRange(i + 1, 7).setValue(card.nick || rows[i][6]);
+          cSheet.getRange(i + 1, 8).setValue(card.status || rows[i][7]);
+          cSheet.getRange(i + 1, 9).setValue(card.claimed !== undefined ? Number(card.claimed) : rows[i][8]);
+          cSheet.getRange(i + 1, 10).setValue(card.total !== undefined ? Number(card.total) : rows[i][9]);
+          cSheet.getRange(i + 1, 11).setValue(card.blockedDate || rows[i][10]);
+          cSheet.getRange(i + 1, 12).setValue(card.notes || rows[i][11]);
+          cSheet.getRange(i + 1, 13).setValue(formatISTTimestamp(new Date()));
           found = true;
           break;
         }
@@ -2033,6 +2045,7 @@ function doPost(e) {
           cardId,
           card.bank || 'RuPay Card',
           card.type || 'RuPay Select',
+          card.network || 'RuPay',
           card.bin ? `'${card.bin}` : '',
           card.last4 ? `'${card.last4}` : '',
           card.nick || 'New Card',
