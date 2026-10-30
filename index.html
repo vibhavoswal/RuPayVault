@@ -1107,6 +1107,41 @@
       color: #64748b !important;
     }
 
+    /* Card Manager 2nd-Level Filter Bar in Light Mode (Tiered Carousel matching Ingested Tab) */
+    [data-theme="light"] #card-secondary-filter-bar,
+    html.light #card-secondary-filter-bar {
+      background-color: #eaefea !important;
+      border-bottom-color: rgba(12, 140, 70, 0.2) !important;
+    }
+
+    [data-theme="light"] #card-secondary-filter-bar button.card-filter-pill-inactive,
+    html.light #card-secondary-filter-bar button.card-filter-pill-inactive {
+      background-color: #ffffff !important;
+      border-color: rgba(12, 140, 70, 0.18) !important;
+      color: #374151 !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    [data-theme="light"] #card-secondary-filter-bar button.card-filter-pill-inactive:hover,
+    html.light #card-secondary-filter-bar button.card-filter-pill-inactive:hover {
+      background-color: #f8fafc !important;
+      color: #111827 !important;
+      border-color: rgba(12, 140, 70, 0.35) !important;
+    }
+
+    [data-theme="light"] #card-secondary-filter-bar button.card-filter-pill-active,
+    html.light #card-secondary-filter-bar button.card-filter-pill-active {
+      background-color: #0C8C46 !important;
+      border-color: #0A753A !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 4px rgba(12, 140, 70, 0.25) !important;
+    }
+
+    [data-theme="light"] #card-secondary-filter-bar button.card-filter-pill-active span,
+    html.light #card-secondary-filter-bar button.card-filter-pill-active span {
+      color: #ffffff !important;
+    }
+
     /* Bank Theme Light Gradients (Option 1: Vibrant Saturated Bank Cards) */
     [data-theme="light"] .pnb-glass,
     html.light .pnb-glass {
@@ -6743,8 +6778,8 @@
           else if (net === 'Visa') dotHtml = '<span class="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block shrink-0"></span>';
           else if (net === 'Mastercard') dotHtml = '<span class="w-1.5 h-1.5 rounded-full bg-red-400 inline-block shrink-0"></span>';
 
-          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
-          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+          const activeCls = 'card-filter-pill-active bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
 
           return `
             <button onclick="setCardNetworkFilter('${net}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
@@ -6767,8 +6802,8 @@
         bankCarousel.innerHTML = bankList.map(bank => {
           const isActive = (currentCardBankFilter === bank);
           const shortName = (bank === 'Bank of Baroda') ? 'BoB' : (bank === 'Union Bank') ? 'Union' : (bank === 'Jana SFB') ? 'Jana' : bank;
-          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
-          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+          const activeCls = 'card-filter-pill-active bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
 
           return `
             <button onclick="setCardBankFilter('${bank}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
@@ -6801,8 +6836,8 @@
         const accList = ['All', ...accountDigits];
         accCarousel.innerHTML = accList.map(acc => {
           const isActive = (currentCardAccountFilter === acc);
-          const activeCls = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
-          const inactiveCls = 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
+          const activeCls = 'card-filter-pill-active bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm';
+          const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
           const label = (acc === 'All') ? 'All' : `••${acc}`;
 
           return `
