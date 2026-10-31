@@ -1294,6 +1294,32 @@ function doGet(e) {
     }
   }
 
+  // Administrative One-Off: Debug get rows from "New" tab
+  if (e && e.parameter && e.parameter.action === "DEBUG_GET_NEW_ROWS") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const nRows = nSheet.getDataRange().getValues();
+      const matches = [];
+      for (let i = 0; i < nRows.length; i++) {
+        const bid = String(nRows[i][0] || '').trim();
+        if (i === 0 || bid.includes("A0D78") || bid.includes("88084") || bid.includes("66D24")) {
+          matches.push({ row: i + 1, data: nRows[i] });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        totalRows: nRows.length,
+        matches: matches
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative One-Off: Remove already approved vouchers from "New" tab
   if (e && e.parameter && e.parameter.action === "PURGE_APPROVED_DUPLICATES_FROM_NEW") {
     try {
