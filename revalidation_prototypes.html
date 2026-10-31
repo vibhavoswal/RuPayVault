@@ -372,6 +372,16 @@
       const vouchers = getVouchers();
       const filtered = vouchers.filter(v => state.currentFilter === 'tagged' ? v.isTagged : !v.isTagged);
 
+      // Sort Priority: Revalidation Pending at top (1), Red Pending in middle (2), Delivered Green at bottom (3)
+      const getPriorityTier = (v) => {
+        const isReval = v.status === 'PENDING_REVALIDATION' || v.code === 'Pending revalidation' || /revalidation/i.test(v.code);
+        if (isReval) return 1;
+        const isPending = v.status === 'PENDING' || v.code === 'PENDING' || v.code === '-' || !v.code;
+        if (isPending) return 2;
+        return 3;
+      };
+      filtered.sort((a, b) => getPriorityTier(a) - getPriorityTier(b));
+
       // Update counters
       const taggedCount = vouchers.filter(v => v.isTagged).length;
       const untaggedCount = vouchers.filter(v => !v.isTagged).length;
