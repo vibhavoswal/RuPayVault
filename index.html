@@ -165,6 +165,18 @@
     html.light .btn-mark-reval:hover {
       background: #f8fafc !important;
     }
+    /* Native iOS Slide-to-Select Gutter Hit Area */
+    .select-gutter {
+      touch-action: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+    }
+    body.slide-selecting {
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      touch-action: pan-y !important;
+    }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-1,
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-2,
     html.light .mobile-view [id^="mb-card-"].card-arrived.ring-1,
@@ -5713,7 +5725,11 @@
                 <div class="p-2.5 flex items-center justify-between gap-2">
                   <!-- Left Cell: 3 STRICT LINES -->
                   <div class="flex-1 flex items-start gap-2.5 min-w-0">
-                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] mt-1 shrink-0 pointer-events-none">` : ''}
+                    ${state.isSelectMode ? `
+                      <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${act.id}">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                      </div>
+                    ` : ''}
                     
                     <div class="truncate flex-1 min-w-0 space-y-0.5">
                       
@@ -5795,7 +5811,11 @@
                  class="card-arrived rounded-2xl p-2.5 border transition-all duration-150 flex items-center justify-between gap-2 cursor-pointer select-none active:scale-[0.99] bg-[#062414]/75 ${borderClass} border-l-4 border-l-emerald-500">
               
               <div class="flex-1 flex items-start gap-2.5 min-w-0">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] mt-1 shrink-0 pointer-events-none">` : ''}
+                ${state.isSelectMode ? `
+                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${act.id}">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                  </div>
+                ` : ''}
                 
                 <div class="truncate flex-1 min-w-0 space-y-0.5">
                   <!-- LINE 1: Brand name + SHARED tag -->
@@ -5939,7 +5959,11 @@
               <!-- Top Row: Brand, Value, Status -->
               <div class="flex items-center justify-between text-xs pointer-events-none">
                 <div class="flex items-center gap-2">
-                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
+                  ${state.isSelectMode ? `
+                    <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="redeemed-${r.code}">
+                      <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                    </div>
+                  ` : ''}
                   <div>
                     <span class="font-bold text-sm text-white">${vBrandName}</span>
                     ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
@@ -6133,7 +6157,11 @@
             <!-- Top Line: Pass # ONLY (+ checkbox in select mode) -->
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">` : ''}
+                ${state.isSelectMode ? `
+                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                  </div>
+                ` : ''}
                 <span class="font-mono-apple font-bold text-[#F47A21] text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
             </div>
@@ -9588,18 +9616,187 @@
       if (!state.isSelectMode) {
         state.selectedIds.clear();
         collapseActionMenu();
+      } else {
+        showToast('Select Mode: Tap or slide down checkboxes to select');
       }
       renderVault();
       updateFloatingDock();
     }
 
+    /* --- NATIVE iOS SLIDE-TO-SELECT MULTIPLE ENGINE (TOUCH & POINTER) --- */
+    let _lastSlideEndTime = 0;
+
     function handleCardClick(id) {
+      if (Date.now() - _lastSlideEndTime < 350) {
+        return; // Suppress duplicate synthesized click from touch gesture
+      }
       if (!state.isSelectMode) {
         openVoucherDetailSheet(id);
         return;
       }
       toggleSelectVoucher(id);
     }
+
+    (function initSlideToSelect() {
+      let isSlideSelecting = false;
+      let slideIntentAdd = true; // true = selecting, false = deselecting
+      let lastCrossedId = null;
+      let autoScrollRaf = null;
+      let currentTouchY = 0;
+
+      function getCardFromPoint(x, y) {
+        if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return null;
+        const el = document.elementFromPoint(x, y);
+        if (!el) return null;
+        return el.closest('[id^="mb-card-"]');
+      }
+
+      function updateCardVisual(cardEl, isSelected) {
+        if (!cardEl) return;
+        const cb = cardEl.querySelector('input[type="checkbox"]');
+        if (cb) cb.checked = isSelected;
+
+        // Apply/remove ring highlight smoothly
+        if (cardEl.classList.contains('card-arrived')) {
+          if (isSelected) {
+            cardEl.classList.add('border-[#0C8C46]', 'ring-2', 'ring-[#0C8C46]');
+            cardEl.classList.remove('border-emerald-500/30');
+          } else {
+            cardEl.classList.remove('border-[#0C8C46]', 'ring-2', 'ring-[#0C8C46]');
+            cardEl.classList.add('border-emerald-500/30');
+          }
+        } else if (cardEl.classList.contains('card-revalidation')) {
+          if (isSelected) {
+            cardEl.classList.add('border-cyan-500', 'ring-2', 'ring-cyan-500');
+            cardEl.classList.remove('border-cyan-500/40');
+          } else {
+            cardEl.classList.remove('border-cyan-500', 'ring-2', 'ring-cyan-500');
+            cardEl.classList.add('border-cyan-500/40');
+          }
+        } else if (cardEl.classList.contains('card-pending')) {
+          if (isSelected) {
+            cardEl.classList.add('border-rose-500', 'ring-2', 'ring-rose-500');
+            cardEl.classList.remove('border-rose-500/30');
+          } else {
+            cardEl.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500');
+            cardEl.classList.add('border-rose-500/30');
+          }
+        } else {
+          // Brand & Redeemed cards
+          if (isSelected) {
+            cardEl.classList.add('ring-2', 'ring-[#0C8C46]/50', 'bg-emerald-950/20');
+          } else {
+            cardEl.classList.remove('ring-2', 'ring-[#0C8C46]/50', 'bg-emerald-950/20');
+          }
+        }
+      }
+
+      function applySelectionToCard(cardEl) {
+        if (!cardEl) return;
+        const id = cardEl.id.replace('mb-card-', '');
+        if (!id) return;
+        if (id === lastCrossedId) return;
+
+        lastCrossedId = id;
+        if (slideIntentAdd) {
+          state.selectedIds.add(id);
+        } else {
+          state.selectedIds.delete(id);
+        }
+
+        updateCardVisual(cardEl, slideIntentAdd);
+        if (navigator.vibrate) {
+          try { navigator.vibrate(8); } catch (_) {}
+        }
+        updateFloatingDock();
+      }
+
+      function handleAutoScroll() {
+        if (!isSlideSelecting) return;
+        const topBoundary = 110;
+        const bottomBoundary = window.innerHeight - 110;
+
+        if (currentTouchY < topBoundary && currentTouchY > 0) {
+          const intensity = Math.min(18, (topBoundary - currentTouchY) / 3.5);
+          window.scrollBy({ top: -intensity, behavior: 'auto' });
+          const cardEl = getCardFromPoint(Math.min(window.innerWidth * 0.15, 60), currentTouchY);
+          if (cardEl) applySelectionToCard(cardEl);
+        } else if (currentTouchY > bottomBoundary && currentTouchY < window.innerHeight) {
+          const intensity = Math.min(18, (currentTouchY - bottomBoundary) / 3.5);
+          window.scrollBy({ top: intensity, behavior: 'auto' });
+          const cardEl = getCardFromPoint(Math.min(window.innerWidth * 0.15, 60), currentTouchY);
+          if (cardEl) applySelectionToCard(cardEl);
+        }
+
+        autoScrollRaf = requestAnimationFrame(handleAutoScroll);
+      }
+
+      // 1. Touch Start
+      window.addEventListener('touchstart', (e) => {
+        if (!state.isSelectMode) return;
+        if (!e.touches || e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const gutter = touch.target.closest('.select-gutter');
+        const cardEl = touch.target.closest('[id^="mb-card-"]');
+
+        let isGutterTouch = !!gutter;
+        if (!isGutterTouch && cardEl) {
+          const rect = cardEl.getBoundingClientRect();
+          if (touch.clientX <= rect.left + 72) {
+            isGutterTouch = true;
+          }
+        }
+
+        if (!isGutterTouch || !cardEl) return;
+
+        isSlideSelecting = true;
+        document.body.classList.add('slide-selecting');
+        const id = cardEl.id.replace('mb-card-', '');
+        slideIntentAdd = !state.selectedIds.has(id);
+        lastCrossedId = null;
+        currentTouchY = touch.clientY;
+
+        applySelectionToCard(cardEl);
+
+        if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
+        autoScrollRaf = requestAnimationFrame(handleAutoScroll);
+      }, { passive: true });
+
+      // 2. Touch Move
+      window.addEventListener('touchmove', (e) => {
+        if (!isSlideSelecting) return;
+        if (!e.touches || e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        currentTouchY = touch.clientY;
+
+        if (e.cancelable) e.preventDefault();
+
+        const cardEl = getCardFromPoint(touch.clientX, touch.clientY);
+        if (cardEl) {
+          applySelectionToCard(cardEl);
+        }
+      }, { passive: false });
+
+      // 3. Touch End / Cancel
+      function endSlideSelect() {
+        if (!isSlideSelecting) return;
+        isSlideSelecting = false;
+        document.body.classList.remove('slide-selecting');
+        lastCrossedId = null;
+        _lastSlideEndTime = Date.now();
+        if (autoScrollRaf) {
+          cancelAnimationFrame(autoScrollRaf);
+          autoScrollRaf = null;
+        }
+        renderVault();
+        updateFloatingDock();
+      }
+
+      window.addEventListener('touchend', endSlideSelect, { passive: true });
+      window.addEventListener('touchcancel', endSlideSelect, { passive: true });
+    })();
 
     function shareSelectedWithShareSheet() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
