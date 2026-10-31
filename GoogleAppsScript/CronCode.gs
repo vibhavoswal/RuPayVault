@@ -1168,22 +1168,26 @@ function doGet(e) {
     }
   }
 
-  // Administrative One-Off: Fix RUPS-880845EB brand to TaxSpanner in Google Sheets
-  if (e && e.parameter && e.parameter.action === "FIX_RUPS_880845EB") {
+  // Administrative: Fix voucher brand to TaxSpanner in Google Sheets (supports bid parameter, RUPS-66D242DA, RUPS-880845EB)
+  if (e && e.parameter && (e.parameter.action === "FIX_RUPS_TO_TAXSPANNER" || e.parameter.action === "FIX_RUPS_880845EB")) {
     try {
       const ss = getSpreadsheet();
-      const targetBid = "RUPS-880845EB";
-      const results = { updatedInNew: false, movedFromTab: null, movedToTab: null, updatedInRedeemed: false };
+      const targetBids = new Set(
+        [e.parameter.bid, "RUPS-66D242DA", "RUPS-880845EB"]
+          .filter(Boolean)
+          .map(b => b.trim().toUpperCase())
+      );
+      const results = { updatedInNew: [], movedFromTab: [], updatedInRedeemed: [] };
 
       // 1. Check "New" tab (Col 1: Booking ID, Col 11: Target Brand)
       const nSheet = ss.getSheetByName("New");
       if (nSheet) {
         const nRows = nSheet.getDataRange().getValues();
         for (let i = 1; i < nRows.length; i++) {
-          if (String(nRows[i][0] || '').trim().toUpperCase() === targetBid) {
+          const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
+          if (targetBids.has(rowBid)) {
             nSheet.getRange(i + 1, 11).setValue("TaxSpanner");
-            results.updatedInNew = true;
-            break;
+            results.updatedInNew.push(rowBid);
           }
         }
       }
@@ -1194,18 +1198,16 @@ function doGet(e) {
         const sName = sheet.getName();
         if (sName === "New" || sName === "TaxSpanner" || sName === "Redeemed" || sName === "Cards" || sName === "⏱ Cooldowns" || sName === "Shared_Activity" || sName === "Active Cards" || sName === "Bank_Accounts") continue;
         const rows = sheet.getDataRange().getValues();
-        for (let i = 1; i < rows.length; i++) {
-          if (String(rows[i][0] || '').trim().toUpperCase() === targetBid) {
+        for (let i = rows.length - 1; i >= 1; i--) {
+          const rowBid = String(rows[i][0] || '').trim().toUpperCase();
+          if (targetBids.has(rowBid)) {
             const rowData = rows[i];
             const targetSheet = getTargetBrandSheet(ss, "TaxSpanner");
             targetSheet.appendRow(rowData);
             sheet.deleteRow(i + 1);
-            results.movedFromTab = sName;
-            results.movedToTab = "TaxSpanner";
-            break;
+            results.movedFromTab.push({ bid: rowBid, from: sName, to: "TaxSpanner" });
           }
         }
-        if (results.movedFromTab) break;
       }
 
       // 3. Check "Redeemed" tab (Col 2: Booking ID, Col 1: Brand)
@@ -1213,10 +1215,10 @@ function doGet(e) {
       if (rSheet) {
         const rRows = rSheet.getDataRange().getValues();
         for (let i = 1; i < rRows.length; i++) {
-          if (String(rRows[i][1] || '').trim().toUpperCase() === targetBid) {
+          const rowBid = String(rRows[i][1] || '').trim().toUpperCase();
+          if (targetBids.has(rowBid)) {
             rSheet.getRange(i + 1, 1).setValue("TaxSpanner");
-            results.updatedInRedeemed = true;
-            break;
+            results.updatedInRedeemed.push(rowBid);
           }
         }
       }
