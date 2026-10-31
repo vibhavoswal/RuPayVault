@@ -1294,6 +1294,43 @@ function doGet(e) {
     }
   }
 
+  // Administrative / Mutation: Mark Revalidated (Transitions PENDING_REVALIDATION -> PENDING)
+  if (e && e.parameter && e.parameter.action === "MARK_REVALIDATED") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const targetBid = String(e.parameter.bookingId || e.parameter.id || '').trim().toUpperCase();
+      if (!targetBid) {
+        return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const dataRows = nSheet.getDataRange().getValues();
+      let updated = false;
+      for (let r = 1; r < dataRows.length; r++) {
+        const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
+        if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
+          nSheet.getRange(r + 1, 2).setValue('PENDING');
+          nSheet.getRange(r + 1, 8).setValue('PENDING');
+          if (dataRows[0].length >= 12) {
+            nSheet.getRange(r + 1, 12).setValue('');
+          }
+          updated = true;
+          break;
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        updated: updated,
+        bookingId: targetBid
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative One-Off: Debug get rows from "New" tab
   if (e && e.parameter && e.parameter.action === "DEBUG_GET_NEW_ROWS") {
     try {
@@ -1867,6 +1904,38 @@ function doPost(e) {
           success: true,
           approvedCount: approvedSummary.length,
           approved: approvedSummary
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // 1D. Mark Revalidated Voucher in "New" Tab (Transitions PENDING_REVALIDATION -> PENDING)
+      if (data.action === "MARK_REVALIDATED") {
+        let newSheet = ss.getSheetByName("New");
+        if (!newSheet) {
+          return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        const targetBid = String(data.bookingId || data.id || '').trim().toUpperCase();
+        if (!targetBid) {
+          return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        const dataRows = newSheet.getDataRange().getValues();
+        let updated = false;
+        for (let r = 1; r < dataRows.length; r++) {
+          const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
+          if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
+            newSheet.getRange(r + 1, 2).setValue('PENDING');
+            newSheet.getRange(r + 1, 8).setValue('PENDING');
+            if (dataRows[0].length >= 12) {
+              newSheet.getRange(r + 1, 12).setValue('');
+            }
+            updated = true;
+            break;
+          }
+        }
+        SpreadsheetApp.flush();
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          updated: updated,
+          bookingId: targetBid
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
