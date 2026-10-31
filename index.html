@@ -5264,7 +5264,8 @@
             card: (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned',
             status: (s.status || 'PENDING').toUpperCase(),
             timestampIST: s.timestampIST || null,
-            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
+            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false',
+            payUrl: s.payUrl || ''
           }));
           await saveEncryptedStaging(state.staging);
         }
