@@ -514,7 +514,7 @@ function extractBrand(subject, body) {
   if (combined.includes("lakme") || combined.includes("lakmé")) return "Lakme";
   if (combined.includes("uber")) return "Uber";
   if (combined.includes("kalyan")) return "Kalyan";
-  if (combined.includes("reliance")) return "Reliance";
+  if (combined.includes("reliance digital") || combined.includes("reliance retail") || combined.includes("reliancedigital")) return "Reliance";
   if (combined.includes("myntra")) return "Myntra";
   if (combined.includes("apollo")) return "Apollo";
   if (combined.includes("big basket") || combined.includes("bigbasket")) return "BigBasket";
@@ -1149,6 +1149,69 @@ function doGet(e) {
         success: true,
         updatedCount: updated.length,
         updated: updated
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Administrative One-Off: Fix RUPS-880845EB brand to TaxSpanner in Google Sheets
+  if (e && e.parameter && e.parameter.action === "FIX_RUPS_880845EB") {
+    try {
+      const ss = getSpreadsheet();
+      const targetBid = "RUPS-880845EB";
+      const results = { updatedInNew: false, movedFromTab: null, movedToTab: null, updatedInRedeemed: false };
+
+      // 1. Check "New" tab (Col 1: Booking ID, Col 11: Target Brand)
+      const nSheet = ss.getSheetByName("New");
+      if (nSheet) {
+        const nRows = nSheet.getDataRange().getValues();
+        for (let i = 1; i < nRows.length; i++) {
+          if (String(nRows[i][0] || '').trim().toUpperCase() === targetBid) {
+            nSheet.getRange(i + 1, 11).setValue("TaxSpanner");
+            results.updatedInNew = true;
+            break;
+          }
+        }
+      }
+
+      // 2. Check if it was already moved into "Reliance" tab or any other brand tab
+      const allSheets = ss.getSheets();
+      for (const sheet of allSheets) {
+        const sName = sheet.getName();
+        if (sName === "New" || sName === "TaxSpanner" || sName === "Redeemed" || sName === "Cards" || sName === "⏱ Cooldowns" || sName === "Shared_Activity" || sName === "Active Cards" || sName === "Bank_Accounts") continue;
+        const rows = sheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][0] || '').trim().toUpperCase() === targetBid) {
+            const rowData = rows[i];
+            const targetSheet = getTargetBrandSheet(ss, "TaxSpanner");
+            targetSheet.appendRow(rowData);
+            sheet.deleteRow(i + 1);
+            results.movedFromTab = sName;
+            results.movedToTab = "TaxSpanner";
+            break;
+          }
+        }
+        if (results.movedFromTab) break;
+      }
+
+      // 3. Check "Redeemed" tab (Col 2: Booking ID, Col 1: Brand)
+      const rSheet = ss.getSheetByName("Redeemed");
+      if (rSheet) {
+        const rRows = rSheet.getDataRange().getValues();
+        for (let i = 1; i < rRows.length; i++) {
+          if (String(rRows[i][1] || '').trim().toUpperCase() === targetBid) {
+            rSheet.getRange(i + 1, 1).setValue("TaxSpanner");
+            results.updatedInRedeemed = true;
+            break;
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        details: results
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
