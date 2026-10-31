@@ -137,10 +137,19 @@
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidation,
     html.light .mobile-view [id^="mb-card-"].card-revalidation {
-      background: #FFFBEB !important;
-      border-color: rgba(245, 158, 11, 0.35) !important;
-      border-left-color: #f59e0b !important;
-      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08) !important;
+      background: #F0F9FF !important;
+      border-color: rgba(6, 182, 212, 0.35) !important;
+      border-left-color: #06b6d4 !important;
+      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.08) !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidation .bg-cyan-950\/70,
+    html.light .mobile-view [id^="mb-card-"].card-revalidation .bg-cyan-950\/70 {
+      background: #E0F2FE !important;
+      border-top-color: rgba(6, 182, 212, 0.3) !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidation .text-cyan-200,
+    html.light .mobile-view [id^="mb-card-"].card-revalidation .text-cyan-200 {
+      color: #0369a1 !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-1,
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-2,
@@ -160,8 +169,8 @@
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidation.ring-2,
     html.light .mobile-view [id^="mb-card-"].card-revalidation.ring-1,
     html.light .mobile-view [id^="mb-card-"].card-revalidation.ring-2 {
-      background: #FEF3C7 !important;
-      border-color: #f59e0b !important;
+      background: #E0F2FE !important;
+      border-color: #06b6d4 !important;
     }
     /* Brand names and code text inside cards in light mode */
     [data-theme="light"] .mobile-view [id^="mb-card-"] .text-white,
@@ -3661,9 +3670,17 @@
                 <span>Approve to Brand Tab</span>
               </button>
             ` : (isRevalidation ? `
-              <div class="flex-1 py-2.5 px-3 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                <span>Pending Revalidation</span>
+              <div class="flex-1 flex flex-col gap-1.5">
+                ${act.payUrl ? `
+                  <a href="${act.payUrl}" target="_blank" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-center text-xs font-black shadow-lg flex items-center justify-center gap-1.5 transition-all">
+                    <span>Revalidate (Pay ₹2) ↗</span>
+                  </a>
+                ` : `
+                  <div class="py-2.5 px-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                    <span>Revalidate (Awaiting link)</span>
+                  </div>
+                `}
               </div>
             ` : `
               <div class="flex-1 py-2.5 px-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-neutral-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
@@ -5425,7 +5442,8 @@
             timestampStr: s.timestampIST,
             timestampMs: parseTimestamp(s.timestampIST),
             status: s.status || 'PENDING',
-            expiry: s.expiry || '31 Dec 2026'
+            expiry: s.expiry || '31 Dec 2026',
+            payUrl: s.payUrl || ''
           });
         });
 
@@ -5539,9 +5557,9 @@
               <td class="p-3">
                 <div class="flex items-center gap-2">
                   ${isRevalidation ? `
-                    <span class="text-amber-400 font-semibold text-xs flex items-center gap-1.5 font-mono-apple">
-                      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                      Pending Revalidation (Payment Link Sent)
+                    <span class="text-cyan-400 font-semibold text-xs flex items-center gap-1.5 font-mono-apple">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 ${act.payUrl ? 'animate-ping' : ''}"></span>
+                      Revalidate ${act.payUrl ? '(Link Ready)' : '(Awaiting link)'}
                     </span>
                   ` : (isPending ? `
                     <span class="text-rose-400 font-semibold text-xs">Pending Delivery (24-48h)</span>
@@ -5561,7 +5579,13 @@
                   <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">Mark Redeemed</button>
                   <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')" class="text-xs font-medium text-neutral-400 hover:text-white">Dismiss</button>
                 ` : (isRevalidation ? `
-                  <span class="text-xs text-amber-400/90 font-medium mr-3">Validation Pending</span>
+                  ${act.payUrl ? `
+                    <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1 mr-2 transition-all">
+                      <span>Revalidate ↗</span>
+                    </a>
+                  ` : `
+                    <span class="text-xs text-cyan-400/90 font-medium mr-3">Awaiting link</span>
+                  `}
                 ` : (isPending ? `
                   <span class="text-xs text-rose-400/90 font-medium mr-3">Awaiting Delivery</span>
                 ` : `
@@ -5592,77 +5616,90 @@
 
           const cardClass = hasArrived ? 'card-arrived' : (isRevalidation ? 'card-revalidation' : 'card-pending');
           const borderClass = isChecked
-            ? (hasArrived ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]' : (isRevalidation ? 'border-amber-500 ring-2 ring-amber-500' : 'border-rose-500 ring-2 ring-rose-500'))
-            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidation ? 'border-amber-500/40 hover:border-amber-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm'));
-          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidation ? 'bg-[#2a1b08]/85' : 'bg-[#260e12]/75');
-          const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidation ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-rose-500');
+            ? (hasArrived ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]' : (isRevalidation ? 'border-cyan-500 ring-2 ring-cyan-500' : 'border-rose-500 ring-2 ring-rose-500'))
+            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidation ? 'border-cyan-500/40 hover:border-cyan-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm'));
+          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidation ? 'bg-[#081822]/85' : 'bg-[#260e12]/75');
+          const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidation ? 'border-l-4 border-l-cyan-500' : 'border-l-4 border-l-rose-500');
 
           if (isIngested) {
             return `
               <div id="mb-card-${act.id}"
                    data-code="${act.code}"
                    onclick="handleCardClick('${act.id}')"
-                   class="${cardClass} rounded-2xl p-2.5 border transition-all duration-150 flex items-center justify-between gap-2 cursor-pointer select-none active:scale-[0.99] ${bgClass} ${borderClass} ${stripeClass}">
+                   class="${cardClass} rounded-2xl border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] overflow-hidden ${bgClass} ${borderClass} ${stripeClass}">
                 
-                <!-- Left Cell: 3 STRICT LINES -->
-                <div class="flex-1 flex items-start gap-2.5 min-w-0">
-                  ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] mt-1 shrink-0 pointer-events-none">` : ''}
-                  
-                  <div class="truncate flex-1 min-w-0 space-y-0.5">
+                <div class="p-2.5 flex items-center justify-between gap-2">
+                  <!-- Left Cell: 3 STRICT LINES -->
+                  <div class="flex-1 flex items-start gap-2.5 min-w-0">
+                    ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] mt-1 shrink-0 pointer-events-none">` : ''}
                     
-                    <!-- LINE 1: Brand name ONLY (Skipping voucher value) + Card tag if tagged -->
-                    <div class="flex items-center gap-1.5 text-xs truncate">
-                      <span class="font-bold text-white truncate text-[13px]">${brandDisplay}</span>
-                      ${isRevalidation ? `
-                        <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0 flex items-center gap-1">
-                          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                          Pending Revalidation
+                    <div class="truncate flex-1 min-w-0 space-y-0.5">
+                      
+                      <!-- LINE 1: Brand name ONLY (no redundant Revalidate badge) + Card tag if tagged -->
+                      <div class="flex items-center gap-1.5 text-xs truncate">
+                        <span class="font-bold text-white truncate text-[13px]">${brandDisplay}</span>
+                        ${isTaggedView && isCardTagged(act.card) ? `
+                          <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
+                            <svg class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            ${act.card}
+                          </span>
+                        ` : ''}
+                      </div>
+
+                      <!-- LINE 2: RUPS- Reference ID ONLY + Simple "Copy" button next to it -->
+                      <div class="flex items-center gap-2 truncate py-0.5">
+                        <span class="font-mono-apple text-xs font-bold text-neutral-200 tracking-wide">
+                          ${act.bookingId || 'RUPS-PENDING'}
                         </span>
-                      ` : ''}
-                      ${isTaggedView && isCardTagged(act.card) ? `
-                        <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
-                          <svg class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                          ${act.card}
-                        </span>
-                      ` : ''}
-                    </div>
+                        ${act.bookingId ? `
+                          <button onclick="event.stopPropagation(); copyToClipboard('${act.bookingId}')"
+                                  class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 shadow-xs active:scale-95 transition-all"
+                                  title="Copy reference ID">
+                            Copy
+                          </button>
+                        ` : ''}
+                      </div>
 
-                    <!-- LINE 2: RUPS- Reference ID ONLY + Simple "Copy" button next to it -->
-                    <div class="flex items-center gap-2 truncate py-0.5">
-                      <span class="font-mono-apple text-xs font-bold text-neutral-200 tracking-wide">
-                        ${act.bookingId || 'RUPS-PENDING'}
-                      </span>
-                      ${act.bookingId ? `
-                        <button onclick="event.stopPropagation(); copyToClipboard('${act.bookingId}')"
-                                class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 shadow-xs active:scale-95 transition-all"
-                                title="Copy reference ID">
-                          Copy
-                        </button>
-                      ` : ''}
-                    </div>
+                      <!-- LINE 3: @account Tag + Relative Age -->
+                      <div class="flex items-center gap-1.5 text-[10px] font-mono-apple truncate pt-0.5">
+                        <span class="text-blue-400 font-bold">@${act.account || '-'}</span>
+                        <span class="text-neutral-500">•</span>
+                        <span class="text-neutral-400">${formatRelativeTime(act.timestampStr || act.timestampIST)}</span>
+                      </div>
 
-                    <!-- LINE 3: @account Tag + Relative Age -->
-                    <div class="flex items-center gap-1.5 text-[10px] font-mono-apple truncate pt-0.5">
-                      <span class="text-blue-400 font-bold">@${act.account || '-'}</span>
-                      <span class="text-neutral-500">•</span>
-                      <span class="text-neutral-400">${formatRelativeTime(act.timestampStr || act.timestampIST)}</span>
                     </div>
+                  </div>
 
+                  <!-- Right Cell: Modern Google Material Design SVG (i) Button -->
+                  <div class="shrink-0 flex items-center gap-1.5 pointer-events-auto">
+                    <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
+                            class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
+                            title="Inspect Voucher Code, PIN & Audit">
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
-                <!-- Right Cell: Modern Google Material Design SVG (i) Button -->
-                <div class="shrink-0 flex items-center gap-1.5 pointer-events-auto">
-                  <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
-                          class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
-                          title="Inspect Voucher Code, PIN & Audit">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="12" y1="16" x2="12" y2="12"></line>
-                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                  </button>
-                </div>
+                <!-- Bottom Action Strip for Revalidation (Clean, Non-redundant) -->
+                ${isRevalidation ? `
+                  <div class="px-3 py-2 bg-cyan-950/70 border-t border-cyan-500/25 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1.5 text-xs text-cyan-200 font-bold tracking-tight shrink-0">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 ${act.payUrl ? 'animate-ping' : ''}"></span>
+                      <span>Revalidate</span>
+                    </div>
+                    ${act.payUrl ? `
+                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-3.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-md flex items-center gap-1 active:scale-95 transition-all shrink-0">
+                        <span>Revalidate ↗</span>
+                      </a>
+                    ` : `
+                      <span class="text-[10.5px] text-cyan-400/80 font-mono-apple shrink-0">Awaiting link</span>
+                    `}
+                  </div>
+                ` : ''}
 
               </div>
             `;

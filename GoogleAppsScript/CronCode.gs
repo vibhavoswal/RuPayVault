@@ -14,7 +14,7 @@ const UNIFIED_BRAND_HEADERS = [
 ];
 
 const UNIFIED_NEW_HEADERS = [
-  "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)", "Display in UI", "Target Brand"
+  "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)", "Display in UI", "Target Brand", "Payment Link"
 ];
 
 const UNIFIED_REDEEMED_HEADERS = [
@@ -177,8 +177,15 @@ function parseRupayVoucherEmail(msg) {
   const account = extractAccountName(msg.getTo(), body, msg.getFrom()) || "vibhavoswal9";
   const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
 
-  // 3B. Guard: Is this an "On Hold – Validation Pending / Payment Link Sent" email?
-  const isRevalMatch = /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(subject) ||
+  // 3B. Guard: Is this an "On Hold – Validation Pending / Payment Link" email?
+  const directUrlMatch = body.match(/https:\/\/rupayselect\.truztee\.com\/#\/pay\?token=[A-Za-z0-9_\-]+/i) ||
+                         body.match(/https?:\/\/rupayselect\.truztee\.com\/[^\s\r\n"'>]+/i);
+  const trackingUrlMatch = body.match(/https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^\s\r\n"'>]+/i);
+  const payUrl = directUrlMatch ? directUrlMatch[0] : (trackingUrlMatch ? trackingUrlMatch[0] : "");
+
+  const isRevalMatch = /payment\s*link/i.test(subject) ||
+                       /undergoing\s*validation.*re-validation/i.test(body) ||
+                       /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(subject) ||
                        /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(body);
   if (isRevalMatch) {
     return {
@@ -192,7 +199,8 @@ function parseRupayVoucherEmail(msg) {
       status: "PENDING_REVALIDATION",
       receivedDate: receivedDate,
       isDelivered: false,
-      isRevalidationPending: true
+      isRevalidationPending: true,
+      payUrl: payUrl
     };
   }
 
@@ -399,9 +407,9 @@ function processRupayEmails() {
 
         if (parsed.isRevalidationPending) {
           // ==========================================
-          // STAGE 1.5: On Hold - Validation Pending Email
+          // STAGE 1.5: On Hold - Validation Pending / Payment Link Email
           // ==========================================
-          // Updates Code to "Pending revalidation" and Status to "PENDING_REVALIDATION"
+          // Updates Code to "Pending revalidation", Status to "PENDING_REVALIDATION", and attaches Payment Link
           // Invariant: Leaves initial acknowledgment timestamp untouched!
           recordPendingRevalidation(ss, {
             bookingId: parsed.bookingId,
@@ -409,7 +417,8 @@ function processRupayEmails() {
             amount: parsed.amount,
             account: parsed.account,
             dateOfIssue: parsed.dateOfIssue,
-            receivedDate: parsed.receivedDate
+            receivedDate: parsed.receivedDate,
+            payUrl: parsed.payUrl
           });
         } else if (!parsed.isDelivered) {
           // ==========================================
@@ -634,6 +643,9 @@ function recordPendingRevalidation(ss, data) {
       newSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
       newSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
       newSheet.getRange(i + 1, 10).setValue(true);
+      if (data.payUrl) {
+        newSheet.getRange(i + 1, 12).setValue(data.payUrl);
+      }
       return;
     }
   }
@@ -650,7 +662,8 @@ function recordPendingRevalidation(ss, data) {
     "PENDING_REVALIDATION",                              // Col 8: Status
     formatISTTimestamp(data.receivedDate || new Date()), // Col 9: Initial Timestamp (only set once on creation)
     true,                                                // Col 10: Display in UI
-    targetBrand                                          // Col 11: Target Brand
+    targetBrand,                                         // Col 11: Target Brand
+    data.payUrl || ""                                    // Col 12: Payment Link
   ];
   newSheet.appendRow(rowData);
 }
@@ -1218,6 +1231,67 @@ function doGet(e) {
     }
   }
 
+  // Administrative One-Off: Attach or Stage revalidation payment link
+  if (e && e.parameter && e.parameter.action === "STAGE_REVALIDATION_PAY_LINK") {
+    try {
+      const ss = getSpreadsheet();
+      const bid = (e.parameter.bid || "RUPS-A0D78AC5").trim().toUpperCase();
+      const payUrl = (e.parameter.payUrl || "https://rupayselect.truztee.com/#/pay?token=D1b7pbRMB5FN_nWkoiQ_8e_Io6wHPLni061zkrXnZho").trim();
+      const brand = (e.parameter.brand || "AmazonPrime").trim();
+      let updated = false;
+      let created = false;
+
+      let nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        nSheet = ss.insertSheet("New");
+        nSheet.appendRow(UNIFIED_NEW_HEADERS);
+        nSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+        nSheet.setFrozenRows(1);
+      }
+
+      const rows = nSheet.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0] || '').trim().toUpperCase() === bid) {
+          nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
+          nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
+          nSheet.getRange(i + 1, 10).setValue(true);
+          nSheet.getRange(i + 1, 12).setValue(payUrl);
+          updated = true;
+          break;
+        }
+      }
+
+      if (!updated) {
+        nSheet.appendRow([
+          bid,
+          "'Pending revalidation",
+          "",
+          500,
+          formatISTDate(new Date()),
+          "devendixit369",
+          "Unassigned",
+          "PENDING_REVALIDATION",
+          formatISTTimestamp(new Date()),
+          true,
+          brand,
+          payUrl
+        ]);
+        created = true;
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        bid: bid,
+        updated: updated,
+        created: created,
+        payUrl: payUrl
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative One-Off: Remove already approved vouchers from "New" tab
   if (e && e.parameter && e.parameter.action === "PURGE_APPROVED_DUPLICATES_FROM_NEW") {
     try {
@@ -1484,7 +1558,8 @@ function doGet(e) {
             status: rows[i][7] ? String(rows[i][7]) : 'PENDING',
             timestampIST: rows[i][8] ? String(rows[i][8]) : null,
             displayInUI: isDisp,
-            targetBrand: targetBrand
+            targetBrand: targetBrand,
+            payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : ''
           });
         }
       } else {
