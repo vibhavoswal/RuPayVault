@@ -5568,8 +5568,27 @@
           );
         }
 
-        // Sort latest at the top
-        allActivities.sort((a, b) => (b.timestampMs || 0) - (a.timestampMs || 0));
+        // Sort Priority for Ingested:
+        // 1. Revalidation Pending at the very top (highest action priority)
+        // 2. Red ones (code not arrived / PENDING delivery 24-48h) in the middle
+        // 3. Code arrived (Green / ACTIVE / delivered) at the bottom
+        // Within each priority tier: newest arrivals first (reverse-chronological)
+        const getPriorityTier = (a) => {
+          const isReval = a.status === 'PENDING_REVALIDATION' || a.code === 'Pending revalidation' || /revalidation/i.test(a.code);
+          if (isReval) return 1;
+          const isPending = a.status === 'PENDING' || a.code === 'PENDING' || a.code === '-' || !a.code;
+          if (isPending) return 2;
+          return 3;
+        };
+
+        allActivities.sort((a, b) => {
+          const tierA = getPriorityTier(a);
+          const tierB = getPriorityTier(b);
+          if (tierA !== tierB) {
+            return tierA - tierB;
+          }
+          return (b.timestampMs || 0) - (a.timestampMs || 0);
+        });
 
         if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = allActivities.length;
 
