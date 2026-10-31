@@ -154,6 +154,17 @@
     html.light .mobile-view [id^="mb-card-"].card-revalidation .text-cyan-200 {
       color: #0369a1 !important;
     }
+    [data-theme="light"] .btn-mark-reval,
+    html.light .btn-mark-reval {
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-color: rgba(6, 182, 212, 0.4) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+    [data-theme="light"] .btn-mark-reval:hover,
+    html.light .btn-mark-reval:hover {
+      background: #f8fafc !important;
+    }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-1,
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-arrived.ring-2,
     html.light .mobile-view [id^="mb-card-"].card-arrived.ring-1,
@@ -3673,17 +3684,19 @@
                 <span>Approve to Brand Tab</span>
               </button>
             ` : (isRevalidation ? `
-              <div class="flex-1 flex flex-col gap-1.5">
+              <div class="flex-1 flex items-center gap-2">
                 ${act.payUrl ? `
-                  <a href="${act.payUrl}" target="_blank" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-center text-xs font-black shadow-lg flex items-center justify-center gap-1.5 transition-all">
-                    <span>Revalidate (Pay ₹2) ↗</span>
+                  <a href="${act.payUrl}" target="_blank" class="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-center text-xs font-black shadow-lg flex items-center justify-center gap-1.5 transition-all">
+                    <span>Revalidate ↗</span>
                   </a>
                 ` : `
-                  <div class="py-2.5 px-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                    <span>Revalidate (Awaiting link)</span>
+                  <div class="flex-1 py-2.5 px-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
+                    <span>Awaiting link</span>
                   </div>
                 `}
+                <button onclick="closeVoucherDetailSheet(); markRevalidated('${act.id}', '${act.bookingId}');" class="btn-mark-reval flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                  <span>Mark Revalidated</span>
+                </button>
               </div>
             ` : `
               <div class="flex-1 py-2.5 px-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-neutral-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
@@ -3803,6 +3816,47 @@
         pin: entry.pin,
         platform: platform
       }, { silent: true }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
+    }
+
+    /* --- MARK REVALIDATED ACTION (TRANSITIONS PENDING_REVALIDATION TO PENDING) --- */
+    async function markRevalidated(id, bookingId) {
+      const targetBid = String(bookingId || '').trim();
+      const targetId = String(id || '').trim();
+
+      // Find in state.staging
+      const item = (state.staging || []).find(s =>
+        (targetBid && s.bookingId === targetBid) ||
+        (targetId && (s.id === targetId || s.bookingId === targetId))
+      );
+
+      if (!item) {
+        showToast('Voucher not found in staging');
+        return;
+      }
+
+      // 1. Optimistic Local State Update:
+      // Change status & code to PENDING, remove revalidation flags and payment URL
+      item.status = 'PENDING';
+      item.code = 'PENDING';
+      item.payUrl = '';
+      item.isRevalidation = false;
+
+      // 2. Persist to encrypted cache and immediately re-render (turns placard red)
+      await saveEncryptedStaging(state.staging);
+      renderVault();
+      if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
+        closeVoucherDetailSheet();
+      }
+      showToast('Marked as revalidated. Waiting for voucher code.');
+
+      // 3. Background Sync to Google Apps Script ("New" tab in Google Sheets)
+      try {
+        await apiFetch('MARK_REVALIDATED', {
+          bookingId: item.bookingId || targetBid || targetId
+        }, { silent: true });
+      } catch (err) {
+        console.warn('Background sync error (MARK_REVALIDATED):', err);
+      }
     }
 
     function dismissSharedActivity(code) {
@@ -5583,13 +5637,18 @@
                   <button onclick="event.stopPropagation(); markVoucherAsRedeemed('${act.code}', '${act.brand}')" class="text-xs font-bold text-emerald-400 hover:underline mr-2">Mark Redeemed</button>
                   <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')" class="text-xs font-medium text-neutral-400 hover:text-white">Dismiss</button>
                 ` : (isRevalidation ? `
-                  ${act.payUrl ? `
-                    <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1 mr-2 transition-all">
-                      <span>Revalidate ↗</span>
-                    </a>
-                  ` : `
-                    <span class="text-xs text-cyan-400/90 font-medium mr-3">Awaiting link</span>
-                  `}
+                  <div class="inline-flex items-center gap-2">
+                    ${act.payUrl ? `
+                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1 transition-all">
+                        <span>Revalidate ↗</span>
+                      </a>
+                    ` : `
+                      <span class="text-xs text-cyan-400/90 font-medium">Awaiting link</span>
+                    `}
+                    <button onclick="event.stopPropagation(); markRevalidated('${act.id}', '${act.bookingId}')" class="btn-mark-reval px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-medium inline-flex items-center gap-1 transition-all">
+                      <span>Mark Revalidated</span>
+                    </button>
+                  </div>
                 ` : (isPending ? `
                   <span class="text-xs text-rose-400/90 font-medium mr-3">Awaiting Delivery</span>
                 ` : `
@@ -5688,20 +5747,21 @@
                   </div>
                 </div>
 
-                <!-- Bottom Action Strip for Revalidation (Clean, Non-redundant) -->
+                <!-- Bottom Action Strip for Revalidation -->
                 ${isRevalidation ? `
-                  <div class="px-3 py-2 bg-cyan-950/70 border-t border-cyan-500/25 flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-1.5 text-xs text-cyan-200 font-bold tracking-tight shrink-0">
-                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 ${act.payUrl ? 'animate-ping' : ''}"></span>
-                      <span>Revalidate</span>
-                    </div>
+                  <div class="px-3 py-2 bg-cyan-950/70 border-t border-cyan-500/25 flex items-center justify-start gap-2">
                     ${act.payUrl ? `
-                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-3.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-md flex items-center gap-1 active:scale-95 transition-all shrink-0">
+                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold shadow-sm flex items-center gap-1 active:scale-95 transition-all shrink-0">
                         <span>Revalidate ↗</span>
                       </a>
                     ` : `
-                      <span class="text-[10.5px] text-cyan-400/80 font-mono-apple shrink-0">Awaiting link</span>
+                      <span class="text-[10.5px] text-cyan-400/80 font-mono-apple shrink-0 px-2 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/20">Awaiting link</span>
                     `}
+                    <button onclick="event.stopPropagation(); markRevalidated('${act.id}', '${act.bookingId}')"
+                            class="btn-mark-reval px-3 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center gap-1 active:scale-95 transition-all shrink-0"
+                            title="Mark as revalidated once payment is complete">
+                      <span>Mark Revalidated</span>
+                    </button>
                   </div>
                 ` : ''}
 
