@@ -9642,7 +9642,25 @@
       let slideIntentAdd = true; // true = selecting, false = deselecting
       let lastCrossedId = null;
       let autoScrollRaf = null;
+      let currentTouchX = 0;
       let currentTouchY = 0;
+
+      function getScrollTarget() {
+        const c = document.querySelector('.mobile-scroll-container') || document.querySelector('main.overflow-y-auto');
+        if (c) return c;
+        return document.scrollingElement || document.documentElement || document.body || window;
+      }
+
+      function doScroll(deltaY) {
+        const target = getScrollTarget();
+        if (target && typeof target.scrollBy === 'function') {
+          target.scrollBy({ top: deltaY, behavior: 'auto' });
+        } else if (target && typeof target.scrollTop === 'number') {
+          target.scrollTop += deltaY;
+        } else {
+          window.scrollBy(0, deltaY);
+        }
+      }
 
       function getCardFromPoint(x, y) {
         if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) return null;
@@ -9713,18 +9731,29 @@
 
       function handleAutoScroll() {
         if (!isSlideSelecting) return;
-        const topBoundary = 110;
-        const bottomBoundary = window.innerHeight - 110;
 
-        if (currentTouchY < topBoundary && currentTouchY > 0) {
-          const intensity = Math.min(18, (topBoundary - currentTouchY) / 3.5);
-          window.scrollBy({ top: -intensity, behavior: 'auto' });
-          const cardEl = getCardFromPoint(Math.min(window.innerWidth * 0.15, 60), currentTouchY);
+        const windowH = window.innerHeight;
+        // Trigger zones: lower 48% scrolls down, upper 35% scrolls up
+        const scrollDownZone = windowH * 0.52;
+        const scrollUpZone = windowH * 0.35;
+
+        if (currentTouchY > scrollDownZone && currentTouchY <= windowH) {
+          // Accelerate scroll down proportional to depth
+          const progress = (currentTouchY - scrollDownZone) / Math.max(1, (windowH - scrollDownZone));
+          const speed = Math.max(3, Math.min(28, Math.round(progress * 28)));
+          doScroll(speed);
+
+          const pickX = currentTouchX || (window.innerWidth * 0.15);
+          const cardEl = getCardFromPoint(pickX, currentTouchY);
           if (cardEl) applySelectionToCard(cardEl);
-        } else if (currentTouchY > bottomBoundary && currentTouchY < window.innerHeight) {
-          const intensity = Math.min(18, (currentTouchY - bottomBoundary) / 3.5);
-          window.scrollBy({ top: intensity, behavior: 'auto' });
-          const cardEl = getCardFromPoint(Math.min(window.innerWidth * 0.15, 60), currentTouchY);
+        } else if (currentTouchY < scrollUpZone && currentTouchY > 0) {
+          // Accelerate scroll up proportional to height
+          const progress = (scrollUpZone - currentTouchY) / Math.max(1, scrollUpZone);
+          const speed = Math.max(3, Math.min(28, Math.round(progress * 28)));
+          doScroll(-speed);
+
+          const pickX = currentTouchX || (window.innerWidth * 0.15);
+          const cardEl = getCardFromPoint(pickX, currentTouchY);
           if (cardEl) applySelectionToCard(cardEl);
         }
 
@@ -9755,6 +9784,7 @@
         const id = cardEl.id.replace('mb-card-', '');
         slideIntentAdd = !state.selectedIds.has(id);
         lastCrossedId = null;
+        currentTouchX = touch.clientX;
         currentTouchY = touch.clientY;
 
         applySelectionToCard(cardEl);
@@ -9769,6 +9799,7 @@
         if (!e.touches || e.touches.length !== 1) return;
 
         const touch = e.touches[0];
+        currentTouchX = touch.clientX;
         currentTouchY = touch.clientY;
 
         if (e.cancelable) e.preventDefault();
