@@ -33,6 +33,18 @@ const UNIFIED_COOLDOWN_HEADERS = [
   "Account ID", "Last Redemption Time (IST)", "Status", "Last Updated (IST)"
 ];
 
+// Centralized System Sheet Names: Protected from brand tab scanning, deletion, or rogue voucher leaks
+const SYSTEM_SHEET_NAMES = new Set([
+  "New",
+  "⚡ Unassigned",
+  "⏱ Cooldowns",
+  "Active Cards",
+  "Blocked Cards",
+  "Bank Accounts",
+  "Shared_Activity",
+  "Redeemed"
+]);
+
 const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
 
 function getSpreadsheet() {
@@ -592,10 +604,9 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
 
   // 2. Scan all other canonical brand tabs (excluding system tabs)
   const sheets = ss.getSheets();
-  const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns"]);
   for (const s of sheets) {
     const sName = s.getName();
-    if (systemTabs.has(sName) || sName === targetBrand) continue;
+    if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards" || sName === targetBrand) continue;
     const res = checkSheet(s);
     if (res) return res;
   }
@@ -1088,8 +1099,13 @@ function doGet(e) {
     }
   }
 
-  // Fetch all Bank Accounts in JSON format
+  // Fetch all Bank Accounts in JSON format (Requires 24-Hour Session Token)
   if (e && e.parameter && e.parameter.action === "GET_BANK_ACCOUNTS") {
+    const providedAuth = e.parameter.token || e.parameter.auth || e.parameter.key || "";
+    const authCheck = validateAuth(providedAuth);
+    if (!authCheck.valid) {
+      return ContentService.createTextOutput(JSON.stringify({ error: authCheck.error, accounts: [] })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
       const ss = getSpreadsheet();
       let sheet = ss.getSheetByName("Bank Accounts");
@@ -1112,309 +1128,6 @@ function doGet(e) {
         accounts.push(acc);
       }
       return ContentService.createTextOutput(JSON.stringify({ success: true, count: accounts.length, accounts: accounts })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative One-Off: Setup SwiggyOne brand tab & update target brand in New tab
-  if (e && e.parameter && e.parameter.action === "SETUP_SWIGGY_ONE") {
-    try {
-      const ss = getSpreadsheet();
-      let swiggySheet = ss.getSheetByName("SwiggyOne");
-      let sheetCreated = false;
-      if (!swiggySheet) {
-        swiggySheet = ss.insertSheet("SwiggyOne");
-        swiggySheet.appendRow(UNIFIED_BRAND_HEADERS);
-        swiggySheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-        swiggySheet.setFrozenRows(1);
-        sheetCreated = true;
-      }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        swiggySheetCreated: sheetCreated,
-        sheetExists: !!swiggySheet
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative One-Off: Correct revalidation rows in "New" tab
-  if (e && e.parameter && e.parameter.action === "CORRECT_REVALIDATION_ROWS") {
-    try {
-      const ss = getSpreadsheet();
-      const nSheet = ss.getSheetByName("New");
-      if (!nSheet) {
-        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const nRows = nSheet.getDataRange().getValues();
-      const targetBids = new Set(["RUPS-34AB2FE3", "RUPS-5ACE0C37"]);
-      const updated = [];
-      for (let i = 1; i < nRows.length; i++) {
-        const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
-        const rowCode = String(nRows[i][1] || '').trim();
-        if (targetBids.has(rowBid) || rowCode.toLowerCase().startsWith("/service")) {
-          nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
-          nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
-          nSheet.getRange(i + 1, 10).setValue(true);
-          updated.push({
-            rowIndex: i + 1,
-            bookingId: rowBid,
-            oldCode: rowCode,
-            newCode: "Pending revalidation",
-            status: "PENDING_REVALIDATION",
-            timestampPreserved: nRows[i][8]
-          });
-        }
-      }
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        updatedCount: updated.length,
-        updated: updated
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative: Fix voucher brand to TaxSpanner in Google Sheets (supports bid parameter, RUPS-66D242DA, RUPS-880845EB)
-  if (e && e.parameter && (e.parameter.action === "FIX_RUPS_TO_TAXSPANNER" || e.parameter.action === "FIX_RUPS_880845EB")) {
-    try {
-      const ss = getSpreadsheet();
-      const targetBids = new Set(
-        [e.parameter.bid, "RUPS-66D242DA", "RUPS-880845EB"]
-          .filter(Boolean)
-          .map(b => b.trim().toUpperCase())
-      );
-      const results = { updatedInNew: [], movedFromTab: [], updatedInRedeemed: [] };
-
-      // 1. Check "New" tab (Col 1: Booking ID, Col 11: Target Brand)
-      const nSheet = ss.getSheetByName("New");
-      if (nSheet) {
-        const nRows = nSheet.getDataRange().getValues();
-        for (let i = 1; i < nRows.length; i++) {
-          const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
-          if (targetBids.has(rowBid)) {
-            nSheet.getRange(i + 1, 11).setValue("TaxSpanner");
-            results.updatedInNew.push(rowBid);
-          }
-        }
-      }
-
-      // 2. Check if it was already moved into "Reliance" tab or any other brand tab
-      const allSheets = ss.getSheets();
-      for (const sheet of allSheets) {
-        const sName = sheet.getName();
-        if (sName === "New" || sName === "TaxSpanner" || sName === "Redeemed" || sName === "Cards" || sName === "⏱ Cooldowns" || sName === "Shared_Activity" || sName === "Active Cards" || sName === "Bank_Accounts") continue;
-        const rows = sheet.getDataRange().getValues();
-        for (let i = rows.length - 1; i >= 1; i--) {
-          const rowBid = String(rows[i][0] || '').trim().toUpperCase();
-          if (targetBids.has(rowBid)) {
-            const rowData = rows[i];
-            const targetSheet = getTargetBrandSheet(ss, "TaxSpanner");
-            targetSheet.appendRow(rowData);
-            sheet.deleteRow(i + 1);
-            results.movedFromTab.push({ bid: rowBid, from: sName, to: "TaxSpanner" });
-          }
-        }
-      }
-
-      // 3. Check "Redeemed" tab (Col 2: Booking ID, Col 1: Brand)
-      const rSheet = ss.getSheetByName("Redeemed");
-      if (rSheet) {
-        const rRows = rSheet.getDataRange().getValues();
-        for (let i = 1; i < rRows.length; i++) {
-          const rowBid = String(rRows[i][1] || '').trim().toUpperCase();
-          if (targetBids.has(rowBid)) {
-            rSheet.getRange(i + 1, 1).setValue("TaxSpanner");
-            results.updatedInRedeemed.push(rowBid);
-          }
-        }
-      }
-
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        details: results
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative One-Off: Attach or Stage revalidation payment link
-  if (e && e.parameter && e.parameter.action === "STAGE_REVALIDATION_PAY_LINK") {
-    try {
-      const ss = getSpreadsheet();
-      const bid = (e.parameter.bid || "RUPS-A0D78AC5").trim().toUpperCase();
-      const payUrl = (e.parameter.payUrl || "https://rupayselect.truztee.com/#/pay?token=D1b7pbRMB5FN_nWkoiQ_8e_Io6wHPLni061zkrXnZho").trim();
-      const brand = (e.parameter.brand || "AmazonPrime").trim();
-      let updated = false;
-      let created = false;
-
-      let nSheet = ss.getSheetByName("New");
-      if (!nSheet) {
-        nSheet = ss.insertSheet("New");
-        nSheet.appendRow(UNIFIED_NEW_HEADERS);
-        nSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
-        nSheet.setFrozenRows(1);
-      }
-
-      const rows = nSheet.getDataRange().getValues();
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][0] || '').trim().toUpperCase() === bid) {
-          nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
-          nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
-          nSheet.getRange(i + 1, 10).setValue(true);
-          nSheet.getRange(i + 1, 12).setValue(payUrl);
-          updated = true;
-          break;
-        }
-      }
-
-      if (!updated) {
-        nSheet.appendRow([
-          bid,
-          "'Pending revalidation",
-          "",
-          500,
-          formatISTDate(new Date()),
-          "devendixit369",
-          "Unassigned",
-          "PENDING_REVALIDATION",
-          formatISTTimestamp(new Date()),
-          true,
-          brand,
-          payUrl
-        ]);
-        created = true;
-      }
-
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        bid: bid,
-        updated: updated,
-        created: created,
-        payUrl: payUrl
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-
-
-  // Administrative One-Off: Inspect email and links for booking ID
-  if (e && e.parameter && e.parameter.action === "DEBUG_INSPECT_EMAIL") {
-    try {
-      const bid = String(e.parameter.bid || "RUPS-A0D78AC5").trim();
-      const threads = GmailApp.search(bid, 0, 5);
-      const results = [];
-      for (const th of threads) {
-        for (const msg of th.getMessages()) {
-          const body = msg.getBody() || "";
-          const plain = msg.getPlainBody() || "";
-          const hrefs = [];
-          const regex = /href=["']([^"']+)["']/gi;
-          let m;
-          while ((m = regex.exec(body)) !== null) {
-            hrefs.push(m[1]);
-          }
-          const urls = body.match(/https?:\/\/[^\s<"']+/gi) || [];
-          results.push({
-            subject: msg.getSubject(),
-            date: msg.getDate(),
-            hrefs: Array.from(new Set(hrefs)),
-            urls: Array.from(new Set(urls)).slice(0, 20),
-            plainSnippet: plain.substring(0, 1500)
-          });
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        bid: bid,
-        count: results.length,
-        results: results
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative One-Off: Debug get rows from "New" tab
-  if (e && e.parameter && e.parameter.action === "DEBUG_GET_NEW_ROWS") {
-    try {
-      const ss = getSpreadsheet();
-      const nSheet = ss.getSheetByName("New");
-      if (!nSheet) {
-        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const nRows = nSheet.getDataRange().getValues();
-      const matches = [];
-      for (let i = 0; i < nRows.length; i++) {
-        const bid = String(nRows[i][0] || '').trim();
-        if (i === 0 || bid.includes("A0D78") || bid.includes("88084") || bid.includes("66D24")) {
-          matches.push({ row: i + 1, data: nRows[i] });
-        }
-      }
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        totalRows: nRows.length,
-        matches: matches
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
-  // Administrative One-Off: Remove already approved vouchers from "New" tab
-  if (e && e.parameter && e.parameter.action === "PURGE_APPROVED_DUPLICATES_FROM_NEW") {
-    try {
-      const ss = getSpreadsheet();
-      const nSheet = ss.getSheetByName("New");
-      if (!nSheet) {
-        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const nRows = nSheet.getDataRange().getValues();
-      const rowsToDelete = [];
-      const purged = [];
-
-      for (let i = 1; i < nRows.length; i++) {
-        const rowBid = String(nRows[i][0] || '').trim();
-        const rowCode = String(nRows[i][1] || '').trim();
-        const rowBrand = String(nRows[i][10] || '').trim();
-        if (!rowBid && !rowCode) continue;
-
-        const match = findRowInBrandTabs(ss, rowBid, rowBrand, rowCode);
-        if (match) {
-          rowsToDelete.push(i + 1);
-          purged.push({
-            rowIndex: i + 1,
-            bookingId: rowBid,
-            code: rowCode,
-            foundInBrandTab: match.sheet.getName(),
-            brandRowIndex: match.rowIndex
-          });
-        }
-      }
-
-      // Bottom-up deletion
-      if (rowsToDelete.length > 0) {
-        rowsToDelete.sort((a, b) => b - a);
-        for (const rIdx of rowsToDelete) {
-          nSheet.deleteRow(rIdx);
-        }
-      }
-
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        purgedCount: purged.length,
-        purged: purged
-      })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -1456,9 +1169,6 @@ function doGet(e) {
     }
 
     // Ensure persistent system tabs exist if missing
-    if (!ss.getSheetByName("Cards")) {
-      getOrInitCardsSheet(ss);
-    }
     if (!ss.getSheetByName("⏱ Cooldowns")) {
       getOrInitCooldownsSheet(ss);
     }
@@ -1640,6 +1350,10 @@ function doGet(e) {
             payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : ''
           });
         }
+      } else if (SYSTEM_SHEET_NAMES.has(name) || name === "Cards") {
+        // Dedicated non-voucher system tabs (Blocked Cards, Bank Accounts, Cards):
+        // Skip here so they NEVER leak into result.vouchers and do NOT inflate active card counts
+        continue;
       } else {
         // Uniform Brand Tabs (Col 10: Display in UI)
         for (let i = 1; i < rows.length; i++) {
@@ -2026,15 +1740,13 @@ function doPost(e) {
 
       // If items still need to be moved from brand tabs:
       if (itemsToSearch.length > 0) {
-        const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
-        
         // Group search items by brand sheet where known, or collect for discovery
         // CANONICAL BRAND TRANSLATION: Map display names (e.g. "Cult.fit Elite", "Amazon Prime", "Lakmé Salon") to canonical sheet names
         const sheetsToScan = new Map();
 
         itemsToSearch.forEach(it => {
           let targetSheetName = "";
-          if (it.brand && !systemTabs.has(it.brand)) {
+          if (it.brand && !SYSTEM_SHEET_NAMES.has(it.brand) && it.brand !== "Cards") {
             if (ss.getSheetByName(it.brand)) {
               targetSheetName = it.brand;
             } else {
@@ -2061,13 +1773,13 @@ function doPost(e) {
           if (brandName === '__ALL__') {
             for (const s of allSheets) {
               const sName = s.getName();
-              if (systemTabs.has(sName) || sName === "New") continue;
+              if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards") continue;
               if (!targetSheetsMap.has(s)) targetSheetsMap.set(s, []);
               targetSheetsMap.get(s).push(...bItems);
             }
           } else {
             const directSheet = ss.getSheetByName(brandName);
-            if (directSheet && !systemTabs.has(directSheet.getName())) {
+            if (directSheet && !SYSTEM_SHEET_NAMES.has(directSheet.getName()) && directSheet.getName() !== "Cards") {
               if (!targetSheetsMap.has(directSheet)) targetSheetsMap.set(directSheet, []);
               targetSheetsMap.get(directSheet).push(...bItems);
             }
@@ -2077,7 +1789,7 @@ function doPost(e) {
         // Process each target brand sheet with Single-Pass Bottom-Up Descending Deletion
         for (const [sheet, sheetItems] of targetSheetsMap.entries()) {
           const sName = sheet.getName();
-          if (systemTabs.has(sName) || sName === "New") continue;
+          if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards") continue;
 
           const vals = sheet.getDataRange().getValues();
           if (vals.length <= 1) continue;
@@ -2158,7 +1870,7 @@ function doPost(e) {
           const scannedSheets = new Set(targetSheetsMap.keys());
           for (const sheet of allSheets) {
             const sName = sheet.getName();
-            if (systemTabs.has(sName) || sName === "New" || scannedSheets.has(sheet)) continue;
+            if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards" || scannedSheets.has(sheet)) continue;
 
             const vals = sheet.getDataRange().getValues();
             if (vals.length <= 1) continue;
@@ -2602,41 +2314,11 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 7. Update Card Quota (Quick Claim)
-    if (data.action === "UPDATE_CARD_QUOTA") {
-      const cSheet = getOrInitCardsSheet(ss);
-      const cardId = String(data.id || '').trim();
-      const rows = cSheet.getDataRange().getValues();
-      let newClaimed = 0;
-      let found = false;
-
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][0]).trim() === cardId) {
-          if (data.claimed !== undefined) {
-            newClaimed = Number(data.claimed);
-          } else {
-            newClaimed = (Number(rows[i][7]) || 0) + 1;
-          }
-          cSheet.getRange(i + 1, 8).setValue(newClaimed);
-          cSheet.getRange(i + 1, 12).setValue(formatISTTimestamp(new Date()));
-          found = true;
-          break;
-        }
-      }
-
-      return ContentService.createTextOutput(JSON.stringify({
-        success: found,
-        action: "UPDATE_CARD_QUOTA",
-        id: cardId,
-        claimed: newClaimed
-      })).setMimeType(ContentService.MimeType.JSON);
-    }
-
     // 7B. Tag Payment Card on Ingested Vouchers
     if (data.action === "TAG_CARD") {
       const cardTag = String(data.cardTag || data.card || "").trim();
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim().toUpperCase()).filter(Boolean) : []);
       if (!cardTag || codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Missing cardTag or voucher codes."
@@ -2645,17 +2327,17 @@ function doPost(e) {
 
       const updated = [];
       const sheets = ss.getSheets();
-      const systemSheets = new Set(["⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
 
       for (const sheet of sheets) {
-        if (systemSheets.has(sheet.getName())) continue;
+        const sName = sheet.getName();
+        if (sName !== "New" && (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards")) continue;
         const vals = sheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
           const rowBid = String(vals[i][0] || "").trim();
           const rowCode = String(vals[i][1] || "").trim();
-          if (codes.has(rowCode) || codes.has(rowBid)) {
+          if (codes.has(rowCode.toUpperCase()) || codes.has(rowBid.toUpperCase())) {
             sheet.getRange(i + 1, 7).setValue(cardTag); // Col 7: Card
-            updated.push({ brand: sheet.getName(), bookingId: rowBid, code: rowCode, card: cardTag });
+            updated.push({ brand: sName, bookingId: rowBid, code: rowCode, card: cardTag });
           }
         }
       }
@@ -2886,9 +2568,8 @@ function doPost(e) {
           }
         }
         const sheets = ss.getSheets();
-        const systemSheets = new Set(["New", "⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed", "Active Cards", "Blocked Cards", "Bank_Accounts"]);
         for (const sheet of sheets) {
-          if (systemSheets.has(sheet.getName())) continue;
+          if (SYSTEM_SHEET_NAMES.has(sheet.getName()) || sheet.getName() === "Cards") continue;
           const vals = sheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][0] || "").trim();
@@ -2952,6 +2633,9 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    return ContentService.createTextOutput(JSON.stringify({
+      error: `Unknown or unhandled action: "${data.action || 'undefined'}"`
+    })).setMimeType(ContentService.MimeType.JSON);
 
     } finally {
       try { lock.releaseLock(); } catch(e) {}

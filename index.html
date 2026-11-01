@@ -4000,8 +4000,7 @@
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     let activityFilter = 'added';
-    let sharedActivity = (JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]'))
-      .filter(s => s.code !== 'RD-TECH-1002931');
+    let sharedActivity = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
     saveSharedActivity();
     let redeemedList = (JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]'))
       .filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
@@ -4009,12 +4008,20 @@
 
     function isVoucherRedeemed(v) {
       if (!v) return false;
-      const vCode = (typeof v === 'string' ? v : (v.code || '')).trim();
-      if (!vCode || vCode.toUpperCase() === 'PENDING' || vCode === '-') return false;
+      const vCode = (typeof v === 'string' ? v : (v.code || '')).trim().toUpperCase();
+      const vBid = (typeof v === 'object' && v.bookingId ? String(v.bookingId).trim().toUpperCase() : '');
+
+      const hasValidCode = vCode && vCode !== 'PENDING' && vCode !== '-';
+      const hasValidBid = vBid && vBid !== '-' && !vBid.startsWith('#');
+
+      if (!hasValidCode && !hasValidBid) return false;
 
       return redeemedList.some(r => {
-        const rc = (r.code || '').trim();
-        return rc && rc.toUpperCase() !== 'PENDING' && rc !== '-' && rc === vCode;
+        const rc = (r.code || '').trim().toUpperCase();
+        const rb = (r.bookingId || '').trim().toUpperCase();
+        const codeMatch = hasValidCode && rc && rc !== 'PENDING' && rc !== '-' && rc === vCode;
+        const bidMatch = hasValidBid && rb && rb !== '-' && !rb.startsWith('#') && rb === vBid;
+        return codeMatch || bidMatch;
       });
     }
 
@@ -4042,6 +4049,8 @@
 
     function logSharedActivity(code, brand, amount, pin, platform = 'WhatsApp') {
       if (!code) return;
+      UniversalMutationJournal.remove(code);
+      UniversalMutationJournal.remove('shared-' + code);
       const timeStr = nowIST();
       const existingIdx = sharedActivity.findIndex(s => s.code === code);
       const entry = {
@@ -5660,16 +5669,26 @@
         }
 
         if (data.shared && Array.isArray(data.shared)) {
-          sharedActivity = data.shared.map(s => ({
-            code: s.code,
-            brand: s.brand || 'Voucher',
-            amount: Number(s.amount) || 0,
-            pin: s.pin || '',
-            sharedAt: s.sharedAt || '',
-            timestampMs: parseTimestamp(s.sharedAt) || Date.now(),
-            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false'
-          }));
-          sharedActivity = sharedActivity.filter(s => !isVoucherRedeemed(s));
+          sharedActivity = data.shared
+            .filter(s => {
+              const code = (s.code || '').trim();
+              if (!code) return false;
+              // Shield: Prevent sync flicker for recently dismissed or cleared shared activities
+              if (UniversalMutationJournal.isTombstoned(code) || UniversalMutationJournal.isTombstoned('shared-' + code)) {
+                return false;
+              }
+              return s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false';
+            })
+            .map(s => ({
+              code: s.code,
+              brand: s.brand || 'Voucher',
+              amount: Number(s.amount) || 0,
+              pin: s.pin || '',
+              sharedAt: s.sharedAt || '',
+              timestampMs: parseTimestamp(s.sharedAt) || Date.now(),
+              displayInUI: true
+            }))
+            .filter(s => !isVoucherRedeemed(s));
           saveSharedActivity();
         }
 
