@@ -2064,12 +2064,24 @@ function doPost(e) {
         const systemTabs = new Set(["New", "Redeemed", "Cards", "Accounts", "Shared_Activity", "⏱ Cooldowns", "⚡ Unassigned"]);
         
         // Group search items by brand sheet where known, or collect for discovery
+        // CANONICAL BRAND TRANSLATION: Map display names (e.g. "Cult.fit Elite", "Amazon Prime", "Lakmé Salon") to canonical sheet names
         const sheetsToScan = new Map();
 
         itemsToSearch.forEach(it => {
+          let targetSheetName = "";
           if (it.brand && !systemTabs.has(it.brand)) {
-            if (!sheetsToScan.has(it.brand)) sheetsToScan.set(it.brand, []);
-            sheetsToScan.get(it.brand).push(it);
+            if (ss.getSheetByName(it.brand)) {
+              targetSheetName = it.brand;
+            } else {
+              const canonical = extractBrand(it.brand, "");
+              if (canonical && canonical !== "Other" && ss.getSheetByName(canonical)) {
+                targetSheetName = canonical;
+              }
+            }
+          }
+          if (targetSheetName) {
+            if (!sheetsToScan.has(targetSheetName)) sheetsToScan.set(targetSheetName, []);
+            sheetsToScan.get(targetSheetName).push(it);
           } else {
             if (!sheetsToScan.has('__ALL__')) sheetsToScan.set('__ALL__', []);
             sheetsToScan.get('__ALL__').push(it);
@@ -2084,7 +2096,7 @@ function doPost(e) {
           if (brandName === '__ALL__') {
             for (const s of allSheets) {
               const sName = s.getName();
-              if (systemTabs.has(sName)) continue;
+              if (systemTabs.has(sName) || sName === "New") continue;
               if (!targetSheetsMap.has(s)) targetSheetsMap.set(s, []);
               targetSheetsMap.get(s).push(...bItems);
             }
@@ -2163,6 +2175,86 @@ function doPost(e) {
             }
           }
         }
+
+        // RESILIENT SECONDARY PASS: If any itemsToSearch were not found in their primary sheet,
+        // scan ALL remaining non-system brand sheets so no voucher is ever dropped.
+        const movedBidSet = new Set(moved.map(m => (m.bookingId || '').trim().toUpperCase()).filter(b => b && b.startsWith('RUPS-')));
+        const movedCodeSet = new Set(moved.map(m => (m.code || '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+
+        const remainingItems = itemsToSearch.filter(it => {
+          const bUpper = (it.bookingId || '').trim().toUpperCase();
+          const cUpper = (it.code || '').trim().toUpperCase();
+          const bidMoved = bUpper && bUpper.startsWith('RUPS-') && movedBidSet.has(bUpper);
+          const codeMoved = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && movedCodeSet.has(cUpper);
+          return !bidMoved && !codeMoved;
+        });
+
+        if (remainingItems.length > 0) {
+          const scannedSheets = new Set(targetSheetsMap.keys());
+          for (const sheet of allSheets) {
+            const sName = sheet.getName();
+            if (systemTabs.has(sName) || sName === "New" || scannedSheets.has(sheet)) continue;
+
+            const vals = sheet.getDataRange().getValues();
+            if (vals.length <= 1) continue;
+
+            const remBidSet = new Set(remainingItems.map(it => (it.bookingId || '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
+            const remCodeSet = new Set(remainingItems.map(it => (it.code || '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+            const rowsToDelete = [];
+
+            for (let i = 1; i < vals.length; i++) {
+              const rowBid = String(vals[i][0] || '').trim().toUpperCase();
+              const rowCode = String(vals[i][1] || '').trim().toUpperCase();
+              const hasRupsBid = rowBid.startsWith('RUPS-');
+              const isBidMatch = hasRupsBid && remBidSet.has(rowBid);
+              const isCodeMatch = rowCode && rowCode !== '-' && rowCode !== 'PENDING' && remCodeSet.has(rowCode);
+
+              if (isBidMatch || isCodeMatch) {
+                const bVal = String(vals[i][0] || '').trim();
+                const cVal = String(vals[i][1] || '').trim();
+                const bValUpper = bVal.toUpperCase();
+                const cValUpper = cVal.toUpperCase();
+
+                const hasRupsVal = bValUpper.startsWith('RUPS-');
+                const alreadyInRedeemed = (hasRupsVal && existingRedeemedBookings.has(bValUpper)) ||
+                                          (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING' && existingRedeemedCodes.has(cValUpper));
+
+                if (!alreadyInRedeemed) {
+                  const redeemedRow = [
+                    sName,                                   // A: Brand
+                    vals[i][0],                              // B: Booking ID
+                    `'${vals[i][1]}`,                        // C: Code
+                    vals[i][2] ? `'${vals[i][2]}` : "",      // D: PIN
+                    vals[i][3],                              // E: Value
+                    vals[i][4],                              // F: Date of Issue
+                    vals[i][5],                              // G: Account
+                    vals[i][6],                              // H: Card
+                    "REDEEMED",                              // I: Status
+                    formatISTTimestamp(new Date()),          // J: Redeemed Timestamp (IST)
+                    sName,                                   // K: Original Tab
+                    vals[i][8] ? String(vals[i][8]) : "",    // L: Original Ingested Timestamp
+                    true                                     // M: Display in UI
+                  ];
+                  rSheet.appendRow(redeemedRow);
+                  if (hasRupsVal) existingRedeemedBookings.add(bValUpper);
+                  if (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING') existingRedeemedCodes.add(cValUpper);
+                }
+
+                rowsToDelete.push(i + 1);
+                moved.push({ bookingId: bVal, code: cVal, brand: sName });
+                if (hasRupsVal) movedBidSet.add(bValUpper);
+                if (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING') movedCodeSet.add(cValUpper);
+              }
+            }
+
+            if (rowsToDelete.length > 0) {
+              rowsToDelete.sort((a, b) => b - a);
+              for (const rIdx of rowsToDelete) {
+                sheet.deleteRow(rIdx);
+              }
+            }
+          }
+        }
       }
 
       // Force atomic persistence
@@ -2221,14 +2313,10 @@ function doPost(e) {
         const rowBooking = String(rRows[i][1]).trim();
 
         if (codes.includes(rowCode) || codes.includes(rowBooking)) {
-          const origBrand = String(rRows[i][10] || rRows[i][0]);
-          let bSheet = ss.getSheetByName(origBrand);
-          if (!bSheet) {
-            bSheet = ss.insertSheet(origBrand);
-            bSheet.appendRow(UNIFIED_BRAND_HEADERS);
-            bSheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-            bSheet.setFrozenRows(1);
-          }
+          const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || '⚡ Unassigned');
+          const canonicalBrand = extractBrand(rawOrigBrand, "");
+          const targetBrand = (canonicalBrand && canonicalBrand !== "Other") ? canonicalBrand : rawOrigBrand;
+          const bSheet = getTargetBrandSheet(ss, targetBrand);
 
           // DEDUPLICATION: Inspect brand sheet (Hierarchical: Primary RUPS Booking ID, Fallback Voucher Code)
           const bVals = bSheet.getDataRange().getValues();
@@ -2266,7 +2354,7 @@ function doPost(e) {
           }
 
           rowsToDeleteFromRedeemed.push(i + 1);
-          restored.push({ bookingId: rowBooking, code: rowCode, brand: origBrand });
+          restored.push({ bookingId: rowBooking, code: rowCode, brand: targetBrand });
         }
       }
 

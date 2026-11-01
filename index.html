@@ -3977,7 +3977,7 @@
 
       let foundAmount = 0;
       let foundPin = '';
-      let sheetBrand = brand || '';
+      let sheetBrand = normalizeBrandKey(brand || '');
       let bookingId = '';
       let account = '';
       let card = '';
@@ -3996,7 +3996,7 @@
         dateOfIssue = (v ? v.dateOfIssue : '') || '';
         expiry = (v ? v.expiry : '') || '';
         timestampIST = (v ? v.timestampIST : '') || '';
-        if (v.brand) sheetBrand = v.brand;
+        if (v.brand) sheetBrand = normalizeBrandKey(v.brand);
       }
 
       const timeStr = nowIST();
@@ -4019,7 +4019,7 @@
 
       const summaryLabel = getBrandDisplayName(sheetBrand);
       const pendingRedeem = {
-        items: [{ brand: sheetBrand, code: code, bookingId: (v ? v.bookingId : '') || bookingId || '' }],
+        items: [{ brand: normalizeBrandKey(sheetBrand), code: code, bookingId: (v ? v.bookingId : '') || bookingId || '' }],
         byBrand: { [sheetBrand]: [code] },
         codes: [code],
         brandName: summaryLabel,
@@ -4110,7 +4110,8 @@
       try {
         await apiFetch('UNDO_REDEEM', {
           code: targetCodes[0],
-          codes: targetCodes
+          codes: targetCodes,
+          brand: normalizeBrandKey(brand || '')
         }, { rollback: rollbackUndo });
       } catch(e) {
         console.warn('Backend undo error:', e);
@@ -4169,21 +4170,30 @@
       isFlushingUncommitted = true;
       try {
         for (const item of list) {
-          const items = item.items || (
+          const rawItems = item.items || (
             item.byBrand
               ? Object.entries(item.byBrand).flatMap(([brand, codes]) => codes.map(c => ({ brand, code: c })))
               : (item.codes || []).map(c => ({ code: c }))
           );
+          const items = rawItems.map(it => ({
+            bookingId: it.bookingId || '',
+            brand: normalizeBrandKey(it.brand || ''),
+            code: it.code || ''
+          }));
           if (!items.length) {
             removeUncommittedRedeem(item.codes);
             continue;
           }
           try {
             // Option B: Single Consolidated Batch Payload (zero lock collisions)
-            await apiFetch('MOVE_TO_REDEEMED', {
+            const res = await apiFetch('MOVE_TO_REDEEMED', {
               items: items,
               codes: item.codes || []
             }, { silent: true });
+            if (res && res.error) {
+              console.warn('[Uncommitted Redeems] Backend error:', res.error);
+              continue;
+            }
             removeUncommittedRedeem(item.codes);
           } catch (err) {
             console.warn('[Uncommitted Redeems] Batch flush retry deferred:', err);
@@ -4367,16 +4377,27 @@
       pending.isCommitted = true;
       try {
         // Option B: Single Consolidated Batch Payload (zero lock collisions, single roundtrip)
-        const items = pending.items || (
+        const rawItems = pending.items || (
           pending.byBrand
             ? Object.entries(pending.byBrand).flatMap(([brand, codes]) => codes.map(c => ({ brand, code: c })))
             : (pending.codes || []).map(c => ({ code: c }))
         );
+        const items = rawItems.map(it => ({
+          bookingId: it.bookingId || '',
+          brand: normalizeBrandKey(it.brand || ''),
+          code: it.code || ''
+        }));
 
-        await apiFetch('MOVE_TO_REDEEMED', {
+        const res = await apiFetch('MOVE_TO_REDEEMED', {
           items: items,
           codes: pending.codes || []
         }, { silent: true, keepalive: !!options.keepalive });
+
+        if (res && res.error) {
+          console.error('[Redeem] Backend rejected move to redeemed:', res.error);
+          showToast('Redemption sync failed: ' + res.error);
+          return;
+        }
 
         // Remove from persistent queue once committed
         removeUncommittedRedeem(pending.codes);
@@ -10334,7 +10355,7 @@
         const summaryLabel = targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`;
 
         const pendingRedeem = {
-          items: targetVouchers.map(v => ({ brand: v.brand, code: v.code, bookingId: (v ? v.bookingId : '') || '' })),
+          items: targetVouchers.map(v => ({ brand: normalizeBrandKey(v.brand), code: v.code, bookingId: (v ? v.bookingId : '') || '' })),
           byBrand: byBrand,
           codes: movedCodes,
           brandName: summaryLabel,
