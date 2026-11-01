@@ -873,6 +873,9 @@
       width: 22px !important;
       height: 22px !important;
     }
+    .action-circle-btn.hidden {
+      display: none !important;
+    }
 
     .btn-tag { background: #f59e0b !important; }
     .btn-tag:hover { background: #d97706 !important; }
@@ -9263,8 +9266,17 @@
       const toggleBtn = document.getElementById('dock-select-toggle-btn');
       const approveTrack = document.getElementById('approve-track');
       const approveLabel = document.getElementById('floating-approve-label');
+      const btnRedeemDock = document.getElementById('btn-redeem-dock');
 
       if (!toggleBtn) return;
+
+      const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
+      const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
+
+      // Hide Redeem icon in floating dock when on Ingested page
+      if (btnRedeemDock) {
+        btnRedeemDock.classList.toggle('hidden', isIngestedView);
+      }
 
       if (!state.isSelectMode) {
         // Collapsed mode: only satellite button visible on bottom right
@@ -9283,9 +9295,6 @@
 
         // FLOATING APPROVE BUTTON VISIBILITY (Sliding Drawer):
         // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
-        const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
-        const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
-        
         let allGreen = false;
         if (isIngestedView && count > 0) {
           const selectedStaging = (state.staging || []).filter(s =>
