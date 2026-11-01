@@ -9747,11 +9747,11 @@
       updateFloatingDock();
     }
 
-    /* --- NATIVE iOS SLIDE-TO-SELECT MULTIPLE ENGINE (TOUCH & POINTER) --- */
+    /* --- PRODUCTION DRAG-TO-SELECT MULTIPLE ENGINE (APPLE & GOOGLE DESIGN) --- */
     let _lastSlideEndTime = 0;
 
     function handleCardClick(id) {
-      if (Date.now() - _lastSlideEndTime < 350) {
+      if (Date.now() - _lastSlideEndTime < 300) {
         return; // Suppress duplicate synthesized click from touch gesture
       }
       if (!state.isSelectMode) {
@@ -9762,13 +9762,18 @@
     }
 
     (function initSlideToSelect() {
+      const DRAG_THRESHOLD = 9; // 9px threshold (Apple 10pt standard / Google TouchSlop)
+      let touchActive = false;
       let isSlideSelecting = false;
+      let startX = 0;
+      let startY = 0;
+      let startCardEl = null;
+      let startId = null;
+      let sessionIntent = true; // true = SELECT, false = UNSELECT (locked on drag commit!)
       let lastCrossedId = null;
       let autoScrollRaf = null;
       let currentTouchX = 0;
       let currentTouchY = 0;
-      let prevTouchY = 0;
-      let currentDirection = 'down'; // 'down' = select, 'up' = unselect
 
       function getScrollTarget() {
         const c = document.querySelector('.mobile-scroll-container') || document.querySelector('main.overflow-y-auto');
@@ -9860,40 +9865,34 @@
         if (!isSlideSelecting) return;
 
         const windowH = window.innerHeight;
-        // Trigger zones: lower 45% scrolls down, upper 35% scrolls up
-        const scrollDownZone = windowH * 0.55;
-        const scrollUpZone = windowH * 0.35;
+        // Edge-Only Zones (Apple / Google standard: only within bounds near top & bottom dock)
+        const topEdge = 70;
+        const bottomEdge = windowH - 90;
 
-        if (currentTouchY > scrollDownZone && currentTouchY <= windowH) {
-          // Scroll DOWN -> SELECT (smooth, gentle speed)
-          currentDirection = 'down';
-          const progress = (currentTouchY - scrollDownZone) / Math.max(1, (windowH - scrollDownZone));
-          const easedProgress = Math.pow(Math.min(1, Math.max(0, progress)), 1.35);
-          // Controlled speed range: 1.5px/frame (~90px/s) to 9.0px/frame (~540px/s)
-          const speed = Math.max(1.5, Math.min(9.0, 1.5 + (easedProgress * 7.5)));
+        if (currentTouchY > bottomEdge && currentTouchY <= windowH) {
+          // In bottom edge zone -> scroll down smoothly
+          const progress = Math.min(1, Math.max(0, (currentTouchY - bottomEdge) / 70));
+          const speed = Math.max(2, Math.min(10, 2 + Math.pow(progress, 1.5) * 8));
           doScroll(speed);
 
           const pickX = currentTouchX || (window.innerWidth * 0.15);
           const cardEl = getCardFromPoint(pickX, currentTouchY);
-          if (cardEl) applySelectionToCard(cardEl, true);
-        } else if (currentTouchY < scrollUpZone && currentTouchY > 0) {
-          // Scroll UP -> UNSELECT (smooth, gentle speed)
-          currentDirection = 'up';
-          const progress = (scrollUpZone - currentTouchY) / Math.max(1, scrollUpZone);
-          const easedProgress = Math.pow(Math.min(1, Math.max(0, progress)), 1.35);
-          // Controlled speed range: 1.5px/frame (~90px/s) to 9.0px/frame (~540px/s)
-          const speed = Math.max(1.5, Math.min(9.0, 1.5 + (easedProgress * 7.5)));
+          if (cardEl) applySelectionToCard(cardEl, sessionIntent);
+        } else if (currentTouchY < topEdge && currentTouchY >= 0) {
+          // In top edge zone -> scroll up smoothly
+          const progress = Math.min(1, Math.max(0, (topEdge - currentTouchY) / 70));
+          const speed = Math.max(2, Math.min(10, 2 + Math.pow(progress, 1.5) * 8));
           doScroll(-speed);
 
           const pickX = currentTouchX || (window.innerWidth * 0.15);
           const cardEl = getCardFromPoint(pickX, currentTouchY);
-          if (cardEl) applySelectionToCard(cardEl, false);
+          if (cardEl) applySelectionToCard(cardEl, sessionIntent);
         }
 
         autoScrollRaf = requestAnimationFrame(handleAutoScroll);
       }
 
-      // 1. Touch Start
+      // 1. Touch Start (Pending state - no drag or scroll triggered yet!)
       window.addEventListener('touchstart', (e) => {
         if (!state.isSelectMode) return;
         if (!e.touches || e.touches.length !== 1) return;
@@ -9901,70 +9900,93 @@
         const touch = e.touches[0];
         const gutter = touch.target.closest('.select-gutter');
         const cardEl = touch.target.closest('[id^="mb-card-"]');
+        if (!cardEl) return;
 
         let isGutterTouch = !!gutter;
-        if (!isGutterTouch && cardEl) {
+        if (!isGutterTouch) {
           const rect = cardEl.getBoundingClientRect();
-          if (touch.clientX <= rect.left + 72) {
+          if (touch.clientX <= rect.left + 54) {
             isGutterTouch = true;
           }
         }
 
-        if (!isGutterTouch || !cardEl) return;
+        if (!isGutterTouch) return;
 
-        isSlideSelecting = true;
-        document.body.classList.add('slide-selecting');
-        const id = cardEl.id.replace('mb-card-', '');
-        
-        // If starting on an unselected card -> select it. If starting on selected card -> toggle it
-        const startSelecting = !state.selectedIds.has(id);
-        currentDirection = startSelecting ? 'down' : 'up';
-        lastCrossedId = null;
+        touchActive = true;
+        isSlideSelecting = false;
+        startX = touch.clientX;
+        startY = touch.clientY;
         currentTouchX = touch.clientX;
         currentTouchY = touch.clientY;
-        prevTouchY = touch.clientY;
-
-        applySelectionToCard(cardEl, startSelecting);
-
-        if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
-        autoScrollRaf = requestAnimationFrame(handleAutoScroll);
+        startCardEl = cardEl;
+        startId = cardEl.id.replace('mb-card-', '');
+        lastCrossedId = null;
       }, { passive: true });
 
-      // 2. Touch Move
+      // 2. Touch Move (Disambiguate tap vs drag using DRAG_THRESHOLD)
       window.addEventListener('touchmove', (e) => {
-        if (!isSlideSelecting) return;
+        if (!touchActive) return;
         if (!e.touches || e.touches.length !== 1) return;
 
         const touch = e.touches[0];
         currentTouchX = touch.clientX;
         currentTouchY = touch.clientY;
 
-        const deltaY = currentTouchY - prevTouchY;
-        if (Math.abs(deltaY) >= 3) {
-          currentDirection = deltaY > 0 ? 'down' : 'up';
-          prevTouchY = currentTouchY;
+        const deltaX = currentTouchX - startX;
+        const deltaY = currentTouchY - startY;
+        const dist = Math.hypot(deltaX, deltaY);
+
+        if (!isSlideSelecting) {
+          // If finger hasn't traveled threshold, stay in pending tap state
+          if (dist < DRAG_THRESHOLD) return;
+
+          // Committed to Slide-Selection!
+          isSlideSelecting = true;
+          document.body.classList.add('slide-selecting');
+
+          // Apple/Google Anchor Rule: Lock session intent once based on start card
+          sessionIntent = !state.selectedIds.has(startId);
+          applySelectionToCard(startCardEl, sessionIntent);
+
+          if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
+          autoScrollRaf = requestAnimationFrame(handleAutoScroll);
         }
 
         if (e.cancelable) e.preventDefault();
 
         const cardEl = getCardFromPoint(touch.clientX, touch.clientY);
         if (cardEl) {
-          const isSelecting = (currentDirection === 'down');
-          applySelectionToCard(cardEl, isSelecting);
+          applySelectionToCard(cardEl, sessionIntent);
         }
       }, { passive: false });
 
       // 3. Touch End / Cancel
       function endSlideSelect() {
-        if (!isSlideSelecting) return;
+        if (!touchActive) return;
+
+        if (!isSlideSelecting) {
+          // Clean discrete Tap!
+          if (startId) {
+            toggleSelectVoucher(startId);
+            if (navigator.vibrate) {
+              try { navigator.vibrate(8); } catch (_) {}
+            }
+          }
+        }
+
+        touchActive = false;
         isSlideSelecting = false;
         document.body.classList.remove('slide-selecting');
+        startCardEl = null;
+        startId = null;
         lastCrossedId = null;
         _lastSlideEndTime = Date.now();
+
         if (autoScrollRaf) {
           cancelAnimationFrame(autoScrollRaf);
           autoScrollRaf = null;
         }
+
         renderVault();
         updateFloatingDock();
       }
