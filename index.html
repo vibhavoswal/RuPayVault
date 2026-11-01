@@ -936,6 +936,24 @@
       width: 16px !important;
       height: 16px !important;
     }
+
+    /* Stretched Edge-to-Edge Approve Button in Ingested */
+    .action-pill.has-approve {
+      flex: 1 1 auto !important;
+      max-width: calc(100% - 64px) !important;
+    }
+    .action-pill.has-approve .approve-slot.open {
+      flex: 1 1 auto !important;
+      max-width: 100% !important;
+      margin-right: 4px !important;
+    }
+    .action-pill.has-approve .btn-approve-pill {
+      width: 100% !important;
+      justify-content: center !important;
+      padding: 0 18px !important;
+      font-size: 13px !important;
+      letter-spacing: 0.01em !important;
+    }
     .pulse-dot {
       width: 7px;
       height: 7px;
@@ -9282,6 +9300,7 @@
         // Collapsed mode: only satellite button visible on bottom right
         if (actionPill) {
           actionPill.classList.remove('expanded');
+          actionPill.classList.remove('has-approve');
         }
         toggleBtn.className = 'dock-satellite-btn collapsed shrink-0 pointer-events-auto';
         toggleBtn.title = 'Select Multiple';
@@ -9322,12 +9341,14 @@
           if (allGreen) {
             approveTrack.classList.remove('closed');
             approveTrack.classList.add('open');
+            if (actionPill) actionPill.classList.add('has-approve');
             if (approveLabel) {
-              approveLabel.innerHTML = `<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve${count > 1 ? ` (${count})` : ''}</span>`;
+              approveLabel.innerHTML = `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve${count > 1 ? ` (${count})` : ''}</span>`;
             }
           } else {
             approveTrack.classList.remove('open');
             approveTrack.classList.add('closed');
+            if (actionPill) actionPill.classList.remove('has-approve');
           }
         }
       }
