@@ -3435,17 +3435,21 @@
         });
       }
 
-      // 1. Increment Mutation Mutex & Quarantine Target IDs (Shield)
+      // 1. Increment Mutation Mutex & Quarantine Target IDs (Shield for removal/destructive mutations)
       pendingMutationsCount++;
       const targetIds = [];
       if (payload.codes) targetIds.push(...(Array.isArray(payload.codes) ? payload.codes : [payload.codes]));
       if (payload.code) targetIds.push(payload.code);
       if (payload.bookingIds) targetIds.push(...(Array.isArray(payload.bookingIds) ? payload.bookingIds : [payload.bookingIds]));
-      if (payload.bookingId) targetIds.push(payload.bookingId);
-      if (payload.cardNumber) targetIds.push(payload.cardNumber);
+      if (payload.bookingId && action !== 'MARK_REVALIDATED') targetIds.push(payload.bookingId);
+      if (payload.cardNumber && action !== 'ADD_CARD') targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
-      if (payload.card && payload.card.cardNumber) targetIds.push(payload.card.cardNumber);
-      if (action !== 'TAG_CARD' && targetIds.length > 0) quarantineIdentifiers(targetIds);
+
+      // Non-destructive actions (additions or in-place status updates) must NEVER be quarantined
+      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'MARK_REVALIDATED', 'LOG_SHARED']);
+      if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
+        quarantineIdentifiers(targetIds);
+      }
       updateSyncPulseIndicator(true);
 
       const maxAttempts = options.retries !== undefined ? options.retries : 2;
