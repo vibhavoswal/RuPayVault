@@ -3177,218 +3177,236 @@
     let pendingMutationsCount = 0;
     let syncPendingAfterMutation = false;
 
-    // Ephemeral Quarantine Storage (30-second TTL across page reloads)
-    function quarantineIdentifiers(ids) {
-      if (!Array.isArray(ids) || ids.length === 0) return;
-      try {
-        const key = 'rupay_quarantine_map';
-        const now = Date.now();
-        const existing = JSON.parse(localStorage.getItem(key) || '{}');
+    /* --- UNIVERSAL MUTATION JOURNAL (PROPAGATION SHIELD & EVENTUAL-CONSISTENCY RECONCILER) --- */
+    const MUTATION_JOURNAL_TTL_MS = 60000; // 60s TTL safety net for in-flight mutations
+
+    const UniversalMutationJournal = {
+      KEY: 'rupay_universal_mutation_journal',
+
+      getAll() {
+        try {
+          const list = JSON.parse(localStorage.getItem(this.KEY) || '[]');
+          const now = Date.now();
+          return Array.isArray(list) ? list.filter(item => item && item.expiresAt > now) : [];
+        } catch (_) { return []; }
+      },
+
+      save(list) {
+        try {
+          localStorage.setItem(this.KEY, JSON.stringify(list));
+        } catch (_) {}
+      },
+
+      record(action, entityType, primaryKey, patch = {}, secondaryKeys = []) {
+        if (!primaryKey && (!secondaryKeys || !secondaryKeys.length)) return;
+        try {
+          const now = Date.now();
+          const cleanPk = primaryKey ? String(primaryKey).trim().toUpperCase() : '';
+          const cleanSec = (Array.isArray(secondaryKeys) ? secondaryKeys : [secondaryKeys])
+            .map(k => String(k || '').trim().toUpperCase()).filter(Boolean);
+          const current = this.getAll().filter(e => {
+            const epk = e.primaryKey;
+            const esec = e.secondaryKeys || [];
+            if (cleanPk && (epk === cleanPk || esec.includes(cleanPk))) return false;
+            for (const sk of cleanSec) {
+              if (epk === sk || esec.includes(sk)) return false;
+            }
+            return true;
+          });
+
+          current.push({
+            id: 'mut-' + now + '-' + Math.random().toString(36).slice(2, 6),
+            action,
+            entityType,
+            primaryKey: cleanPk || cleanSec[0],
+            secondaryKeys: cleanSec,
+            patch: patch || {},
+            timestamp: now,
+            expiresAt: now + MUTATION_JOURNAL_TTL_MS
+          });
+          this.save(current);
+        } catch (_) {}
+      },
+
+      remove(key) {
+        if (!key) return;
+        try {
+          const clean = String(key).trim().toUpperCase();
+          const filtered = this.getAll().filter(e => {
+            if (e.primaryKey === clean) return false;
+            if (e.secondaryKeys && e.secondaryKeys.includes(clean)) return false;
+            return true;
+          });
+          this.save(filtered);
+        } catch (_) {}
+      },
+
+      // --- TOMBSTONE SHIELD (Covers Ingested, Shared, and Redeemed Clear / Hide) ---
+      recordTombstone(identifiers, context = 'all') {
+        const ids = Array.isArray(identifiers) ? identifiers : [identifiers];
         ids.forEach(id => {
-          if (id) existing[String(id).replace(/['\s]/g, '')] = now + 30000;
+          if (id) {
+            const clean = String(id).replace(/['\s]/g, '').trim().toUpperCase();
+            if (clean) this.record('TOMBSTONE_HIDE', context, clean, { context });
+          }
         });
-        localStorage.setItem(key, JSON.stringify(existing));
-      } catch (e) {}
+      },
+
+      isTombstoned(identifier) {
+        if (!identifier) return false;
+        const clean = String(identifier).replace(/['\s]/g, '').trim().toUpperCase();
+        return this.getAll().some(e => e.action === 'TOMBSTONE_HIDE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean))));
+      },
+
+      // --- STAGING APPROVALS (Staging -> Brand Tabs) ---
+      recordApprovals(vouchers) {
+        if (!Array.isArray(vouchers) || !vouchers.length) return;
+        vouchers.forEach(v => {
+          const key = v.code || v.bookingId;
+          const sec = [v.code, v.bookingId].filter(x => x && x !== key);
+          if (key) this.record('VOUCHER_APPROVE', 'voucher', key, v, sec);
+        });
+      },
+
+      getApprovals() {
+        return this.getAll()
+          .filter(e => e.action === 'VOUCHER_APPROVE' && e.patch)
+          .map(e => e.patch);
+      },
+
+      removeApproval(key) {
+        this.remove(key);
+      },
+
+      // --- UNDO REDEEM (Redeemed -> Brand Tabs) ---
+      recordUndo(voucher) {
+        if (!voucher) return;
+        const key = voucher.code || voucher.bookingId;
+        const sec = [voucher.code, voucher.bookingId].filter(x => x && x !== key);
+        if (key) this.record('VOUCHER_UNDO', 'voucher', key, voucher, sec);
+      },
+
+      getUndos() {
+        return this.getAll()
+          .filter(e => e.action === 'VOUCHER_UNDO' && e.patch)
+          .map(e => e.patch);
+      },
+
+      removeUndo(key) {
+        this.remove(key);
+      },
+
+      // --- REVALIDATION REGISTER (Sticky PENDING status on revalidated vouchers) ---
+      recordRevalidate(bookingId) {
+        if (!bookingId) return;
+        const clean = String(bookingId).trim().toUpperCase();
+        this.record('STAGING_REVALIDATE', 'staging', clean, { status: 'PENDING' });
+      },
+
+      isRevalidated(bookingId) {
+        if (!bookingId) return false;
+        const clean = String(bookingId).trim().toUpperCase();
+        return this.getAll().some(e => e.action === 'STAGING_REVALIDATE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean))));
+      },
+
+      removeRevalidate(bookingId) {
+        this.remove(bookingId);
+      },
+
+      // --- CARD TAGS (Card assignment on staging) ---
+      recordTags(codes, cardTag) {
+        if (!Array.isArray(codes) || !cardTag) return;
+        codes.forEach(c => {
+          if (c) {
+            const clean = String(c).trim().toUpperCase();
+            this.record('CARD_TAG', 'staging', clean, { cardTag });
+          }
+        });
+      },
+
+      getTags() {
+        const tags = {};
+        this.getAll().forEach(e => {
+          if (e.action === 'CARD_TAG' && e.patch && e.patch.cardTag) {
+            tags[e.primaryKey] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
+            if (e.secondaryKeys) {
+              e.secondaryKeys.forEach(sk => tags[sk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt });
+            }
+          }
+        });
+        return tags;
+      },
+
+      removeTag(code) {
+        this.remove(code);
+      },
+
+      // --- CARDS (Optimistic add / replace) ---
+      recordCard(card) {
+        if (!card || !card.cardNumber) return;
+        const cleanNum = String(card.cardNumber).replace(/['\s]/g, '').toUpperCase();
+        this.record('CARD_ADD', 'card', cleanNum, card);
+      },
+
+      getCards() {
+        return this.getAll()
+          .filter(e => (e.action === 'CARD_ADD' || e.action === 'CARD_REPLACE') && e.patch)
+          .map(e => e.patch);
+      },
+
+      removeCard(cardNum) {
+        if (!cardNum) return;
+        const cleanNum = String(cardNum).replace(/['\s]/g, '').toUpperCase();
+        this.remove(cleanNum);
+      },
+
+      // --- CLEARED REDEEMED CODES ---
+      recordClearedRedeemed(codes) {
+        this.recordTombstone(codes, 'redeemed');
+      },
+
+      getClearedRedeemed() {
+        const valid = new Set();
+        this.getAll().forEach(e => {
+          if (e.action === 'TOMBSTONE_HIDE' && (e.entityType === 'redeemed' || e.entityType === 'all')) {
+            valid.add(e.primaryKey);
+            if (e.secondaryKeys) e.secondaryKeys.forEach(sk => valid.add(sk));
+          }
+        });
+        return valid;
+      }
+    };
+
+    // Backward Compatibility Alias
+    const MutationJournal = UniversalMutationJournal;
+
+    // Ephemeral Quarantine Delegation (delegates to UniversalMutationJournal)
+    function quarantineIdentifiers(ids) {
+      UniversalMutationJournal.recordTombstone(ids, 'quarantine');
     }
 
     function isIdentifierQuarantined(id) {
-      if (!id) return false;
-      try {
-        const key = 'rupay_quarantine_map';
-        const existing = JSON.parse(localStorage.getItem(key) || '{}');
-        const cleanId = String(id).replace(/['\s]/g, '');
-        const expiry = existing[cleanId];
-        if (expiry && expiry > Date.now()) return true;
-      } catch (e) {}
-      return false;
+      return UniversalMutationJournal.isTombstoned(id);
     }
 
     function isCardQuarantined(cardNum) {
-      return isIdentifierQuarantined(cardNum);
+      return UniversalMutationJournal.isTombstoned(cardNum);
     }
 
-    /* --- PERSISTENT REVALIDATION REGISTER (STICKY MARK REVALIDATED) --- */
+    // Revalidation Register Delegation (delegates to UniversalMutationJournal)
     function getRevalidatedBids() {
-      try {
-        const raw = localStorage.getItem('rupay_revalidated_bids');
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        return [];
-      }
+      return UniversalMutationJournal.getAll()
+        .filter(e => e.action === 'STAGING_REVALIDATE')
+        .map(e => e.primaryKey);
     }
 
     function addRevalidatedBid(bid) {
-      if (!bid) return;
-      try {
-        const bids = new Set(getRevalidatedBids());
-        bids.add(String(bid).trim());
-        localStorage.setItem('rupay_revalidated_bids', JSON.stringify(Array.from(bids)));
-      } catch (e) {}
+      UniversalMutationJournal.recordRevalidate(bid);
     }
 
     function removeRevalidatedBid(bid) {
-      if (!bid) return;
-      try {
-        const bids = new Set(getRevalidatedBids());
-        bids.delete(String(bid).trim());
-        localStorage.setItem('rupay_revalidated_bids', JSON.stringify(Array.from(bids)));
-      } catch (e) {}
+      UniversalMutationJournal.removeRevalidate(bid);
     }
-
-    /* --- UNIFIED MUTATION JOURNAL (PROPAGATION SHIELD & EVENTUAL-CONSISTENCY RECONCILER) --- */
-    const MUTATION_JOURNAL_TTL_MS = 60000; // 60s TTL safety net for in-flight mutations
-
-    const MutationJournal = {
-      // 1. In-Flight Staging Approvals (Staging -> Brand Tabs)
-      getApprovals() {
-        try {
-          const list = JSON.parse(localStorage.getItem('rupay_journal_approvals') || '[]');
-          const now = Date.now();
-          return list.filter(item => item && item.expiresAt > now);
-        } catch (_) { return []; }
-      },
-      recordApprovals(vouchers) {
-        if (!Array.isArray(vouchers) || !vouchers.length) return;
-        try {
-          const now = Date.now();
-          const current = this.getApprovals();
-          const map = new Map(current.map(v => [v.code || v.bookingId, v]));
-          vouchers.forEach(v => {
-            const key = v.code || v.bookingId;
-            if (key) {
-              map.set(key, { ...v, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
-            }
-          });
-          localStorage.setItem('rupay_journal_approvals', JSON.stringify(Array.from(map.values())));
-        } catch (_) {}
-      },
-      removeApproval(key) {
-        if (!key) return;
-        try {
-          const clean = String(key).trim().toUpperCase();
-          const current = this.getApprovals().filter(v => 
-            (v.code || '').trim().toUpperCase() !== clean && 
-            (v.bookingId || '').trim().toUpperCase() !== clean
-          );
-          localStorage.setItem('rupay_journal_approvals', JSON.stringify(current));
-        } catch (_) {}
-      },
-
-      // 2. In-Flight Undos (Redeemed -> Active Brand Tabs)
-      getUndos() {
-        try {
-          const list = JSON.parse(localStorage.getItem('rupay_journal_undos') || '[]');
-          const now = Date.now();
-          return list.filter(item => item && item.expiresAt > now);
-        } catch (_) { return []; }
-      },
-      recordUndo(voucher) {
-        if (!voucher || (!voucher.code && !voucher.bookingId)) return;
-        try {
-          const now = Date.now();
-          const current = this.getUndos();
-          const map = new Map(current.map(v => [v.code || v.bookingId, v]));
-          const key = voucher.code || voucher.bookingId;
-          map.set(key, { ...voucher, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
-          localStorage.setItem('rupay_journal_undos', JSON.stringify(Array.from(map.values())));
-        } catch (_) {}
-      },
-      removeUndo(key) {
-        if (!key) return;
-        try {
-          const clean = String(key).trim().toUpperCase();
-          const current = this.getUndos().filter(v => 
-            (v.code || '').trim().toUpperCase() !== clean && 
-            (v.bookingId || '').trim().toUpperCase() !== clean
-          );
-          localStorage.setItem('rupay_journal_undos', JSON.stringify(current));
-        } catch (_) {}
-      },
-
-      // 3. In-Flight Card Tags (Keyed by code/bookingId -> cardTag)
-      getTags() {
-        try {
-          const obj = JSON.parse(localStorage.getItem('rupay_journal_tags') || '{}');
-          const now = Date.now();
-          const valid = {};
-          Object.entries(obj).forEach(([k, v]) => {
-            if (v && v.expiresAt > now) valid[k] = v;
-          });
-          return valid;
-        } catch (_) { return {}; }
-      },
-      recordTags(codes, cardTag) {
-        if (!Array.isArray(codes) || !cardTag) return;
-        try {
-          const now = Date.now();
-          const tags = this.getTags();
-          codes.forEach(c => {
-            if (c) tags[String(c).trim().toUpperCase()] = { cardTag, expiresAt: now + MUTATION_JOURNAL_TTL_MS };
-          });
-          localStorage.setItem('rupay_journal_tags', JSON.stringify(tags));
-        } catch (_) {}
-      },
-      removeTag(code) {
-        if (!code) return;
-        try {
-          const tags = this.getTags();
-          delete tags[String(code).trim().toUpperCase()];
-          localStorage.setItem('rupay_journal_tags', JSON.stringify(tags));
-        } catch (_) {}
-      },
-
-      // 4. In-Flight Added / Replaced Cards
-      getCards() {
-        try {
-          const list = JSON.parse(localStorage.getItem('rupay_journal_cards') || '[]');
-          const now = Date.now();
-          return list.filter(item => item && item.expiresAt > now);
-        } catch (_) { return []; }
-      },
-      recordCard(card) {
-        if (!card || !card.cardNumber) return;
-        try {
-          const now = Date.now();
-          const current = this.getCards();
-          const cleanNum = String(card.cardNumber).replace(/['\s]/g, '');
-          const filtered = current.filter(c => String(c.cardNumber).replace(/['\s]/g, '') !== cleanNum);
-          filtered.push({ ...card, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
-          localStorage.setItem('rupay_journal_cards', JSON.stringify(filtered));
-        } catch (_) {}
-      },
-      removeCard(cardNum) {
-        if (!cardNum) return;
-        try {
-          const cleanNum = String(cardNum).replace(/['\s]/g, '');
-          const current = this.getCards().filter(c => String(c.cardNumber).replace(/['\s]/g, '') !== cleanNum);
-          localStorage.setItem('rupay_journal_cards', JSON.stringify(current));
-        } catch (_) {}
-      },
-
-      // 5. In-Flight Cleared Redeemed Codes
-      getClearedRedeemed() {
-        try {
-          const obj = JSON.parse(localStorage.getItem('rupay_journal_cleared_redeemed') || '{}');
-          const now = Date.now();
-          const valid = new Set();
-          Object.entries(obj).forEach(([k, exp]) => {
-            if (exp > now) valid.add(k);
-          });
-          return valid;
-        } catch (_) { return new Set(); }
-      },
-      recordClearedRedeemed(codes) {
-        if (!Array.isArray(codes) || !codes.length) return;
-        try {
-          const now = Date.now();
-          const obj = JSON.parse(localStorage.getItem('rupay_journal_cleared_redeemed') || '{}');
-          codes.forEach(c => {
-            if (c) obj[String(c).trim().toUpperCase()] = now + MUTATION_JOURNAL_TTL_MS;
-          });
-          localStorage.setItem('rupay_journal_cleared_redeemed', JSON.stringify(obj));
-        } catch (_) {}
-      }
-    };
 
     function updateSyncPulseIndicator(isSaving) {
       const spinner = document.getElementById('mb-sync-spinner');
@@ -3421,9 +3439,12 @@
       pendingMutationsCount++;
       const targetIds = [];
       if (payload.codes) targetIds.push(...(Array.isArray(payload.codes) ? payload.codes : [payload.codes]));
+      if (payload.code) targetIds.push(payload.code);
       if (payload.bookingIds) targetIds.push(...(Array.isArray(payload.bookingIds) ? payload.bookingIds : [payload.bookingIds]));
+      if (payload.bookingId) targetIds.push(payload.bookingId);
       if (payload.cardNumber) targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
+      if (payload.card && payload.card.cardNumber) targetIds.push(payload.card.cardNumber);
       if (action !== 'TAG_CARD' && targetIds.length > 0) quarantineIdentifiers(targetIds);
       updateSyncPulseIndicator(true);
 
@@ -4083,13 +4104,7 @@
       }
       showToast('Marked as revalidated. Waiting for voucher code.');
 
-      // 4. Background Sync to Google Apps Script ("New" tab in Google Sheets)
-      // Dual transport: Fire direct GET endpoint and authenticated apiFetch POST
-      try {
-        const getUrl = `${API_ENDPOINT}?action=MARK_REVALIDATED&bookingId=${encodeURIComponent(activeBid)}`;
-        fetch(getUrl).catch(() => fetch(getUrl, { mode: 'no-cors' }).catch(() => {}));
-      } catch (e) {}
-
+      // 4. Background Sync to Google Apps Script ("New" tab in Google Sheets via authenticated POST)
       try {
         await apiFetch('MARK_REVALIDATED', {
           bookingId: activeBid
@@ -4101,6 +4116,7 @@
 
     function dismissSharedActivity(code) {
       sharedActivity = sharedActivity.filter(s => s.code !== code);
+      UniversalMutationJournal.recordTombstone(code, 'shared');
       saveSharedActivity();
       showToast('Removed from Activity Log');
       renderDeckSelector();
@@ -4502,19 +4518,21 @@
       if (!codes.length) return;
       try {
         if (context === 'ingested') {
+          UniversalMutationJournal.recordTombstone(codes, 'ingested');
           await apiFetch('CLEAR_ACTIVITY', {
             type: 'INGESTED',
             codes: codes
           }, { keepalive: !!options.keepalive });
           await saveEncryptedStaging(state.staging);
         } else if (context === 'shared') {
+          UniversalMutationJournal.recordTombstone(codes, 'shared');
           await apiFetch('CLEAR_ACTIVITY', {
             type: 'SHARED',
             codes: codes
           }, { keepalive: !!options.keepalive });
           saveSharedActivity();
         } else if (context === 'redeemed') {
-          MutationJournal.recordClearedRedeemed(codes);
+          UniversalMutationJournal.recordTombstone(codes, 'redeemed');
           await apiFetch('CLEAR_REDEEMED', {
             codes: codes
           }, { keepalive: !!options.keepalive });
@@ -5759,81 +5777,13 @@
 
     /* --- RENDER CARDS --- */
     function renderCards() {
-      const active = state.cards.filter(c => c.status === 'active');
-      const blocked = state.cards.filter(c => c.status === 'blocked').sort((a,b) => new Date(b.blockedDate) - new Date(a.blockedDate));
+      const active = state.cards.filter(c => (c.status || '').toLowerCase() === 'active');
+      const blocked = state.cards.filter(c => (c.status || '').toLowerCase() === 'blocked').sort((a,b) => new Date(b.blockedDate || 0) - new Date(a.blockedDate || 0));
 
       if (document.getElementById('dt-cards-count')) document.getElementById('dt-cards-count').textContent = active.length;
       if (document.getElementById('dt-blocked-count')) document.getElementById('dt-blocked-count').textContent = blocked.length;
       if (document.getElementById('dt-blocked-inline-count')) document.getElementById('dt-blocked-inline-count').textContent = blocked.length;
       if (document.getElementById('mb-blocked-count')) document.getElementById('mb-blocked-count').textContent = blocked.length;
-
-      // Desktop Cards Grid
-      const dtCardsGrid = document.getElementById('dt-cards-grid');
-      if (dtCardsGrid) {
-        dtCardsGrid.innerHTML = active.map(c => {
-        const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
-        return `
-          <div class="rounded-xl p-4.5 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider" style="color: var(--system-blue);">${c.bank}</span>
-                <h3 class="font-bold text-sm mt-0.5">${c.nick}</h3>
-                <p class="font-mono-apple text-xs mt-0.5" style="color: var(--label-tertiary);">BIN ${c.bin} &middot; ···· ${c.last4}</p>
-              </div>
-              <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full" style="color: var(--system-green); background: rgba(48,209,88,0.12);">
-                Active
-              </span>
-            </div>
-            <div>
-              <div class="flex justify-between text-[11px] mb-1.5" style="color: var(--label-secondary);">
-                <span>Q4 Quota: ${c.claimed} of ${c.total} Claimed</span>
-                <span class="font-semibold">${pct}%</span>
-              </div>
-              <div class="w-full rounded-full overflow-hidden" style="height: 5px; background: var(--fill-quaternary);">
-                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: var(--system-blue);"></div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/40 text-xs">
-              <button onclick="quickClaim('${c.id}')" class="font-semibold hover:underline" style="color: var(--system-blue);">+ Log Claim</button>
-              <button onclick="promptBlock('${c.id}')" class="font-semibold text-rose-500 hover:underline">Block Card</button>
-            </div>
-          </div>
-        `;
-        }).join('');
-      }
-
-      // Mobile Cards List
-      const mbCardsList = document.getElementById('mb-cards-list');
-      if (mbCardsList) {
-        mbCardsList.innerHTML = active.map(c => {
-        const pct = Math.min(100, Math.round((c.claimed / c.total) * 100));
-        return `
-          <div class="rounded-xl p-4 space-y-3" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-            <div class="flex items-start justify-between">
-              <div>
-                <span class="text-[9px] font-bold uppercase tracking-wider" style="color: var(--system-blue);">${c.bank}</span>
-                <h3 class="font-bold text-sm mt-0.5">${c.nick}</h3>
-                <p class="font-mono-apple text-xs" style="color: var(--label-tertiary);">BIN ${c.bin} &middot; ···· ${c.last4}</p>
-              </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="color: var(--system-green); background: rgba(48,209,88,0.12);">Active</span>
-            </div>
-            <div>
-              <div class="flex justify-between text-[11px] mb-1" style="color: var(--label-secondary);">
-                <span>Q4 Quota: ${c.claimed} of ${c.total}</span>
-                <span class="font-semibold">${pct}%</span>
-              </div>
-              <div class="w-full rounded-full overflow-hidden" style="height: 4px; background: var(--fill-quaternary);">
-                <div class="h-full rounded-full transition-all duration-300" style="width: ${pct}%; background: var(--system-blue);"></div>
-              </div>
-            </div>
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/40 text-xs">
-              <button onclick="quickClaim('${c.id}')" class="font-semibold" style="color: var(--system-blue);">+ Claim</button>
-              <button onclick="promptBlock('${c.id}')" class="font-semibold text-rose-500">Block</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      }
     }
 
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */

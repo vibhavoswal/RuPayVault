@@ -1305,42 +1305,7 @@ function doGet(e) {
     }
   }
 
-  // Administrative / Mutation: Mark Revalidated (Transitions PENDING_REVALIDATION -> PENDING)
-  if (e && e.parameter && e.parameter.action === "MARK_REVALIDATED") {
-    try {
-      const ss = getSpreadsheet();
-      const nSheet = ss.getSheetByName("New");
-      if (!nSheet) {
-        return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const targetBid = String(e.parameter.bookingId || e.parameter.id || '').trim().toUpperCase();
-      if (!targetBid) {
-        return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
-      }
-      const dataRows = nSheet.getDataRange().getValues();
-      let updated = false;
-      for (let r = 1; r < dataRows.length; r++) {
-        const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
-        if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
-          nSheet.getRange(r + 1, 2).setValue('PENDING');
-          nSheet.getRange(r + 1, 8).setValue('PENDING');
-          if (dataRows[0].length >= 12) {
-            nSheet.getRange(r + 1, 12).setValue('');
-          }
-          updated = true;
-          break;
-        }
-      }
-      SpreadsheetApp.flush();
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        updated: updated,
-        bookingId: targetBid
-      })).setMimeType(ContentService.MimeType.JSON);
-    } catch(err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
-    }
-  }
+
 
   // Administrative One-Off: Inspect email and links for booking ID
   if (e && e.parameter && e.parameter.action === "DEBUG_INSPECT_EMAIL") {
@@ -2298,9 +2263,12 @@ function doPost(e) {
       }
 
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = Array.from(new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []));
-      if (!codes.length && data.bookingId) {
-        codes.push(String(data.bookingId).trim());
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) {
+        codes.add(String(data.bookingId).trim().toUpperCase());
+      }
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
       }
 
       const restored = [];
@@ -2309,10 +2277,12 @@ function doPost(e) {
 
       // Search backwards so deleting rows does not alter row index of earlier rows
       for (let i = rRows.length - 1; i >= 1; i--) {
-        const rowCode = String(rRows[i][2]).trim();
-        const rowBooking = String(rRows[i][1]).trim();
+        const rowCode = String(rRows[i][2] || '').trim();
+        const rowBooking = String(rRows[i][1] || '').trim();
+        const rowCodeUpper = rowCode.toUpperCase();
+        const rowBookingUpper = rowBooking.toUpperCase();
 
-        if (codes.includes(rowCode) || codes.includes(rowBooking)) {
+        if ((rowCodeUpper && codes.has(rowCodeUpper)) || (rowBookingUpper && codes.has(rowBookingUpper))) {
           const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || '⚡ Unassigned');
           const canonicalBrand = extractBrand(rawOrigBrand, "");
           const targetBrand = (canonicalBrand && canonicalBrand !== "Other") ? canonicalBrand : rawOrigBrand;
@@ -2388,53 +2358,74 @@ function doPost(e) {
       }
 
       return ContentService.createTextOutput(JSON.stringify({
-        error: "Voucher(s) not found in Redeemed sheet: " + codes.join(", ")
+        error: "Voucher(s) not found in Redeemed sheet: " + Array.from(codes).join(", ")
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 5. Save Card (Add or Update in "Cards" tab)
+    // 5. Save Card (Add or Update in "Active Cards" tab with fallback to legacy "Cards")
     if (data.action === "SAVE_CARD") {
-      const cSheet = getOrInitCardsSheet(ss);
+      const aSheet = ss.getSheetByName("Active Cards");
       const card = data.card || data;
-      const cardId = String(card.id || ('c-' + Date.now())).trim();
-      const rows = cSheet.getDataRange().getValues();
-      let found = false;
+      const targetCardNum = String(card.cardNumber || card.last4 || card.id || '').replace(/['\s]/g, '').trim();
+      let updated = false;
 
-      for (let i = 1; i < rows.length; i++) {
-        if (String(rows[i][0]).trim() === cardId) {
-          cSheet.getRange(i + 1, 2).setValue(card.bank || rows[i][1]);
-          cSheet.getRange(i + 1, 3).setValue(card.type || rows[i][2]);
-          cSheet.getRange(i + 1, 4).setValue(card.network || rows[i][3] || 'RuPay');
-          cSheet.getRange(i + 1, 5).setValue(card.bin ? `'${card.bin}` : rows[i][4]);
-          cSheet.getRange(i + 1, 6).setValue(card.last4 ? `'${card.last4}` : rows[i][5]);
-          cSheet.getRange(i + 1, 7).setValue(card.nick || rows[i][6]);
-          cSheet.getRange(i + 1, 8).setValue(card.status || rows[i][7]);
-          cSheet.getRange(i + 1, 9).setValue(card.claimed !== undefined ? Number(card.claimed) : rows[i][8]);
-          cSheet.getRange(i + 1, 10).setValue(card.total !== undefined ? Number(card.total) : rows[i][9]);
-          cSheet.getRange(i + 1, 11).setValue(card.blockedDate || rows[i][10]);
-          cSheet.getRange(i + 1, 12).setValue(card.notes || rows[i][11]);
-          cSheet.getRange(i + 1, 13).setValue(formatISTTimestamp(new Date()));
-          found = true;
-          break;
+      if (aSheet && targetCardNum) {
+        const aRows = aSheet.getDataRange().getValues();
+        for (let i = 1; i < aRows.length; i++) {
+          const rowCardNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowCardNum === targetCardNum || (targetCardNum.length === 4 && rowCardNum.endsWith(targetCardNum))) {
+            if (card.status) aSheet.getRange(i + 1, 8).setValue(card.status.toUpperCase());
+            if (card.notes !== undefined) aSheet.getRange(i + 1, 9).setValue(card.notes);
+            if (card.cardName || card.nick) aSheet.getRange(i + 1, 3).setValue(card.cardName || card.nick);
+            aSheet.getRange(i + 1, 23).setValue(formatISTTimestamp(new Date()));
+            updated = true;
+            break;
+          }
         }
       }
 
-      if (!found) {
-        cSheet.appendRow([
-          cardId,
-          card.bank || 'RuPay Card',
-          card.type || 'RuPay Select',
-          card.network || 'RuPay',
-          card.bin ? `'${card.bin}` : '',
-          card.last4 ? `'${card.last4}` : '',
-          card.nick || 'New Card',
-          card.status || 'active',
-          card.claimed !== undefined ? Number(card.claimed) : 0,
-          card.total !== undefined ? Number(card.total) : 5,
-          card.blockedDate || '',
-          card.notes || '',
-          formatISTTimestamp(new Date())
-        ]);
+      const cSheet = getOrInitCardsSheet(ss);
+      const cardId = String(card.id || ('c-' + Date.now())).trim();
+      if (!updated) {
+        const rows = cSheet.getDataRange().getValues();
+        let found = false;
+
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][0]).trim() === cardId) {
+            cSheet.getRange(i + 1, 2).setValue(card.bank || rows[i][1]);
+            cSheet.getRange(i + 1, 3).setValue(card.type || rows[i][2]);
+            cSheet.getRange(i + 1, 4).setValue(card.network || rows[i][3] || 'RuPay');
+            cSheet.getRange(i + 1, 5).setValue(card.bin ? `'${card.bin}` : rows[i][4]);
+            cSheet.getRange(i + 1, 6).setValue(card.last4 ? `'${card.last4}` : rows[i][5]);
+            cSheet.getRange(i + 1, 7).setValue(card.nick || rows[i][6]);
+            cSheet.getRange(i + 1, 8).setValue(card.status || rows[i][7]);
+            cSheet.getRange(i + 1, 9).setValue(card.claimed !== undefined ? Number(card.claimed) : rows[i][8]);
+            cSheet.getRange(i + 1, 10).setValue(card.total !== undefined ? Number(card.total) : rows[i][9]);
+            cSheet.getRange(i + 1, 11).setValue(card.blockedDate || rows[i][10]);
+            cSheet.getRange(i + 1, 12).setValue(card.notes || rows[i][11]);
+            cSheet.getRange(i + 1, 13).setValue(formatISTTimestamp(new Date()));
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          cSheet.appendRow([
+            cardId,
+            card.bank || 'RuPay Card',
+            card.type || 'RuPay Select',
+            card.network || 'RuPay',
+            card.bin ? `'${card.bin}` : '',
+            card.last4 ? `'${card.last4}` : '',
+            card.nick || 'New Card',
+            card.status || 'active',
+            card.claimed !== undefined ? Number(card.claimed) : 0,
+            card.total !== undefined ? Number(card.total) : 5,
+            card.blockedDate || '',
+            card.notes || '',
+            formatISTTimestamp(new Date())
+          ]);
+        }
       }
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -2751,9 +2742,10 @@ function doPost(e) {
       items.forEach(item => {
         if (!item.code) return;
         const cStr = String(item.code).trim();
+        const cStrUpper = cStr.toUpperCase();
         let foundIndex = -1;
         for (let i = 1; i < sRows.length; i++) {
-          if (String(sRows[i][0]).trim() === cStr) {
+          if (String(sRows[i][0] || '').trim().toUpperCase() === cStrUpper) {
             foundIndex = i + 1;
             break;
           }
@@ -2792,14 +2784,20 @@ function doPost(e) {
     if (data.action === "DISMISS_SHARED") {
       const sSheet = getOrInitSharedActivitySheet(ss);
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : [];
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).trim().toUpperCase());
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
+      }
       const sRows = sSheet.getDataRange().getValues();
       const dismissed = [];
 
       for (let i = 1; i < sRows.length; i++) {
-        const rowCode = String(sRows[i][0]).trim();
-        if (codes.includes(rowCode)) {
+        const rowCode = String(sRows[i][0] || '').trim();
+        const rowCodeUpper = rowCode.toUpperCase();
+        if (rowCodeUpper && codes.has(rowCodeUpper)) {
           sSheet.getRange(i + 1, 6).setValue("DISMISSED");
+          sSheet.getRange(i + 1, 8).setValue(false); // Col 8: Display in UI = FALSE
           dismissed.push(rowCode);
         }
       }
@@ -2835,9 +2833,19 @@ function doPost(e) {
       const rawCodes = data.codes || (data.code ? [data.code] : []);
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
-          .map(c => String(c).trim())
-          .filter(c => c && c.toUpperCase() !== 'PENDING' && c !== '-' && !c.startsWith('#'))
+          .map(c => String(c).trim().toUpperCase())
+          .filter(c => c && c !== 'PENDING' && c !== '-' && !c.startsWith('#'))
       );
+      if (data.bookingId) {
+        const b = String(data.bookingId).trim().toUpperCase();
+        if (b && b !== '-' && !b.startsWith('#')) codes.add(b);
+      }
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => {
+          const bStr = String(b).trim().toUpperCase();
+          if (bStr && bStr !== '-' && !bStr.startsWith('#')) codes.add(bStr);
+        });
+      }
       if (codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Cannot clear activity: No valid voucher codes or booking IDs specified."
@@ -2851,7 +2859,8 @@ function doPost(e) {
           const vals = sh.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowCode = String(vals[i][0] || "").trim();
-            if (rowCode && rowCode !== '-' && codes.has(rowCode)) {
+            const rowCodeUpper = rowCode.toUpperCase();
+            if (rowCodeUpper && rowCodeUpper !== '-' && codes.has(rowCodeUpper)) {
               sh.getRange(i + 1, 8).setValue(false); // Col 8: Display in UI
               sh.getRange(i + 1, 6).setValue("DISMISSED");
               updated.push(rowCode);
@@ -2866,8 +2875,10 @@ function doPost(e) {
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][0] || "").trim();
             const rowCode = String(vals[i][1] || "").trim();
-            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
-            const codeMatch = rowCode && rowCode !== '-' && rowCode.toUpperCase() !== 'PENDING' && codes.has(rowCode);
+            const rowBidUpper = rowBid.toUpperCase();
+            const rowCodeUpper = rowCode.toUpperCase();
+            const bidMatch = rowBidUpper && rowBidUpper !== '-' && !rowBidUpper.startsWith('#') && codes.has(rowBidUpper);
+            const codeMatch = rowCodeUpper && rowCodeUpper !== '-' && rowCodeUpper !== 'PENDING' && codes.has(rowCodeUpper);
             if (bidMatch || codeMatch) {
               newSheet.getRange(i + 1, 10).setValue(false); // Col 10: Display in UI
               updated.push(rowBid || rowCode);
@@ -2875,15 +2886,17 @@ function doPost(e) {
           }
         }
         const sheets = ss.getSheets();
-        const systemSheets = new Set(["New", "⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed"]);
+        const systemSheets = new Set(["New", "⚡ Unassigned", "⏱ Cooldowns", "Cards", "Shared_Activity", "Redeemed", "Active Cards", "Blocked Cards", "Bank_Accounts"]);
         for (const sheet of sheets) {
           if (systemSheets.has(sheet.getName())) continue;
           const vals = sheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][0] || "").trim();
             const rowCode = String(vals[i][1] || "").trim();
-            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
-            const codeMatch = rowCode && rowCode !== '-' && rowCode.toUpperCase() !== 'PENDING' && codes.has(rowCode);
+            const rowBidUpper = rowBid.toUpperCase();
+            const rowCodeUpper = rowCode.toUpperCase();
+            const bidMatch = rowBidUpper && rowBidUpper !== '-' && !rowBidUpper.startsWith('#') && codes.has(rowBidUpper);
+            const codeMatch = rowCodeUpper && rowCodeUpper !== '-' && rowCodeUpper !== 'PENDING' && codes.has(rowCodeUpper);
             if (bidMatch || codeMatch) {
               sheet.getRange(i + 1, 10).setValue(false); // Col 10: Display in UI
               updated.push(rowBid || rowCode);
@@ -2904,7 +2917,11 @@ function doPost(e) {
     // 15. Clear Redeemed Items (sets Display in UI = FALSE in Redeemed tab)
     if (data.action === "CLEAR_REDEEMED") {
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim()).filter(Boolean) : []);
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).trim().toUpperCase());
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
+      }
       if (codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Cannot clear redeemed: No voucher codes specified."
@@ -2918,7 +2935,9 @@ function doPost(e) {
         for (let i = 1; i < vals.length; i++) {
           const rowBid = String(vals[i][1] || "").trim();
           const rowCode = String(vals[i][2] || "").trim();
-          if (codes.has(rowCode) || codes.has(rowBid)) {
+          const rowBidUpper = rowBid.toUpperCase();
+          const rowCodeUpper = rowCode.toUpperCase();
+          if ((rowCodeUpper && codes.has(rowCodeUpper)) || (rowBidUpper && codes.has(rowBidUpper))) {
             rSheet.getRange(i + 1, 13).setValue(false); // Col 13: Display in UI
             updated.push(rowCode || rowBid);
           }
@@ -2932,6 +2951,8 @@ function doPost(e) {
         clearedCodes: updated
       })).setMimeType(ContentService.MimeType.JSON);
     }
+
+
     } finally {
       try { lock.releaseLock(); } catch(e) {}
     }
