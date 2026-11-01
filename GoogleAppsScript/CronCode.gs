@@ -178,10 +178,21 @@ function parseRupayVoucherEmail(msg) {
   const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
 
   // 3B. Guard: Is this an "On Hold – Validation Pending / Payment Link" email?
-  const directUrlMatch = body.match(/https:\/\/rupayselect\.truztee\.com\/#\/pay\?token=[A-Za-z0-9_\-]+/i) ||
-                         body.match(/https?:\/\/rupayselect\.truztee\.com\/[^\s\r\n"'>]+/i);
-  const trackingUrlMatch = body.match(/https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^\s\r\n"'>]+/i);
-  const payUrl = directUrlMatch ? directUrlMatch[0] : (trackingUrlMatch ? trackingUrlMatch[0] : "");
+  const tokenUrlMatch = body.match(/https:\/\/rupayselect\.truztee\.com\/#\/pay\?token=[A-Za-z0-9_\-]+/i);
+  let payUrl = tokenUrlMatch ? tokenUrlMatch[0] : "";
+  if (!payUrl) {
+    // Look for link associated with "Pay Now" or re-validation
+    const payNowBtnMatch = body.match(/href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["'][\s\S]{0,200}?>\s*Pay\s*Now/i) ||
+                           body.match(/Pay\s*Now[\s\S]{0,200}?href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["']/i);
+    if (payNowBtnMatch) {
+      payUrl = payNowBtnMatch[1];
+    } else {
+      const anyClickMatch = body.match(/https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^\s\r\n"'>]+/i);
+      if (anyClickMatch && (/payment\s*link/i.test(subject) || /re-validation|revalidation/i.test(body))) {
+        payUrl = anyClickMatch[0];
+      }
+    }
+  }
 
   const isRevalMatch = /payment\s*link/i.test(subject) ||
                        /undergoing\s*validation.*re-validation/i.test(body) ||
@@ -1325,6 +1336,43 @@ function doGet(e) {
         success: true,
         updated: updated,
         bookingId: targetBid
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Administrative One-Off: Inspect email and links for booking ID
+  if (e && e.parameter && e.parameter.action === "DEBUG_INSPECT_EMAIL") {
+    try {
+      const bid = String(e.parameter.bid || "RUPS-A0D78AC5").trim();
+      const threads = GmailApp.search(bid, 0, 5);
+      const results = [];
+      for (const th of threads) {
+        for (const msg of th.getMessages()) {
+          const body = msg.getBody() || "";
+          const plain = msg.getPlainBody() || "";
+          const hrefs = [];
+          const regex = /href=["']([^"']+)["']/gi;
+          let m;
+          while ((m = regex.exec(body)) !== null) {
+            hrefs.push(m[1]);
+          }
+          const urls = body.match(/https?:\/\/[^\s<"']+/gi) || [];
+          results.push({
+            subject: msg.getSubject(),
+            date: msg.getDate(),
+            hrefs: Array.from(new Set(hrefs)),
+            urls: Array.from(new Set(urls)).slice(0, 20),
+            plainSnippet: plain.substring(0, 1500)
+          });
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        bid: bid,
+        count: results.length,
+        results: results
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
