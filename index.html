@@ -3186,6 +3186,34 @@
       return isIdentifierQuarantined(cardNum);
     }
 
+    /* --- PERSISTENT REVALIDATION REGISTER (STICKY MARK REVALIDATED) --- */
+    function getRevalidatedBids() {
+      try {
+        const raw = localStorage.getItem('rupay_revalidated_bids');
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function addRevalidatedBid(bid) {
+      if (!bid) return;
+      try {
+        const bids = new Set(getRevalidatedBids());
+        bids.add(String(bid).trim());
+        localStorage.setItem('rupay_revalidated_bids', JSON.stringify(Array.from(bids)));
+      } catch (e) {}
+    }
+
+    function removeRevalidatedBid(bid) {
+      if (!bid) return;
+      try {
+        const bids = new Set(getRevalidatedBids());
+        bids.delete(String(bid).trim());
+        localStorage.setItem('rupay_revalidated_bids', JSON.stringify(Array.from(bids)));
+      } catch (e) {}
+    }
+
     function updateSyncPulseIndicator(isSaving) {
       const spinner = document.getElementById('mb-sync-spinner');
       const syncTime = document.getElementById('mb-sync-time');
@@ -3348,7 +3376,19 @@
           state.accounts = decryptedAccounts;
         }
         if (decryptedStaging && decryptedStaging.length) {
-          state.staging = decryptedStaging;
+          const revalSet = new Set(getRevalidatedBids());
+          state.staging = decryptedStaging.map(s => {
+            if (revalSet.has(s.bookingId)) {
+              const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code);
+              if (!isRealCode) {
+                s.status = 'PENDING';
+                s.code = 'PENDING';
+                s.payUrl = '';
+                s.isRevalidation = false;
+              }
+            }
+            return s;
+          });
         }
       } catch (err) {
         console.warn('Hydration warning during unlock:', err);
@@ -3846,6 +3886,8 @@
         return;
       }
 
+      const activeBid = item.bookingId || targetBid || targetId;
+
       // 1. Optimistic Local State Update:
       // Change status & code to PENDING, remove revalidation flags and payment URL
       item.status = 'PENDING';
@@ -3853,7 +3895,11 @@
       item.payUrl = '';
       item.isRevalidation = false;
 
-      // 2. Persist to encrypted cache and immediately re-render (turns placard red)
+      // 2. Persist to dedicated revalidated registry (survives refreshes & syncs)
+      addRevalidatedBid(activeBid);
+      if (targetBid) addRevalidatedBid(targetBid);
+
+      // 3. Persist to encrypted cache and immediately re-render (turns placard red)
       await saveEncryptedStaging(state.staging);
       renderVault();
       if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
@@ -3861,10 +3907,16 @@
       }
       showToast('Marked as revalidated. Waiting for voucher code.');
 
-      // 3. Background Sync to Google Apps Script ("New" tab in Google Sheets)
+      // 4. Background Sync to Google Apps Script ("New" tab in Google Sheets)
+      // Dual transport: Fire direct GET endpoint and authenticated apiFetch POST
+      try {
+        const getUrl = `${API_ENDPOINT}?action=MARK_REVALIDATED&bookingId=${encodeURIComponent(activeBid)}`;
+        fetch(getUrl).catch(() => fetch(getUrl, { mode: 'no-cors' }).catch(() => {}));
+      } catch (e) {}
+
       try {
         await apiFetch('MARK_REVALIDATED', {
-          bookingId: item.bookingId || targetBid || targetId
+          bookingId: activeBid
         }, { silent: true });
       } catch (err) {
         console.warn('Background sync error (MARK_REVALIDATED):', err);
@@ -5318,24 +5370,45 @@
         }
 
         if (data.staging && Array.isArray(data.staging)) {
+          const revalSet = new Set(getRevalidatedBids());
           state.staging = data.staging
             .filter(s => !isIdentifierQuarantined(s.bookingId) && !isIdentifierQuarantined(s.code))
-            .map((s, idx) => ({
-            id: 'staging-' + (s.bookingId || idx),
-            bookingId: s.bookingId || ('#S' + (idx + 1)),
-            brand: s.brand || s.targetBrand || 'Unassigned',
-            targetBrand: s.targetBrand || s.brand || 'Unassigned',
-            code: s.code || 'PENDING',
-            pin: s.pin || null,
-            amount: Number(s.amount) || 500,
-            dateOfIssue: s.dateOfIssue || '',
-            account: s.account || '-',
-            card: (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned',
-            status: (s.status || 'PENDING').toUpperCase(),
-            timestampIST: s.timestampIST || null,
-            displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false',
-            payUrl: s.payUrl || ''
-          }));
+            .map((s, idx) => {
+              const bId = s.bookingId || ('#S' + (idx + 1));
+              let status = (s.status || 'PENDING').toUpperCase();
+              let code = s.code || 'PENDING';
+              let payUrl = s.payUrl || '';
+
+              // If marked revalidated locally, keep it sticky as PENDING until real code arrives
+              if (revalSet.has(bId) || (s.bookingId && revalSet.has(s.bookingId))) {
+                const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code);
+                if (isRealCode) {
+                  removeRevalidatedBid(bId);
+                  if (s.bookingId) removeRevalidatedBid(s.bookingId);
+                } else {
+                  status = 'PENDING';
+                  code = 'PENDING';
+                  payUrl = '';
+                }
+              }
+
+              return {
+                id: 'staging-' + (s.bookingId || idx),
+                bookingId: bId,
+                brand: s.brand || s.targetBrand || 'Unassigned',
+                targetBrand: s.targetBrand || s.brand || 'Unassigned',
+                code: code,
+                pin: s.pin || null,
+                amount: Number(s.amount) || 500,
+                dateOfIssue: s.dateOfIssue || '',
+                account: s.account || '-',
+                card: (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned',
+                status: status,
+                timestampIST: s.timestampIST || null,
+                displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false',
+                payUrl: payUrl
+              };
+            });
           await saveEncryptedStaging(state.staging);
         }
 
