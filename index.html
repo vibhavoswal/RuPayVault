@@ -3235,6 +3235,161 @@
       } catch (e) {}
     }
 
+    /* --- UNIFIED MUTATION JOURNAL (PROPAGATION SHIELD & EVENTUAL-CONSISTENCY RECONCILER) --- */
+    const MUTATION_JOURNAL_TTL_MS = 60000; // 60s TTL safety net for in-flight mutations
+
+    const MutationJournal = {
+      // 1. In-Flight Staging Approvals (Staging -> Brand Tabs)
+      getApprovals() {
+        try {
+          const list = JSON.parse(localStorage.getItem('rupay_journal_approvals') || '[]');
+          const now = Date.now();
+          return list.filter(item => item && item.expiresAt > now);
+        } catch (_) { return []; }
+      },
+      recordApprovals(vouchers) {
+        if (!Array.isArray(vouchers) || !vouchers.length) return;
+        try {
+          const now = Date.now();
+          const current = this.getApprovals();
+          const map = new Map(current.map(v => [v.code || v.bookingId, v]));
+          vouchers.forEach(v => {
+            const key = v.code || v.bookingId;
+            if (key) {
+              map.set(key, { ...v, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
+            }
+          });
+          localStorage.setItem('rupay_journal_approvals', JSON.stringify(Array.from(map.values())));
+        } catch (_) {}
+      },
+      removeApproval(key) {
+        if (!key) return;
+        try {
+          const clean = String(key).trim().toUpperCase();
+          const current = this.getApprovals().filter(v => 
+            (v.code || '').trim().toUpperCase() !== clean && 
+            (v.bookingId || '').trim().toUpperCase() !== clean
+          );
+          localStorage.setItem('rupay_journal_approvals', JSON.stringify(current));
+        } catch (_) {}
+      },
+
+      // 2. In-Flight Undos (Redeemed -> Active Brand Tabs)
+      getUndos() {
+        try {
+          const list = JSON.parse(localStorage.getItem('rupay_journal_undos') || '[]');
+          const now = Date.now();
+          return list.filter(item => item && item.expiresAt > now);
+        } catch (_) { return []; }
+      },
+      recordUndo(voucher) {
+        if (!voucher || (!voucher.code && !voucher.bookingId)) return;
+        try {
+          const now = Date.now();
+          const current = this.getUndos();
+          const map = new Map(current.map(v => [v.code || v.bookingId, v]));
+          const key = voucher.code || voucher.bookingId;
+          map.set(key, { ...voucher, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
+          localStorage.setItem('rupay_journal_undos', JSON.stringify(Array.from(map.values())));
+        } catch (_) {}
+      },
+      removeUndo(key) {
+        if (!key) return;
+        try {
+          const clean = String(key).trim().toUpperCase();
+          const current = this.getUndos().filter(v => 
+            (v.code || '').trim().toUpperCase() !== clean && 
+            (v.bookingId || '').trim().toUpperCase() !== clean
+          );
+          localStorage.setItem('rupay_journal_undos', JSON.stringify(current));
+        } catch (_) {}
+      },
+
+      // 3. In-Flight Card Tags (Keyed by code/bookingId -> cardTag)
+      getTags() {
+        try {
+          const obj = JSON.parse(localStorage.getItem('rupay_journal_tags') || '{}');
+          const now = Date.now();
+          const valid = {};
+          Object.entries(obj).forEach(([k, v]) => {
+            if (v && v.expiresAt > now) valid[k] = v;
+          });
+          return valid;
+        } catch (_) { return {}; }
+      },
+      recordTags(codes, cardTag) {
+        if (!Array.isArray(codes) || !cardTag) return;
+        try {
+          const now = Date.now();
+          const tags = this.getTags();
+          codes.forEach(c => {
+            if (c) tags[String(c).trim().toUpperCase()] = { cardTag, expiresAt: now + MUTATION_JOURNAL_TTL_MS };
+          });
+          localStorage.setItem('rupay_journal_tags', JSON.stringify(tags));
+        } catch (_) {}
+      },
+      removeTag(code) {
+        if (!code) return;
+        try {
+          const tags = this.getTags();
+          delete tags[String(code).trim().toUpperCase()];
+          localStorage.setItem('rupay_journal_tags', JSON.stringify(tags));
+        } catch (_) {}
+      },
+
+      // 4. In-Flight Added / Replaced Cards
+      getCards() {
+        try {
+          const list = JSON.parse(localStorage.getItem('rupay_journal_cards') || '[]');
+          const now = Date.now();
+          return list.filter(item => item && item.expiresAt > now);
+        } catch (_) { return []; }
+      },
+      recordCard(card) {
+        if (!card || !card.cardNumber) return;
+        try {
+          const now = Date.now();
+          const current = this.getCards();
+          const cleanNum = String(card.cardNumber).replace(/['\s]/g, '');
+          const filtered = current.filter(c => String(c.cardNumber).replace(/['\s]/g, '') !== cleanNum);
+          filtered.push({ ...card, expiresAt: now + MUTATION_JOURNAL_TTL_MS });
+          localStorage.setItem('rupay_journal_cards', JSON.stringify(filtered));
+        } catch (_) {}
+      },
+      removeCard(cardNum) {
+        if (!cardNum) return;
+        try {
+          const cleanNum = String(cardNum).replace(/['\s]/g, '');
+          const current = this.getCards().filter(c => String(c.cardNumber).replace(/['\s]/g, '') !== cleanNum);
+          localStorage.setItem('rupay_journal_cards', JSON.stringify(current));
+        } catch (_) {}
+      },
+
+      // 5. In-Flight Cleared Redeemed Codes
+      getClearedRedeemed() {
+        try {
+          const obj = JSON.parse(localStorage.getItem('rupay_journal_cleared_redeemed') || '{}');
+          const now = Date.now();
+          const valid = new Set();
+          Object.entries(obj).forEach(([k, exp]) => {
+            if (exp > now) valid.add(k);
+          });
+          return valid;
+        } catch (_) { return new Set(); }
+      },
+      recordClearedRedeemed(codes) {
+        if (!Array.isArray(codes) || !codes.length) return;
+        try {
+          const now = Date.now();
+          const obj = JSON.parse(localStorage.getItem('rupay_journal_cleared_redeemed') || '{}');
+          codes.forEach(c => {
+            if (c) obj[String(c).trim().toUpperCase()] = now + MUTATION_JOURNAL_TTL_MS;
+          });
+          localStorage.setItem('rupay_journal_cleared_redeemed', JSON.stringify(obj));
+        } catch (_) {}
+      }
+    };
+
     function updateSyncPulseIndicator(isSaving) {
       const spinner = document.getElementById('mb-sync-spinner');
       const syncTime = document.getElementById('mb-sync-time');
@@ -3269,7 +3424,7 @@
       if (payload.bookingIds) targetIds.push(...(Array.isArray(payload.bookingIds) ? payload.bookingIds : [payload.bookingIds]));
       if (payload.cardNumber) targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
-      if (targetIds.length > 0) quarantineIdentifiers(targetIds);
+      if (action !== 'TAG_CARD' && targetIds.length > 0) quarantineIdentifiers(targetIds);
       updateSyncPulseIndicator(true);
 
       const maxAttempts = options.retries !== undefined ? options.retries : 2;
@@ -4050,37 +4205,50 @@
 
       targetCodes.forEach(c => {
         const matches = state.vouchers.filter(x => x.code === c);
+        const r = redeemedList.find(x => x.code === c);
+        const targetBrandName = normalizeBrandKey(brand || (r ? (r.originalTab || r.brand) : 'Voucher'));
+
+        let restoredObj = null;
         if (matches.length > 0) {
-          matches.forEach(m => m.status = 'ACTIVE');
+          matches.forEach(m => {
+            m.status = 'ACTIVE';
+            m.brand = targetBrandName;
+            m.isRecent = true;
+          });
+          restoredObj = matches[0];
           // If there were somehow duplicate entries in state, prune down to 1
           if (matches.length > 1) {
             const firstIdx = state.vouchers.findIndex(x => x.code === c);
             state.vouchers = state.vouchers.filter((x, idx) => x.code !== c || idx === firstIdx);
           }
         } else {
-          const r = redeemedList.find(x => x.code === c);
-          if (r && !state.vouchers.some(x => x.code === c)) {
-            state.vouchers.push({
-              id: 'v-restored-' + c,
-              bookingId: r.bookingId || ('#restored-' + c),
-              brand: r.originalTab || r.brand || brand || 'Voucher',
-              title: (r.brand || brand || 'Voucher') + ' Voucher',
-              amount: r.amount || 0,
-              code: c,
-              pin: r.pin || null,
-              account: r.account || '-',
-              card: r.card || 'RuPay Select',
-              dateOfIssue: r.dateOfIssue || '',
-              expiry: r.expiry || '31 Dec 2026',
-              redeemedOn: null,
-              timestampIST: r.timestampIST || null,
-              status: 'ACTIVE'
-            });
-          }
+          restoredObj = {
+            id: 'v-restored-' + c,
+            bookingId: (r ? r.bookingId : '') || ('#restored-' + c),
+            brand: targetBrandName,
+            title: (targetBrandName || 'Voucher') + ' Voucher',
+            amount: (r ? r.amount : 0) || 0,
+            code: c,
+            pin: (r ? r.pin : null) || null,
+            account: (r ? r.account : '-') || '-',
+            card: (r ? r.card : 'RuPay Select') || 'RuPay Select',
+            dateOfIssue: (r ? r.dateOfIssue : '') || '',
+            expiry: (r ? r.expiry : '31 Dec 2026') || '31 Dec 2026',
+            redeemedOn: null,
+            timestampIST: (r ? r.timestampIST : null) || nowIST(),
+            status: 'ACTIVE',
+            isRecent: true
+          };
+          state.vouchers.unshift(restoredObj);
         }
-        redeemedList = redeemedList.filter(r => r.code !== c);
+
+        if (restoredObj) {
+          MutationJournal.recordUndo(restoredObj);
+        }
+        redeemedList = redeemedList.filter(x => x.code !== c);
       });
       saveRedeemedList();
+      saveEncryptedVouchers(state.vouchers);
 
       showToast('Voucher restored to active vault');
       renderDeckSelector();
@@ -4099,9 +4267,11 @@
 
       const rollbackUndo = () => {
         targetCodes.forEach(c => {
+          MutationJournal.removeUndo(c);
           const v = state.vouchers.find(x => x.code === c);
           if (v) v.status = 'USED';
         });
+        saveEncryptedVouchers(state.vouchers);
         renderDeckSelector();
         renderVault();
         showToast('Undo reverted');
@@ -4344,6 +4514,7 @@
           }, { keepalive: !!options.keepalive });
           saveSharedActivity();
         } else if (context === 'redeemed') {
+          MutationJournal.recordClearedRedeemed(codes);
           await apiFetch('CLEAR_REDEEMED', {
             codes: codes
           }, { keepalive: !!options.keepalive });
@@ -5268,8 +5439,11 @@
         }
 
         if (Array.isArray(data.vouchers)) {
-          // Defensive deduplication: ensure each voucher code only appears once in state.vouchers
-          // For PENDING vouchers where code is not yet generated, deduplicate by bookingId instead
+          const inFlightTags = MutationJournal.getTags();
+          const inFlightApprovals = MutationJournal.getApprovals();
+          const inFlightUndos = MutationJournal.getUndos();
+
+          // Deduplication sets for remote data
           const seenCodes = new Set();
           const seenBookingIds = new Set();
           state.vouchers = data.vouchers.filter(v => {
@@ -5297,10 +5471,34 @@
             }
 
             const vCode = (v.code || '').trim();
+            const vBid = (v.bookingId || '').trim();
             const isPendingRedeem = !!(
               (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted && undoState.pendingRedeem.codes?.includes(vCode)) ||
               (getUncommittedRedeems().some(u => u.codes?.includes(vCode)))
             );
+
+            // Reconcile card tags: in-flight journal tag overrides unassigned remote tag
+            let cardVal = (v.card && String(v.card).trim() !== '' && String(v.card).trim() !== 'Unassigned' && String(v.card).trim() !== '-') ? String(v.card).trim() : 'Unassigned';
+            const tagMatch = inFlightTags[vCode.toUpperCase()] || (vBid ? inFlightTags[vBid.toUpperCase()] : null);
+            if (cardVal === 'Unassigned') {
+              if (tagMatch) cardVal = tagMatch.cardTag;
+            } else {
+              // Remote sheet has persisted the tag! Clean from journal
+              if (tagMatch) {
+                if (vCode) MutationJournal.removeTag(vCode);
+                if (vBid) MutationJournal.removeTag(vBid);
+              }
+            }
+
+            // Remote sheet has officially persisted the approved/restored voucher
+            if (vCode) {
+              MutationJournal.removeApproval(vCode);
+              MutationJournal.removeUndo(vCode);
+            }
+            if (vBid) {
+              MutationJournal.removeApproval(vBid);
+              MutationJournal.removeUndo(vBid);
+            }
 
             return {
               id: 'v-' + i,
@@ -5311,13 +5509,37 @@
               code: v.code || '-',
               pin: v.pin || null,
               account: v.account || '-',
-              card: (v.card && String(v.card).trim() !== '' && String(v.card).trim() !== 'Unassigned' && String(v.card).trim() !== '-') ? String(v.card).trim() : 'Unassigned',
+              card: cardVal,
               expiry: v.dateOfIssue || '31 Dec 2026',
               redeemedOn: redeemedOn,
               timestampIST: (v.timestampIST && String(v.timestampIST).trim() !== '' && String(v.timestampIST).trim() !== 'null') ? String(v.timestampIST).trim() : null,
               displayInUI: v.displayInUI !== false && String(v.displayInUI).toLowerCase() !== 'false',
               status: isPendingRedeem ? 'USED' : (v.status || 'ACTIVE').toUpperCase()
             };
+          });
+
+          // PRESERVATION MERGE: Any in-flight approvals NOT yet returned by remote Google Sheet are merged to front!
+          inFlightApprovals.forEach(app => {
+            const cUpper = (app.code || '').trim().toUpperCase();
+            const bUpper = (app.bookingId || '').trim().toUpperCase();
+            const alreadyInRemote = (cUpper && seenCodes.has(app.code)) || (bUpper && seenBookingIds.has(app.bookingId));
+            if (!alreadyInRemote) {
+              state.vouchers.unshift(app);
+              if (app.code) seenCodes.add(app.code);
+              if (app.bookingId) seenBookingIds.add(app.bookingId);
+            }
+          });
+
+          // PRESERVATION MERGE: Any in-flight undos NOT yet returned by remote Google Sheet are merged to front!
+          inFlightUndos.forEach(und => {
+            const cUpper = (und.code || '').trim().toUpperCase();
+            const bUpper = (und.bookingId || '').trim().toUpperCase();
+            const alreadyInRemote = (cUpper && seenCodes.has(und.code)) || (bUpper && seenBookingIds.has(und.bookingId));
+            if (!alreadyInRemote) {
+              state.vouchers.unshift(und);
+              if (und.code) seenCodes.add(und.code);
+              if (und.bookingId) seenBookingIds.add(und.bookingId);
+            }
           });
 
           // AES-GCM Encrypted cache persistence (never plaintext)
@@ -5328,7 +5550,18 @@
         }
 
         if (data.redeemed && Array.isArray(data.redeemed)) {
-          const remoteRedeemed = data.redeemed.map(r => ({
+          const inFlightUndos = new Set(MutationJournal.getUndos().flatMap(u => [(u.code || '').trim().toUpperCase(), (u.bookingId || '').trim().toUpperCase()]).filter(Boolean));
+          const clearedRedeemedSet = MutationJournal.getClearedRedeemed();
+
+          const remoteRedeemed = data.redeemed.filter(r => {
+            const rc = (r.code || '').trim();
+            const rb = (r.bookingId || '').trim();
+            if (!rc || rc.toUpperCase() === 'PENDING' || rc === '-') return false;
+            // Shield: Filter out any voucher that was restored to vault or cleared
+            if (inFlightUndos.has(rc.toUpperCase()) || (rb && inFlightUndos.has(rb.toUpperCase()))) return false;
+            if (clearedRedeemedSet.has(rc.toUpperCase()) || (rb && clearedRedeemedSet.has(rb.toUpperCase()))) return false;
+            return true;
+          }).map(r => ({
             code: r.code,
             bookingId: r.bookingId || '',
             brand: r.brand || r.originalTab || 'Voucher',
@@ -5342,7 +5575,7 @@
             redeemedTimestampIST: r.redeemedTimestampIST || '',
             originalTab: r.originalTab || r.brand || '',
             displayInUI: r.displayInUI !== false && String(r.displayInUI).toLowerCase() !== 'false'
-          })).filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
+          }));
 
           // Preserve uncommitted pending redemptions across background sync
           const uncommittedList = getUncommittedRedeems();
@@ -5365,22 +5598,40 @@
         }
 
         if (data.cards && Array.isArray(data.cards) && data.cards.length) {
+          const inFlightCards = MutationJournal.getCards();
+          const cleanRemoteNums = new Set();
           state.cards = data.cards
             .filter(c => !isCardQuarantined(c.cardNumber))
-            .map(c => ({
-              bank: c.bank || 'RuPay Card',
-              type: c.type || 'Debit',
-              network: c.network || (String(c.name || '').includes('Visa') ? 'Visa' : String(c.name || '').includes('Mastercard') ? 'Mastercard' : 'RuPay'),
-              name: c.name || 'RuPay Card',
-              linkedAccount: c.linkedAccount || 'NA',
-              cardNumber: c.cardNumber || '',
-              expiry: c.expiry || '10/33',
-              cvv: c.cvv || '000',
-              status: (c.status || 'ACTIVE').toUpperCase(),
-              notes: c.notes || '',
-              benefits: c.benefits || {},
-              lastUpdated: c.lastUpdated || ''
-            }));
+            .map(c => {
+              const clean = String(c.cardNumber || '').replace(/['\s]/g, '');
+              if (clean) cleanRemoteNums.add(clean);
+              return {
+                bank: c.bank || 'RuPay Card',
+                type: c.type || 'Debit',
+                network: c.network || (String(c.name || '').includes('Visa') ? 'Visa' : String(c.name || '').includes('Mastercard') ? 'Mastercard' : 'RuPay'),
+                name: c.name || 'RuPay Card',
+                linkedAccount: c.linkedAccount || 'NA',
+                cardNumber: c.cardNumber || '',
+                expiry: c.expiry || '10/33',
+                cvv: c.cvv || '000',
+                status: (c.status || 'ACTIVE').toUpperCase(),
+                notes: c.notes || '',
+                benefits: c.benefits || {},
+                lastUpdated: c.lastUpdated || ''
+              };
+            });
+
+          // PRESERVATION MERGE: Any newly added cards not yet in data.cards are preserved!
+          inFlightCards.forEach(c => {
+            const clean = String(c.cardNumber || '').replace(/['\s]/g, '');
+            if (clean && !cleanRemoteNums.has(clean) && !isCardQuarantined(clean)) {
+              state.cards.push(c);
+              cleanRemoteNums.add(clean);
+            } else if (cleanRemoteNums.has(clean)) {
+              MutationJournal.removeCard(clean);
+            }
+          });
+
           await saveEncryptedCards(state.cards);
           updateDrawerCardCount();
           if (isCardManagerOpen) renderCardManagerList(currentCardCategoryFilter);
@@ -5413,6 +5664,7 @@
 
         if (data.staging && Array.isArray(data.staging)) {
           const revalSet = new Set(getRevalidatedBids());
+          const inFlightTags = MutationJournal.getTags();
           state.staging = data.staging
             .filter(s => !isIdentifierQuarantined(s.bookingId) && !isIdentifierQuarantined(s.code))
             .map((s, idx) => {
@@ -5434,6 +5686,17 @@
                 }
               }
 
+              let cardVal = (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned';
+              const tagMatch = inFlightTags[code.toUpperCase()] || (bId ? inFlightTags[bId.toUpperCase()] : null);
+              if (cardVal === 'Unassigned') {
+                if (tagMatch) cardVal = tagMatch.cardTag;
+              } else {
+                if (tagMatch) {
+                  if (code) MutationJournal.removeTag(code);
+                  if (bId) MutationJournal.removeTag(bId);
+                }
+              }
+
               return {
                 id: 'staging-' + (s.bookingId || idx),
                 bookingId: bId,
@@ -5444,7 +5707,7 @@
                 amount: Number(s.amount) || 500,
                 dateOfIssue: s.dateOfIssue || '',
                 account: s.account || '-',
-                card: (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned',
+                card: cardVal,
                 status: status,
                 timestampIST: s.timestampIST || null,
                 displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false',
@@ -7540,6 +7803,7 @@
       // Optimistically swap card in state.cards
       state.cards = state.cards.filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== oldCardNum);
       state.cards.push(newCard);
+      MutationJournal.recordCard(newCard);
       saveEncryptedCards(state.cards);
       renderCardManagerList(currentCardCategoryFilter);
       showToast(`Replaced card! Fresh quota activated.`);
@@ -7630,6 +7894,7 @@
 
       state.cards = state.cards || [];
       state.cards.push(newCard);
+      MutationJournal.recordCard(newCard);
       saveEncryptedCards(state.cards);
       closeAddCardModal();
       updateDrawerCardCount();
@@ -9402,10 +9667,11 @@
       const codes = selectedStaging.map(s => s.code).filter(Boolean);
       const approvedCount = selectedStaging.length;
 
-      // 1. Optimistic UI: Add to state.vouchers with isRecent = true
+      // 1. Optimistic UI: Add to state.vouchers with isRecent = true and normalize brand
+      const approvedItemsToJournal = [];
       selectedStaging.forEach(s => {
-        const canonicalBrand = s.targetBrand || s.brand || 'Unassigned';
-        state.vouchers.unshift({
+        const canonicalBrand = normalizeBrandKey(s.targetBrand || s.brand || 'Unassigned');
+        const voucherObj = {
           id: 'v-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
           bookingId: s.bookingId,
           brand: canonicalBrand,
@@ -9421,8 +9687,13 @@
           displayInUI: true,
           status: 'ACTIVE',
           isRecent: true // 72-Hour Royal Blue Flag
-        });
+        };
+        state.vouchers.unshift(voucherObj);
+        approvedItemsToJournal.push(voucherObj);
       });
+
+      // Record in Unified Mutation Journal (persists across syncs, tabs & reloads!)
+      MutationJournal.recordApprovals(approvedItemsToJournal);
 
       // 2. Remove from state.staging (Inbox Zero)
       const bookingIdSet = new Set(bookingIds);
@@ -9450,6 +9721,7 @@
 
       // Transactional rollback callback if backend rejects or network fails
       const rollback = () => {
+        approvedItemsToJournal.forEach(v => MutationJournal.removeApproval(v.code || v.bookingId));
         state.staging = prevStaging;
         state.vouchers = prevVouchers;
         renderVault();
@@ -9613,6 +9885,7 @@
           if (s.code && s.code !== '-' && s.code !== 'PENDING') lookupCodesSet.add(s.code);
         });
         const lookupCodes = Array.from(lookupCodesSet);
+        MutationJournal.recordTags(lookupCodes, cardTag);
 
         state.selectedIds.clear();
         collapseActionMenu();
