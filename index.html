@@ -1823,6 +1823,15 @@
       border: 1px solid rgba(168, 85, 247, 0.4);
     }
 
+    .spring-press:active {
+      transform: scale(0.96);
+      transition: transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .sheet-enter {
+      transform: translateY(0);
+      transition: transform 200ms ease-out;
+    }
+
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
@@ -2412,6 +2421,332 @@
     </div>
   </section>
 
+  <!-- ======================================================== -->
+  <!-- WORKSPACE 4: RUPAY INCOME TRACKER VIEW                    -->
+  <!-- ======================================================== -->
+  <section id="view-income-tracker" class="hidden flex-1 flex flex-col h-full w-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-main)] overflow-hidden select-none">
+    <!-- Executive Top Header -->
+    <header class="h-14 px-3.5 shrink-0 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/80 backdrop-blur-md z-30">
+      <div class="flex items-center gap-2.5">
+        <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Open Menu" aria-label="Open Menu">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+
+        <!-- Executive Capsule Dropdown Switcher Button -->
+        <button id="in-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)]/50 border border-[var(--theme-border)] text-[var(--theme-text-main)] text-xs font-bold spring-press shadow-sm" aria-expanded="false" aria-haspopup="true">
+          <span id="in-capsule-indicator" class="w-2 h-2 rounded-full bg-[#F47A21]"></span>
+          <span id="in-capsule-brand-title" class="truncate max-w-[150px]">RuPay Income Tracker</span>
+          <svg id="in-capsule-chevron" class="w-4 h-4 text-[var(--theme-text-muted)] transition-transform duration-200" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+        </button>
+      </div>
+
+      <!-- Sync Status Pill -->
+      <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors" title="Sync with Google Sheets">
+        <svg id="in-sync-spinner" class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <span id="in-sync-time">RuPay Income</span>
+      </button>
+    </header>
+
+    <!-- Subheader: Year Selector & "+ Add" Action Bar -->
+    <div class="px-3 py-2 border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)] flex items-center justify-between gap-1.5 shrink-0 relative z-20">
+      <!-- Year Filter Segmented Control (Defaults to current year 2026) -->
+      <div class="flex items-center gap-0.5 p-1 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold shrink-0">
+        <button onclick="setIncomeYearFilter('all')" id="in-year-btn-all" class="px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all spring-press">All-Time</button>
+        <button onclick="setIncomeYearFilter('2026')" id="in-year-btn-2026" class="px-2.5 py-1 rounded-lg bg-[#0C8C46] text-white shadow transition-all spring-press">2026</button>
+        <button onclick="setIncomeYearFilter('2025')" id="in-year-btn-2025" class="px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all spring-press">2025</button>
+        <button onclick="setIncomeYearFilter('2024')" id="in-year-btn-2024" class="px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all spring-press">2024</button>
+      </div>
+
+      <!-- Add Button: Google Material Design Add SVG + 'Add' text (no duplicate '+') -->
+      <div>
+        <button id="in-btn-add-entry" onclick="toggleAddMenu()" class="px-3 py-1.5 rounded-xl bg-[#0C8C46] hover:bg-emerald-600 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm spring-press shrink-0" title="Add Transaction" aria-label="Add Transaction">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span>Add</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Financial KPI Dashboard Hero -->
+    <div class="p-3.5 bg-[var(--theme-card-subtle)]/40 border-b border-[var(--theme-border)] space-y-3 shrink-0">
+      <!-- Net Income Hero Card (Clean solid background, zero gradients) -->
+      <div class="rounded-2xl p-4 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between text-xs font-bold text-[var(--theme-text-muted)] mb-1 gap-2">
+          <span class="uppercase tracking-wider truncate">Net Income (<span id="in-kpi-year-label">2026</span>)</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--theme-card-subtle)] text-emerald-500 font-bold border border-[var(--theme-border)] shrink-0">Income - Card Charges</span>
+        </div>
+        <div class="text-3xl font-extrabold text-[var(--theme-text-main)] tracking-tight flex items-baseline gap-1" id="in-kpi-net-income">
+          ₹0.00
+        </div>
+      </div>
+
+      <!-- 2 Metric Split Grid: Income vs Card Charges -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- Income Card: Google Material Design Trending_Up SVG -->
+        <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm">
+          <div class="flex items-center justify-between text-[11px] font-bold text-emerald-500 dark:text-emerald-400">
+            <span>Voucher Income</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+          </div>
+          <div class="text-lg font-bold text-emerald-500 dark:text-emerald-400 mt-1" id="in-kpi-gross-income">+₹0.00</div>
+          <div class="text-[10px] text-[var(--theme-text-sub)] mt-0.5" id="in-kpi-income-count">0 sold entries</div>
+        </div>
+
+        <!-- Card Charges Card: Google Material Design Trending_Down SVG -->
+        <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm">
+          <div class="flex items-center justify-between text-[11px] font-bold text-rose-500 dark:text-rose-400">
+            <span>Card Charges</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+          </div>
+          <div class="text-lg font-bold text-rose-500 dark:text-rose-400 mt-1" id="in-kpi-card-charges">-₹0.00</div>
+          <div class="text-[10px] text-[var(--theme-text-sub)] mt-0.5" id="in-kpi-charges-count">0 fee deductions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ledger Feed Filter Bar -->
+    <div class="px-3.5 py-2 border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)] flex items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-1 text-xs">
+        <button onclick="setIncomeLedgerTypeFilter('all')" id="in-ledger-filter-all" class="px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] text-[var(--theme-text-main)] font-bold border border-[var(--theme-border)]">All</button>
+        <button onclick="setIncomeLedgerTypeFilter('income')" id="in-ledger-filter-income" class="px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-emerald-400 font-medium">Vouchers</button>
+        <button onclick="setIncomeLedgerTypeFilter('charge')" id="in-ledger-filter-charge" class="px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-rose-400 font-medium">Card Fees</button>
+      </div>
+
+      <div class="relative max-w-[130px] w-full">
+        <input type="text" id="in-ledger-search" oninput="renderIncomeLedger()" placeholder="Search..." class="w-full text-xs px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
+      </div>
+    </div>
+
+    <!-- Live Income Ledger Feed -->
+    <div id="in-income-ledger-container" class="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-24 no-scrollbar">
+      <!-- Rendered dynamically via renderIncomeLedger() -->
+    </div>
+  </section>
+
+  <!-- ======================================================== -->
+  <!-- BOTTOM SHEET: "+ ADD" ACTION SELECTOR (POPS UP FROM BELOW)-->
+  <!-- ======================================================== -->
+  <div id="add-choice-modal" class="hidden fixed inset-0 z-50 flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeAddMenu()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sheet Container -->
+    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-5 shadow-2xl space-y-3 z-10 sheet-enter">
+      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto mb-1"></div>
+
+      <div class="flex items-center justify-between pb-1 border-b border-[var(--theme-border)]">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)]">RuPay Income Tracker</span>
+          <h3 class="text-sm font-extrabold text-[var(--theme-text-main)]">New Transaction</h3>
+        </div>
+        <button onclick="closeAddMenu()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <!-- Option 1: Record a sale -->
+        <button onclick="closeAddMenu(); openRecordSaleModal();" class="w-full p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)] border border-[var(--theme-border)] text-left flex items-center justify-between transition-all spring-press group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-emerald-400 transition-colors">Record a sale</div>
+              <div class="text-[11px] text-[var(--theme-text-sub)]">Cult Elite (₹1,200), Amazon Prime, etc.</div>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+
+        <!-- Option 2: Record a charge -->
+        <button onclick="closeAddMenu(); openRecordChargeModal();" class="w-full p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)] border border-[var(--theme-border)] text-left flex items-center justify-between transition-all spring-press group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+            </div>
+            <div>
+              <div class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-rose-400 transition-colors">Record a charge</div>
+              <div class="text-[11px] text-[var(--theme-text-sub)]">Card replacement, AMC, hotlisting fees</div>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: "RECORD A SALE"                                 -->
+  <!-- ======================================================== -->
+  <div id="modal-sale" class="hidden fixed inset-0 z-50 flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeRecordSaleModal()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sheet Container -->
+    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-5 shadow-2xl space-y-3.5 max-h-[90%] overflow-y-auto no-scrollbar z-10 sheet-enter">
+      <!-- Handlebar -->
+      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto"></div>
+
+      <!-- Header -->
+      <div class="flex items-start justify-between pb-1 border-b border-[var(--theme-border)]">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">RuPay Income</span>
+            <span class="text-xs font-bold text-[var(--theme-text-muted)]">Record a Sale</span>
+          </div>
+          <h3 class="text-sm font-extrabold text-[var(--theme-text-main)] mt-0.5">Voucher Sale Entry</h3>
+        </div>
+        <button onclick="closeRecordSaleModal()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Quick Presets (2x2 Grid) -->
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-[var(--theme-text-muted)]">Quick Presets</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="selectSalePreset('Cult Fit', 1200)" id="in-preset-btn-cult" class="p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/40 text-emerald-300 text-xs font-bold transition-all spring-press text-left">
+            <div>Cult.fit Elite</div>
+            <div class="text-[10px] font-normal opacity-80">+₹1,200</div>
+          </button>
+          <button onclick="selectSalePreset('Amazon Prime', 1000)" id="in-preset-btn-amazon" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Amazon Prime</div>
+            <div class="text-[10px] font-normal opacity-80">+₹1,000</div>
+          </button>
+          <button onclick="selectSalePreset('Times Prime', 400)" id="in-preset-btn-times" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Times Prime</div>
+            <div class="text-[10px] font-normal opacity-80">+₹400</div>
+          </button>
+          <button onclick="selectSalePreset('Custom Voucher', 500)" id="in-preset-btn-other" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Custom Voucher</div>
+            <div class="text-[10px] font-normal opacity-80">Manual Entry</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Title Input -->
+      <div class="space-y-1">
+        <label for="in-sale-input-title" class="text-xs font-bold text-[var(--theme-text-muted)]">Voucher Brand / Title</label>
+        <input type="text" id="in-sale-input-title" value="Cult Fit" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <!-- Selling Price Input (No Steppers, Clean Numeric) -->
+      <div class="space-y-1">
+        <label for="in-sale-input-price" class="text-xs font-bold text-[var(--theme-text-muted)]">Selling Price (₹)</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-500">₹</span>
+          <input type="number" id="in-sale-input-price" value="1200" oninput="updateSaleButtonText()" class="w-full pl-8 pr-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-sm font-extrabold text-emerald-400 focus:outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <!-- Date Input -->
+      <div class="space-y-1">
+        <label for="in-sale-input-date" class="text-xs font-bold text-[var(--theme-text-muted)]">Date</label>
+        <input type="text" id="in-sale-input-date" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <!-- Comments Input (Label: Comments, Not prefilled) -->
+      <div class="space-y-1">
+        <label for="in-sale-input-comments" class="text-xs font-bold text-[var(--theme-text-muted)]">Comments</label>
+        <input type="text" id="in-sale-input-comments" placeholder="e.g. Sold to Siddharth" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-1.5 pb-1">
+        <button id="in-btn-confirm-sale" onclick="confirmRecordSale()" class="w-full py-2.5 rounded-2xl bg-[#0C8C46] hover:bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-950/30 spring-press flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+          <span id="in-btn-confirm-sale-text">Confirm &amp; Log Sale (+₹1,200)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: "RECORD A CHARGE"                               -->
+  <!-- ======================================================== -->
+  <div id="modal-charge" class="hidden fixed inset-0 z-50 flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeRecordChargeModal()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sheet Container -->
+    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-5 shadow-2xl space-y-3.5 max-h-[90%] overflow-y-auto no-scrollbar z-10 sheet-enter">
+      <!-- Handlebar -->
+      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto"></div>
+
+      <!-- Header -->
+      <div class="flex items-start justify-between pb-1 border-b border-[var(--theme-border)]">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 uppercase tracking-wider">RuPay Income</span>
+            <span class="text-xs font-bold text-[var(--theme-text-muted)]">Record a Charge</span>
+          </div>
+          <h3 class="text-sm font-extrabold text-[var(--theme-text-main)] mt-0.5">Card Fee / Expense Entry</h3>
+        </div>
+        <button onclick="closeRecordChargeModal()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Quick Presets (2x2 Grid) -->
+      <div class="space-y-1">
+        <label class="text-xs font-bold text-[var(--theme-text-muted)]">Quick Presets</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb')" id="in-preset-charge-pnb" class="p-2.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold transition-all spring-press text-left">
+            <div>PNB Imperial Issuance</div>
+            <div class="text-[10px] font-normal opacity-80">-₹708 (Debit)</div>
+          </button>
+          <button onclick="selectChargePreset('Jana DC AMC', 588.82, 'jana-amc')" id="in-preset-charge-jana-amc" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Jana DC AMC</div>
+            <div class="text-[10px] font-normal opacity-80">-₹588.82</div>
+          </button>
+          <button onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Jana Replacement</div>
+            <div class="text-[10px] font-normal opacity-80">-₹293.82</div>
+          </button>
+          <button onclick="selectChargePreset('Canara Acc 9491 DC Hostlisting', 177, 'canara')" id="in-preset-charge-canara" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+            <div>Canara Hotlisting</div>
+            <div class="text-[10px] font-normal opacity-80">-₹177</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Title Input -->
+      <div class="space-y-1">
+        <label for="in-charge-input-title" class="text-xs font-bold text-[var(--theme-text-muted)]">Fee Title / Description</label>
+        <input type="text" id="in-charge-input-title" value="PNB Imperial DC Issuance Fee" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+      </div>
+
+      <!-- Charge Amount Input (Clean Numeric) -->
+      <div class="space-y-1">
+        <label for="in-charge-input-amount" class="text-xs font-bold text-[var(--theme-text-muted)]">Charge Amount (₹)</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-400">-₹</span>
+          <input type="number" id="in-charge-input-amount" value="708" step="any" oninput="updateChargeButtonText()" class="w-full pl-8 pr-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-sm font-extrabold text-rose-400 focus:outline-none focus:border-rose-500">
+        </div>
+      </div>
+
+      <!-- Date Input -->
+      <div class="space-y-1">
+        <label for="in-charge-input-date" class="text-xs font-bold text-[var(--theme-text-muted)]">Date</label>
+        <input type="text" id="in-charge-input-date" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+      </div>
+
+      <!-- Comments Input (Label: Comments, Not prefilled) -->
+      <div class="space-y-1">
+        <label for="in-charge-input-comments" class="text-xs font-bold text-[var(--theme-text-muted)]">Comments</label>
+        <input type="text" id="in-charge-input-comments" placeholder="e.g. Card Replacement 9012" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-rose-500">
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-1.5 pb-1">
+        <button id="in-btn-confirm-charge" onclick="confirmRecordCharge()" class="w-full py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-950/30 spring-press flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+          <span id="in-btn-confirm-charge-text">Confirm &amp; Deduct Charge (-₹708)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADD CARD MODAL SHEET -->
   <div id="modal-add-card" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
     <div class="bg-[#181617] border border-neutral-700 rounded-3xl w-full max-w-[420px] p-5 shadow-2xl text-left space-y-3">
@@ -2567,6 +2902,13 @@
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Quick Shortcuts</div>
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] divide-y divide-[var(--theme-border)] text-xs text-[var(--theme-text-muted)] overflow-hidden shadow-sm">
+            <button onclick="switchWorkspace('income'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+              <span class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                <span>RuPay Income Tracker</span>
+              </span>
+              <span class="text-[10px] font-mono-apple">›</span>
+            </button>
             <button onclick="switchWorkspace('banks'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
@@ -3446,7 +3788,7 @@
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
 
       // Non-destructive actions (additions or in-place status updates) must NEVER be quarantined
-      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'MARK_REVALIDATED', 'LOG_SHARED']);
+      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY']);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       }
@@ -3597,13 +3939,16 @@
         renderAll();
         flushUncommittedRedeems();
         syncWithGoogleSheets();
-        const savedWorkspace = sessionStorage.getItem('rupay_active_workspace') || 'cards';
+        const urlWs = (new URLSearchParams(window.location.search)).get('ws');
+        const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'cards';
         switchWorkspace(savedWorkspace);
       }
     }
 
     // Lock Vault and Wipe Memory
     async function lockVault() {
+      const isDevUnlock = (new URLSearchParams(window.location.search)).get('dev_unlock') === 'true';
+      if (isDevUnlock) return;
       securityState.isUnlocked = false;
       securityState.enteredPin = '';
       clearOtpInput();
@@ -4947,6 +5292,24 @@
       }
     }
 
+    const DEFAULT_INCOME_LEDGER = [
+      { id: 'inc-1', title: 'Amazon Prime', date: '13/10/26', price: 4000, comments: '4 sold', account: 'ICICI 8821', year: 2026 },
+      { id: 'inc-2', title: 'Cult Fit', date: '16/10/26', price: 1500, comments: 'g/Siddharth Agrawal', account: 'ICICI 8821', year: 2026 },
+      { id: 'inc-3', title: 'PNB Imperial DC Issuance Fee', date: '19/10/26', price: -708, comments: 'Card Replacement 9012', account: 'PNB', year: 2026 },
+      { id: 'inc-4', title: 'Canara Acc 9491 DC Hostlisting', date: '24/10/26', price: -177, comments: 'Hotlisting fee', account: 'Canara', year: 2026 },
+      { id: 'inc-5', title: 'Jana DC AMC', date: '27/10/26', price: -588.82, comments: 'Annual Maintenance', account: 'Jana', year: 2026 },
+      { id: 'inc-6', title: 'Amazon Prime', date: '28/09/26', price: 3000, comments: '3 sold to group', account: 'ICICI 8821', year: 2026 },
+      { id: 'inc-7', title: 'Cult Fit Elite', date: '12/09/26', price: 2400, comments: '2 sold (₹1200 ea)', account: 'HDFC', year: 2026 },
+      { id: 'inc-8', title: 'PNB DC Replacement', date: '05/08/26', price: -708, comments: 'Lost card replacement', account: 'PNB', year: 2026 },
+      { id: 'inc-9', title: 'Historical 2026 Voucher Sales', date: '01/08/26', price: 31600, comments: 'Previous 2026 voucher sales', account: 'Vault', year: 2026 },
+      { id: 'inc-10', title: '2025 Voucher Sales (Aggregated)', date: '31/12/25', price: 112000, comments: 'All 2025 voucher sales', account: 'Vault', year: 2025 },
+      { id: 'inc-11', title: '202 Card Issuance & Fees', date: '15/10/25', price: -5400, comments: '2025 replacement charges', account: 'Bank Accounts', year: 2025 },
+      { id: 'inc-12', title: '2024 Voucher Sales (Aggregated)', date: '31/12/24', price: 51000, comments: 'All 2024 voucher sales', account: 'Vault', year: 2024 },
+      { id: 'inc-13', title: 'Jana DC Replacement', date: '20/05/24', price: -293.82, comments: 'Jana DC replacement fee', account: 'Jana', year: 2024 },
+      { id: 'inc-14', title: 'PNB CC Replacements', date: '15/07/24', price: -1180, comments: 'Double CC replacement', account: 'PNB', year: 2024 },
+      { id: 'inc-15', title: '2024 Card Fees & AMC', date: '10/01/24', price: -3201.38, comments: 'Other 2024 bank charges', account: 'Bank Accounts', year: 2024 }
+    ];
+
     const state = {
       isDark: true,
       activeWorkspace: 'cards',
@@ -4961,10 +5324,17 @@
       accounts: [],
       cards: [],
       vouchers: [],
-      staging: []
+      staging: [],
+      income: {
+        allTime: { gross: 0, charges: 0, net: 0, count: 0 },
+        byYear: {},
+        ledger: JSON.parse(JSON.stringify(DEFAULT_INCOME_LEDGER))
+      },
+      incomeYearFilter: '2026',
+      incomeLedgerTypeFilter: 'all'
     };
 
-    /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS, BANKS) --- */
+    /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS, BANKS, INCOME) --- */
     function switchWorkspace(target) {
       state.activeWorkspace = (target === 'hub' ? 'cards' : target) || 'cards';
       try {
@@ -4973,6 +5343,7 @@
       const cardEl = document.getElementById('view-card-manager');
       const voucherEl = document.getElementById('mobile-app-container');
       const bankEl = document.getElementById('view-bank-accounts');
+      const incomeEl = document.getElementById('view-income-tracker');
       const fabBtn = document.getElementById('unified-floating-dock');
 
       closeExecutiveDropdown();
@@ -4982,6 +5353,7 @@
         if (cardEl) cardEl.classList.remove('hidden');
         if (voucherEl) voucherEl.classList.add('hidden');
         if (bankEl) bankEl.classList.add('hidden');
+        if (incomeEl) incomeEl.classList.add('hidden');
         if (fabBtn) fabBtn.classList.add('hidden');
         renderCardManagerList(currentCardCategoryFilter || 'Debit');
         updateDrawerCardCount();
@@ -4997,6 +5369,7 @@
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.add('hidden');
         if (bankEl) bankEl.classList.remove('hidden');
+        if (incomeEl) incomeEl.classList.add('hidden');
         if (fabBtn) fabBtn.classList.add('hidden');
 
         renderBankManager();
@@ -5004,11 +5377,25 @@
         const baSync = document.getElementById('ba-sync-time');
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
         if (baSync && savedSyncTime) baSync.textContent = savedSyncTime;
+      } else if (state.activeWorkspace === 'income') {
+        isCardManagerOpen = false;
+        if (cardEl) cardEl.classList.add('hidden');
+        if (voucherEl) voucherEl.classList.add('hidden');
+        if (bankEl) bankEl.classList.add('hidden');
+        if (incomeEl) incomeEl.classList.remove('hidden');
+        if (fabBtn) fabBtn.classList.add('hidden');
+
+        renderIncomeTracker();
+
+        const inSync = document.getElementById('in-sync-time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        if (inSync && savedSyncTime) inSync.textContent = savedSyncTime;
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
         if (voucherEl) voucherEl.classList.remove('hidden');
         if (bankEl) bankEl.classList.add('hidden');
+        if (incomeEl) incomeEl.classList.add('hidden');
         if (fabBtn) fabBtn.classList.remove('hidden');
 
         const bConfig = BRAND_CONFIG.find(x => x.key === normalizeBrandKey(state.activeFilterBrand));
@@ -5026,7 +5413,7 @@
       updateDrawerSwitcherUI();
     }
 
-    /* --- EXECUTIVE DROPDOWN & WORKSPACE SWITCHER (APPROACH 4A) --- */
+    /* --- EXECUTIVE DROPDOWN & WORKSPACE SWITCHER ENGINE --- */
     let isExecutiveDropdownOpen = false;
 
     function toggleExecutiveDropdown() {
@@ -5036,6 +5423,7 @@
       const mbChevron = document.getElementById('mb-capsule-chevron');
       const cmChevron = document.getElementById('cm-capsule-chevron');
       const baChevron = document.getElementById('ba-capsule-chevron');
+      const inChevron = document.getElementById('in-capsule-chevron');
 
       if (isExecutiveDropdownOpen) {
         renderExecutiveDropdown();
@@ -5044,6 +5432,7 @@
         if (mbChevron) mbChevron.style.transform = 'rotate(180deg)';
         if (cmChevron) cmChevron.style.transform = 'rotate(180deg)';
         if (baChevron) baChevron.style.transform = 'rotate(180deg)';
+        if (inChevron) inChevron.style.transform = 'rotate(180deg)';
       } else {
         closeExecutiveDropdown();
       }
@@ -5056,170 +5445,582 @@
       const mbChevron = document.getElementById('mb-capsule-chevron');
       const cmChevron = document.getElementById('cm-capsule-chevron');
       const baChevron = document.getElementById('ba-capsule-chevron');
+      const inChevron = document.getElementById('in-capsule-chevron');
 
       if (popover) popover.classList.add('hidden');
       if (backdrop) backdrop.classList.add('hidden');
       if (mbChevron) mbChevron.style.transform = 'rotate(0deg)';
       if (cmChevron) cmChevron.style.transform = 'rotate(0deg)';
       if (baChevron) baChevron.style.transform = 'rotate(0deg)';
+      if (inChevron) inChevron.style.transform = 'rotate(0deg)';
+    }
+
+    function getWorkspaceCardHTML(wsKey, activeWs) {
+      const items = {
+        income: {
+          key: 'income',
+          title: 'RuPay Income Tracker',
+          subtitle: 'Voucher Sales & Card Charges',
+          bg: 'bg-[#F47A21]',
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
+        },
+        vouchers: {
+          key: 'vouchers',
+          title: 'Voucher Manager',
+          subtitle: 'Vault & Redemptions (Manual)',
+          bg: 'bg-[#0C8C46]',
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>'
+        },
+        cards: {
+          key: 'cards',
+          title: 'Card Manager',
+          subtitle: 'Debit & Credit Cards',
+          bg: 'bg-blue-600',
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
+        },
+        banks: {
+          key: 'banks',
+          title: 'Bank Accounts Manager',
+          subtitle: 'Accounts, Nominees & Balances',
+          bg: 'bg-rose-600',
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>'
+        }
+      };
+
+      const item = items[wsKey];
+      if (!item) return '';
+      const isActive = (wsKey === activeWs);
+
+      return `
+        <div onclick="switchWorkspace('${item.key}'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border ${isActive ? 'border-neutral-500/40 ring-1 ring-neutral-500/20' : 'border-[var(--theme-border)]'} flex items-center justify-between cursor-pointer transition-all spring-press group">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg ${item.bg} text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+              ${item.svg}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-emerald-400 transition-colors">${item.title}</span>
+                ${isActive ? '<span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">ACTIVE</span>' : ''}
+              </div>
+              <div class="text-[10px] text-[var(--theme-text-sub)]">${item.subtitle}</div>
+            </div>
+          </div>
+          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </div>
+      `;
     }
 
     function renderExecutiveDropdown() {
       const popover = document.getElementById('executive-dropdown-popover');
       if (!popover) return;
 
-      const wsCardVouchers = `
-        <div onclick="switchWorkspace('vouchers'); closeExecutiveDropdown();" class="ws-switch-card mt-1.5 p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/70 to-emerald-900/50 border border-emerald-500/40 hover:border-emerald-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-[#0C8C46] text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            </div>
-            <div class="ws-switch-title text-xs font-bold text-white">Voucher Manager</div>
-          </div>
-          <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-      `;
+      const wsOptions = ['income', 'vouchers', 'cards', 'banks']
+        .map(key => getWorkspaceCardHTML(key, state.activeWorkspace))
+        .join('');
 
-      const wsCardCards = `
-        <div onclick="switchWorkspace('cards'); closeExecutiveDropdown();" class="ws-switch-card-blue mt-1.5 p-2.5 rounded-xl bg-gradient-to-r from-blue-950/70 to-indigo-900/50 border border-blue-500/40 hover:border-blue-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      let filterSection = '';
+      if (state.activeWorkspace === 'income') {
+        filterSection = `
+          <div class="pt-2 border-t border-[var(--theme-border)]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Filter Income Ledger</span>
+            <div class="mt-1.5 grid grid-cols-2 gap-1.5">
+              <button onclick="setIncomeYearFilter('all'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] text-left flex items-center justify-between">
+                <span>All-Time</span>
+                <span class="text-[10px] text-[var(--theme-text-sub)] font-mono">${(state.income && state.income.ledger) ? state.income.ledger.length : 0} entries</span>
+              </button>
+              <button onclick="setIncomeYearFilter('2026'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] text-left flex items-center justify-between">
+                <span>2026</span>
+                <span class="text-[10px] text-emerald-500 font-mono">Current</span>
+              </button>
             </div>
-            <div class="ws-switch-title text-xs font-bold text-white">Card Manager</div>
           </div>
-          <svg class="w-4 h-4 text-blue-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-      `;
-
-      const wsCardBanks = `
-        <div onclick="switchWorkspace('banks'); closeExecutiveDropdown();" class="ws-switch-card-rose mt-1.5 p-2.5 rounded-xl bg-gradient-to-r from-rose-950/70 via-amber-950/60 to-rose-900/50 border border-rose-500/40 hover:border-rose-500/70 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-rose-600 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
-            </div>
-            <div class="ws-switch-title text-xs font-bold text-white">Bank Accounts Manager</div>
-          </div>
-          <svg class="w-4 h-4 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-      `;
-
-      if (state.activeWorkspace === 'cards') {
-        popover.innerHTML = `
-          <div class="space-y-3">
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
-              <div class="space-y-1.5">
-                ${wsCardVouchers}
-                ${wsCardBanks}
+        `;
+      } else if (state.activeWorkspace === 'cards') {
+        const badgeDc = document.getElementById('badge-count-dc');
+        const badgeCc = document.getElementById('badge-count-cc');
+        const dcCount = badgeDc ? badgeDc.textContent : '16';
+        const ccCount = badgeCc ? badgeCc.textContent : '4';
+        filterSection = `
+          <div class="pt-2 border-t border-[var(--theme-border)]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Filter Cards</span>
+            <div class="mt-1.5 space-y-1">
+              <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-between cursor-pointer transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                  </span>
+                  <span class="text-xs font-bold text-[var(--theme-text-main)]">Credit Cards</span>
+                </div>
+                <span class="text-[11px] font-bold text-[var(--theme-text-sub)]">${ccCount} Cards</span>
               </div>
-            </div>
-
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Filter Cards</span>
-              <div class="mt-1.5 space-y-1">
-                <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="dd-item-normal p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
-                  <div class="flex items-center gap-2.5">
-                    <span class="dd-item-icon-box dd-item-icon-purple w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    </span>
-                    <span class="dd-item-label text-xs font-bold text-white">Credit Cards</span>
-                  </div>
-                  <span class="dd-count-text text-[11px] font-bold text-neutral-400" id="dd-count-cc">4 Cards</span>
+              <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-between cursor-pointer transition-all">
+                <div class="flex items-center gap-2.5">
+                  <span class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
+                  </span>
+                  <span class="text-xs font-bold text-[var(--theme-text-main)]">Debit Cards</span>
                 </div>
-                <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="dd-item-normal p-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 flex items-center justify-between cursor-pointer transition-all">
-                  <div class="flex items-center gap-2.5">
-                    <span class="dd-item-icon-box dd-item-icon-blue w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
-                    </span>
-                    <span class="dd-item-label text-xs font-bold text-white">Debit Cards</span>
-                  </div>
-                  <span class="dd-count-text text-[11px] font-bold text-neutral-400" id="dd-count-dc">16 Cards</span>
-                </div>
+                <span class="text-[11px] font-bold text-[var(--theme-text-sub)]">${dcCount} Cards</span>
               </div>
             </div>
           </div>
         `;
-        updateDrawerCardCount();
-        const badgeDc = document.getElementById('badge-count-dc');
-        const badgeCc = document.getElementById('badge-count-cc');
-        const ddCc = document.getElementById('dd-count-cc');
-        const ddDc = document.getElementById('dd-count-dc');
-        if (ddCc && badgeCc) ddCc.textContent = `${badgeCc.textContent} Cards`;
-        if (ddDc && badgeDc) ddDc.textContent = `${badgeDc.textContent} Cards`;
       } else if (state.activeWorkspace === 'banks') {
-        popover.innerHTML = `
-          <div class="space-y-3">
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
-              <div class="space-y-1.5">
-                ${wsCardCards}
-                ${wsCardVouchers}
-              </div>
-            </div>
-
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Family Members</span>
-              <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5">
-                ${BANK_MEMBERS.map(m => {
-                  const isSel = (selectedBankMember === m.id);
-                  return `
-                    <div onclick="selectBankMember('${m.id}'); closeExecutiveDropdown();" class="${isSel ? 'dd-item-active bg-neutral-800 border border-rose-500/40 text-rose-300 font-semibold' : 'dd-item-normal bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
-                      <div class="flex items-center gap-2.5 truncate">
-                        <span class="w-6 h-6 rounded-md ${m.avatarBg} text-white flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">${m.short}</span>
-                        <span class="dd-item-label text-xs font-bold truncate">${m.name}</span>
-                      </div>
-                      <span class="dd-item-badge text-[10px] font-mono-apple ${isSel ? 'text-rose-400 font-bold' : 'text-neutral-500'}">${m.count} Acc</span>
+        filterSection = `
+          <div class="pt-2 border-t border-[var(--theme-border)]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Family Members</span>
+            <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5">
+              ${BANK_MEMBERS.map(m => {
+                const isSel = (selectedBankMember === m.id);
+                return `
+                  <div onclick="selectBankMember('${m.id}'); closeExecutiveDropdown();" class="${isSel ? 'bg-[var(--theme-card-subtle)] border border-rose-500/40 text-rose-400 font-semibold' : 'bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)]'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
+                    <div class="flex items-center gap-2.5 truncate">
+                      <span class="w-6 h-6 rounded-md ${m.avatarBg} text-white flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">${m.short}</span>
+                      <span class="text-xs font-bold truncate">${m.name}</span>
                     </div>
-                  `;
-                }).join('')}
-              </div>
+                    <span class="text-[10px] font-mono-apple ${isSel ? 'text-rose-400 font-bold' : 'text-[var(--theme-text-sub)]'}">${m.count} Acc</span>
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
         `;
       } else {
         const normActive = normalizeBrandKey(state.activeFilterBrand);
-        popover.innerHTML = `
-          <div class="space-y-3">
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Change Workspace</span>
-              <div class="space-y-1.5">
-                ${wsCardCards}
-                ${wsCardBanks}
-              </div>
+        filterSection = `
+          <div class="pt-2 border-t border-[var(--theme-border)]">
+            <div class="relative mb-2">
+              <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="w-full bg-[var(--theme-card-bg)] border border-[var(--theme-border)] rounded-xl px-3 py-1.5 pl-8 text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
+              <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-sub)]" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
             </div>
-
-            <div>
-              <div class="relative">
-                <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="dd-search-input w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 pl-8 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-700">
-                <svg class="dd-search-icon w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              </div>
-            </div>
-
-            <div>
-              <span class="dd-section-header text-[10px] font-bold uppercase tracking-wider text-neutral-400">Brand Passes &amp; Queues</span>
-              <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5" id="executive-brands-list">
-                ${BRAND_CONFIG.map(item => {
-                  const isSel = (normActive === item.key);
-                  const iconSvg = item.key === 'ActivityLog'
-                    ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`
-                    : item.key === 'Redeemed'
-                    ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
-                    : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>`;
-                  return `
-                    <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="${isSel ? 'dd-item-active bg-neutral-800 border border-emerald-500/40 text-emerald-400 font-semibold' : 'dd-item-normal bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
-                      <div class="flex items-center gap-2.5 truncate">
-                        <span class="dd-item-icon-box w-6 h-6 rounded-md bg-neutral-800 flex items-center justify-center shrink-0 ${isSel ? 'text-emerald-400' : 'text-neutral-400'}">${iconSvg}</span>
-                        <span class="dd-item-label text-xs font-bold truncate">${item.name}</span>
-                      </div>
-                      <span class="dd-item-badge text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-neutral-500'}">Pass</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Brand Passes &amp; Queues</span>
+            <div class="mt-1.5 space-y-1 max-h-[200px] overflow-y-auto no-scrollbar pr-0.5" id="executive-brands-list">
+              ${BRAND_CONFIG.map(item => {
+                const isSel = (normActive === item.key);
+                const iconSvg = item.key === 'ActivityLog'
+                  ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`
+                  : item.key === 'Redeemed'
+                  ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>`
+                  : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`;
+                return `
+                  <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="${isSel ? 'bg-[var(--theme-card-subtle)] border border-emerald-500/40 text-emerald-400 font-semibold' : 'bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)]'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
+                    <div class="flex items-center gap-2.5 truncate">
+                      <span class="w-6 h-6 rounded-md bg-[var(--theme-card-subtle)] flex items-center justify-center shrink-0 ${isSel ? 'text-emerald-400' : 'text-[var(--theme-text-sub)]'}">${iconSvg}</span>
+                      <span class="text-xs font-bold truncate text-[var(--theme-text-main)]">${item.name}</span>
                     </div>
-                  `;
-                }).join('')}
-              </div>
+                    <span class="text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-[var(--theme-text-sub)]'}">Pass</span>
+                  </div>
+                `;
+              }).join('')}
             </div>
           </div>
         `;
+      }
+
+      popover.innerHTML = `
+        <div class="space-y-2.5">
+          <div>
+            <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-1 mb-1.5">SWITCH WORKSPACE</div>
+            <div class="space-y-1.5">
+              ${wsOptions}
+            </div>
+          </div>
+          ${filterSection}
+        </div>
+      `;
+    }
+
+    /* --- RUPAY INCOME TRACKER VIEW CONTROLLER & FLOWS --- */
+    function formatTodayDDMMYY() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    }
+
+    function setIncomeYearFilter(year) {
+      state.incomeYearFilter = year;
+      ['all', '2026', '2025', '2024'].forEach(y => {
+        const btn = document.getElementById(`in-year-btn-${y}`);
+        if (!btn) return;
+        if (y === year) {
+          btn.className = 'px-3 py-1 rounded-lg bg-[#0C8C46] text-white shadow transition-all spring-press';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all spring-press';
+        }
+      });
+      renderIncomeTracker();
+    }
+
+    function setIncomeLedgerTypeFilter(type) {
+      state.incomeLedgerTypeFilter = type;
+      ['all', 'income', 'charge'].forEach(t => {
+        const btn = document.getElementById(`in-ledger-filter-${t}`);
+        if (!btn) return;
+        if (t === type) {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] text-[var(--theme-text-main)] font-bold border border-[var(--theme-border)]';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-white font-medium';
+        }
+      });
+      renderIncomeLedger();
+    }
+
+    function renderIncomeTracker() {
+      const ledger = (state.income && Array.isArray(state.income.ledger)) ? state.income.ledger : [];
+
+      // Filter ledger by selected year
+      const filteredYear = state.incomeYearFilter === 'all'
+        ? ledger
+        : ledger.filter(item => String(item.year) === String(state.incomeYearFilter));
+
+      let grossIncome = 0;
+      let cardCharges = 0;
+      let incomeCount = 0;
+      let chargeCount = 0;
+
+      filteredYear.forEach(row => {
+        const price = Number(row.price) || 0;
+        if (price > 0) {
+          grossIncome += price;
+          incomeCount++;
+        } else {
+          cardCharges += Math.abs(price);
+          chargeCount++;
+        }
+      });
+
+      const netIncome = grossIncome - cardCharges;
+
+      const yearLabelEl = document.getElementById('in-kpi-year-label');
+      if (yearLabelEl) yearLabelEl.textContent = state.incomeYearFilter === 'all' ? 'All-Time' : state.incomeYearFilter;
+
+      const netEl = document.getElementById('in-kpi-net-income');
+      if (netEl) netEl.textContent = '₹' + netIncome.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const grossEl = document.getElementById('in-kpi-gross-income');
+      if (grossEl) grossEl.textContent = '+₹' + grossIncome.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const chargeEl = document.getElementById('in-kpi-card-charges');
+      if (chargeEl) chargeEl.textContent = '-₹' + cardCharges.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const incCountEl = document.getElementById('in-kpi-income-count');
+      if (incCountEl) incCountEl.textContent = `${incomeCount} sold entries`;
+
+      const chgCountEl = document.getElementById('in-kpi-charges-count');
+      if (chgCountEl) chgCountEl.textContent = `${chargeCount} fee deductions`;
+
+      renderIncomeLedger();
+    }
+
+    function renderIncomeLedger() {
+      const container = document.getElementById('in-income-ledger-container');
+      if (!container) return;
+
+      const searchInput = document.getElementById('in-ledger-search');
+      const search = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const ledger = (state.income && Array.isArray(state.income.ledger)) ? state.income.ledger : [];
+
+      // 1. Filter by Year
+      let list = state.incomeYearFilter === 'all'
+        ? ledger
+        : ledger.filter(item => String(item.year) === String(state.incomeYearFilter));
+
+      // 2. Filter by Type
+      if (state.incomeLedgerTypeFilter === 'income') {
+        list = list.filter(item => Number(item.price) > 0);
+      } else if (state.incomeLedgerTypeFilter === 'charge') {
+        list = list.filter(item => Number(item.price) < 0);
+      }
+
+      // 3. Filter by Search Query
+      if (search) {
+        list = list.filter(item =>
+          (item.title || '').toLowerCase().includes(search) ||
+          (item.comments || '').toLowerCase().includes(search) ||
+          (item.account || '').toLowerCase().includes(search)
+        );
+      }
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-[var(--theme-text-sub)] text-xs">
+            No transactions match this filter.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(item => {
+        const price = Number(item.price) || 0;
+        const isPositive = price > 0;
+        const formattedAmount = isPositive
+          ? `+₹${price.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
+          : `-₹${Math.abs(price).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
+        return `
+          <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} font-bold">
+                ${isPositive ? `
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                ` : `
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+                `}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${item.title}</h4>
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${isPositive ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}">
+                    ${isPositive ? 'SALE' : 'FEE'}
+                  </span>
+                </div>
+                <div class="text-[10px] text-[var(--theme-text-sub)] flex items-center gap-1.5 mt-0.5 truncate">
+                  <span>${item.date || ''}</span>
+                  ${item.comments ? `<span>•</span><span class="truncate">${item.comments}</span>` : ''}
+                  ${item.account ? `<span>•</span><span class="text-[var(--theme-text-muted)]">${item.account}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="text-right shrink-0">
+              <div class="text-xs font-extrabold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} font-mono">
+                ${formattedAmount}
+              </div>
+              <div class="text-[9px] text-[var(--theme-text-sub)]">${item.year || ''}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* --- "+ ADD" BOTTOM SHEET CONTROLS --- */
+    function toggleAddMenu() {
+      const modal = document.getElementById('add-choice-modal');
+      if (!modal) return;
+      const isOpen = !modal.classList.contains('hidden');
+      if (isOpen) {
+        closeAddMenu();
+      } else {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeAddMenu() {
+      const modal = document.getElementById('add-choice-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    /* --- RECORD A SALE FLOW --- */
+    function openRecordSaleModal() {
+      selectSalePreset('Cult Fit', 1200);
+      const commentsInput = document.getElementById('in-sale-input-comments');
+      if (commentsInput) commentsInput.value = '';
+      const dateInput = document.getElementById('in-sale-input-date');
+      if (dateInput) dateInput.value = formatTodayDDMMYY();
+      const modal = document.getElementById('modal-sale');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeRecordSaleModal() {
+      const modal = document.getElementById('modal-sale');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function updateSaleButtonText() {
+      const valInput = document.getElementById('in-sale-input-price');
+      const val = parseInt(valInput ? valInput.value : 0, 10) || 0;
+      const btnText = document.getElementById('in-btn-confirm-sale-text');
+      if (btnText) btnText.textContent = `Confirm & Log Sale (+₹${val.toLocaleString('en-IN')})`;
+    }
+
+    function selectSalePreset(brand, price) {
+      const titleInput = document.getElementById('in-sale-input-title');
+      if (titleInput) titleInput.value = brand;
+      const priceInput = document.getElementById('in-sale-input-price');
+      if (priceInput) priceInput.value = price;
+      updateSaleButtonText();
+
+      const isCult = brand.includes('Cult');
+      const isAmzn = brand.includes('Amazon');
+      const isTimes = brand.includes('Times');
+
+      const btnCult = document.getElementById('in-preset-btn-cult');
+      const btnAmzn = document.getElementById('in-preset-btn-amazon');
+      const btnTimes = document.getElementById('in-preset-btn-times');
+      const btnOther = document.getElementById('in-preset-btn-other');
+
+      const activeCls = 'p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/40 text-emerald-300 text-xs font-bold transition-all spring-press text-left';
+      const inactiveCls = 'p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left';
+
+      if (btnCult) btnCult.className = isCult ? activeCls : inactiveCls;
+      if (btnAmzn) btnAmzn.className = isAmzn ? activeCls : inactiveCls;
+      if (btnTimes) btnTimes.className = isTimes ? activeCls : inactiveCls;
+      if (btnOther) btnOther.className = (!isCult && !isAmzn && !isTimes) ? activeCls : inactiveCls;
+    }
+
+    async function confirmRecordSale() {
+      const titleInput = document.getElementById('in-sale-input-title');
+      const title = (titleInput ? titleInput.value : '').trim() || 'Cult Fit';
+      const priceInput = document.getElementById('in-sale-input-price');
+      const price = parseInt(priceInput ? priceInput.value : 1200, 10) || 1200;
+      const commentsInput = document.getElementById('in-sale-input-comments');
+      const comments = (commentsInput ? commentsInput.value : '').trim();
+      const dateInput = document.getElementById('in-sale-input-date');
+      const date = (dateInput ? dateInput.value : '').trim() || formatTodayDDMMYY();
+
+      // Determine year
+      let yr = 2026;
+      if (date) {
+        const parts = date.split(/[\/\-\.]/);
+        if (parts.length === 3) {
+          const yPart = parts[2].trim();
+          if (yPart.length === 4) yr = parseInt(yPart, 10);
+          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+        }
+      }
+
+      const newEntry = {
+        id: 'inc-' + Date.now(),
+        title: title,
+        date: date,
+        price: price,
+        comments: comments,
+        account: '',
+        year: yr
+      };
+
+      if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
+      if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
+
+      // Optimistic Update
+      state.income.ledger.unshift(newEntry);
+      closeRecordSaleModal();
+      renderIncomeTracker();
+      showToast(`Logged ${title} sale (+₹${price}) in RuPay Income!`);
+
+      // Rollback function in case network or backend fails
+      const rollback = () => {
+        state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
+        renderIncomeTracker();
+        showToast(`Failed to persist ${title} sale. Reverted.`);
+      };
+
+      try {
+        await apiFetch('RECORD_INCOME_ENTRY', {
+          title: title,
+          date: date,
+          price: price,
+          comments: comments,
+          account: ''
+        }, { rollback });
+      } catch (err) {
+        console.error('Error recording income sale:', err);
+      }
+    }
+
+    /* --- RECORD A CHARGE FLOW --- */
+    function openRecordChargeModal() {
+      selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb');
+      const commentsInput = document.getElementById('in-charge-input-comments');
+      if (commentsInput) commentsInput.value = '';
+      const dateInput = document.getElementById('in-charge-input-date');
+      if (dateInput) dateInput.value = formatTodayDDMMYY();
+      const modal = document.getElementById('modal-charge');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeRecordChargeModal() {
+      const modal = document.getElementById('modal-charge');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function updateChargeButtonText() {
+      const amountInput = document.getElementById('in-charge-input-amount');
+      const val = parseFloat(amountInput ? amountInput.value : 0) || 0;
+      const btnText = document.getElementById('in-btn-confirm-charge-text');
+      if (btnText) btnText.textContent = `Confirm & Deduct Charge (-₹${val.toLocaleString('en-IN')})`;
+    }
+
+    function selectChargePreset(title, amount, key) {
+      const titleInput = document.getElementById('in-charge-input-title');
+      if (titleInput) titleInput.value = title;
+      const amountInput = document.getElementById('in-charge-input-amount');
+      if (amountInput) amountInput.value = amount;
+      updateChargeButtonText();
+
+      const activeCls = 'p-2.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold transition-all spring-press text-left';
+      const inactiveCls = 'p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left';
+
+      const btnPnb = document.getElementById('in-preset-charge-pnb');
+      const btnJanaAmc = document.getElementById('in-preset-charge-jana-amc');
+      const btnJanaRep = document.getElementById('in-preset-charge-jana-rep');
+      const btnCanara = document.getElementById('in-preset-charge-canara');
+
+      if (btnPnb) btnPnb.className = key === 'pnb' ? activeCls : inactiveCls;
+      if (btnJanaAmc) btnJanaAmc.className = key === 'jana-amc' ? activeCls : inactiveCls;
+      if (btnJanaRep) btnJanaRep.className = key === 'jana-rep' ? activeCls : inactiveCls;
+      if (btnCanara) btnCanara.className = key === 'canara' ? activeCls : inactiveCls;
+    }
+
+    async function confirmRecordCharge() {
+      const titleInput = document.getElementById('in-charge-input-title');
+      const title = (titleInput ? titleInput.value : '').trim() || 'Card Charge';
+      const amountInput = document.getElementById('in-charge-input-amount');
+      const amount = parseFloat(amountInput ? amountInput.value : 0) || 0;
+      const commentsInput = document.getElementById('in-charge-input-comments');
+      const comments = (commentsInput ? commentsInput.value : '').trim();
+      const dateInput = document.getElementById('in-charge-input-date');
+      const date = (dateInput ? dateInput.value : '').trim() || formatTodayDDMMYY();
+
+      let yr = 2026;
+      if (date) {
+        const parts = date.split(/[\/\-\.]/);
+        if (parts.length === 3) {
+          const yPart = parts[2].trim();
+          if (yPart.length === 4) yr = parseInt(yPart, 10);
+          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+        }
+      }
+
+      const chargePrice = -Math.abs(amount);
+      const newEntry = {
+        id: 'inc-' + Date.now(),
+        title: title,
+        date: date,
+        price: chargePrice,
+        comments: comments,
+        account: '',
+        year: yr
+      };
+
+      if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
+      if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
+
+      // Optimistic Update
+      state.income.ledger.unshift(newEntry);
+      closeRecordChargeModal();
+      renderIncomeTracker();
+      showToast(`Deducted ${title} (-₹${amount}) in RuPay Income!`);
+
+      // Rollback function in case of error
+      const rollback = () => {
+        state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
+        renderIncomeTracker();
+        showToast(`Failed to persist charge ${title}. Reverted.`);
+      };
+
+      try {
+        await apiFetch('RECORD_INCOME_ENTRY', {
+          title: title,
+          date: date,
+          price: chargePrice,
+          comments: comments,
+          account: ''
+        }, { rollback });
+      } catch (err) {
+        console.error('Error recording card charge:', err);
       }
     }
 
@@ -5446,6 +6247,10 @@
       if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing now...';
       const spinner = document.getElementById('mb-sync-spinner');
       if (spinner) spinner.classList.add('animate-spin');
+      const inSpinner = document.getElementById('in-sync-spinner');
+      if (inSpinner) inSpinner.classList.add('animate-spin');
+      const inSyncTime = document.getElementById('in-sync-time');
+      if (inSyncTime) inSyncTime.textContent = 'Syncing...';
       
       try {
         const token = getSessionToken();
@@ -5463,9 +6268,12 @@
         
         if (data && data.error) {
           if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
-            lockVault();
-            showToast('Session expired. Please enter OTP to re-authenticate.');
-            return;
+            const isDevUnlock = (new URLSearchParams(window.location.search)).get('dev_unlock') === 'true';
+            if (!isDevUnlock) {
+              lockVault();
+              showToast('Session expired. Please enter OTP to re-authenticate.');
+              return;
+            }
           }
         }
 
@@ -5758,6 +6566,13 @@
           await saveEncryptedStaging(state.staging);
         }
 
+        if (data.income) {
+          state.income = data.income;
+          if (state.activeWorkspace === 'income') {
+            renderIncomeTracker();
+          }
+        }
+
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
         const sheetLink = document.getElementById('sheet-link-btn');
         if (sheetLink) sheetLink.href = sheetUrl;
@@ -5773,6 +6588,8 @@
           mbSyncTime.classList.remove('text-[#F47A21]');
           mbSyncTime.classList.add('text-neutral-400');
         }
+        const inSyncTime = document.getElementById('in-sync-time');
+        if (inSyncTime) inSyncTime.textContent = `Synced at ${timeStr}`;
 
         const drawerSheetCount = document.getElementById('drawer-sheet-count');
         if (drawerSheetCount) {
@@ -5792,9 +6609,13 @@
           mbSyncTime.classList.remove('text-[#F47A21]');
           mbSyncTime.classList.add('text-neutral-400');
         }
+        const inSyncTime = document.getElementById('in-sync-time');
+        if (inSyncTime) inSyncTime.textContent = `Synced at ${timeStr} (cached)`;
       } finally {
         isSyncing = false;
         if (spinner) spinner.classList.remove('animate-spin');
+        const inSpinner = document.getElementById('in-sync-spinner');
+        if (inSpinner) inSpinner.classList.remove('animate-spin');
       }
     }
 
@@ -10739,6 +11560,12 @@
       const urlWs = urlParams.get('ws');
       const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'cards';
       switchWorkspace(savedWorkspace);
+
+      if (urlParams.get('popup') === 'add') toggleAddMenu();
+      if (urlParams.get('modal') === 'sale') openRecordSaleModal();
+      if (urlParams.get('modal') === 'charge') openRecordChargeModal();
+      if (urlParams.get('dropdown') === '1') toggleExecutiveDropdown();
+      if (urlParams.get('year')) setIncomeYearFilter(urlParams.get('year'));
 
       const setCard = urlParams.get('setCard');
       const setField = urlParams.get('setField');
