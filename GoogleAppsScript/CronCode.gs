@@ -42,7 +42,8 @@ const SYSTEM_SHEET_NAMES = new Set([
   "Blocked Cards",
   "Bank Accounts",
   "Shared_Activity",
-  "Redeemed"
+  "Redeemed",
+  "RuPay Income"
 ]);
 
 const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
@@ -1185,7 +1186,12 @@ function doGet(e) {
       redeemed: [],
       cards: [],
       shared: [],
-      staging: []
+      staging: [],
+      income: {
+        allTime: { gross: 0, charges: 0, net: 0, count: 0 },
+        byYear: {},
+        ledger: []
+      }
     };
 
     for (const sheet of sheets) {
@@ -1350,6 +1356,68 @@ function doGet(e) {
             payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : ''
           });
         }
+      } else if (name === "RuPay Income") {
+        for (let i = 1; i < rows.length; i++) {
+          const title = String(rows[i][0] || '').trim();
+          if (!title || title.toUpperCase() === 'TOTAL') continue;
+
+          let dateStr = rows[i][1];
+          if (dateStr instanceof Date) {
+            dateStr = Utilities.formatDate(dateStr, "GMT+05:30", "dd/MM/yy");
+          } else {
+            dateStr = String(dateStr || '').replace(/^'/, '').trim();
+          }
+
+          const priceVal = Number(rows[i][2]);
+          if (isNaN(priceVal) || priceVal === 0) continue;
+
+          const comments = String(rows[i][3] || '').trim();
+          const account = String(rows[i][4] || '').trim();
+
+          let yr = 2026;
+          if (dateStr) {
+            const parts = dateStr.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              const yPart = parts[2].trim();
+              if (yPart.length === 4) yr = parseInt(yPart, 10);
+              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+            }
+          }
+
+          const entry = {
+            id: 'inc-' + i,
+            title: title,
+            date: dateStr,
+            price: priceVal,
+            comments: comments,
+            account: account,
+            year: yr
+          };
+          result.income.ledger.push(entry);
+
+          if (priceVal > 0) {
+            result.income.allTime.gross += priceVal;
+          } else {
+            result.income.allTime.charges += Math.abs(priceVal);
+          }
+          result.income.allTime.count++;
+
+          const yrKey = String(yr);
+          if (!result.income.byYear[yrKey]) {
+            result.income.byYear[yrKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+          }
+          if (priceVal > 0) {
+            result.income.byYear[yrKey].gross += priceVal;
+          } else {
+            result.income.byYear[yrKey].charges += Math.abs(priceVal);
+          }
+          result.income.byYear[yrKey].count++;
+        }
+
+        result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
+        for (const y in result.income.byYear) {
+          result.income.byYear[y].net = result.income.byYear[y].gross - result.income.byYear[y].charges;
+        }
       } else if (SYSTEM_SHEET_NAMES.has(name) || name === "Cards") {
         // Dedicated non-voucher system tabs (Blocked Cards, Bank Accounts, Cards):
         // Skip here so they NEVER leak into result.vouchers and do NOT inflate active card counts
@@ -1386,7 +1454,8 @@ function doGet(e) {
       redeemed: [],
       cards: [],
       shared: [],
-      staging: []
+      staging: [],
+      income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
     })).setMimeType(ContentService.MimeType.JSON);
   }
 }
@@ -2630,6 +2699,70 @@ function doPost(e) {
         action: "CLEAR_REDEEMED",
         clearedCount: updated.length,
         clearedCodes: updated
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 13. Record RuPay Income Entry (Voucher Sale or Card Fee)
+    if (data.action === "RECORD_INCOME_ENTRY") {
+      let incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: '"RuPay Income" tab not found in spreadsheet'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const title = String(data.title || '').trim();
+      const rawPrice = Number(data.price);
+      if (!title || isNaN(rawPrice) || rawPrice === 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Invalid income entry: title and non-zero price are required."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const dateStr = String(data.date || Utilities.formatDate(new Date(), "GMT+05:30", "dd/MM/yy")).trim();
+      const comments = String(data.comments || '').trim();
+      const account = String(data.account || '').trim();
+
+      const vals = incomeSheet.getDataRange().getValues();
+      let insertIndex = -1; // 1-based index
+
+      // Check for bottom "TOTAL" summary row
+      for (let r = vals.length - 1; r >= 0; r--) {
+        const col0 = String(vals[r][0] || '').trim().toUpperCase();
+        if (col0 === 'TOTAL') {
+          insertIndex = r + 1; // 1-based index of the TOTAL row
+          break;
+        }
+      }
+
+      const newRowData = [
+        title,
+        `'${dateStr}`,
+        rawPrice,
+        comments,
+        account
+      ];
+
+      if (insertIndex > 1) {
+        // Safely insert row before the TOTAL row so formula remains intact
+        incomeSheet.insertRowBefore(insertIndex);
+        incomeSheet.getRange(insertIndex, 1, 1, newRowData.length).setValues([newRowData]);
+      } else {
+        incomeSheet.appendRow(newRowData);
+      }
+
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RECORD_INCOME_ENTRY",
+        entry: {
+          title: title,
+          date: dateStr,
+          price: rawPrice,
+          comments: comments,
+          account: account
+        }
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
