@@ -968,6 +968,163 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+  // Remediation handler for "RuPay Income" tab dates
+  if (e && e.parameter && e.parameter.action === "REMEDIATE_RUPAY_INCOME_DATES") {
+    try {
+      const isDryRun = e.parameter.dryRun === "true" || e.parameter.dryRun === "1";
+      const ss = getSpreadsheet();
+      const sheet = ss.getSheetByName("RuPay Income");
+      if (!sheet) return ContentService.createTextOutput(JSON.stringify({ error: "Sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+
+      const lastRow = sheet.getLastRow();
+      const lastCol = sheet.getLastColumn();
+      const range = sheet.getRange(1, 1, lastRow, lastCol);
+      const values = range.getValues();
+      const displayValues = range.getDisplayValues();
+
+      let totalRowIndex = -1;
+      for (let r = values.length - 1; r >= 0; r--) {
+        if (String(values[r][0] || '').trim().toUpperCase() === 'TOTAL') {
+          totalRowIndex = r + 1; // 1-based row number
+          break;
+        }
+      }
+
+      const endDataRow = totalRowIndex > 1 ? totalRowIndex - 1 : lastRow;
+      const totalDataRows = endDataRow - 1; // excluding header at row 1
+
+      const updates = [];
+      const newColBValues = [];
+
+      for (let r = 2; r <= endDataRow; r++) {
+        const rowIdx = r - 1;
+        const rawVal = values[rowIdx][1];
+        const dispVal = displayValues[rowIdx][1];
+        let trueDay = null;
+        let trueMonth = null;
+        let trueYear = null;
+        let source = "";
+
+        if (rawVal instanceof Date) {
+          // Date object in en_US locale: user entered d/m/y, sheets read m as month, d as day
+          const dStr = Utilities.formatDate(rawVal, "GMT+05:30", "yyyy-MM-dd");
+          const parts = dStr.split("-");
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          const d = parseInt(parts[2], 10);
+
+          trueDay = m;
+          trueMonth = d;
+          trueYear = y;
+          source = "DateObject_Flipped";
+        } else {
+          // String like "27/10/26" or "25/04/24"
+          const s = String(rawVal || dispVal || '').replace(/^'/, '').trim();
+          const parts = s.split(/[\/\-\.]/);
+          if (parts.length === 3) {
+            trueDay = parseInt(parts[0], 10);
+            trueMonth = parseInt(parts[1], 10);
+            let y = parseInt(parts[2], 10);
+            if (y < 100) y = 2000 + y;
+            trueYear = y;
+            source = "String_Parsed";
+          }
+        }
+
+        if (trueDay && trueMonth && trueYear) {
+          const dd = (trueDay < 10 ? '0' : '') + trueDay;
+          const mm = (trueMonth < 10 ? '0' : '') + trueMonth;
+          const yy = String(trueYear).slice(-2);
+          const formattedStr = `${dd}/${mm}/${yy}`;
+
+          // Create Date at noon IST to avoid any midnight boundary shifts
+          const trueDateObj = new Date(Date.UTC(trueYear, trueMonth - 1, trueDay, 6, 30, 0));
+
+          updates.push({
+            row: r,
+            title: values[rowIdx][0],
+            oldVal: rawVal instanceof Date ? rawVal.toISOString() : rawVal,
+            oldDisp: dispVal,
+            trueDay: trueDay,
+            trueMonth: trueMonth,
+            trueYear: trueYear,
+            newFormattedStr: formattedStr,
+            source: source
+          });
+
+          newColBValues.push([trueDateObj]);
+        } else {
+          newColBValues.push([rawVal]);
+        }
+      }
+
+      if (!isDryRun && newColBValues.length > 0) {
+        // Set spreadsheet locale to en_IN so Google Sheets natively infers dd/MM/yyyy
+        try {
+          ss.setSpreadsheetLocale("en_IN");
+        } catch (locErr) {
+          Logger.log("Locale error: " + locErr);
+        }
+
+        const colBRange = sheet.getRange(2, 2, newColBValues.length, 1);
+        colBRange.setValues(newColBValues);
+        colBRange.setNumberFormat("dd/MM/yy");
+        colBRange.setHorizontalAlignment("center");
+        SpreadsheetApp.flush();
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        dryRun: isDryRun,
+        totalDataRows: totalDataRows,
+        updatedCount: updates.length,
+        updatesSummary: updates
+      }, null, 2)).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Inspection handler for "RuPay Income" tab
+  if (e && e.parameter && e.parameter.action === "INSPECT_RUPAY_INCOME") {
+    try {
+      const ss = getSpreadsheet();
+      const sheet = ss.getSheetByName("RuPay Income");
+      if (!sheet) return ContentService.createTextOutput(JSON.stringify({ error: "Sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      
+      const lastRow = sheet.getLastRow();
+      const lastCol = sheet.getLastColumn();
+      const range = sheet.getRange(1, 1, lastRow, lastCol);
+      const values = range.getValues();
+      const displayValues = range.getDisplayValues();
+      const numberFormats = range.getNumberFormats();
+      const horizontalAlignments = range.getHorizontalAlignments();
+      
+      const inspectedRows = [];
+      for (let r = 0; r < values.length; r++) {
+        const isDate = values[r][1] instanceof Date;
+        inspectedRows.push({
+          rowNum: r + 1,
+          val: values[r],
+          disp: displayValues[r],
+          fmt: numberFormats[r],
+          align: horizontalAlignments[r],
+          types: values[r].map(v => v instanceof Date ? 'Date(' + v.toISOString() + ')' : typeof v),
+          isDateObj: isDate
+        });
+      }
+      return ContentService.createTextOutput(JSON.stringify({
+        lastRow: lastRow,
+        lastCol: lastCol,
+        locale: ss.getSpreadsheetLocale(),
+        timeZone: ss.getSpreadsheetTimeZone(),
+        inspectedRows: inspectedRows
+      }, null, 2)).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Administrative Setup: Initialize "Active Cards" tab with 20 cards, Linked Account, and 13 benefit columns
   if (e && e.parameter && e.parameter.action === "SETUP_ACTIVE_CARDS_TAB") {
     try {
@@ -2735,21 +2892,31 @@ function doPost(e) {
         }
       }
 
+      let cellDateValue = dateStr;
+      const parts = dateStr.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        let y = parseInt(parts[2], 10);
+        if (y < 100) y = 2000 + y;
+        cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+      }
+
       const newRowData = [
         title,
-        `'${dateStr}`,
+        cellDateValue,
         rawPrice,
         comments,
         account
       ];
 
+      const targetRow = insertIndex > 1 ? insertIndex : (incomeSheet.getLastRow() + 1);
       if (insertIndex > 1) {
-        // Safely insert row before the TOTAL row so formula remains intact
         incomeSheet.insertRowBefore(insertIndex);
-        incomeSheet.getRange(insertIndex, 1, 1, newRowData.length).setValues([newRowData]);
-      } else {
-        incomeSheet.appendRow(newRowData);
       }
+      const insertedRange = incomeSheet.getRange(targetRow, 1, 1, newRowData.length);
+      insertedRange.setValues([newRowData]);
+      incomeSheet.getRange(targetRow, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
 
       SpreadsheetApp.flush();
 
