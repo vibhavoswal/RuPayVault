@@ -1034,14 +1034,16 @@
     }
     #mobile-app-container:not(.hidden),
     #view-card-manager:not(.hidden),
-    #view-bank-accounts:not(.hidden) {
+    #view-bank-accounts:not(.hidden),
+    #view-income-tracker:not(.hidden) {
       display: flex !important;
       width: 100%;
       height: 100%;
     }
     #mobile-app-container.hidden,
     #view-card-manager.hidden,
-    #view-bank-accounts.hidden {
+    #view-bank-accounts.hidden,
+    #view-income-tracker.hidden {
       display: none !important;
     }
 
@@ -1051,7 +1053,8 @@
       }
       #mobile-app-container,
       #view-card-manager,
-      #view-bank-accounts {
+      #view-bank-accounts,
+      #view-income-tracker {
         max-width: 480px;
         margin-left: auto;
         margin-right: auto;
@@ -1064,6 +1067,15 @@
         right: calc(50% - 240px + 1rem) !important;
         max-width: 448px !important;
       }
+      #add-choice-modal > div:last-child,
+      #modal-sale > div:last-child,
+      #modal-charge > div:last-child {
+        max-width: 480px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+      }
     }
 
     [data-theme="light"] body,
@@ -1073,9 +1085,11 @@
     [data-theme="light"] #mobile-app-container,
     [data-theme="light"] #view-card-manager,
     [data-theme="light"] #view-bank-accounts,
+    [data-theme="light"] #view-income-tracker,
     html.light #mobile-app-container,
     html.light #view-card-manager,
-    html.light #view-bank-accounts {
+    html.light #view-bank-accounts,
+    html.light #view-income-tracker {
       border-color: rgba(0, 0, 0, 0.08);
       box-shadow: 0 0 50px rgba(0, 0, 0, 0.06);
     }
@@ -1376,18 +1390,22 @@
     [data-theme="light"] #mb-top-header,
     [data-theme="light"] #view-card-manager header,
     [data-theme="light"] #view-bank-accounts header,
+    [data-theme="light"] #view-income-tracker header,
     html.light #mb-top-header,
     html.light #view-card-manager header,
-    html.light #view-bank-accounts header {
+    html.light #view-bank-accounts header,
+    html.light #view-income-tracker header {
       background-color: #ffffff !important;
       border-color: rgba(0, 0, 0, 0.08) !important;
     }
     [data-theme="light"] #mb-brand-capsule-btn,
     [data-theme="light"] #cm-brand-capsule-btn,
     [data-theme="light"] #ba-brand-capsule-btn,
+    [data-theme="light"] #in-capsule-btn,
     html.light #mb-brand-capsule-btn,
     html.light #cm-brand-capsule-btn,
-    html.light #ba-brand-capsule-btn {
+    html.light #ba-brand-capsule-btn,
+    html.light #in-capsule-btn {
       background-color: #f1f5f9 !important;
       border-color: #e2e8f0 !important;
       color: #0f172a !important;
@@ -2386,7 +2404,7 @@
   <!-- ======================================================== -->
   <section id="view-income-tracker" class="hidden flex-1 flex flex-col h-full w-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-main)] overflow-hidden select-none">
     <!-- Executive Top Header -->
-    <header class="h-14 px-3.5 shrink-0 flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/80 backdrop-blur-md z-30">
+    <header class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/80 backdrop-blur-md z-30 transition-all">
       <div class="flex items-center gap-2.5">
         <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Open Menu" aria-label="Open Menu">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
