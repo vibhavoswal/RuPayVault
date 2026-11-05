@@ -2743,10 +2743,19 @@
         </button>
       </div>
 
+      <!-- Fast Card OCR Scanner Button for Add Card -->
+      <div class="mb-2">
+        <button type="button" onclick="triggerCardOcr('add', 'modal')" id="ocr-btn-add-modal" class="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+          <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <span id="ocr-label-add-modal">Scan Card (Camera / Upload)</span>
+        </button>
+        <div id="ocr-status-add-modal" class="hidden mt-1 text-[10px] text-amber-300 font-mono-apple flex items-center justify-center gap-1.5 animate-pulse"></div>
+      </div>
+
       <div class="space-y-2.5 text-xs">
         <div>
-          <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">16-Digit Card Number</label>
-          <input id="add-card-num" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          <label for="add-card-num" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">16-Digit Card Number</label>
+          <input id="add-card-num" name="cardnumber" autocomplete="cc-number" inputmode="numeric" pattern="[0-9]*" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           <div id="add-card-detected-badge" class="hidden mt-1 text-[10px] text-emerald-400 font-semibold flex items-center gap-1"></div>
         </div>
 
@@ -2783,12 +2792,12 @@
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
-            <input id="add-card-exp" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+            <label for="add-card-exp" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
+            <input id="add-card-exp" name="cc-exp" autocomplete="cc-exp" inputmode="numeric" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
-            <input id="add-card-cvv" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+            <label for="add-card-cvv" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
+            <input id="add-card-cvv" name="cvv" autocomplete="cc-csc" inputmode="numeric" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           </div>
         </div>
 
@@ -2931,6 +2940,9 @@
     </div>
   </div>
 
+
+  <!-- Hidden Card OCR File Input for Camera / Photo Scan -->
+  <input type="file" id="card-ocr-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleCardOcrFileSelect(event)">
 
   <!-- ======================================================== -->
   <!-- JAVASCRIPT STATE ENGINE & GOOGLE SHEETS LIVE SYNC        -->
@@ -8309,30 +8321,39 @@
                 </button>
               </div>
 
-              <div class="space-y-2 text-left">
+              <!-- Fast Card OCR Scanner Button -->
+              <div class="mb-2.5">
+                <button type="button" onclick="triggerCardOcr('rep', '${rawNum}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+                  <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                  <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Camera / Upload)</span>
+                </button>
+                <div id="ocr-status-rep-${rawNum}" class="hidden mt-1.5 text-[10px] text-amber-300 font-mono-apple flex items-center justify-center gap-1.5 animate-pulse"></div>
+              </div>
+
+              <form onsubmit="event.preventDefault(); submitCardReplacement('${rawNum}');" autocomplete="on" class="space-y-2 text-left">
                 <div>
-                  <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
-                  <input id="rep-num-${rawNum}" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  <label for="rep-num-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
+                  <input id="rep-num-${rawNum}" name="cardnumber" autocomplete="cc-number" inputmode="numeric" pattern="[0-9]*" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
-                    <input id="rep-exp-${rawNum}" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                    <label for="rep-exp-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
+                    <input id="rep-exp-${rawNum}" name="cc-exp" autocomplete="cc-exp" inputmode="numeric" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                   </div>
                   <div>
-                    <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
-                    <input id="rep-cvv-${rawNum}" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                    <label for="rep-cvv-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
+                    <input id="rep-cvv-${rawNum}" name="cvv" autocomplete="cc-csc" inputmode="numeric" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                   </div>
                 </div>
                 <div>
-                  <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
-                  <input id="rep-notes-${rawNum}" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  <label for="rep-notes-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
+                  <input id="rep-notes-${rawNum}" name="notes" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
-                <button onclick="submitCardReplacement('${rawNum}')" class="w-full mt-1.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
+                <button type="submit" class="w-full mt-1.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>Save &amp; Activate Replacement Card</span>
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         `;
@@ -8507,6 +8528,246 @@
         }
       } else if (badge && inputEl.id === 'add-card-num') {
         badge.classList.add('hidden');
+      }
+    }
+
+    /* --- HIGH-SPEED ON-DEVICE CARD OCR ENGINE --- */
+    let activeOcrTarget = null; // { type: 'rep' | 'add', id: string }
+    let tesseractWorkerPromise = null;
+
+    function isValidLuhn(digits) {
+      const clean = String(digits).replace(/\D/g, '');
+      if (clean.length < 13 || clean.length > 19) return false;
+      let sum = 0;
+      let shouldDouble = false;
+      for (let i = clean.length - 1; i >= 0; i--) {
+        let digit = parseInt(clean.charAt(i), 10);
+        if (shouldDouble) {
+          digit *= 2;
+          if (digit > 9) digit -= 9;
+        }
+        sum += digit;
+        shouldDouble = !shouldDouble;
+      }
+      return (sum % 10) === 0;
+    }
+
+    function parseCardDetailsFromText(rawText) {
+      const cleanText = String(rawText || '').replace(/\r/g, '\n');
+      
+      // 1. Match card numbers (16 digits in blocks or continuous)
+      // Matches: "6524 9710 0085 5409", "6524-9710-0085-5409", "6524971000855409"
+      const candidateMatches = cleanText.match(/\b(?:\d[ -]?){15,19}\d\b/g) || [];
+      let bestCardNum = null;
+
+      for (const cand of candidateMatches) {
+        const digits = cand.replace(/\D/g, '');
+        if (digits.length === 16) {
+          if (isValidLuhn(digits)) {
+            bestCardNum = digits;
+            break;
+          }
+          if (!bestCardNum && /^(652|653|60|50|35|4|5)/.test(digits)) {
+            bestCardNum = digits;
+          }
+        }
+      }
+
+      // Fallback: sliding 16-digit window on all extracted digits
+      if (!bestCardNum) {
+        const allDigits = cleanText.replace(/\D/g, '');
+        for (let i = 0; i <= allDigits.length - 16; i++) {
+          const sub = allDigits.slice(i, i + 16);
+          if (isValidLuhn(sub) && /^(652|653|60|50|35|4|5)/.test(sub)) {
+            bestCardNum = sub;
+            break;
+          }
+        }
+      }
+
+      // 2. Match Expiry: MM/YY or MM/YYYY
+      let expiry = null;
+      const expMatches = cleanText.match(/(?:VALID\s*THRU|EXP|THRU)?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})\b/i);
+      if (expMatches) {
+        const mm = expMatches[1];
+        let yy = expMatches[2];
+        if (yy.length === 4) yy = yy.slice(-2);
+        const monthNum = parseInt(mm, 10);
+        if (monthNum >= 1 && monthNum <= 12) {
+          expiry = `${mm}/${yy}`;
+        }
+      }
+
+      return { cardNumber: bestCardNum, expiry: expiry };
+    }
+
+    function triggerCardOcr(type, id) {
+      activeOcrTarget = { type, id };
+      const fileInput = document.getElementById('card-ocr-file-input');
+      if (fileInput) {
+        fileInput.value = ''; // Reset
+        fileInput.click();
+      }
+    }
+
+    function updateOcrButtonState(isScanning, message = '') {
+      if (!activeOcrTarget) return;
+      const { type, id } = activeOcrTarget;
+      const btn = document.getElementById(`ocr-btn-${type}-${id}`);
+      const label = document.getElementById(`ocr-label-${type}-${id}`);
+      const status = document.getElementById(`ocr-status-${type}-${id}`);
+
+      if (btn) btn.disabled = isScanning;
+      if (label) {
+        label.textContent = isScanning ? (message || 'Scanning Card...') : 'Scan Card (Camera / Upload)';
+      }
+      if (status) {
+        if (isScanning) {
+          status.classList.remove('hidden');
+          status.textContent = message || 'Processing image...';
+        } else {
+          status.classList.add('hidden');
+          status.textContent = '';
+        }
+      }
+    }
+
+    async function getTesseractWorker() {
+      if (tesseractWorkerPromise) return tesseractWorkerPromise;
+      tesseractWorkerPromise = (async () => {
+        if (typeof Tesseract === 'undefined') {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Unable to load OCR engine. Check your internet connection.'));
+            document.head.appendChild(script);
+          });
+        }
+        const worker = await Tesseract.createWorker('eng', 1);
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789/- VALIDTHRUexp'
+        });
+        return worker;
+      })();
+      return tesseractWorkerPromise;
+    }
+
+    async function handleCardOcrFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !activeOcrTarget) return;
+
+      const { type, id } = activeOcrTarget;
+      updateOcrButtonState(true, 'Optimizing image for fast OCR...');
+
+      try {
+        // Step 1: Load image onto canvas and scale to max 1200px width/height for fast processing
+        const img = new Image();
+        const imgUrl = URL.createObjectURL(file);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = imgUrl;
+        });
+
+        const maxDim = 1200;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(imgUrl);
+
+        // Enhance contrast and grayscale for clean number edges
+        const imgData = ctx.getImageData(0, 0, w, h);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+          const enhanced = gray > 140 ? 255 : (gray < 70 ? 0 : gray);
+          d[i] = enhanced;
+          d[i+1] = enhanced;
+          d[i+2] = enhanced;
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        updateOcrButtonState(true, 'Extracting card numbers...');
+
+        // Step 2: Try native Web TextDetector if available (instant on Android Chrome)
+        let extractedText = '';
+        if ('TextDetector' in window) {
+          try {
+            const detector = new window.TextDetector();
+            const results = await detector.detect(canvas);
+            extractedText = results.map(r => r.rawValue).join('\n');
+          } catch (tdErr) {
+            console.warn('Native TextDetector failed, falling back to Tesseract:', tdErr);
+          }
+        }
+
+        // Step 3: Fast Tesseract.js fallback
+        if (!extractedText.trim()) {
+          updateOcrButtonState(true, 'Running OCR engine...');
+          const worker = await getTesseractWorker();
+          const ocrResult = await worker.recognize(canvas);
+          extractedText = ocrResult?.data?.text || '';
+        }
+
+        // Step 4: Parse Card Number and Expiry
+        const parsed = parseCardDetailsFromText(extractedText);
+
+        // Step 5: Fill target input fields
+        const numInput = type === 'rep'
+          ? document.getElementById(`rep-num-${id}`)
+          : document.getElementById('add-card-num');
+        const expInput = type === 'rep'
+          ? document.getElementById(`rep-exp-${id}`)
+          : document.getElementById('add-card-exp');
+        const cvvInput = type === 'rep'
+          ? document.getElementById(`rep-cvv-${id}`)
+          : document.getElementById('add-card-cvv');
+
+        let filledCount = 0;
+        if (parsed.cardNumber && numInput) {
+          numInput.value = parsed.cardNumber.replace(/(\d{4})/g, '$1 ').trim();
+          onCardNumberInput(numInput);
+          filledCount++;
+        }
+        if (parsed.expiry && expInput) {
+          expInput.value = parsed.expiry;
+          filledCount++;
+        }
+
+        if (filledCount > 0) {
+          if (navigator.vibrate) {
+            try { navigator.vibrate([15, 50, 15]); } catch (_) {}
+          }
+          if (parsed.cardNumber && parsed.expiry) {
+            showToast('Card scanned! 16-digit number & expiry auto-filled. Please enter CVV.');
+          } else if (parsed.cardNumber) {
+            showToast('Card number scanned! Please verify expiry & enter CVV.');
+          }
+          if (cvvInput) cvvInput.focus();
+        } else {
+          showToast('Could not detect card numbers clearly. Please ensure good lighting or enter manually.');
+        }
+
+      } catch (err) {
+        console.error('Card OCR error:', err);
+        showToast('Card scan error: ' + (err.message || 'Please enter manually.'));
+      } finally {
+        updateOcrButtonState(false);
       }
     }
 
