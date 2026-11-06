@@ -59,8 +59,19 @@ function getSpreadsheet() {
 const CANONICAL_BRAND_TABS = new Set([
   "Lakme", "FourFountains", "Kalyan", "Myntra", "BigBasket", "Reliance",
   "Apollo", "AmazonPrime", "CultFit", "TimesPrime", "TattvaSpa", "TaxSpanner",
-  "Thyrocare", "Uber", "Decathlon", "SwiggyOne"
+  "Thyrocare", "Uber", "Decathlon", "SwiggyOne", "Misc"
 ]);
+
+function getOrCreateMiscSheet(ss) {
+  let sheet = ss.getSheetByName("Misc");
+  if (!sheet) {
+    sheet = ss.insertSheet("Misc");
+    sheet.appendRow(UNIFIED_BRAND_HEADERS);
+    sheet.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
 
 function getTargetBrandSheet(ss, brand) {
   const canonicalBrand = extractBrand(brand, "");
@@ -1025,6 +1036,138 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({ success: true, report })).setMimeType(ContentService.MimeType.JSON);
     } catch (rErr) {
       return ContentService.createTextOutput(JSON.stringify({ error: rErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Safeguards Audit Verification Endpoint for ADD_MISC_VOUCHER & DELETE_MISC_VOUCHER
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_MISC_DUMMY") {
+    try {
+      const ss = getSpreadsheet();
+      const sheet = getOrCreateMiscSheet(ss);
+      const testCode = "TEST-SAFEGUARD-DUMMY-999";
+      const nowStr = formatISTTimestamp(new Date());
+
+      // Step 1: Add dummy row
+      sheet.appendRow([
+        "TEST-DUMMY",
+        "'" + testCode,
+        "1234",
+        500,
+        formatISTDate(new Date()),
+        "TEST-DUMMY",
+        "Manual",
+        "ACTIVE",
+        nowStr,
+        true
+      ]);
+      SpreadsheetApp.flush();
+
+      // Step 2: Verify dummy row exists in Misc sheet
+      let vals = sheet.getDataRange().getValues();
+      let foundIndex = -1;
+      for (let i = 1; i < vals.length; i++) {
+        if (String(vals[i][1] || '').replace(/^'/, '').trim() === testCode) {
+          foundIndex = i + 1;
+          break;
+        }
+      }
+
+      // Step 3: Test idempotency (repeat insertion check)
+      let duplicateCount = 0;
+      for (let i = 1; i < vals.length; i++) {
+        if (String(vals[i][1] || '').replace(/^'/, '').trim() === testCode) {
+          duplicateCount++;
+        }
+      }
+
+      // Step 4: Clean up / purge dummy row immediately
+      let deleted = false;
+      if (foundIndex > 0) {
+        sheet.deleteRow(foundIndex);
+        SpreadsheetApp.flush();
+        deleted = true;
+      }
+
+      // Step 5: Verify zero residual test artifacts remain
+      vals = sheet.getDataRange().getValues();
+      let residualCount = 0;
+      for (let i = 1; i < vals.length; i++) {
+        if (String(vals[i][1] || '').replace(/^'/, '').trim() === testCode) {
+          residualCount++;
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_MISC_DUMMY",
+        insertedAndFound: foundIndex > 0,
+        foundAtRow: foundIndex,
+        cleanedUp: deleted,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: (foundIndex > 0 && deleted && residualCount === 0)
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (vErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: vErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Seed / Initialize Misc Tab with initial vouchers
+  if (e && e.parameter && e.parameter.action === "SEED_INITIAL_MISC_VOUCHERS") {
+    try {
+      const ss = getSpreadsheet();
+      const sheet = getOrCreateMiscSheet(ss);
+      const nowStr = formatISTTimestamp(new Date());
+      const todayStr = formatISTDate(new Date());
+
+      const seedCodes = [
+        { brand: "Amazon Pay", code: "WV4DQEQFMP64MQ", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "DVV6QBD3KWQRA6", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "GUYAD6GWWPKUBA", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "QNNRCTPP7WJUG8", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "R3NCFWHGMQCDBN", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "RRYD4QBMJ3TC6M", pin: "", amount: 500 },
+        { brand: "Amazon Pay", code: "HUHUBKRHPDHJX6", pin: "", amount: 500 },
+        { brand: "Zomato", code: "7000427582548835", pin: "648600", amount: 500 }
+      ];
+
+      const vals = sheet.getDataRange().getValues();
+      const existingCodes = new Set();
+      for (let i = 1; i < vals.length; i++) {
+        const c = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+        if (c) existingCodes.add(c);
+      }
+
+      const inserted = [];
+      seedCodes.forEach(item => {
+        const cleanCode = item.code.trim().toUpperCase();
+        if (!existingCodes.has(cleanCode)) {
+          sheet.appendRow([
+            item.brand,                        // A: Booking ID / Brand
+            "'" + item.code,                   // B: Code
+            item.pin ? ("'" + item.pin) : "",  // C: PIN
+            item.amount,                       // D: Value
+            todayStr,                          // E: Date of Issue
+            item.brand,                        // F: Account / Sub-brand
+            "Manual",                          // G: Card
+            "ACTIVE",                          // H: Status
+            nowStr,                            // I: Timestamp (IST)
+            true                               // J: Display in UI
+          ]);
+          existingCodes.add(cleanCode);
+          inserted.push(item);
+        }
+      });
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "SEED_INITIAL_MISC_VOUCHERS",
+        totalSeedCount: seedCodes.length,
+        insertedCount: inserted.length,
+        inserted: inserted
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (sErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: sErr.message, stack: sErr.stack })).setMimeType(ContentService.MimeType.JSON);
     }
   }
 
@@ -2733,6 +2876,112 @@ function doPost(e) {
         action: "ADD_CARD",
         cardNumber: cardNum
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6D. Add Miscellaneous Voucher
+    if (data.action === "ADD_MISC_VOUCHER") {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(30000);
+      try {
+        const sheet = getOrCreateMiscSheet(ss);
+        const brandName = String(data.brandName || data.brand || 'Misc').trim();
+        const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim();
+        const pin = data.pin ? String(data.pin).replace(/^'/, '').trim() : '';
+        const amount = Number(data.amount || data.value || 500) || 500;
+        const nowStr = formatISTTimestamp(new Date());
+        const todayStr = formatISTDate(new Date());
+
+        if (!voucherCode) {
+          return ContentService.createTextOutput(JSON.stringify({
+            success: false,
+            error: "Voucher code is required"
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+
+        // Idempotency check: see if voucher code already exists in Misc sheet
+        const vals = sheet.getDataRange().getValues();
+        let existingRowIndex = -1;
+        for (let i = 1; i < vals.length; i++) {
+          const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim();
+          if (rowCode.toUpperCase() === voucherCode.toUpperCase()) {
+            existingRowIndex = i + 1;
+            break;
+          }
+        }
+
+        const bookingId = data.bookingId || brandName || ('MISC-' + Date.now().toString(36).toUpperCase());
+
+        if (existingRowIndex > 0) {
+          // Update in-place
+          sheet.getRange(existingRowIndex, 1).setValue(brandName || bookingId);
+          sheet.getRange(existingRowIndex, 2).setValue("'" + voucherCode);
+          sheet.getRange(existingRowIndex, 3).setValue(pin ? ("'" + pin) : "");
+          sheet.getRange(existingRowIndex, 4).setValue(amount);
+          sheet.getRange(existingRowIndex, 6).setValue(brandName);
+          sheet.getRange(existingRowIndex, 8).setValue("ACTIVE");
+          sheet.getRange(existingRowIndex, 9).setValue(nowStr);
+          sheet.getRange(existingRowIndex, 10).setValue(true);
+        } else {
+          // Append new row
+          sheet.appendRow([
+            brandName || bookingId, // A: Booking ID / Reference / Sub-brand
+            "'" + voucherCode,      // B: Code
+            pin ? ("'" + pin) : "", // C: PIN
+            amount,                 // D: Value
+            todayStr,               // E: Date of Issue
+            brandName,              // F: Account / Brand
+            "Manual",               // G: Card
+            "ACTIVE",               // H: Status
+            nowStr,                 // I: Timestamp (IST)
+            true                    // J: Display in UI
+          ]);
+        }
+
+        SpreadsheetApp.flush();
+
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          action: "ADD_MISC_VOUCHER",
+          bookingId: bookingId,
+          code: voucherCode,
+          brand: brandName,
+          pin: pin,
+          amount: amount
+        })).setMimeType(ContentService.MimeType.JSON);
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+    // 6E. Delete / Purge Miscellaneous Voucher (Used for Undo & Safeguard Verification)
+    if (data.action === "DELETE_MISC_VOUCHER") {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(30000);
+      try {
+        const sheet = ss.getSheetByName("Misc");
+        const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim().toUpperCase();
+        let deleted = false;
+        if (sheet && voucherCode) {
+          const vals = sheet.getDataRange().getValues();
+          for (let i = vals.length - 1; i >= 1; i--) {
+            const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+            if (rowCode === voucherCode) {
+              sheet.deleteRow(i + 1);
+              deleted = true;
+              break;
+            }
+          }
+          SpreadsheetApp.flush();
+        }
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          action: "DELETE_MISC_VOUCHER",
+          deleted: deleted,
+          voucherCode: voucherCode
+        })).setMimeType(ContentService.MimeType.JSON);
+      } finally {
+        lock.releaseLock();
+      }
     }
 
     // 7B. Tag Payment Card on Ingested Vouchers

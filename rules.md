@@ -65,6 +65,21 @@ Every operation must be evaluated against these 7 core safeguards:
    - Ensure newly created or replaced entities inherit the user's active filter context (Bank, Category, Linked Account).
    - Never allow a newly replaced or added card to default to `NA` or another account if the user is scoped to a specific account filter.
 
+### Operations Safeguard Registry
+
+#### Operation: `ADD_MISC_VOUCHER` (Adding Custom Voucher to Misc Tab)
+- **Safeguard 1 (Mutation Journal)**: Record optimistic entry `MISC_VOUCHER_ADD` with unique key `misc_${voucherCode}` and 60s TTL so the newly added voucher survives background syncs until backend flushes.
+- **Safeguard 2 (Quarantine Shield)**: Call `UniversalMutationJournal.unquarantine(voucherCode)` to guarantee the new voucher code is never suppressed by prior stale tombstones.
+- **Safeguard 3 (Optimistic Feedback & Undo)**: Optimistically prepend the voucher card to the active Misc view immediately. Display a 5-second interactive Undo banner (`"Added [Brand] voucher. Tap to Undo"`) allowing the user to abort before backend commit.
+- **Safeguard 4 (Rollback Handler)**: Supply an explicit rollback handler to `apiFetch` that restores the pre-mutation voucher state, clears the journal entry, and displays an alert if the network drops or backend fails.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background syncs.
+- **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
+  - Guard backend handler `ADD_MISC_VOUCHER` with `LockService.getScriptLock().waitLock(30000)`.
+  - Automatically create and format the `Misc` sheet if missing, with `UNIFIED_BRAND_HEADERS` and frozen top row.
+  - Scan existing rows for duplicate voucher code. If already present, update in-place idempotently; otherwise append row.
+- **Safeguard 7 (Context Preservation)**: Retains active view on `Misc` carousel tab without jarring resets.
+- **Mandatory Verification**: Tested with a temporary dummy row (`MISC-TEST-DUMMY`) pushed to the spreadsheet, verified live, and safely purged.
+
 ### Mandatory Verification via Dummy Row Testing
 Whenever adding a new operation or feature change:
 1. **Insert a tagged dummy row** into the relevant Google Sheet tab (e.g. `TEST-DUMMY-SAFEGUARD` / card `6521999900000001`).
