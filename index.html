@@ -5247,6 +5247,7 @@
       undoState.timer = null;
       undoState.actionType = null;
       undoState.onCardUndo = null;
+      undoState.onCardCommit = null;
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
       if (dtBanner) dtBanner.classList.add('hidden');
@@ -5352,6 +5353,8 @@
           commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets, { keepalive: true });
         } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
           commitRedeemToBackend(undoState.pendingRedeem, { keepalive: true });
+        } else if (undoState.actionType === 'card' && typeof undoState.onCardCommit === 'function') {
+          try { undoState.onCardCommit(); } catch(e) {}
         }
       }
     });

@@ -3000,7 +3000,8 @@ function doPost(e) {
 
     // 6C. Add Brand New Card (With Idempotency & Deduplication Shield)
     if (data.action === "ADD_CARD") {
-      const aSheet = ss.getSheetByName("Active Cards");
+      let aSheet = ss.getSheetByName("Active Cards");
+      if (!aSheet) aSheet = ss.insertSheet("Active Cards");
       const c = data.card || data;
       const cardNum = String(c.cardNumber || '').replace(/['\s]/g, '').trim();
 
