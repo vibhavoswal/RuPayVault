@@ -2813,7 +2813,7 @@
       <div class="space-y-2.5 text-xs">
         <div>
           <label for="add-card-num" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">16-Digit Card Number</label>
-          <input id="add-card-num" name="cardnumber" autocomplete="cc-number" inputmode="numeric" pattern="[0-9]*" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          <input id="add-card-num" name="cardnumber" autocomplete="cc-number" inputmode="numeric" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           <div id="add-card-detected-badge" class="hidden mt-1 text-[10px] text-emerald-400 font-semibold flex items-center gap-1"></div>
         </div>
 
@@ -8504,10 +8504,10 @@
                 </button>
               </div>
 
-              <form onsubmit="event.preventDefault(); submitCardReplacement('${rawNum}');" autocomplete="on" class="space-y-2 text-left">
+              <form onsubmit="event.preventDefault(); submitCardReplacement('${rawNum}');" autocomplete="on" novalidate class="space-y-2 text-left">
                 <div>
                   <label for="rep-num-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
-                  <input id="rep-num-${rawNum}" name="cardnumber" autocomplete="cc-number" inputmode="numeric" pattern="[0-9]*" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  <input id="rep-num-${rawNum}" name="cardnumber" autocomplete="cc-number" inputmode="numeric" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
