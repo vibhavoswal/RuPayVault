@@ -8728,6 +8728,23 @@
       return (sum % 10) === 0;
     }
 
+    function rotateCanvas(sourceCanvas, degrees) {
+      const rad = (degrees * Math.PI) / 180;
+      const canvas = document.createElement('canvas');
+      if (degrees === 90 || degrees === 270) {
+        canvas.width = sourceCanvas.height;
+        canvas.height = sourceCanvas.width;
+      } else {
+        canvas.width = sourceCanvas.width;
+        canvas.height = sourceCanvas.height;
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(rad);
+      ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+      return canvas;
+    }
+
     function parseExpiryFromCanvasOrText(rawText) {
       const text = String(rawText || '').replace(/\r/g, '\n');
       const matches = text.match(/(?:VALID\s*THRU|EXP|THRU|EXPIRES)?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})\b/i);
@@ -8744,68 +8761,88 @@
     }
 
     function parseCardDetailsFromText(rawText) {
-      const cleanText = String(rawText || '').replace(/\r/g, '\n');
+      const clean = String(rawText || '').replace(/\r/g, '\n');
       
       // Normalization pass for common OCR letter/digit confusions on cards
-      const normalized = cleanText
+      const normalized = clean
         .replace(/[OoD]/g, '0')
         .replace(/[Il|!]/g, '1')
         .replace(/[Zz]/g, '2')
         .replace(/[Ss]/g, '5')
         .replace(/[Bb]/g, '8');
 
+      const isCardBin = num => /^(652|653|60|508|35|4|5|2)/.test(num);
       let bestCardNum = null;
 
-      // 1. Match 4x4 digit blocks: "6524 9710 0085 5409", "6524-9710-0085-5409"
-      const blockMatches = normalized.match(/\b\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}\b/g) || [];
-      for (const m of blockMatches) {
-        const digits = m.replace(/\D/g, '');
-        if (digits.length === 16 && isValidLuhn(digits)) {
-          bestCardNum = digits;
-          break;
-        }
-      }
-
-      // 2. Match continuous or spaced 15-19 digits
-      if (!bestCardNum) {
-        const candidateMatches = normalized.match(/\b(?:\d[ -]?){15,19}\d\b/g) || [];
-        for (const cand of candidateMatches) {
-          const digits = cand.replace(/\D/g, '');
-          if (digits.length === 16) {
-            if (isValidLuhn(digits)) {
-              bestCardNum = digits;
-              break;
-            }
-            if (!bestCardNum && /^(652|653|60|50|35|4|5)/.test(digits)) {
-              bestCardNum = digits;
-            }
+      // 1. Two-line 2x8 digits (common on PNB and modern RuPay cards with details on the back)
+      // e.g. "6524 9710\n0088 3955"
+      const lines = normalized.split('\n').map(l => l.replace(/[^0-9]/g, '')).filter(Boolean);
+      for (let i = 0; i < lines.length - 1; i++) {
+        if (lines[i].length === 8 && lines[i+1].length === 8) {
+          const comb = lines[i] + lines[i+1];
+          if (isValidLuhn(comb) && isCardBin(comb)) {
+            bestCardNum = comb;
+            break;
           }
         }
       }
 
-      // 3. Fallback: sliding 16-digit window on all extracted digits
+      // 2. Continuous 16 digits (e.g. 4x4 blocks across lines or on one line)
+      if (!bestCardNum) {
+        const candMatches = normalized.match(/\b(?:\d[ -]?){15,19}\d\b/g) || [];
+        for (const cand of candMatches) {
+          const digits = cand.replace(/\D/g, '');
+          if (digits.length === 16 && isValidLuhn(digits) && isCardBin(digits)) {
+            bestCardNum = digits;
+            break;
+          }
+        }
+      }
+
+      // 3. Sliding window on stripped digits, requiring isCardBin
       if (!bestCardNum) {
         const allDigits = normalized.replace(/\D/g, '');
         for (let i = 0; i <= allDigits.length - 16; i++) {
           const sub = allDigits.slice(i, i + 16);
-          if (isValidLuhn(sub) && /^(652|653|60|50|35|4|5)/.test(sub)) {
+          if (isValidLuhn(sub) && isCardBin(sub)) {
             bestCardNum = sub;
             break;
           }
         }
-        if (!bestCardNum) {
-          for (let i = 0; i <= allDigits.length - 16; i++) {
-            const sub = allDigits.slice(i, i + 16);
-            if (isValidLuhn(sub)) {
-              bestCardNum = sub;
-              break;
-            }
+      }
+
+      // Fallback: sliding window on any 16 digits that pass Luhn
+      if (!bestCardNum) {
+        const allDigits = normalized.replace(/\D/g, '');
+        for (let i = 0; i <= allDigits.length - 16; i++) {
+          const sub = allDigits.slice(i, i + 16);
+          if (isValidLuhn(sub)) {
+            bestCardNum = sub;
+            break;
           }
         }
       }
 
-      // Expiry check
-      const expiry = parseExpiryFromCanvasOrText(cleanText);
+      // 4. Expiry: prioritize VALID TO / THRU / EXP or the later date (NOT VALID FROM)
+      let expiry = null;
+      const toMatch = clean.match(/(?:VALID\s*TO|TO|THRU|EXP)\s*:?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})/i);
+      if (toMatch) {
+        let yy = toMatch[2];
+        if (yy.length === 4) yy = yy.slice(-2);
+        expiry = `${toMatch[1]}/${yy}`;
+      } else {
+        const allDates = [...clean.matchAll(/([01]\d)\s*[\/\-]\s*(\d{2,4})\b/g)];
+        if (allDates.length >= 2) {
+          const d = allDates[allDates.length - 1];
+          let yy = d[2];
+          if (yy.length === 4) yy = yy.slice(-2);
+          expiry = `${d[1]}/${yy}`;
+        } else if (allDates.length === 1) {
+          let yy = allDates[0][2];
+          if (yy.length === 4) yy = yy.slice(-2);
+          expiry = `${allDates[0][1]}/${yy}`;
+        }
+      }
 
       return { cardNumber: bestCardNum, expiry: expiry };
     }
@@ -9036,83 +9073,105 @@
           }
         }
 
-        // Step 3: Focused Horizontal ROI Band (Middle 35% - 75% height)
-        // 99% of payment card numbers reside in this horizontal band
-        const roiY = Math.round(h * 0.35);
-        const roiH = Math.round(h * 0.42);
-        const roiX = Math.round(w * 0.04);
-        const roiW = Math.round(w * 0.92);
-
-        const roiCanvas = document.createElement('canvas');
-        roiCanvas.width = roiW;
-        roiCanvas.height = roiH;
-        const roiCtx = roiCanvas.getContext('2d');
-        roiCtx.drawImage(normCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
-
-        // Analyze luminance of ROI to determine polarity
-        const roiImgData = roiCtx.getImageData(0, 0, roiW, roiH);
-        const d = roiImgData.data;
-        let totalLum = 0;
-        for (let i = 0; i < d.length; i += 4) {
-          totalLum += (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
-        }
-        const avgLum = totalLum / (roiW * roiH);
-        const isDarkCard = avgLum < 128;
-
-        // Enhance contrast & invert if dark card with light embossed digits
-        for (let i = 0; i < d.length; i += 4) {
-          let gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
-          if (isDarkCard) {
-            gray = 255 - gray; // Invert to black text on white background
-          }
-          gray = Math.min(255, Math.max(0, (gray - 45) * 1.45));
-          d[i] = gray;
-          d[i+1] = gray;
-          d[i+2] = gray;
-        }
-        roiCtx.putImageData(roiImgData, 0, 0);
-
-        if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Recognizing digits...</span>';
-
+        if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Scanning card details...</span>';
         const worker = await getTesseractWorker();
 
-        // 1st Neural Pass on Cropped Number Band with strict digits whitelist
+        // Pass A: Full frame with automatic page segmentation (--psm 3)
+        // Highly effective for cards with details on the back (e.g. PNB RuPay with 2-line stacked digits)
         await worker.setParameters({
-          tessedit_char_whitelist: '0123456789 ',
-          tessedit_pageseg_mode: '6'
+          tessedit_char_whitelist: '0123456789/- VALIDFROMTHRUexp',
+          tessedit_pageseg_mode: '3'
         });
+        let result = await worker.recognize(normCanvas);
+        let parsed = parseCardDetailsFromText(result?.data?.text || '');
 
-        const roiResult = await worker.recognize(roiCanvas);
-        const roiText = roiResult?.data?.text || '';
-        let parsed = parseCardDetailsFromText(roiText);
-
-        // If no valid card number found yet, try wide-angle full canvas scan
+        // Pass B: If not found, try 180-degree rotation (common when holding card in portrait or upside down)
         if (!parsed.cardNumber || !isValidLuhn(parsed.cardNumber)) {
-          if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Running full-frame scan...</span>';
-          await worker.setParameters({
-            tessedit_char_whitelist: '0123456789/- VALIDTHRUexp',
-            tessedit_pageseg_mode: '3'
-          });
-          const fullResult = await worker.recognize(normCanvas);
-          const fullText = fullResult?.data?.text || '';
-          const fullParsed = parseCardDetailsFromText(fullText);
+          if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Checking portrait orientation (180°)...</span>';
+          const rot180 = rotateCanvas(normCanvas, 180);
+          result = await worker.recognize(rot180);
+          const parsed180 = parseCardDetailsFromText(result?.data?.text || '');
+          if (parsed180.cardNumber && isValidLuhn(parsed180.cardNumber)) {
+            parsed = parsed180;
+          }
+        }
 
-          if (fullParsed.cardNumber) parsed.cardNumber = fullParsed.cardNumber;
-          if (fullParsed.expiry) parsed.expiry = fullParsed.expiry;
+        // Pass C: If still not found, try 90-degree and 270-degree rotations
+        if (!parsed.cardNumber || !isValidLuhn(parsed.cardNumber)) {
+          if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Checking orientation (90°)...</span>';
+          const rot90 = rotateCanvas(normCanvas, 90);
+          result = await worker.recognize(rot90);
+          const parsed90 = parseCardDetailsFromText(result?.data?.text || '');
+          if (parsed90.cardNumber && isValidLuhn(parsed90.cardNumber)) {
+            parsed = parsed90;
+          }
+        }
+
+        if (!parsed.cardNumber || !isValidLuhn(parsed.cardNumber)) {
+          const rot270 = rotateCanvas(normCanvas, 270);
+          result = await worker.recognize(rot270);
+          const parsed270 = parseCardDetailsFromText(result?.data?.text || '');
+          if (parsed270.cardNumber && isValidLuhn(parsed270.cardNumber)) {
+            parsed = parsed270;
+          }
+        }
+
+        // Pass D: Focused central ROI band fallback (for standard horizontal embossed front-facing cards)
+        if (!parsed.cardNumber || !isValidLuhn(parsed.cardNumber)) {
+          if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Analyzing embossed number band...</span>';
+          const roiY = Math.round(h * 0.35);
+          const roiH = Math.round(h * 0.42);
+          const roiX = Math.round(w * 0.04);
+          const roiW = Math.round(w * 0.92);
+
+          const roiCanvas = document.createElement('canvas');
+          roiCanvas.width = roiW;
+          roiCanvas.height = roiH;
+          const roiCtx = roiCanvas.getContext('2d');
+          roiCtx.drawImage(normCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+          const roiImgData = roiCtx.getImageData(0, 0, roiW, roiH);
+          const d = roiImgData.data;
+          let totalLum = 0;
+          for (let i = 0; i < d.length; i += 4) {
+            totalLum += (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
+          }
+          const avgLum = totalLum / (roiW * roiH);
+          const isDarkCard = avgLum < 128;
+
+          for (let i = 0; i < d.length; i += 4) {
+            let gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+            if (isDarkCard) gray = 255 - gray;
+            gray = Math.min(255, Math.max(0, (gray - 45) * 1.45));
+            d[i] = gray;
+            d[i+1] = gray;
+            d[i+2] = gray;
+          }
+          roiCtx.putImageData(roiImgData, 0, 0);
+
+          await worker.setParameters({
+            tessedit_char_whitelist: '0123456789 ',
+            tessedit_pageseg_mode: '6'
+          });
+          const roiResult = await worker.recognize(roiCanvas);
+          const parsedRoi = parseCardDetailsFromText(roiResult?.data?.text || '');
+          if (parsedRoi.cardNumber && isValidLuhn(parsedRoi.cardNumber)) {
+            parsed = parsedRoi;
+          }
         }
 
         // Try extracting expiry if not yet detected
         if (!parsed.expiry) {
-          const exp = parseExpiryFromCanvasOrText(extractedText || roiText);
+          const exp = parseExpiryFromCanvasOrText(extractedText || result?.data?.text || '');
           if (exp) parsed.expiry = exp;
         }
 
-        // Check result
+        // Check final result
         if (parsed.cardNumber) {
           await triggerRecognitionSuccessAnimation(parsed);
         } else {
           if (status) {
-            status.innerHTML = '<span class="text-rose-400 font-bold">Could not detect 16-digit card number clearly.</span> Ensure card is aligned without glare, or enter manually.';
+            status.innerHTML = '<span class="text-rose-400 font-bold">Could not detect 16-digit card number clearly.</span> Ensure card details are visible without glare, or enter manually.';
           }
           showToast('Could not detect card numbers clearly. Ensure good lighting without glare.');
         }
