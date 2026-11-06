@@ -418,10 +418,31 @@ function processRupayEmails() {
     // 0. Auto-consolidate any rogue tabs created previously
     consolidateRogueTabs(ss);
 
-    // Search emails from the last 30 minutes with RUPS reference (read and unread)
-    const query = 'newer_than:30m ("RUPS-" OR subject:"RUPS-" OR from:rupay@truztee.com OR "rupay@truztee.com")';
-    const threads = GmailApp.search(query, 0, 25);
-    if (!threads.length) return;
+    // Broad resilient search for RuPay / RUPS emails from the last 2 days
+    // Avoid quote on RUPS- because hyphen in quotes breaks Gmail token boundary search
+    const query = 'newer_than:2d (RUPS OR subject:RUPS OR from:rupay OR "rupay@truztee.com" OR "RuPay Select")';
+    let threads = [];
+    try {
+      threads = GmailApp.search(query, 0, 30);
+      try {
+        PropertiesService.getScriptProperties().setProperties({
+          'LAST_EMAIL_SYNC_TIME': new Date().toISOString(),
+          'LAST_EMAIL_SYNC_STATUS': 'SUCCESS',
+          'LAST_EMAIL_SYNC_COUNT': String(threads ? threads.length : 0)
+        });
+      } catch (_) {}
+    } catch (gSearchErr) {
+      console.warn("processRupayEmails search error:", gSearchErr.message);
+      try {
+        PropertiesService.getScriptProperties().setProperties({
+          'LAST_EMAIL_SYNC_TIME': new Date().toISOString(),
+          'LAST_EMAIL_SYNC_STATUS': 'ERROR: ' + gSearchErr.message
+        });
+      } catch (_) {}
+      return;
+    }
+
+    if (!threads || !threads.length) return;
 
     for (const thread of threads) {
       const messages = thread.getMessages();
@@ -853,34 +874,9 @@ function reconcilePendingVouchers(ss) {
     const status = String(sRows[i][7] || '').trim();
 
     if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || code === 'PENDING' || code === 'Pending revalidation') && /^RUPS/i.test(bid)) {
+      // In-memory data sanitization for pending rows (Gmail search is handled centrally in processRupayEmails batch)
       if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
         newSheet.getRange(i + 1, 3).setValue("");
-      }
-
-      try {
-        const threads = GmailApp.search('"' + bid + '"', 0, 3);
-        for (const t of threads) {
-          const msgs = t.getMessages();
-          for (const m of msgs) {
-            const parsed = parseRupayVoucherEmail(m);
-            if (parsed && parsed.isDelivered && parsed.bookingId === bid) {
-              newSheet.getRange(i + 1, 2).setValue(`'${parsed.code}`);
-              newSheet.getRange(i + 1, 3).setValue(parsed.pin ? `'${parsed.pin}` : "");
-              if (parsed.amount && Number(parsed.amount) > 0) {
-                newSheet.getRange(i + 1, 4).setValue(Number(parsed.amount));
-              }
-              newSheet.getRange(i + 1, 8).setValue("ACTIVE");
-              newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(parsed.receivedDate || m.getDate()));
-              newSheet.getRange(i + 1, 10).setValue(true);
-              reconciled.push({ bookingId: bid, code: parsed.code, pin: parsed.pin });
-              try { m.markRead(); } catch (_) {}
-              break;
-            }
-          }
-          if (reconciled.some(r => r.bookingId === bid)) break;
-        }
-      } catch (e) {
-        console.warn("Reconcile error for " + bid + ": " + e.message);
       }
     }
   }
@@ -968,6 +964,79 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+  // Diagnostic handler for Gmail ingestion debugging & manual voucher population
+  if (e && e.parameter && e.parameter.action === "DEBUG_GMAIL_INGEST") {
+    try {
+      const effectiveUser = Session.getEffectiveUser().getEmail();
+      const activeUser = Session.getActiveUser().getEmail();
+      const ss = getSpreadsheet();
+
+      // Check current New tab contents
+      const nSheet = ss.getSheetByName("New");
+      const currentNewRows = nSheet ? nSheet.getDataRange().getValues().map((r, idx) => ({
+        row: idx + 1,
+        bookingId: r[0],
+        code: r[1],
+        pin: r[2],
+        value: r[3],
+        date: r[4],
+        account: r[5],
+        status: r[7],
+        brand: r[10]
+      })) : [];
+
+      let gmailQuotaStatus = "OK";
+      let searchCount = 0;
+      try {
+        const ths = GmailApp.search('newer_than:1d RUPS', 0, 5);
+        searchCount = ths.length;
+      } catch (gErr) {
+        gmailQuotaStatus = gErr.message;
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        effectiveUser,
+        activeUser,
+        gmailQuotaStatus,
+        searchCount,
+        currentNewRows
+      }, null, 2)).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message, stack: err.stack })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Populate missing RUPS vouchers directly into New tab
+  if (e && e.parameter && e.parameter.action === "INGEST_MISSING_SCREENSHOT_VOUCHERS") {
+    try {
+      const ss = getSpreadsheet();
+      const vouchers = [
+        { bookingId: "RUPS-48449243", brand: "SwiggyOne", account: e.parameter.acc1 || "vibhavoswal9", amount: 500 },
+        { bookingId: "RUPS-FB47C696", brand: "TaxSpanner", account: e.parameter.acc2 || "vibhavoswal9", amount: 500 },
+        { bookingId: "RUPS-0A6C9163", brand: "Decathlon", account: e.parameter.acc3 || "vibhavoswal9", amount: 500 }
+      ];
+
+      const inserted = [];
+      vouchers.forEach(v => {
+        recordPendingRedemption(ss, {
+          bookingId: v.bookingId,
+          brand: v.brand,
+          amount: v.amount,
+          account: v.account,
+          dateOfIssue: formatISTDate(new Date()),
+          receivedDate: new Date()
+        });
+        updateCooldownTab(ss, v.account);
+        inserted.push(v);
+      });
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, inserted: inserted })).setMimeType(ContentService.MimeType.JSON);
+    } catch (popErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: popErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Remediation handler for "RuPay Income" tab dates
   if (e && e.parameter && e.parameter.action === "REMEDIATE_RUPAY_INCOME_DATES") {
     try {
@@ -1317,8 +1386,8 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // ON-DEMAND REAL-TIME EMAIL INGESTION & AUTO-HEALING RECONCILER
-    if (!e || !e.parameter || e.parameter.ingest !== "false") {
+    // Explicit on-demand email sync (throttled): Only runs when explicitly requested to protect daily Gmail quota
+    if (e && e.parameter && (e.parameter.sync_emails === "true" || e.parameter.ingest === "force")) {
       try {
         processRupayEmails();
       } catch (err) {
@@ -1600,6 +1669,15 @@ function doGet(e) {
         }
       }
     }
+
+    try {
+      const scriptProps = PropertiesService.getScriptProperties().getProperties();
+      result.systemStatus = {
+        lastEmailSyncTime: scriptProps.LAST_EMAIL_SYNC_TIME || null,
+        lastEmailSyncStatus: scriptProps.LAST_EMAIL_SYNC_STATUS || null,
+        lastEmailSyncCount: scriptProps.LAST_EMAIL_SYNC_COUNT || null
+      };
+    } catch (_) {}
 
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
