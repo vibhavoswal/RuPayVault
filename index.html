@@ -1810,64 +1810,101 @@
       transition: transform 200ms ease-out;
     }
 
-    /* --- CARD SCANNER LASER & RECOGNITION ANIMATIONS --- */
-    @keyframes scanLaserLine {
-      0% { top: 6%; opacity: 0.85; }
-      50% { top: 88%; opacity: 1; }
-      100% { top: 6%; opacity: 0.85; }
+    /* --- PROFESSIONAL HIGH-PRECISION CARD SCANNER STYLES --- */
+    @keyframes scanOpticalBeam {
+      0% {
+        top: 6%;
+        opacity: 0.25;
+      }
+      18% {
+        opacity: 0.95;
+      }
+      50% {
+        top: 86%;
+        opacity: 1;
+      }
+      82% {
+        opacity: 0.95;
+      }
+      100% {
+        top: 6%;
+        opacity: 0.25;
+      }
     }
+
     .card-laser-beam {
       position: absolute;
-      left: 4%;
-      right: 4%;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #34d399, #10b981, #34d399, transparent);
-      box-shadow: 0 0 16px #10b981, 0 0 32px rgba(16, 185, 129, 0.7);
-      animation: scanLaserLine 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      left: 3%;
+      right: 3%;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(52, 211, 153, 0.45) 15%, 
+        #ffffff 50%, 
+        rgba(52, 211, 153, 0.45) 85%, 
+        transparent 100%
+      );
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.7), 0 0 20px rgba(16, 185, 129, 0.35);
+      animation: scanOpticalBeam 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
       pointer-events: none;
       border-radius: 9999px;
       z-index: 15;
     }
+
     .card-laser-trail {
       position: absolute;
       left: 0;
       right: 0;
-      height: 28px;
-      background: linear-gradient(180deg, rgba(16, 185, 129, 0.3), transparent);
-      top: 3px;
+      height: 38px;
+      background: linear-gradient(180deg, 
+        rgba(52, 211, 153, 0.18) 0%, 
+        rgba(16, 185, 129, 0.05) 50%, 
+        transparent 100%
+      );
+      top: 2px;
       pointer-events: none;
     }
 
+    .reticle-bracket {
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reticle-locked {
+      border-color: #34d399 !important;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.5) !important;
+      transform: scale(0.985);
+    }
+
+    /* Apple-style refined field focus pulse */
     @keyframes fieldRecognizedPulse {
       0% {
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 0 25px rgba(16, 185, 129, 0.65);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), 0 0 16px rgba(16, 185, 129, 0.4);
         border-color: #10b981 !important;
-        background-color: rgba(16, 185, 129, 0.22) !important;
+        background-color: rgba(16, 185, 129, 0.15) !important;
       }
-      35% {
-        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35), 0 0 40px rgba(16, 185, 129, 0.8);
+      40% {
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25), 0 0 24px rgba(16, 185, 129, 0.45);
         border-color: #34d399 !important;
-        background-color: rgba(16, 185, 129, 0.18) !important;
+        background-color: rgba(16, 185, 129, 0.10) !important;
       }
       100% {
         box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 rgba(16, 185, 129, 0);
         border-color: #10b981 !important;
-        background-color: rgba(16, 185, 129, 0.08) !important;
+        background-color: transparent !important;
       }
     }
     .card-recognized-glow {
-      animation: fieldRecognizedPulse 2s ease-out forwards !important;
+      animation: fieldRecognizedPulse 1.8s ease-out forwards !important;
     }
 
+    /* Refined digit block pop */
     @keyframes digitBlockPop {
-      0% { transform: scale(0.5); opacity: 0; filter: blur(4px); }
-      70% { transform: scale(1.12); opacity: 1; filter: blur(0px); }
-      100% { transform: scale(1); opacity: 1; }
+      0% { transform: scale(0.85) translateY(4px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .digit-pop-1 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
-    .digit-pop-2 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s both; }
-    .digit-pop-3 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.31s both; }
-    .digit-pop-4 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.44s both; }
+    .digit-pop-1 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both; }
+    .digit-pop-2 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both; }
+    .digit-pop-3 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both; }
+    .digit-pop-4 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both; }
 
   </style>
 </head>
@@ -3030,11 +3067,16 @@
 
         <!-- Viewfinder Guide Frame Corners -->
         <div class="absolute inset-3 pointer-events-none rounded-xl border border-white/10" id="scanner-guide-box">
-          <!-- Corner brackets -->
-          <span class="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg"></span>
-          <span class="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg"></span>
-          <span class="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg"></span>
-          <span class="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-2 border-r-2 border-emerald-400 rounded-br-lg"></span>
+          <!-- Precision Corner brackets -->
+          <span class="reticle-bracket absolute -top-[2px] -left-[2px] w-6 h-6 border-t-2 border-l-2 border-white/90 rounded-tl-xl shadow-sm"></span>
+          <span class="reticle-bracket absolute -top-[2px] -right-[2px] w-6 h-6 border-t-2 border-r-2 border-white/90 rounded-tr-xl shadow-sm"></span>
+          <span class="reticle-bracket absolute -bottom-[2px] -left-[2px] w-6 h-6 border-b-2 border-l-2 border-white/90 rounded-bl-xl shadow-sm"></span>
+          <span class="reticle-bracket absolute -bottom-[2px] -right-[2px] w-6 h-6 border-b-2 border-r-2 border-white/90 rounded-br-xl shadow-sm"></span>
+          <!-- Subtle center crosshair watermark -->
+          <div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+            <div class="w-8 h-[1px] bg-white"></div>
+            <div class="h-8 w-[1px] bg-white absolute"></div>
+          </div>
         </div>
 
         <!-- Laser Scan Beam Animation -->
@@ -3044,38 +3086,36 @@
 
         <!-- Placeholder overlay before camera/photo is loaded -->
         <div id="scanner-placeholder" class="flex flex-col items-center justify-center text-center p-4 z-10">
-          <div class="w-12 h-12 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center text-neutral-400 mb-2">
-            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-          </div>
-          <p class="text-xs font-semibold text-neutral-200">Start Live Camera or Upload Card Photo</p>
-          <p class="text-[10px] text-neutral-500 mt-0.5">Works with embossed and flat RuPay cards</p>
+          <div class="w-9 h-9 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin mb-2.5" id="scanner-spinner"></div>
+          <p class="text-xs font-semibold text-neutral-200" id="scanner-placeholder-title">Starting Camera...</p>
+          <p class="text-[10px] text-neutral-500 mt-0.5" id="scanner-placeholder-sub">Position card within frame</p>
         </div>
 
         <!-- Recognized Card Mockup Overlay (Celebration on detection!) -->
-        <div id="scanner-recognized-overlay" class="hidden absolute inset-0 bg-neutral-950/92 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-4 text-center transition-all">
+        <div id="scanner-recognized-overlay" class="hidden absolute inset-0 bg-neutral-950/92 backdrop-blur-md z-20 flex flex-col items-center justify-center p-4 text-center transition-all">
           <!-- Success Badge -->
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-3 shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
             <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Card Recognized &amp; Verified!</span>
+            <span>Card Recognized &amp; Verified</span>
           </div>
 
           <!-- 16-Digit Card Blocks with cascading pop animation -->
-          <div class="w-full max-w-[280px] bg-gradient-to-r from-neutral-800/90 to-neutral-900/90 border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
+          <div class="w-full max-w-[280px] bg-neutral-900/90 border border-emerald-500/40 rounded-xl p-3 shadow-2xl backdrop-blur-sm">
             <div class="flex items-center justify-between text-[10px] text-neutral-400 font-mono-apple mb-2">
-              <span class="text-emerald-400 font-bold">RuPay / BANK CARD</span>
-              <span id="scanner-detected-exp" class="text-neutral-300">EXP: --/--</span>
+              <span class="text-emerald-400 font-semibold tracking-wider">RuPay / BANK CARD</span>
+              <span id="scanner-detected-exp" class="text-neutral-300 font-medium">EXP: --/--</span>
             </div>
-            <div class="grid grid-cols-4 gap-1 text-center font-mono-apple font-bold text-xs sm:text-sm text-white" id="scanner-digit-blocks">
-              <div id="scanned-block-1" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-1">••••</div>
-              <div id="scanned-block-2" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-2">••••</div>
-              <div id="scanned-block-3" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-3">••••</div>
-              <div id="scanned-block-4" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-4">••••</div>
+            <div class="grid grid-cols-4 gap-1.5 text-center font-mono-apple font-bold text-xs sm:text-sm text-white" id="scanner-digit-blocks">
+              <div id="scanned-block-1" class="py-1 rounded-lg bg-black/60 border border-neutral-700 text-emerald-300 digit-pop-1">••••</div>
+              <div id="scanned-block-2" class="py-1 rounded-lg bg-black/60 border border-neutral-700 text-emerald-300 digit-pop-2">••••</div>
+              <div id="scanned-block-3" class="py-1 rounded-lg bg-black/60 border border-neutral-700 text-emerald-300 digit-pop-3">••••</div>
+              <div id="scanned-block-4" class="py-1 rounded-lg bg-black/60 border border-neutral-700 text-emerald-300 digit-pop-4">••••</div>
             </div>
           </div>
 
-          <p class="text-[11px] text-emerald-400 font-medium mt-3 flex items-center gap-1.5">
+          <p class="text-[11px] text-emerald-400/90 font-medium mt-3 flex items-center gap-1.5">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Auto-filling replacement form...</span>
+            <span>Populating replacement details...</span>
           </p>
         </div>
 
@@ -3083,27 +3123,26 @@
 
       <!-- Status feedback banner -->
       <div id="scanner-status-text" class="text-center text-[11px] font-mono-apple text-neutral-400 py-0.5 min-h-[20px] transition-all">
-        Ensure good lighting. Avoid strong reflections or glare.
+        Starting camera... Please allow camera access if prompted.
       </div>
 
-      <!-- Action Buttons -->
-      <div class="grid grid-cols-2 gap-2 pt-1">
-        <button type="button" id="scanner-btn-camera" onclick="startLiveCameraScanner()" class="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-2 border border-neutral-700 transition-all active:scale-95">
-          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-          <span id="scanner-cam-btn-label">Open Camera</span>
-        </button>
-
-        <button type="button" onclick="triggerFileInputFromModal()" class="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95">
-          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <span>Upload Photo</span>
+      <!-- Primary Action: Shutter Button -->
+      <div id="scanner-shutter-container" class="pt-1">
+        <button type="button" onclick="captureLiveCameraFrame()" id="scanner-btn-capture" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all">
+          <span class="w-2.5 h-2.5 rounded-full bg-neutral-950/80 animate-ping"></span>
+          <span id="scanner-capture-label">Snap &amp; Recognize Card</span>
         </button>
       </div>
 
-      <!-- Shutter button when camera is active -->
-      <div id="scanner-shutter-container" class="hidden pt-1">
-        <button type="button" onclick="captureLiveCameraFrame()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all">
-          <span class="w-2.5 h-2.5 rounded-full bg-neutral-950 animate-ping"></span>
-          <span>Snap &amp; Recognize Card</span>
+      <!-- Secondary Controls Row -->
+      <div class="flex items-center justify-between text-xs px-1 pt-1" id="scanner-secondary-controls">
+        <button type="button" onclick="triggerFileInputFromModal()" class="text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors text-[11px] font-medium py-1">
+          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Upload / Pick Photo</span>
+        </button>
+        <button type="button" id="scanner-btn-toggle-cam" onclick="toggleCameraStream()" class="text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors text-[11px] font-medium py-1">
+          <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span id="scanner-toggle-cam-label">Restart Camera</span>
         </button>
       </div>
 
@@ -8858,6 +8897,9 @@
       resetScannerModalUI();
       modal.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
+
+      // Start live camera automatically by default
+      startLiveCameraScanner();
     }
 
     function closeCardScannerModal() {
@@ -8872,40 +8914,77 @@
       const video = document.getElementById('card-scanner-video');
       const preview = document.getElementById('card-scanner-preview-img');
       const placeholder = document.getElementById('scanner-placeholder');
+      const spinner = document.getElementById('scanner-spinner');
+      const pTitle = document.getElementById('scanner-placeholder-title');
+      const pSub = document.getElementById('scanner-placeholder-sub');
       const overlay = document.getElementById('scanner-recognized-overlay');
       const shutter = document.getElementById('scanner-shutter-container');
       const laser = document.getElementById('scanner-laser-beam');
       const status = document.getElementById('scanner-status-text');
-      const camBtnLabel = document.getElementById('scanner-cam-btn-label');
+      const toggleLabel = document.getElementById('scanner-toggle-cam-label');
+      const brackets = document.querySelectorAll('.reticle-bracket');
 
       if (video) { video.classList.add('hidden'); video.srcObject = null; }
       if (preview) { preview.classList.add('hidden'); preview.src = ''; }
       if (placeholder) placeholder.classList.remove('hidden');
+      if (spinner) spinner.classList.remove('hidden');
+      if (pTitle) pTitle.textContent = 'Starting Camera...';
+      if (pSub) pSub.textContent = 'Position card within frame';
       if (overlay) overlay.classList.add('hidden');
-      if (shutter) shutter.classList.add('hidden');
+      if (shutter) shutter.classList.remove('hidden');
       if (laser) laser.classList.remove('hidden');
-      if (camBtnLabel) camBtnLabel.textContent = 'Open Camera';
-      if (status) status.innerHTML = 'Ensure good lighting. Avoid strong reflections or glare.';
+      if (toggleLabel) toggleLabel.textContent = 'Camera Active';
+      if (status) status.innerHTML = 'Starting camera... Please allow camera access if prompted.';
+      brackets.forEach(b => b.classList.remove('reticle-locked'));
       isOcrProcessing = false;
     }
 
-    async function startLiveCameraScanner() {
+    async function toggleCameraStream() {
       if (liveCameraStream) {
         stopLiveCameraStream();
-        resetScannerModalUI();
-        return;
-      }
+        const video = document.getElementById('card-scanner-video');
+        const placeholder = document.getElementById('scanner-placeholder');
+        const shutter = document.getElementById('scanner-shutter-container');
+        const toggleLabel = document.getElementById('scanner-toggle-cam-label');
+        const status = document.getElementById('scanner-status-text');
+        const spinner = document.getElementById('scanner-spinner');
+        const pTitle = document.getElementById('scanner-placeholder-title');
+        const pSub = document.getElementById('scanner-placeholder-sub');
 
+        if (video) { video.classList.add('hidden'); video.srcObject = null; }
+        if (placeholder) placeholder.classList.remove('hidden');
+        if (spinner) spinner.classList.add('hidden');
+        if (pTitle) pTitle.textContent = 'Camera Paused';
+        if (pSub) pSub.textContent = 'Tap below to restart or upload photo';
+        if (shutter) shutter.classList.add('hidden');
+        if (toggleLabel) toggleLabel.textContent = 'Start Camera';
+        if (status) status.textContent = 'Camera paused. Tap "Start Camera" or "Upload / Pick Photo".';
+      } else {
+        await startLiveCameraScanner();
+      }
+    }
+
+    async function startLiveCameraScanner() {
       const status = document.getElementById('scanner-status-text');
       const placeholder = document.getElementById('scanner-placeholder');
+      const spinner = document.getElementById('scanner-spinner');
+      const pTitle = document.getElementById('scanner-placeholder-title');
+      const pSub = document.getElementById('scanner-placeholder-sub');
       const video = document.getElementById('card-scanner-video');
       const preview = document.getElementById('card-scanner-preview-img');
       const shutter = document.getElementById('scanner-shutter-container');
-      const camBtnLabel = document.getElementById('scanner-cam-btn-label');
+      const toggleLabel = document.getElementById('scanner-toggle-cam-label');
 
+      if (spinner) spinner.classList.remove('hidden');
+      if (pTitle) pTitle.textContent = 'Starting Camera...';
+      if (pSub) pSub.textContent = 'Position card within frame';
       if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Requesting camera access...</span>';
 
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera API not supported on this browser');
+        }
+
         const constraints = {
           video: {
             facingMode: { ideal: 'environment' },
@@ -8926,13 +9005,17 @@
         if (preview) preview.classList.add('hidden');
         if (placeholder) placeholder.classList.add('hidden');
         if (shutter) shutter.classList.remove('hidden');
-        if (camBtnLabel) camBtnLabel.textContent = 'Stop Camera';
+        if (toggleLabel) toggleLabel.textContent = 'Camera Active';
         if (status) status.innerHTML = '<span class="text-emerald-400 font-bold">Align card inside frame</span> and tap "Snap &amp; Recognize"';
 
       } catch (err) {
         console.warn('Camera access failed:', err);
-        if (status) status.innerHTML = '<span class="text-rose-400 font-bold">Camera unavailable.</span> Please use "Upload Photo".';
-        showToast('Camera access unavailable. Please use photo upload.');
+        if (spinner) spinner.classList.add('hidden');
+        if (pTitle) pTitle.textContent = 'Camera Unavailable';
+        if (pSub) pSub.textContent = 'Tap "Upload / Pick Photo" below';
+        if (toggleLabel) toggleLabel.textContent = 'Retry Camera';
+        if (shutter) shutter.classList.add('hidden');
+        if (status) status.innerHTML = '<span class="text-rose-400 font-bold">Camera unavailable.</span> Please use "Upload / Pick Photo".';
       }
     }
 
@@ -9197,9 +9280,13 @@
       if (shutter) shutter.classList.add('hidden');
       if (laser) laser.classList.add('hidden');
 
+      // Precision lock-on reticle snap
+      const brackets = document.querySelectorAll('.reticle-bracket');
+      brackets.forEach(b => b.classList.add('reticle-locked'));
+
       // Trigger haptic vibration on mobile
       if (navigator.vibrate) {
-        try { navigator.vibrate([30, 70, 30, 80]); } catch (_) {}
+        try { navigator.vibrate([25, 60, 25, 70]); } catch (_) {}
       }
 
       // Populate recognized overlay card
@@ -9216,12 +9303,12 @@
       if (b4) b4.textContent = cardNum.slice(12, 16) || '••••';
       if (expElem) expElem.textContent = parsed.expiry ? `EXP: ${parsed.expiry}` : 'EXP: --/--';
 
-      // Reveal the WOW celebration overlay
+      // Reveal the celebration overlay
       if (overlay) overlay.classList.remove('hidden');
-      if (status) status.innerHTML = '<span class="text-emerald-300 font-bold">✓ 16-Digit Card &amp; Luhn Check Verified!</span>';
+      if (status) status.innerHTML = '<span class="text-emerald-300 font-semibold tracking-wide">✓ Card Identified &amp; Luhn Check Passed</span>';
 
-      // Allow user to see the recognized numbers animate on screen (850ms)
-      await new Promise(r => setTimeout(r, 850));
+      // Allow user to see the recognized numbers animate on screen (800ms)
+      await new Promise(r => setTimeout(r, 800));
 
       // Close scanner modal
       closeCardScannerModal();
@@ -9247,7 +9334,7 @@
         void numInput.offsetWidth; // Force reflow
         numInput.classList.add('card-recognized-glow');
 
-        // Typewriter effect over ~240ms
+        // Typewriter effect over ~220ms
         let curr = 0;
         const typeInterval = setInterval(() => {
           curr += 4;
@@ -9258,20 +9345,20 @@
             numInput.value = formatted;
             onCardNumberInput(numInput);
           }
-        }, 50);
+        }, 45);
 
         // Show or update animated success pill right beneath the input
         let successPill = document.getElementById(`ocr-success-pill-${type}-${id}`);
         if (!successPill) {
           successPill = document.createElement('div');
           successPill.id = `ocr-success-pill-${type}-${id}`;
-          successPill.className = 'mt-2 p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]';
+          successPill.className = 'mt-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center justify-between transition-all duration-300 shadow-sm';
           numInput.parentNode.appendChild(successPill);
         }
         successPill.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            <span>Card Recognized &amp; Verified</span>
+            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span class="text-[11px] font-semibold">Card Identified &amp; Verified</span>
           </div>
           <span class="text-[10px] font-mono-apple bg-emerald-400/20 px-1.5 py-0.5 rounded text-emerald-200">LUHN OK</span>
         `;
