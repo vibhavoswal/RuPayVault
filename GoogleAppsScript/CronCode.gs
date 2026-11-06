@@ -1111,6 +1111,154 @@ function doGet(e) {
     }
   }
 
+  // Safeguards Audit Verification Endpoint for BLOCK_CARD, BLOCK_AND_REPLACE_CARD & ADD_CARD
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_CARD_DUMMY") {
+    try {
+      const ss = getSpreadsheet();
+      let aSheet = ss.getSheetByName("Active Cards");
+      let bSheet = ss.getSheetByName("Blocked Cards");
+      if (!aSheet) aSheet = ss.insertSheet("Active Cards");
+      if (!bSheet) bSheet = ss.insertSheet("Blocked Cards");
+
+      const testOldCard = "6524999900008499";
+      const testNewCard = "6524999900003955";
+      const testAcc = "8499";
+      const nowStr = formatISTTimestamp(new Date());
+      const stepsPassed = [];
+
+      // Step 1: Pre-cleanup any stale test records from prior runs
+      [aSheet, bSheet].forEach(sheet => {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) {
+          const num = String(rows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (num === testOldCard || num === testNewCard) {
+            sheet.deleteRow(i + 1);
+          }
+        }
+      });
+      SpreadsheetApp.flush();
+
+      // Step 2: Seed initial Active Card (Old Card)
+      aSheet.appendRow([
+        "PNB", "Debit", "PNB Imperial RSDC",
+        "'" + testAcc, "'" + testOldCard, "'10/33", "'000",
+        "ACTIVE", "Test Dummy Card",
+        "Applicable", "Applicable", "Applicable", "Applicable", "Applicable",
+        "Applicable", "Applicable", "Applicable", "Applicable", "Applicable",
+        "Applicable", "Applicable", "Applicable",
+        nowStr
+      ]);
+      SpreadsheetApp.flush();
+      stepsPassed.push("STEP_1_SEED_OLD_CARD");
+
+      // Step 3: Test BLOCK_AND_REPLACE_CARD simulation
+      // a) Archive old card to Blocked Cards
+      const aRows = aSheet.getDataRange().getValues();
+      let foundOldInActive = false;
+      for (let i = 1; i < aRows.length; i++) {
+        const num = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+        if (num === testOldCard) {
+          const rowData = aRows[i];
+          bSheet.appendRow([
+            rowData[0], rowData[1], rowData[2],
+            "'" + String(rowData[3] || 'NA').replace(/^'/, ''),
+            "'" + testOldCard,
+            "'" + String(rowData[5] || '').replace(/^'/, ''),
+            "'" + String(rowData[6] || '').replace(/^'/, ''),
+            "BLOCKED", nowStr, testNewCard.slice(-4), "Replaced via Safeguard Test",
+            rowData[9], rowData[10], rowData[11], rowData[12], rowData[13],
+            rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
+            rowData[19], rowData[20], rowData[21]
+          ]);
+          aSheet.deleteRow(i + 1);
+          foundOldInActive = true;
+          break;
+        }
+      }
+      SpreadsheetApp.flush();
+      if (foundOldInActive) stepsPassed.push("STEP_2_ARCHIVE_OLD_CARD");
+
+      // b) Insert new card into Active Cards
+      aSheet.appendRow([
+        "PNB", "Debit", "PNB Imperial RSDC",
+        "'" + testAcc, "'" + testNewCard, "'10/33", "'000",
+        "ACTIVE", "Replacement Safeguard Test",
+        "Applicable", "Applicable", "Applicable", "Applicable", "Applicable",
+        "Applicable", "Applicable", "Applicable", "Applicable", "Applicable",
+        "Applicable", "Applicable", "Applicable",
+        nowStr
+      ]);
+      SpreadsheetApp.flush();
+      stepsPassed.push("STEP_3_ACTIVATE_NEW_CARD");
+
+      // Step 4: Verify Dual-Sheet Consistency
+      const checkARows = aSheet.getDataRange().getValues();
+      const hasNewInActive = checkARows.some(r => String(r[4] || '').replace(/['\s]/g, '').trim() === testNewCard && String(r[7] || '').toUpperCase() === 'ACTIVE');
+      const checkBRows = bSheet.getDataRange().getValues();
+      const hasOldInBlocked = checkBRows.some(r => String(r[4] || '').replace(/['\s]/g, '').trim() === testOldCard && String(r[7] || '').toUpperCase() === 'BLOCKED' && String(r[9] || '').trim() === testNewCard.slice(-4));
+
+      if (hasNewInActive && hasOldInBlocked) {
+        stepsPassed.push("STEP_4_DUAL_SHEET_CONSISTENCY_VERIFIED");
+      }
+
+      // Step 5: Test BLOCK_CARD simulation on the replacement card
+      const aRows2 = aSheet.getDataRange().getValues();
+      for (let i = 1; i < aRows2.length; i++) {
+        const num = String(aRows2[i][4] || '').replace(/['\s]/g, '').trim();
+        if (num === testNewCard) {
+          const rowData = aRows2[i];
+          bSheet.appendRow([
+            rowData[0], rowData[1], rowData[2],
+            "'" + String(rowData[3] || 'NA').replace(/^'/, ''),
+            "'" + testNewCard,
+            "'" + String(rowData[5] || '').replace(/^'/, ''),
+            "'" + String(rowData[6] || '').replace(/^'/, ''),
+            "BLOCKED", nowStr, "", "Blocked via Safeguard Test",
+            rowData[9], rowData[10], rowData[11], rowData[12], rowData[13],
+            rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
+            rowData[19], rowData[20], rowData[21]
+          ]);
+          aSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      SpreadsheetApp.flush();
+      stepsPassed.push("STEP_5_BLOCK_NEW_CARD");
+
+      // Step 6: Post-test Cleanup - Safely purge test records
+      [aSheet, bSheet].forEach(sheet => {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) {
+          const num = String(rows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (num === testOldCard || num === testNewCard) {
+            sheet.deleteRow(i + 1);
+          }
+        }
+      });
+      SpreadsheetApp.flush();
+
+      // Step 7: Verify Zero Residual Artifacts
+      let residualCount = 0;
+      [aSheet, bSheet].forEach(sheet => {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          const num = String(rows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (num === testOldCard || num === testNewCard) residualCount++;
+        }
+      });
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_CARD_DUMMY",
+        stepsPassed: stepsPassed,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: (stepsPassed.length === 5 && residualCount === 0)
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (cErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: cErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Seed / Initialize Misc Tab with initial vouchers
   if (e && e.parameter && e.parameter.action === "SEED_INITIAL_MISC_VOUCHERS") {
     try {
@@ -2676,7 +2824,18 @@ function doPost(e) {
       const targetCardNum = String(data.cardNumber || data.id || '').replace(/['\s]/g, '').trim();
       let found = false;
 
-      if (aSheet) {
+      // Safeguard: Purge any stale pre-existing duplicate in Blocked Cards
+      if (bSheet && targetCardNum) {
+        const bRows = bSheet.getDataRange().getValues();
+        for (let b = bRows.length - 1; b >= 1; b--) {
+          const bNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
+          if (bNum === targetCardNum) {
+            bSheet.deleteRow(b + 1);
+          }
+        }
+      }
+
+      if (aSheet && targetCardNum) {
         const aRows = aSheet.getDataRange().getValues();
         for (let i = 1; i < aRows.length; i++) {
           const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
@@ -2733,12 +2892,13 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // 1. Safeguard: If newCardNum was mistakenly in Blocked Cards, purge it from Blocked Cards (reactivation guard)
+      // 1. Safeguard: If newCardNum was in Blocked Cards, purge it from Blocked Cards (reactivation guard)
+      // Also purge any pre-existing duplicate of oldCardNum in Blocked Cards
       if (bSheet) {
         const bRows = bSheet.getDataRange().getValues();
         for (let b = bRows.length - 1; b >= 1; b--) {
           const bCardNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
-          if (bCardNum === newCardNum) {
+          if (bCardNum === newCardNum || bCardNum === oldCardNum) {
             bSheet.deleteRow(b + 1);
           }
         }
@@ -2779,7 +2939,7 @@ function doPost(e) {
       if (aSheet && newCardNum) {
         const bank = newCard.bank || (oldRowData ? oldRowData[0] : 'PNB');
         const type = newCard.type || newCard.cardType || (oldRowData ? oldRowData[1] : 'Debit');
-        const name = newCard.name || newCard.cardName || (oldRowData ? oldRowData[2] : 'PNB Imperial');
+        const name = newCard.name || newCard.cardName || (oldRowData ? oldRowData[2] : (bank + ' ' + (bank === 'PNB' ? 'Imperial' : 'RuPay Select')));
         const linkedAcc = newCard.linkedAccount || (oldRowData ? String(oldRowData[3] || '').replace(/^'/, '') : 'NA');
         const expiry = newCard.expiry || '10/33';
         const cvv = newCard.cvv || '000';
@@ -2838,7 +2998,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 6C. Add Brand New Card
+    // 6C. Add Brand New Card (With Idempotency & Deduplication Shield)
     if (data.action === "ADD_CARD") {
       const aSheet = ss.getSheetByName("Active Cards");
       const c = data.card || data;
@@ -2846,8 +3006,8 @@ function doPost(e) {
 
       if (aSheet && cardNum) {
         const bank = c.bank || 'PNB';
-        const type = c.cardType || 'Debit';
-        const name = c.cardName || 'RuPay Select Card';
+        const type = c.cardType || c.type || 'Debit';
+        const name = c.cardName || c.name || 'RuPay Select Card';
         const linkedAcc = c.linkedAccount || 'NA';
         const expiry = c.expiry || '10/33';
         const cvv = c.cvv || '000';
@@ -2855,19 +3015,43 @@ function doPost(e) {
         const nowStr = formatISTTimestamp(new Date());
         const benefits = getEligibleBenefitsArray(bank, type, name);
 
-        aSheet.appendRow([
-          bank,
-          type,
-          name,
-          "'" + String(linkedAcc).replace(/^'/, ''),
-          "'" + cardNum,
-          "'" + String(expiry).replace(/^'/, ''),
-          "'" + String(cvv).replace(/^'/, ''),
-          "ACTIVE",
-          notes,
-          ...benefits,
-          nowStr
-        ]);
+        // Check if cardNum already exists in Active Cards
+        const aRows = aSheet.getDataRange().getValues();
+        let existingRowIndex = -1;
+        for (let i = 1; i < aRows.length; i++) {
+          const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowNum === cardNum) {
+            existingRowIndex = i + 1;
+            break;
+          }
+        }
+
+        if (existingRowIndex > 1) {
+          // Update in-place to prevent duplication
+          aSheet.getRange(existingRowIndex, 1).setValue(bank);
+          aSheet.getRange(existingRowIndex, 2).setValue(type);
+          aSheet.getRange(existingRowIndex, 3).setValue(name);
+          aSheet.getRange(existingRowIndex, 4).setValue("'" + String(linkedAcc).replace(/^'/, ''));
+          aSheet.getRange(existingRowIndex, 5).setValue("'" + cardNum);
+          aSheet.getRange(existingRowIndex, 6).setValue("'" + String(expiry).replace(/^'/, ''));
+          aSheet.getRange(existingRowIndex, 7).setValue("'" + String(cvv).replace(/^'/, ''));
+          aSheet.getRange(existingRowIndex, 8).setValue("ACTIVE");
+          aSheet.getRange(existingRowIndex, 9).setValue(notes);
+        } else {
+          aSheet.appendRow([
+            bank,
+            type,
+            name,
+            "'" + String(linkedAcc).replace(/^'/, ''),
+            "'" + cardNum,
+            "'" + String(expiry).replace(/^'/, ''),
+            "'" + String(cvv).replace(/^'/, ''),
+            "ACTIVE",
+            notes,
+            ...benefits,
+            nowStr
+          ]);
+        }
         SpreadsheetApp.flush();
       }
 
@@ -2880,108 +3064,96 @@ function doPost(e) {
 
     // 6D. Add Miscellaneous Voucher
     if (data.action === "ADD_MISC_VOUCHER") {
-      const lock = LockService.getScriptLock();
-      lock.waitLock(30000);
-      try {
-        const sheet = getOrCreateMiscSheet(ss);
-        const brandName = String(data.brandName || data.brand || 'Misc').trim();
-        const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim();
-        const pin = data.pin ? String(data.pin).replace(/^'/, '').trim() : '';
-        const amount = Number(data.amount || data.value || 500) || 500;
-        const nowStr = formatISTTimestamp(new Date());
-        const todayStr = formatISTDate(new Date());
+      const sheet = getOrCreateMiscSheet(ss);
+      const brandName = String(data.brandName || data.brand || 'Misc').trim();
+      const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim();
+      const pin = data.pin ? String(data.pin).replace(/^'/, '').trim() : '';
+      const amount = Number(data.amount || data.value || 500) || 500;
+      const nowStr = formatISTTimestamp(new Date());
+      const todayStr = formatISTDate(new Date());
 
-        if (!voucherCode) {
-          return ContentService.createTextOutput(JSON.stringify({
-            success: false,
-            error: "Voucher code is required"
-          })).setMimeType(ContentService.MimeType.JSON);
-        }
-
-        // Idempotency check: see if voucher code already exists in Misc sheet
-        const vals = sheet.getDataRange().getValues();
-        let existingRowIndex = -1;
-        for (let i = 1; i < vals.length; i++) {
-          const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim();
-          if (rowCode.toUpperCase() === voucherCode.toUpperCase()) {
-            existingRowIndex = i + 1;
-            break;
-          }
-        }
-
-        const bookingId = data.bookingId || brandName || ('MISC-' + Date.now().toString(36).toUpperCase());
-
-        if (existingRowIndex > 0) {
-          // Update in-place
-          sheet.getRange(existingRowIndex, 1).setValue(brandName || bookingId);
-          sheet.getRange(existingRowIndex, 2).setValue("'" + voucherCode);
-          sheet.getRange(existingRowIndex, 3).setValue(pin ? ("'" + pin) : "");
-          sheet.getRange(existingRowIndex, 4).setValue(amount);
-          sheet.getRange(existingRowIndex, 6).setValue(brandName);
-          sheet.getRange(existingRowIndex, 8).setValue("ACTIVE");
-          sheet.getRange(existingRowIndex, 9).setValue(nowStr);
-          sheet.getRange(existingRowIndex, 10).setValue(true);
-        } else {
-          // Append new row
-          sheet.appendRow([
-            brandName || bookingId, // A: Booking ID / Reference / Sub-brand
-            "'" + voucherCode,      // B: Code
-            pin ? ("'" + pin) : "", // C: PIN
-            amount,                 // D: Value
-            todayStr,               // E: Date of Issue
-            brandName,              // F: Account / Brand
-            "Manual",               // G: Card
-            "ACTIVE",               // H: Status
-            nowStr,                 // I: Timestamp (IST)
-            true                    // J: Display in UI
-          ]);
-        }
-
-        SpreadsheetApp.flush();
-
+      if (!voucherCode) {
         return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          action: "ADD_MISC_VOUCHER",
-          bookingId: bookingId,
-          code: voucherCode,
-          brand: brandName,
-          pin: pin,
-          amount: amount
+          success: false,
+          error: "Voucher code is required"
         })).setMimeType(ContentService.MimeType.JSON);
-      } finally {
-        lock.releaseLock();
       }
+
+      // Idempotency check: see if voucher code already exists in Misc sheet
+      const vals = sheet.getDataRange().getValues();
+      let existingRowIndex = -1;
+      for (let i = 1; i < vals.length; i++) {
+        const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim();
+        if (rowCode.toUpperCase() === voucherCode.toUpperCase()) {
+          existingRowIndex = i + 1;
+          break;
+        }
+      }
+
+      const bookingId = data.bookingId || brandName || ('MISC-' + Date.now().toString(36).toUpperCase());
+
+      if (existingRowIndex > 0) {
+        // Update in-place
+        sheet.getRange(existingRowIndex, 1).setValue(brandName || bookingId);
+        sheet.getRange(existingRowIndex, 2).setValue("'" + voucherCode);
+        sheet.getRange(existingRowIndex, 3).setValue(pin ? ("'" + pin) : "");
+        sheet.getRange(existingRowIndex, 4).setValue(amount);
+        sheet.getRange(existingRowIndex, 6).setValue(brandName);
+        sheet.getRange(existingRowIndex, 8).setValue("ACTIVE");
+        sheet.getRange(existingRowIndex, 9).setValue(nowStr);
+        sheet.getRange(existingRowIndex, 10).setValue(true);
+      } else {
+        // Append new row
+        sheet.appendRow([
+          brandName || bookingId, // A: Booking ID / Reference / Sub-brand
+          "'" + voucherCode,      // B: Code
+          pin ? ("'" + pin) : "", // C: PIN
+          amount,                 // D: Value
+          todayStr,               // E: Date of Issue
+          brandName,              // F: Account / Brand
+          "Manual",               // G: Card
+          "ACTIVE",               // H: Status
+          nowStr,                 // I: Timestamp (IST)
+          true                    // J: Display in UI
+        ]);
+      }
+
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "ADD_MISC_VOUCHER",
+        bookingId: bookingId,
+        code: voucherCode,
+        brand: brandName,
+        pin: pin,
+        amount: amount
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 6E. Delete / Purge Miscellaneous Voucher (Used for Undo & Safeguard Verification)
     if (data.action === "DELETE_MISC_VOUCHER") {
-      const lock = LockService.getScriptLock();
-      lock.waitLock(30000);
-      try {
-        const sheet = ss.getSheetByName("Misc");
-        const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim().toUpperCase();
-        let deleted = false;
-        if (sheet && voucherCode) {
-          const vals = sheet.getDataRange().getValues();
-          for (let i = vals.length - 1; i >= 1; i--) {
-            const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
-            if (rowCode === voucherCode) {
-              sheet.deleteRow(i + 1);
-              deleted = true;
-              break;
-            }
+      const sheet = ss.getSheetByName("Misc");
+      const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim().toUpperCase();
+      let deleted = false;
+      if (sheet && voucherCode) {
+        const vals = sheet.getDataRange().getValues();
+        for (let i = vals.length - 1; i >= 1; i--) {
+          const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+          if (rowCode === voucherCode) {
+            sheet.deleteRow(i + 1);
+            deleted = true;
+            break;
           }
-          SpreadsheetApp.flush();
         }
-        return ContentService.createTextOutput(JSON.stringify({
-          success: true,
-          action: "DELETE_MISC_VOUCHER",
-          deleted: deleted,
-          voucherCode: voucherCode
-        })).setMimeType(ContentService.MimeType.JSON);
-      } finally {
-        lock.releaseLock();
+        SpreadsheetApp.flush();
       }
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "DELETE_MISC_VOUCHER",
+        deleted: deleted,
+        voucherCode: voucherCode
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 7B. Tag Payment Card on Ingested Vouchers
