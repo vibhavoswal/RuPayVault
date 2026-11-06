@@ -964,6 +964,70 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+// Remediation handler for PNB 8499 cards: restores 6524971000883955 to Active Cards and removes from Blocked Cards
+  if (e && e.parameter && e.parameter.action === "REMEDIATE_PNB_8499_CARDS") {
+    try {
+      const ss = getSpreadsheet();
+      const aSheet = ss.getSheetByName("Active Cards");
+      const bSheet = ss.getSheetByName("Blocked Cards");
+      const targetNum = "6524971000883955";
+      const report = { removedFromBlocked: false, updatedInActive: false, addedToActive: false };
+
+      // 1. Remove 3955 from Blocked Cards if present
+      if (bSheet) {
+        const bRows = bSheet.getDataRange().getValues();
+        for (let i = bRows.length - 1; i >= 1; i--) {
+          const rowNum = String(bRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowNum === targetNum) {
+            bSheet.deleteRow(i + 1);
+            report.removedFromBlocked = true;
+          }
+        }
+      }
+
+      // 2. Ensure 3955 is active in Active Cards with correct details
+      if (aSheet) {
+        const aRows = aSheet.getDataRange().getValues();
+        let targetRowIndex = -1;
+        for (let i = 1; i < aRows.length; i++) {
+          const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (rowNum === targetNum) {
+            targetRowIndex = i + 1;
+            break;
+          }
+        }
+
+        const benefits = getEligibleBenefitsArray('PNB', 'Debit', 'PNB Imperial');
+        if (targetRowIndex > 1) {
+          aSheet.getRange(targetRowIndex, 1).setValue('PNB');
+          aSheet.getRange(targetRowIndex, 2).setValue('Debit');
+          aSheet.getRange(targetRowIndex, 3).setValue('PNB Imperial');
+          aSheet.getRange(targetRowIndex, 4).setValue("'8499");
+          aSheet.getRange(targetRowIndex, 5).setValue("'" + targetNum);
+          aSheet.getRange(targetRowIndex, 6).setValue("'10/33");
+          aSheet.getRange(targetRowIndex, 7).setValue("'547");
+          aSheet.getRange(targetRowIndex, 8).setValue('ACTIVE');
+          aSheet.getRange(targetRowIndex, 9).setValue('Applied 30th Oct, Received 6th Nov');
+          report.updatedInActive = true;
+        } else {
+          const newRow = [
+            'PNB', 'Debit', 'PNB Imperial', "'8499", "'" + targetNum, "'10/33", "'547", 'ACTIVE',
+            'Applied 30th Oct, Received 6th Nov',
+            ...benefits,
+            formatISTTimestamp(new Date())
+          ];
+          aSheet.appendRow(newRow);
+          report.addedToActive = true;
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, report })).setMimeType(ContentService.MimeType.JSON);
+    } catch (rErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: rErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Diagnostic handler for Gmail ingestion debugging & manual voucher population
   if (e && e.parameter && e.parameter.action === "DEBUG_GMAIL_INGEST") {
     try {
@@ -971,35 +1035,43 @@ function doGet(e) {
       const activeUser = Session.getActiveUser().getEmail();
       const ss = getSpreadsheet();
 
-      // Check current New tab contents
-      const nSheet = ss.getSheetByName("New");
-      const currentNewRows = nSheet ? nSheet.getDataRange().getValues().map((r, idx) => ({
+      // Check Active Cards
+      const aSheet = ss.getSheetByName("Active Cards");
+      const activeCards = aSheet ? aSheet.getDataRange().getValues().map((r, idx) => ({
         row: idx + 1,
-        bookingId: r[0],
-        code: r[1],
-        pin: r[2],
-        value: r[3],
-        date: r[4],
-        account: r[5],
+        bank: r[0],
+        type: r[1],
+        name: r[2],
+        linkedAcc: r[3],
+        cardNum: r[4],
+        expiry: r[5],
+        cvv: r[6],
         status: r[7],
-        brand: r[10]
+        notes: r[8]
       })) : [];
 
-      let gmailQuotaStatus = "OK";
-      let searchCount = 0;
-      try {
-        const ths = GmailApp.search('newer_than:1d RUPS', 0, 5);
-        searchCount = ths.length;
-      } catch (gErr) {
-        gmailQuotaStatus = gErr.message;
-      }
+      // Check Blocked Cards
+      const bSheet = ss.getSheetByName("Blocked Cards");
+      const blockedCards = bSheet ? bSheet.getDataRange().getValues().map((r, idx) => ({
+        row: idx + 1,
+        bank: r[0],
+        type: r[1],
+        name: r[2],
+        linkedAcc: r[3],
+        cardNum: r[4],
+        expiry: r[5],
+        cvv: r[6],
+        status: r[7],
+        blockedTimestamp: r[8],
+        replacedBy: r[9],
+        notes: r[10]
+      })) : [];
 
       return ContentService.createTextOutput(JSON.stringify({
-        effectiveUser,
-        activeUser,
-        gmailQuotaStatus,
-        searchCount,
-        currentNewRows
+        activeCardsCount: activeCards.length,
+        blockedCardsCount: blockedCards.length,
+        activeCards: activeCards.filter(c => String(c.cardNum).includes('8499') || String(c.linkedAcc).includes('8499') || String(c.bank).toUpperCase().includes('PNB')),
+        blockedCards: blockedCards.filter(c => String(c.cardNum).includes('8499') || String(c.linkedAcc).includes('8499') || String(c.bank).toUpperCase().includes('PNB'))
       }, null, 2)).setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message, stack: err.stack })).setMimeType(ContentService.MimeType.JSON);
@@ -2499,7 +2571,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 6B. Block & Replace Card
+    // 6B. Block & Replace Card: Transactional, idempotent swap with dual-sheet consistency
     if (data.action === "BLOCK_AND_REPLACE_CARD") {
       const aSheet = ss.getSheetByName("Active Cards");
       let bSheet = ss.getSheetByName("Blocked Cards");
@@ -2508,65 +2580,109 @@ function doPost(e) {
       const oldCardNum = String(data.oldCardNumber || '').replace(/['\s]/g, '').trim();
       const newCard = data.newCard || {};
       const newCardNum = String(newCard.cardNumber || '').replace(/['\s]/g, '').trim();
-      let found = false;
+      let foundOld = false;
+      let oldRowData = null;
 
-      if (aSheet) {
+      if (!newCardNum || newCardNum.length < 15) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Invalid replacement card number. Must be 16 digits.",
+          action: "BLOCK_AND_REPLACE_CARD"
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // 1. Safeguard: If newCardNum was mistakenly in Blocked Cards, purge it from Blocked Cards (reactivation guard)
+      if (bSheet) {
+        const bRows = bSheet.getDataRange().getValues();
+        for (let b = bRows.length - 1; b >= 1; b--) {
+          const bCardNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
+          if (bCardNum === newCardNum) {
+            bSheet.deleteRow(b + 1);
+          }
+        }
+      }
+
+      // 2. Find and archive the old card to Blocked Cards
+      if (aSheet && oldCardNum) {
         const aRows = aSheet.getDataRange().getValues();
         for (let i = 1; i < aRows.length; i++) {
           const rowNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
           if (rowNum === oldCardNum || (oldCardNum.length === 4 && rowNum.endsWith(oldCardNum))) {
-            const rowData = aRows[i];
+            oldRowData = aRows[i];
             const blockedRow = [
-              rowData[0], // Bank
-              rowData[1], // Card_Type
-              rowData[2], // Card_Name
-              "'" + String(rowData[3] || 'NA').replace(/^'/, ''),
+              oldRowData[0], // Bank
+              oldRowData[1], // Card_Type
+              oldRowData[2], // Card_Name
+              "'" + String(oldRowData[3] || 'NA').replace(/^'/, ''),
               "'" + rowNum,
-              "'" + String(rowData[5] || '').replace(/^'/, ''),
-              "'" + String(rowData[6] || '').replace(/^'/, ''),
+              "'" + String(oldRowData[5] || '').replace(/^'/, ''),
+              "'" + String(oldRowData[6] || '').replace(/^'/, ''),
               "BLOCKED",
               formatISTTimestamp(new Date()),
               newCardNum ? newCardNum.slice(-4) : '',
-              data.notes || String(rowData[8] || 'Replaced via App'),
-              rowData[9], rowData[10], rowData[11], rowData[12], rowData[13],
-              rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
-              rowData[19], rowData[20], rowData[21]
+              data.notes || String(oldRowData[8] || 'Replaced via App'),
+              oldRowData[9], oldRowData[10], oldRowData[11], oldRowData[12], oldRowData[13],
+              oldRowData[14], oldRowData[15], oldRowData[16], oldRowData[17], oldRowData[18],
+              oldRowData[19], oldRowData[20], oldRowData[21]
             ];
             bSheet.appendRow(blockedRow);
             aSheet.deleteRow(i + 1);
-            found = true;
+            foundOld = true;
             break;
           }
         }
       }
 
-      // Add New Replacement Card to Active Cards with eligible benefits set to "Unredeemed"
+      // 3. Add or update the new card in Active Cards with eligible benefits
       if (aSheet && newCardNum) {
-        const bank = newCard.bank || 'PNB';
-        const type = newCard.cardType || 'Debit';
-        const name = newCard.cardName || 'PNB Imperial';
-        const linkedAcc = newCard.linkedAccount || 'NA';
+        const bank = newCard.bank || (oldRowData ? oldRowData[0] : 'PNB');
+        const type = newCard.type || newCard.cardType || (oldRowData ? oldRowData[1] : 'Debit');
+        const name = newCard.name || newCard.cardName || (oldRowData ? oldRowData[2] : 'PNB Imperial');
+        const linkedAcc = newCard.linkedAccount || (oldRowData ? String(oldRowData[3] || '').replace(/^'/, '') : 'NA');
         const expiry = newCard.expiry || '10/33';
         const cvv = newCard.cvv || '000';
         const notes = newCard.notes || 'Replaced card';
         const nowStr = formatISTTimestamp(new Date());
-
         const benefits = getEligibleBenefitsArray(bank, type, name);
 
-        const newRow = [
-          bank,
-          type,
-          name,
-          "'" + String(linkedAcc).replace(/^'/, ''),
-          "'" + newCardNum,
-          "'" + String(expiry).replace(/^'/, ''),
-          "'" + String(cvv).replace(/^'/, ''),
-          "ACTIVE",
-          notes,
-          ...benefits,
-          nowStr
-        ];
-        aSheet.appendRow(newRow);
+        // Check if newCardNum is ALREADY in Active Cards (prevent duplicate row!)
+        const currentARows = aSheet.getDataRange().getValues();
+        let existingActiveRow = -1;
+        for (let j = 1; j < currentARows.length; j++) {
+          const existingNum = String(currentARows[j][4] || '').replace(/['\s]/g, '').trim();
+          if (existingNum === newCardNum) {
+            existingActiveRow = j + 1;
+            break;
+          }
+        }
+
+        if (existingActiveRow > 1) {
+          // Update in-place to prevent duplication
+          aSheet.getRange(existingActiveRow, 1).setValue(bank);
+          aSheet.getRange(existingActiveRow, 2).setValue(type);
+          aSheet.getRange(existingActiveRow, 3).setValue(name);
+          aSheet.getRange(existingActiveRow, 4).setValue("'" + String(linkedAcc).replace(/^'/, ''));
+          aSheet.getRange(existingActiveRow, 5).setValue("'" + newCardNum);
+          aSheet.getRange(existingActiveRow, 6).setValue("'" + String(expiry).replace(/^'/, ''));
+          aSheet.getRange(existingActiveRow, 7).setValue("'" + String(cvv).replace(/^'/, ''));
+          aSheet.getRange(existingActiveRow, 8).setValue("ACTIVE");
+          aSheet.getRange(existingActiveRow, 9).setValue(notes);
+        } else {
+          // Append brand new active row
+          const newRow = [
+            bank,
+            type,
+            name,
+            "'" + String(linkedAcc).replace(/^'/, ''),
+            "'" + newCardNum,
+            "'" + String(expiry).replace(/^'/, ''),
+            "'" + String(cvv).replace(/^'/, ''),
+            "ACTIVE",
+            notes,
+            ...benefits,
+            nowStr
+          ];
+          aSheet.appendRow(newRow);
+        }
       }
 
       SpreadsheetApp.flush();
@@ -2574,7 +2690,8 @@ function doPost(e) {
         success: true,
         action: "BLOCK_AND_REPLACE_CARD",
         oldCardNumber: oldCardNum,
-        newCardNumber: newCardNum
+        newCardNumber: newCardNum,
+        foundOld: foundOld
       })).setMimeType(ContentService.MimeType.JSON);
     }
 

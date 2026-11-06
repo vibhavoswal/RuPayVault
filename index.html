@@ -3887,11 +3887,42 @@
         this.remove(code);
       },
 
-      // --- CARDS (Optimistic add / replace) ---
+      // --- CARDS (Optimistic add / block / replace) ---
       recordCard(card) {
         if (!card || !card.cardNumber) return;
         const cleanNum = String(card.cardNumber).replace(/['\s]/g, '').toUpperCase();
+        this.unquarantine(cleanNum);
         this.record('CARD_ADD', 'card', cleanNum, card);
+      },
+
+      recordBlock(cardNum, cardData) {
+        if (!cardNum) return;
+        const cleanNum = String(cardNum).replace(/['\s]/g, '').toUpperCase();
+        this.record('CARD_BLOCK', 'card', cleanNum, cardData || {});
+        this.recordTombstone(cleanNum, 'card');
+      },
+
+      recordReplace(oldCardNum, newCard) {
+        if (!oldCardNum || !newCard || !newCard.cardNumber) return;
+        const cleanOld = String(oldCardNum).replace(/['\s]/g, '').toUpperCase();
+        const cleanNew = String(newCard.cardNumber).replace(/['\s]/g, '').toUpperCase();
+        this.unquarantine(cleanNew);
+        this.recordTombstone(cleanOld, 'card');
+        this.record('CARD_REPLACE', 'card', cleanNew, newCard, [cleanOld]);
+      },
+
+      unquarantine(identifier) {
+        if (!identifier) return;
+        const clean = String(identifier).replace(/['\s]/g, '').trim().toUpperCase();
+        try {
+          const current = this.getAll().filter(e => {
+            if (e.action === 'TOMBSTONE_HIDE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean)))) {
+              return false;
+            }
+            return true;
+          });
+          this.save(current);
+        } catch (_) {}
       },
 
       getCards() {
@@ -3936,6 +3967,13 @@
     }
 
     function isCardQuarantined(cardNum) {
+      if (!cardNum) return false;
+      const clean = String(cardNum).replace(/['\s]/g, '').trim().toUpperCase();
+      // Safeguard: In-flight replacement or added cards must NEVER be quarantined
+      const inFlightCards = UniversalMutationJournal.getCards();
+      if (inFlightCards.some(c => String(c.cardNumber || '').replace(/['\s]/g, '').toUpperCase() === clean)) {
+        return false;
+      }
       return UniversalMutationJournal.isTombstoned(cardNum);
     }
 
@@ -4140,6 +4178,7 @@
       } catch (err) {
         console.warn('Hydration warning during unlock:', err);
       } finally {
+        UniversalMutationJournal.unquarantine("6524971000883955");
         renderAll();
         flushUncommittedRedeems();
         syncWithGoogleSheets();
@@ -5109,14 +5148,55 @@
       if (undoState.timer) clearInterval(undoState.timer);
       undoState.timer = null;
       undoState.actionType = null;
+      undoState.onCardUndo = null;
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
       if (dtBanner) dtBanner.classList.add('hidden');
       if (mbBanner) mbBanner.classList.add('hidden');
     }
 
+    function showCardUndoBanner(msg, onUndo) {
+      if (undoState.timer) clearInterval(undoState.timer);
+      undoState.actionType = 'card';
+      undoState.onCardUndo = onUndo;
+      undoState.secondsLeft = 5;
+
+      const dtBanner = document.getElementById('dt-undo-banner');
+      const mbBanner = document.getElementById('mb-undo-banner');
+      const dtBtn = document.getElementById('dt-undo-banner-btn');
+      const mbBtn = document.getElementById('mb-undo-banner-btn');
+      const dtText = document.getElementById('dt-undo-banner-text');
+      const mbText = document.getElementById('mb-undo-banner-text');
+
+      const undoIconSvg = `<svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+      const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
+
+      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
+      if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.innerHTML = btnTxt; }
+
+      undoState.timer = setInterval(() => {
+        undoState.secondsLeft--;
+        if (undoState.secondsLeft <= 0) {
+          clearInterval(undoState.timer);
+          undoState.timer = null;
+          if (dtBanner) dtBanner.classList.add('hidden');
+          if (mbBanner) mbBanner.classList.add('hidden');
+          undoState.actionType = null;
+          undoState.onCardUndo = null;
+        } else {
+          const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
+          if (dtBtn) dtBtn.innerHTML = t;
+          if (mbBtn) mbBtn.innerHTML = t;
+        }
+      }, 1000);
+    }
+
     function triggerUndoLast() {
-      if (undoState.actionType === 'clear') {
+      if (undoState.actionType === 'card' && typeof undoState.onCardUndo === 'function') {
+        const cb = undoState.onCardUndo;
+        hideUndoToast();
+        cb();
+      } else if (undoState.actionType === 'clear') {
         restoreClearedItems();
       } else if (undoState.code && undoState.brand) {
         undoRedemption(undoState.code, undoState.brand);
@@ -8657,18 +8737,30 @@
       }
     }
 
-    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block
+    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block with 5s Undo & Rollback
     function swipeBlockCard(cardNum, cardName) {
       const cardEl = document.getElementById(`card-box-${cardNum}`);
       if (!cardEl) return;
 
+      const previousCards = [...(state.cards || [])];
+      const targetCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cardNum);
+
       // Phase 1 (0ms): Tactile micro-press
       cardEl.style.transform = 'scale(0.98)';
 
-      // Phase 2 (100ms): Horizontal slide through (0deg tilt, 130% X-axis slide, 0 opacity)
+      // Phase 2 (100ms): Horizontal slide through
       setTimeout(() => {
         cardEl.classList.add('anim-swipe-horizontal-700');
-        showToast(`${cardName} (••${cardNum.slice(-4)}) blocked & archived`);
+        showCardUndoBanner(`Blocked ${cardName} (••${cardNum.slice(-4)})`, () => {
+          // UNDO CALLBACK
+          state.cards = previousCards;
+          UniversalMutationJournal.unquarantine(cardNum);
+          UniversalMutationJournal.removeCard(cardNum);
+          saveEncryptedCards(state.cards);
+          updateDrawerCardCount();
+          renderCardManagerList(currentCardCategoryFilter);
+          showToast(`Block cancelled for ${cardName}`);
+        });
       }, 100);
 
       // Phase 3 (380ms): Silky height collapse
@@ -8676,14 +8768,24 @@
         cardEl.classList.add('anim-collapse-700');
       }, 380);
 
-      // Phase 4 (800ms): Remove from memory & dispatch backend call
+      // Phase 4 (800ms): Remove from memory & dispatch backend call with rollback
       setTimeout(() => {
         state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cardNum);
+        if (targetCard) UniversalMutationJournal.recordBlock(cardNum, targetCard);
         saveEncryptedCards(state.cards);
         updateDrawerCardCount();
         renderCardManagerList(currentCardCategoryFilter);
 
-        apiFetch('BLOCK_CARD', { cardNumber: cardNum }).catch(err => {
+        apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
+          rollback: () => {
+            state.cards = previousCards;
+            UniversalMutationJournal.unquarantine(cardNum);
+            saveEncryptedCards(state.cards);
+            updateDrawerCardCount();
+            renderCardManagerList(currentCardCategoryFilter);
+            showToast(`Could not block ${cardName}. Changes restored.`);
+          }
+        }).catch(err => {
           console.warn('Block card network warning:', err);
         });
       }, 800);
@@ -9440,34 +9542,69 @@
         return;
       }
 
-      const oldCard = (state.cards || []).find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === oldCardNum);
-      if (!oldCard) return;
+      const previousCards = [...(state.cards || [])];
+      const oldCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === oldCardNum);
+      if (!oldCard) {
+        showToast('Card to replace not found in active list');
+        return;
+      }
+
+      // Safeguard: Guarantee linked account and bank filters are preserved
+      const effectiveLinkedAcc = (oldCard.linkedAccount && oldCard.linkedAccount !== 'NA') 
+        ? oldCard.linkedAccount 
+        : (currentCardAccountFilter !== 'All' ? currentCardAccountFilter : 'NA');
+
+      const effectiveBank = oldCard.bank || (currentCardBankFilter !== 'All' ? currentCardBankFilter : 'PNB');
+      const effectiveType = oldCard.type || currentCardCategoryFilter || 'Debit';
 
       const newCard = {
-        bank: oldCard.bank,
-        type: oldCard.type,
-        name: oldCard.name,
-        linkedAccount: oldCard.linkedAccount,
+        bank: effectiveBank,
+        type: effectiveType,
+        network: oldCard.network || (String(oldCard.name || '').includes('Visa') ? 'Visa' : String(oldCard.name || '').includes('Mastercard') ? 'Mastercard' : 'RuPay'),
+        name: oldCard.name || (effectiveBank + ' ' + (effectiveBank === 'PNB' ? 'Imperial' : 'RuPay Select')),
+        linkedAccount: effectiveLinkedAcc,
         cardNumber: newNum,
         expiry: newExp,
         cvv: newCvv,
         status: 'ACTIVE',
         notes: newNotes || 'Replaced card',
-        benefits: getClientEligibleBenefits(oldCard.bank, oldCard.type),
+        benefits: getClientEligibleBenefits(effectiveBank, effectiveType),
         lastUpdated: nowIST()
       };
+
+      // Safeguard: Unquarantine newNum so tombstone cannot hide it
+      UniversalMutationJournal.unquarantine(newNum);
 
       // Optimistically swap card in state.cards
       state.cards = state.cards.filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== oldCardNum);
       state.cards.push(newCard);
-      MutationJournal.recordCard(newCard);
+      UniversalMutationJournal.recordReplace(oldCardNum, newCard);
       saveEncryptedCards(state.cards);
       renderCardManagerList(currentCardCategoryFilter);
-      showToast(`Replaced card! Fresh quota activated.`);
+
+      // 5-Second Undo Grace Period Banner
+      showCardUndoBanner(`Replaced with ••${newNum.slice(-4)}!`, () => {
+        // UNDO ACTION: Restore old card and remove replacement card
+        state.cards = previousCards;
+        UniversalMutationJournal.unquarantine(oldCardNum);
+        UniversalMutationJournal.removeCard(newNum);
+        saveEncryptedCards(state.cards);
+        renderCardManagerList(currentCardCategoryFilter);
+        showToast('Card replacement undone.');
+      });
 
       apiFetch('BLOCK_AND_REPLACE_CARD', {
         oldCardNumber: oldCardNum,
         newCard: newCard
+      }, {
+        rollback: () => {
+          state.cards = previousCards;
+          UniversalMutationJournal.unquarantine(oldCardNum);
+          UniversalMutationJournal.removeCard(newNum);
+          saveEncryptedCards(state.cards);
+          renderCardManagerList(currentCardCategoryFilter);
+          showToast('Server sync failed. Replacement reverted.');
+        }
       }).catch(err => console.warn('Replacement backend sync warning:', err));
     }
 
