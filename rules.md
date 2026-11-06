@@ -23,3 +23,53 @@
 ## 4. No Monogram Letter Badges
 - Do not generate arbitrary single-letter initial boxes (e.g., `[L]`, `[F]`, `[K]`, `[M]`) as placeholders for brands.
 - Use clean brand typography, logos, or semantic category icons instead.
+
+---
+
+## 5. Safeguards Audit Across Operations (Mandatory Pre-Flight Gate)
+Before adding or modifying **any** operation, mutation, or workflow in the codebase (frontend or Google Apps Script backend), you must audit the operation against this checklist and integrate every safeguard that applies.
+
+### Core Safeguards Matrix
+Every operation must be evaluated against these 7 core safeguards:
+
+1. **Universal Mutation Journaling (`UniversalMutationJournal`)**:
+   - Record an optimistic mutation entry with a unique primary key and TTL (60s default).
+   - Ensure in-flight items (`CARD_ADD`, `CARD_REPLACE`, `VOUCHER_APPROVE`, `VOUCHER_UNDO`, `CARD_TAG`, etc.) are merged and preserved during background syncs (`syncWithGoogleSheets`).
+   - Clean up journal entries when remote confirmation is received.
+
+2. **Ephemeral Quarantine & Anti-Collision Shield**:
+   - For destructive/archival actions (block, delete, dismiss), quarantine the identifier to prevent ghost re-appearance during background polling.
+   - For constructive/replacement/activation actions (add, replace, undo, reactivate), explicitly call `UniversalMutationJournal.unquarantine(id)` so valid entities are never suppressed by previous tombstones.
+
+3. **Optimistic Grace Period & Interactive Undo Banner**:
+   - Destructive or high-impact user actions (Redeem, Clear, Block, Block & Replace) must display a 3–5 second countdown floating Undo banner (`showCardUndoBanner` / `showUndoBanner`).
+   - Clicking Undo must immediately cancel the scheduled backend dispatch, restore memory state, unquarantine identifiers, and update the UI.
+
+4. **Network & Server Failure Rollback Handler**:
+   - Every `apiFetch(action, payload, { rollback: () => { ... } })` invocation must supply an explicit `rollback` callback.
+   - If the network drops, request times out (35s), lock contention occurs, or authentication fails, the callback must cleanly revert local state to its pre-mutation snapshot and alert the user.
+
+5. **Mutation Mutex Shield (`pendingMutationsCount`)**:
+   - `apiFetch` must increment `pendingMutationsCount` on dispatch and decrement in `finally`.
+   - Prevent background read syncs from firing during active write mutations; queue them safely via `syncPendingAfterMutation = true`.
+
+6. **Backend Transactional Integrity & Idempotency (`CronCode.gs`)**:
+   - Guard all mutations with `LockService.getScriptLock()`.
+   - Check for pre-existing records: update in-place if an entry already exists instead of appending duplicate rows.
+   - For dual-sheet transfers (`Active Cards` <-> `Blocked Cards`, `New` -> Brand Tab, Brand Tab -> `Redeemed`):
+     - Verify source row existence before deletion.
+     - Purge conflicting states from destination/source tabs (e.g., purge from `Blocked Cards` if activating as replacement).
+     - Preserve all metadata and benefit column values.
+
+7. **Filter & View Context Preservation**:
+   - Ensure newly created or replaced entities inherit the user's active filter context (Bank, Category, Linked Account).
+   - Never allow a newly replaced or added card to default to `NA` or another account if the user is scoped to a specific account filter.
+
+### Mandatory Verification via Dummy Row Testing
+Whenever adding a new operation or feature change:
+1. **Insert a tagged dummy row** into the relevant Google Sheet tab (e.g. `TEST-DUMMY-SAFEGUARD` / card `6521999900000001`).
+2. **Verify live behavior**:
+   - Optimistic UI update and Undo toast appearance.
+   - Backend transactional execution and idempotency against repeat calls.
+   - Rollback handling under forced error/network interruption.
+3. **Post-test cleanup**: Automatically delete the dummy row from the spreadsheet and verify that zero residual test artifacts remain.

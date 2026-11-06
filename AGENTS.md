@@ -54,3 +54,14 @@
   - **Redeemed tab**: `Brand` (Col A), `Booking ID` (Col B), `Code` (Col C), `PIN` (Col D), `Value` (Col E), `Date of Issue` (Col F), `Account` (Col G), `Card` (Col H), `Status` (Col I), `Redeemed Timestamp` (Col J), `Original Tab` (Col K), `Appended Timestamp` (Col L), `Display in UI` (Col M).
   - **Shared_Activity tab**: `Code` (Col A), `Brand` (Col B), `Amount` (Col C), `PIN` (Col D), `Shared Timestamp` (Col E), `Status` (Col F), `Platform` (Col G), `Display in UI` (Col H).
 - Renumbering loops (`setValues(nums)`) are strictly forbidden, as row numbering is handled natively by Google Sheets and card numbering is rendered dynamically by the UI.
+
+### 4. Mandatory Safeguards Audit for Any Operation / Feature Change (STRICT)
+- **Pre-Flight Audit**: Before introducing or modifying any mutation or operation, you must review and enforce the 7 safeguards detailed in `rules.md`:
+  1. Universal Mutation Journaling (`UniversalMutationJournal`)
+  2. Ephemeral Quarantine & Anti-Collision (`unquarantine` on creation/undo)
+  3. Optimistic Grace Period & Interactive Undo Banner (3–5s)
+  4. Network & Server Rollback Handler (`options.rollback` in `apiFetch`)
+  5. Concurrency Mutex Shield (`pendingMutationsCount` + queueing)
+  6. Backend Transactional Integrity & Idempotency (`LockService`, update-in-place, dual-sheet sync)
+  7. Filter & View Context Preservation (active Account/Bank/Category)
+- **Mandatory Dummy Row Testing**: You must verify the operation live against a tagged dummy row in Google Sheets, confirming optimistic update, undo/rollback, and backend execution, followed by immediate cleanup of the dummy row.
