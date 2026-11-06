@@ -541,18 +541,10 @@
        ======================================================== */
     function getWorkspaceCardHTML(wsKey, activeWs) {
       const items = {
-        income: {
-          key: 'income',
-          title: 'RuPay Income Tracker',
-          subtitle: 'Voucher Sales & Card Charges',
-          bg: 'bg-[#F47A21]',
-          // Google Material Design account_balance_wallet
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
-        },
         vouchers: {
           key: 'vouchers',
           title: 'Voucher Manager',
-          subtitle: 'Vault & Redemptions (Manual)',
+          subtitle: 'Vault & Redemptions',
           bg: 'bg-[#0C8C46]',
           // Google Material Design local_offer
           svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>'
@@ -564,6 +556,22 @@
           bg: 'bg-blue-600',
           // Google Material Design credit_card
           svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
+        },
+        banks: {
+          key: 'banks',
+          title: 'Bank Accounts Manager',
+          subtitle: 'Accounts, Nominees & Balances',
+          bg: 'bg-rose-600',
+          // Google Material Design account_balance
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>'
+        },
+        income: {
+          key: 'income',
+          title: 'RuPay Income Tracker',
+          subtitle: 'Voucher Sales & Card Charges',
+          bg: 'bg-[#F47A21]',
+          // Google Material Design account_balance_wallet
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
         }
       };
 
@@ -572,7 +580,7 @@
       const isActive = (wsKey === activeWs);
 
       return `
-        <div onclick="switchWorkspace('${item.key}'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border ${isActive ? 'border-neutral-500/40 ring-1 ring-neutral-500/20' : 'border-[var(--border)]'} flex items-center justify-between cursor-pointer transition-all spring-press group">
+        <div onclick="switchWorkspace('${item.key}'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border ${isActive ? 'border-emerald-500/50 ring-1 ring-emerald-500/30' : 'border-[var(--border)]'} flex items-center justify-between cursor-pointer transition-all spring-press group">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg ${item.bg} text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
               ${item.svg}
@@ -595,65 +603,17 @@
       const popover = document.getElementById('executive-dropdown-popover');
       if (!popover) return;
 
-      const wsOptions = ['income', 'vouchers', 'cards']
+      const STATIC_WORKSPACE_ORDER = ['vouchers', 'cards', 'banks', 'income'];
+      const wsOptions = STATIC_WORKSPACE_ORDER
         .map(key => getWorkspaceCardHTML(key, state.activeWorkspace))
         .join('');
 
-      let filterSection = '';
-      if (state.activeWorkspace === 'income') {
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-sub)] px-1">Filter Income Ledger</span>
-            <div class="mt-1.5 grid grid-cols-2 gap-1.5">
-              <button onclick="setIncomeYearFilter('all'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border border-[var(--border)] text-xs font-bold text-[var(--text-main)] text-left flex items-center justify-between">
-                <span>All-Time</span>
-                <span class="text-[10px] text-[var(--text-sub)] font-mono">15 entries</span>
-              </button>
-              <button onclick="setIncomeYearFilter('2026'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border border-[var(--border)] text-xs font-bold text-[var(--text-main)] text-left flex items-center justify-between">
-                <span>2026</span>
-                <span class="text-[10px] text-emerald-500 font-mono">Current</span>
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (state.activeWorkspace === 'cards') {
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-sub)] px-1">Filter Cards</span>
-            <div class="mt-1.5 space-y-1">
-              <div class="p-2 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border border-[var(--border)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between">
-                <span class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                  <span>Debit Cards</span>
-                </span>
-                <span class="text-[10px] text-[var(--text-sub)]">3 Cards</span>
-              </div>
-            </div>
-          </div>
-        `;
-      } else {
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--text-sub)] px-1">Filter Brand Vault</span>
-            <div class="mt-1.5 space-y-1">
-              <div class="p-2 rounded-xl bg-[var(--card-subtle)] hover:bg-[var(--border)] border border-[var(--border)] text-xs font-bold text-[var(--text-main)] flex items-center justify-between">
-                <span>Cult.fit Elite</span>
-                <span class="text-[10px] text-emerald-500">2 Active</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }
-
       popover.innerHTML = `
-        <div class="space-y-2.5">
-          <div>
-            <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--text-sub)] px-1 mb-1.5">SWITCH WORKSPACE</div>
-            <div class="space-y-1.5">
-              ${wsOptions}
-            </div>
+        <div class="space-y-1.5">
+          <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--text-sub)] px-1 mb-1">SWITCH WORKSPACE</div>
+          <div class="space-y-1.5">
+            ${wsOptions}
           </div>
-          ${filterSection}
         </div>
       `;
     }
