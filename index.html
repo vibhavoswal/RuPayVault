@@ -5253,10 +5253,14 @@
       if (mbBanner) mbBanner.classList.add('hidden');
     }
 
-    function showCardUndoBanner(msg, onUndo) {
+    function showCardUndoBanner(msg, onUndo, onCommit) {
       if (undoState.timer) clearInterval(undoState.timer);
+      if (undoState.actionType === 'card' && typeof undoState.onCardCommit === 'function') {
+        try { undoState.onCardCommit(); } catch(e) { console.error('Card commit error:', e); }
+      }
       undoState.actionType = 'card';
       undoState.onCardUndo = onUndo;
+      undoState.onCardCommit = onCommit;
       undoState.secondsLeft = 5;
 
       const dtBanner = document.getElementById('dt-undo-banner');
@@ -5279,8 +5283,13 @@
           undoState.timer = null;
           if (dtBanner) dtBanner.classList.add('hidden');
           if (mbBanner) mbBanner.classList.add('hidden');
+          const commitFn = undoState.onCardCommit;
           undoState.actionType = null;
           undoState.onCardUndo = null;
+          undoState.onCardCommit = null;
+          if (typeof commitFn === 'function') {
+            try { commitFn(); } catch(err) { console.error('Card commit error:', err); }
+          }
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
           if (dtBtn) dtBtn.innerHTML = t;
@@ -5292,6 +5301,7 @@
     function triggerUndoLast() {
       if (undoState.actionType === 'card' && typeof undoState.onCardUndo === 'function') {
         const cb = undoState.onCardUndo;
+        undoState.onCardCommit = null; // Abort backend commit!
         hideUndoToast();
         cb();
       } else if (undoState.actionType === 'clear') {
@@ -8766,13 +8776,14 @@
       }
     }
 
-    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block with 5s Undo & Rollback
+    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block with 5s Undo Grace Period & Rollback
     function swipeBlockCard(cardNum, cardName) {
       const cardEl = document.getElementById(`card-box-${cardNum}`);
       if (!cardEl) return;
 
       const previousCards = [...(state.cards || [])];
       const targetCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cardNum);
+      const previousAccountFilter = currentCardAccountFilter;
 
       // Phase 1 (0ms): Tactile micro-press
       cardEl.style.transform = 'scale(0.98)';
@@ -8780,16 +8791,36 @@
       // Phase 2 (100ms): Horizontal slide through
       setTimeout(() => {
         cardEl.classList.add('anim-swipe-horizontal-700');
-        showCardUndoBanner(`Blocked ${cardName} (••${cardNum.slice(-4)})`, () => {
-          // UNDO CALLBACK
-          state.cards = previousCards;
-          UniversalMutationJournal.unquarantine(cardNum);
-          UniversalMutationJournal.removeCard(cardNum);
-          saveEncryptedCards(state.cards);
-          updateDrawerCardCount();
-          renderCardManagerList(currentCardCategoryFilter);
-          showToast(`Block cancelled for ${cardName}`);
-        });
+        showCardUndoBanner(
+          `Blocked ${cardName} (••${cardNum.slice(-4)})`,
+          () => {
+            // UNDO CALLBACK: Revert local state, restore filter, unquarantine
+            state.cards = previousCards;
+            currentCardAccountFilter = previousAccountFilter;
+            UniversalMutationJournal.unquarantine(cardNum);
+            UniversalMutationJournal.removeCard(cardNum);
+            saveEncryptedCards(state.cards);
+            updateDrawerCardCount();
+            renderCardManagerList(currentCardCategoryFilter);
+            showToast(`Block cancelled for ${cardName}`);
+          },
+          () => {
+            // COMMIT CALLBACK: Dispatched strictly after 5-Second Grace Period
+            apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
+              rollback: () => {
+                state.cards = previousCards;
+                currentCardAccountFilter = previousAccountFilter;
+                UniversalMutationJournal.unquarantine(cardNum);
+                saveEncryptedCards(state.cards);
+                updateDrawerCardCount();
+                renderCardManagerList(currentCardCategoryFilter);
+                showToast(`Could not block ${cardName}. Changes restored.`);
+              }
+            }).catch(err => {
+              console.warn('Block card network warning:', err);
+            });
+          }
+        );
       }, 100);
 
       // Phase 3 (380ms): Silky height collapse
@@ -8797,26 +8828,25 @@
         cardEl.classList.add('anim-collapse-700');
       }, 380);
 
-      // Phase 4 (800ms): Remove from memory & dispatch backend call with rollback
+      // Phase 4 (800ms): Remove from memory & update UI optimistically
       setTimeout(() => {
         state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cardNum);
         if (targetCard) UniversalMutationJournal.recordBlock(cardNum, targetCard);
+
+        // Filter Context Preservation (SG7): If account filter was locked to this card's last 4 and no other cards match, relax to 'All'
+        if (currentCardAccountFilter === cardNum.slice(-4)) {
+          const remainingWithAcc = state.cards.filter(c => {
+            const linkedLast4 = (c.linkedAccount && c.linkedAccount !== 'NA') ? String(c.linkedAccount).replace(/\D/g, '').slice(-4) : '';
+            return linkedLast4 === currentCardAccountFilter;
+          });
+          if (remainingWithAcc.length === 0) {
+            currentCardAccountFilter = 'All';
+          }
+        }
+
         saveEncryptedCards(state.cards);
         updateDrawerCardCount();
         renderCardManagerList(currentCardCategoryFilter);
-
-        apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
-          rollback: () => {
-            state.cards = previousCards;
-            UniversalMutationJournal.unquarantine(cardNum);
-            saveEncryptedCards(state.cards);
-            updateDrawerCardCount();
-            renderCardManagerList(currentCardCategoryFilter);
-            showToast(`Could not block ${cardName}. Changes restored.`);
-          }
-        }).catch(err => {
-          console.warn('Block card network warning:', err);
-        });
       }, 800);
     }
 
@@ -9572,6 +9602,7 @@
       }
 
       const previousCards = [...(state.cards || [])];
+      const previousAccountFilter = currentCardAccountFilter;
       const oldCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === oldCardNum);
       if (!oldCard) {
         showToast('Card to replace not found in active list');
@@ -9604,6 +9635,14 @@
       // Safeguard: Unquarantine newNum so tombstone cannot hide it
       UniversalMutationJournal.unquarantine(newNum);
 
+      // Filter Context Preservation (SG7): If account filter was focused on old card last 4, update to replacement card!
+      const oldCardLast4 = oldCardNum.slice(-4);
+      const oldAccLast4 = (oldCard.linkedAccount && oldCard.linkedAccount !== 'NA') ? String(oldCard.linkedAccount).replace(/\D/g, '').slice(-4) : '';
+      if (currentCardAccountFilter === oldCardLast4 || (oldAccLast4 && currentCardAccountFilter === oldAccLast4)) {
+        const newAccLast4 = (newCard.linkedAccount && newCard.linkedAccount !== 'NA') ? String(newCard.linkedAccount).replace(/\D/g, '').slice(-4) : '';
+        currentCardAccountFilter = newAccLast4 || newNum.slice(-4);
+      }
+
       // Optimistically swap card in state.cards
       state.cards = state.cards.filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== oldCardNum);
       state.cards.push(newCard);
@@ -9611,30 +9650,37 @@
       saveEncryptedCards(state.cards);
       renderCardManagerList(currentCardCategoryFilter);
 
-      // 5-Second Undo Grace Period Banner
-      showCardUndoBanner(`Replaced with ••${newNum.slice(-4)}!`, () => {
-        // UNDO ACTION: Restore old card and remove replacement card
-        state.cards = previousCards;
-        UniversalMutationJournal.unquarantine(oldCardNum);
-        UniversalMutationJournal.removeCard(newNum);
-        saveEncryptedCards(state.cards);
-        renderCardManagerList(currentCardCategoryFilter);
-        showToast('Card replacement undone.');
-      });
-
-      apiFetch('BLOCK_AND_REPLACE_CARD', {
-        oldCardNumber: oldCardNum,
-        newCard: newCard
-      }, {
-        rollback: () => {
+      // 5-Second Undo Grace Period Banner with Deferred Backend Commit
+      showCardUndoBanner(
+        `Replaced with ••${newNum.slice(-4)}!`,
+        () => {
+          // UNDO ACTION: Restore old card, revert filter, remove replacement card
           state.cards = previousCards;
+          currentCardAccountFilter = previousAccountFilter;
           UniversalMutationJournal.unquarantine(oldCardNum);
           UniversalMutationJournal.removeCard(newNum);
           saveEncryptedCards(state.cards);
           renderCardManagerList(currentCardCategoryFilter);
-          showToast('Server sync failed. Replacement reverted.');
+          showToast('Card replacement undone.');
+        },
+        () => {
+          // COMMIT ACTION: Dispatched only after 5-Second Grace Period expires without Undo
+          apiFetch('BLOCK_AND_REPLACE_CARD', {
+            oldCardNumber: oldCardNum,
+            newCard: newCard
+          }, {
+            rollback: () => {
+              state.cards = previousCards;
+              currentCardAccountFilter = previousAccountFilter;
+              UniversalMutationJournal.unquarantine(oldCardNum);
+              UniversalMutationJournal.removeCard(newNum);
+              saveEncryptedCards(state.cards);
+              renderCardManagerList(currentCardCategoryFilter);
+              showToast('Server sync failed. Replacement reverted.');
+            }
+          }).catch(err => console.warn('Replacement backend sync warning:', err));
         }
-      }).catch(err => console.warn('Replacement backend sync warning:', err));
+      );
     }
 
     function openAddCardModal() {
@@ -9715,16 +9761,26 @@
         lastUpdated: nowIST()
       };
 
+      const previousCards = [...(state.cards || [])];
       state.cards = state.cards || [];
       state.cards.push(newCard);
-      MutationJournal.recordCard(newCard);
+      UniversalMutationJournal.recordCard(newCard);
       saveEncryptedCards(state.cards);
       closeAddCardModal();
       updateDrawerCardCount();
       renderCardManagerList(currentCardCategoryFilter);
       showToast(`Added card: ${name}`);
 
-      apiFetch('ADD_CARD', { card: newCard }).catch(err => {
+      apiFetch('ADD_CARD', { card: newCard }, {
+        rollback: () => {
+          state.cards = previousCards;
+          UniversalMutationJournal.removeCard(num);
+          saveEncryptedCards(state.cards);
+          updateDrawerCardCount();
+          renderCardManagerList(currentCardCategoryFilter);
+          showToast(`Failed to add card: ${name}. Changes reverted.`);
+        }
+      }).catch(err => {
         console.warn('Add card backend sync warning:', err);
       });
     }
@@ -11821,6 +11877,9 @@
 
       // Wait 500ms for slide-out animation to complete
       setTimeout(async () => {
+        const previousVouchers = state.vouchers.map(v => ({ ...v }));
+        const previousStaging = (state.staging || []).map(s => ({ ...s }));
+
         targetVouchers.forEach(v => { v.card = cardTag; });
         targetStaging.forEach(s => { s.card = cardTag; });
 
@@ -11859,11 +11918,23 @@
         renderVault();
         showToast(`Tagged ${targetCount} voucher${targetCount > 1 ? 's' : ''} as ${cardTag} · Moved to Tagged`);
 
-        // Backend synchronization
+        // Backend synchronization with Safeguard Rollback Handler (SG4)
         try {
           await apiFetch('TAG_CARD', {
             cardTag: cardTag,
             codes: lookupCodes
+          }, {
+            rollback: async () => {
+              state.vouchers = previousVouchers;
+              state.staging = previousStaging;
+              lookupCodes.forEach(code => MutationJournal.removeTag(code));
+              await Promise.all([
+                saveEncryptedVouchers(state.vouchers),
+                saveEncryptedStaging(state.staging)
+              ]);
+              renderVault();
+              showToast('Tagging failed on server. Changes restored.');
+            }
           });
         } catch (err) {
           console.warn('Backend TAG_CARD error:', err);

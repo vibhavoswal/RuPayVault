@@ -74,11 +74,67 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 4 (Rollback Handler)**: Supply an explicit rollback handler to `apiFetch` that restores the pre-mutation voucher state, clears the journal entry, and displays an alert if the network drops or backend fails.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background syncs.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
-  - Guard backend handler `ADD_MISC_VOUCHER` with `LockService.getScriptLock().waitLock(30000)`.
+  - Guard backend handler `ADD_MISC_VOUCHER` with top-level `LockService.getScriptLock().tryLock(30000)`.
   - Automatically create and format the `Misc` sheet if missing, with `UNIFIED_BRAND_HEADERS` and frozen top row.
   - Scan existing rows for duplicate voucher code. If already present, update in-place idempotently; otherwise append row.
 - **Safeguard 7 (Context Preservation)**: Retains active view on `Misc` carousel tab without jarring resets.
 - **Mandatory Verification**: Tested with a temporary dummy row (`MISC-TEST-DUMMY`) pushed to the spreadsheet, verified live, and safely purged.
+
+#### Operation: `BLOCK_CARD` (Card Archival)
+- **Safeguard 1 (Mutation Journal)**: Record optimistic entry `CARD_BLOCK` with primary key `cardNum` and card details in `UniversalMutationJournal`.
+- **Safeguard 2 (Quarantine Shield)**: Tombstone `cardNum` in ephemeral quarantine (`isCardQuarantined`) so background sync does not resurface the blocked card before backend commit.
+- **Safeguard 3 (Optimistic Grace Period & Interactive Undo Banner)**: Display a 5-second floating Undo banner. Hold backend dispatch in a deferred commit closure (`onCommit`). If the user taps Undo, cancel the backend commit, unquarantine the card, restore memory state, and alert the user.
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` closure supplied to `apiFetch` that restores `previousCards`, resets filters, unquarantines `cardNum`, and saves local encrypted storage upon network or server error.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting syncs.
+- **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
+  - Guarded by `LockService.getScriptLock()`.
+  - Pre-purge any stale duplicates of `cardNum` from `Blocked Cards`.
+  - Locate row in `Active Cards`, copy row with `BLOCKED` status and timestamp to `Blocked Cards`, and safely delete row from `Active Cards`.
+- **Safeguard 7 (Context Preservation)**: If the active secondary account filter pill was locked to the blocked card's digits (`cardNum.slice(-4)`), check for remaining cards; if none match, smoothly relax filter to `'All'` to avoid presenting an empty card manager screen.
+- **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_CARD_DUMMY` on live sheet and safely purged.
+
+#### Operation: `BLOCK_AND_REPLACE_CARD` (Compound Atomic Swap)
+- **Safeguard 1 (Mutation Journal)**: Record `CARD_REPLACE` with primary key `newCardNum` and secondary key `oldCardNum` in `UniversalMutationJournal`.
+- **Safeguard 2 (Quarantine Shield)**: Tombstone `oldCardNum`; explicitly call `UniversalMutationJournal.unquarantine(newCardNum)` to prevent replacement card collision with any prior tombstones.
+- **Safeguard 3 (Optimistic Grace Period & Interactive Undo Banner)**: Optimistically swap the card in memory, re-render the list immediately, and present a 5-second interactive Undo banner (`"Replaced with ••[Last4]! Tap to Undo"`). Defer backend commit (`onCommit`) until the 5s timer expires. Tapping Undo completely aborts backend dispatch.
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` closure in `apiFetch` that restores `previousCards`, restores `currentCardAccountFilter`, unquarantines `oldCardNum`, removes `newCardNum` from the journal, and refreshes the view.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, blocking concurrent read collisions.
+- **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
+  - Guarded by `LockService.getScriptLock()`.
+  - Dual-sheet purge: remove `newCardNum` and `oldCardNum` from `Blocked Cards` to prevent duplicate or conflicting status.
+  - Archive `oldCardNum` to `Blocked Cards` with `Replaced_By_Card` metadata.
+  - Check `Active Cards`: if `newCardNum` is already present, update in-place; otherwise append new row with eligible RuPay benefits and linked account.
+- **Safeguard 7 (Context Preservation)**: If the active view was scoped to the old card's account or last-4 digits, smoothly migrate `currentCardAccountFilter` to the replacement card's last-4 or linked account digits so the replacement card remains immediately visible.
+- **Mandatory Verification**: Tested live on Google Sheets via `VERIFY_SAFEGUARD_CARD_DUMMY` and purged with 0 residual artifacts.
+
+#### Operation: `ADD_CARD` (Card Portfolio Onboarding)
+- **Safeguard 1 (Mutation Journal)**: Record optimistic entry `CARD_ADD` with primary key `cardNumber` in `UniversalMutationJournal` with 60s TTL.
+- **Safeguard 2 (Quarantine Shield)**: Explicitly unquarantine `cardNumber` on addition.
+- **Safeguard 3 (Optimistic UI & Feedback)**: Prepend card to active list, close modal, update count badges, and toast immediately.
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` callback supplied to `apiFetch('ADD_CARD', ...)` that reverts `state.cards` to snapshot and removes journal entry upon error.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount`.
+- **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
+  - Guarded by `LockService.getScriptLock()`.
+  - Scan `Active Cards` for pre-existing `cardNumber`. If found, update in-place; otherwise append new row.
+- **Safeguard 7 (Context Preservation)**: Retains active bank and category filters; pre-fills modal with active filter values.
+
+#### Operation: `TAG_CARD` (Metadata Annotation on Vouchers)
+- **Safeguard 1 (Mutation Journal)**: Record optimistic tag mutation entries for all selected voucher codes via `MutationJournal.recordTags`.
+- **Safeguard 2 (Quarantine Shield)**: N/A (metadata update only).
+- **Safeguard 3 (Optimistic UI)**: Trigger tactile slide animation, update local card tags across `state.vouchers` and `state.staging`, and collapse dock.
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` callback supplied to `apiFetch('TAG_CARD', ...)` reverting vouchers and staging to previous snapshot and purging journal tags on server error.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, deferring background syncs during write.
+- **Safeguard 6 (Backend Transactional Integrity)**: In-place cell update in brand and staging sheets under script lock.
+- **Safeguard 7 (Context Preservation)**: Preserves active brand tab and selection state.
+
+#### Operation: `UNDO_REDEEM` (Restorative Reverse Transfer)
+- **Safeguard 1 (Mutation Journal)**: Record optimistic restoration entry in `UniversalMutationJournal`.
+- **Safeguard 2 (Quarantine Shield)**: Call `UniversalMutationJournal.unquarantine(codes)` so the restored voucher is immediately visible.
+- **Safeguard 3 (Optimistic UI)**: Move voucher from Redeemed archive back to active brand tab immediately with success toast.
+- **Safeguard 4 (Rollback Handler)**: Reverts local list and journal entries if backend return indicates error.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount`.
+- **Safeguard 6 (Backend Transactional Integrity)**: Locate row in `Redeemed`, copy back to original brand tab with `ACTIVE` status, and safely delete row in descending index order under script lock. Self-healing check verifies if row was already restored.
+- **Safeguard 7 (Context Preservation)**: Restores card into matching brand carousel view.
 
 ### Mandatory Verification via Dummy Row Testing
 Whenever adding a new operation or feature change:
