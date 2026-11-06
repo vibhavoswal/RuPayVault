@@ -5741,17 +5741,10 @@
 
     function getWorkspaceCardHTML(wsKey, activeWs) {
       const items = {
-        income: {
-          key: 'income',
-          title: 'RuPay Income Tracker',
-          subtitle: 'Voucher Sales & Card Charges',
-          bg: 'bg-[#F47A21]',
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
-        },
         vouchers: {
           key: 'vouchers',
           title: 'Voucher Manager',
-          subtitle: 'Vault & Redemptions (Manual)',
+          subtitle: 'Vault & Redemptions',
           bg: 'bg-[#0C8C46]',
           svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>'
         },
@@ -5768,6 +5761,13 @@
           subtitle: 'Accounts, Nominees & Balances',
           bg: 'bg-rose-600',
           svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>'
+        },
+        income: {
+          key: 'income',
+          title: 'RuPay Income Tracker',
+          subtitle: 'Voucher Sales & Card Charges',
+          bg: 'bg-[#F47A21]',
+          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
         }
       };
 
@@ -5776,7 +5776,7 @@
       const isActive = (wsKey === activeWs);
 
       return `
-        <div onclick="switchWorkspace('${item.key}'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border ${isActive ? 'border-neutral-500/40 ring-1 ring-neutral-500/20' : 'border-[var(--theme-border)]'} flex items-center justify-between cursor-pointer transition-all spring-press group">
+        <div onclick="switchWorkspace('${item.key}'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border ${isActive ? 'border-emerald-500/50 ring-1 ring-emerald-500/30' : 'border-[var(--theme-border)]'} flex items-center justify-between cursor-pointer transition-all spring-press group">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-lg ${item.bg} text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
               ${item.svg}
@@ -5798,118 +5798,22 @@
       const popover = document.getElementById('executive-dropdown-popover');
       if (!popover) return;
 
-      const wsOptions = ['income', 'vouchers', 'cards', 'banks']
+      // Static order strictly requested:
+      // 1. Voucher Manager
+      // 2. Card Manager
+      // 3. Bank Accounts Manager
+      // 4. RuPay Income Tracker
+      const STATIC_WORKSPACE_ORDER = ['vouchers', 'cards', 'banks', 'income'];
+      const wsOptions = STATIC_WORKSPACE_ORDER
         .map(key => getWorkspaceCardHTML(key, state.activeWorkspace))
         .join('');
 
-      let filterSection = '';
-      if (state.activeWorkspace === 'income') {
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--theme-border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Filter Income Ledger</span>
-            <div class="mt-1.5 grid grid-cols-2 gap-1.5">
-              <button onclick="setIncomeYearFilter('all'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] text-left flex items-center justify-between">
-                <span>All-Time</span>
-                <span class="text-[10px] text-[var(--theme-text-sub)] font-mono">${(state.income && state.income.ledger) ? state.income.ledger.length : 0} entries</span>
-              </button>
-              <button onclick="setIncomeYearFilter('2026'); closeExecutiveDropdown();" class="p-2 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] text-left flex items-center justify-between">
-                <span>2026</span>
-                <span class="text-[10px] text-emerald-500 font-mono">Current</span>
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (state.activeWorkspace === 'cards') {
-        const badgeDc = document.getElementById('badge-count-dc');
-        const badgeCc = document.getElementById('badge-count-cc');
-        const dcCount = badgeDc ? badgeDc.textContent : '16';
-        const ccCount = badgeCc ? badgeCc.textContent : '4';
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--theme-border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Filter Cards</span>
-            <div class="mt-1.5 space-y-1">
-              <div onclick="setCardCategoryFilter('Credit'); updateCardCapsuleTitle('Credit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-between cursor-pointer transition-all">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                  </span>
-                  <span class="text-xs font-bold text-[var(--theme-text-main)]">Credit Cards</span>
-                </div>
-                <span class="text-[11px] font-bold text-[var(--theme-text-sub)]">${ccCount} Cards</span>
-              </div>
-              <div onclick="setCardCategoryFilter('Debit'); updateCardCapsuleTitle('Debit Cards'); closeExecutiveDropdown();" class="p-2.5 rounded-xl bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-between cursor-pointer transition-all">
-                <div class="flex items-center gap-2.5">
-                  <span class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
-                  </span>
-                  <span class="text-xs font-bold text-[var(--theme-text-main)]">Debit Cards</span>
-                </div>
-                <span class="text-[11px] font-bold text-[var(--theme-text-sub)]">${dcCount} Cards</span>
-              </div>
-            </div>
-          </div>
-        `;
-      } else if (state.activeWorkspace === 'banks') {
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--theme-border)]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Family Members</span>
-            <div class="mt-1.5 space-y-1 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5">
-              ${BANK_MEMBERS.map(m => {
-                const isSel = (selectedBankMember === m.id);
-                return `
-                  <div onclick="selectBankMember('${m.id}'); closeExecutiveDropdown();" class="${isSel ? 'bg-[var(--theme-card-subtle)] border border-rose-500/40 text-rose-400 font-semibold' : 'bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)]'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
-                    <div class="flex items-center gap-2.5 truncate">
-                      <span class="w-6 h-6 rounded-md ${m.avatarBg} text-white flex items-center justify-center text-[10px] font-extrabold shrink-0 shadow-sm">${m.short}</span>
-                      <span class="text-xs font-bold truncate">${m.name}</span>
-                    </div>
-                    <span class="text-[10px] font-mono-apple ${isSel ? 'text-rose-400 font-bold' : 'text-[var(--theme-text-sub)]'}">${m.count} Acc</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      } else {
-        const normActive = normalizeBrandKey(state.activeFilterBrand);
-        filterSection = `
-          <div class="pt-2 border-t border-[var(--theme-border)]">
-            <div class="relative mb-2">
-              <input type="text" id="executive-dd-search" placeholder="Search brand passes..." oninput="filterExecutiveDropdownBrands(this.value)" class="w-full bg-[var(--theme-card-bg)] border border-[var(--theme-border)] rounded-xl px-3 py-1.5 pl-8 text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
-              <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--theme-text-sub)]" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-            </div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--theme-text-sub)] px-1">Brand Passes &amp; Queues</span>
-            <div class="mt-1.5 space-y-1 max-h-[200px] overflow-y-auto no-scrollbar pr-0.5" id="executive-brands-list">
-              ${BRAND_CONFIG.map(item => {
-                const isSel = (normActive === item.key);
-                const iconSvg = item.key === 'ActivityLog'
-                  ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>`
-                  : item.key === 'Redeemed'
-                  ? `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>`
-                  : `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`;
-                return `
-                  <div onclick="filterVaultBrand('${item.key}'); closeExecutiveDropdown();" class="${isSel ? 'bg-[var(--theme-card-subtle)] border border-emerald-500/40 text-emerald-400 font-semibold' : 'bg-[var(--theme-card-bg)] hover:bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)]'} p-2 rounded-xl flex items-center justify-between cursor-pointer transition-all">
-                    <div class="flex items-center gap-2.5 truncate">
-                      <span class="w-6 h-6 rounded-md bg-[var(--theme-card-subtle)] flex items-center justify-center shrink-0 ${isSel ? 'text-emerald-400' : 'text-[var(--theme-text-sub)]'}">${iconSvg}</span>
-                      <span class="text-xs font-bold truncate text-[var(--theme-text-main)]">${item.name}</span>
-                    </div>
-                    <span class="text-[10px] ${isSel ? 'text-emerald-400 font-bold' : 'text-[var(--theme-text-sub)]'}">Pass</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }
-
       popover.innerHTML = `
-        <div class="space-y-2.5">
-          <div>
-            <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-1 mb-1.5">SWITCH WORKSPACE</div>
-            <div class="space-y-1.5">
-              ${wsOptions}
-            </div>
+        <div class="space-y-1.5">
+          <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-1 mb-1">SWITCH WORKSPACE</div>
+          <div class="space-y-1.5">
+            ${wsOptions}
           </div>
-          ${filterSection}
         </div>
       `;
     }
