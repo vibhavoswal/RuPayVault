@@ -1523,6 +1523,29 @@
       color: #047857 !important;
     }
 
+    /* Modal Add Misc Voucher Light Mode Overrides */
+    [data-theme="light"] #modal-add-misc .sheet-enter,
+    html.light #modal-add-misc .sheet-enter {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 -12px 45px rgba(0, 0, 0, 0.15) !important;
+    }
+    [data-theme="light"] #modal-add-misc input,
+    html.light #modal-add-misc input {
+      background-color: #f8fafc !important;
+      border-color: #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+    [data-theme="light"] #modal-add-misc label,
+    html.light #modal-add-misc label {
+      color: #334155 !important;
+    }
+    [data-theme="light"] #modal-add-misc h3,
+    html.light #modal-add-misc h3 {
+      color: #0f172a !important;
+    }
+
     /* ======================================================== */
     /* WORKSPACE 3: BANK ACCOUNTS MANAGER STYLES & GRADIENTS    */
     /* ======================================================== */
@@ -2137,6 +2160,14 @@
 
     <!-- Unified Floating Action Dock: Two-Pill Split Architecture (Expands Right to Left) -->
     <div id="unified-floating-dock" class="fixed z-40 pointer-events-none flex items-center justify-end" style="bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); left: 1rem; right: 1rem; max-width: 440px; margin: 0 auto;">
+      <!-- Dedicated Add Button for Misc Tab (Bottom only on Misc) -->
+      <div id="floating-misc-add-container" class="hidden pointer-events-auto">
+        <button onclick="openAddMiscModal()" class="px-5 py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center gap-2 border border-emerald-400/30 active:scale-95 transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span>Add Voucher</span>
+        </button>
+      </div>
+
       <!-- Pill 1: Floating Action Pill (Hugs actions with zero dead space) -->
       <div id="floating-action-pill" class="action-pill pointer-events-auto">
         <!-- Ingest Approve Button in Sliding Drawer -->
@@ -2366,6 +2397,71 @@
 
       <!-- Scrollable Benefits List for Selected Card -->
       <div id="benefit-rules-content" class="flex-1 overflow-y-auto space-y-2 pr-0.5 text-xs"></div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: "ADD MISC VOUCHER" (BOTTOM SHEET)                 -->
+  <!-- ======================================================== -->
+  <div id="modal-add-misc" class="hidden fixed inset-0 z-50 flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeAddMiscModal()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sheet Container -->
+    <div class="relative w-full max-w-lg mx-auto bg-[#181617] border-t border-neutral-700/80 rounded-t-3xl p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-4 max-h-[90%] overflow-y-auto no-scrollbar z-10 sheet-enter">
+      <!-- Drag handle -->
+      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1"></div>
+
+      <!-- Header -->
+      <div class="flex items-start justify-between pb-2 border-b border-neutral-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider font-mono-apple">Misc Vouchers</span>
+            <span class="text-xs font-bold text-neutral-400">Vault Entry</span>
+          </div>
+          <h3 class="text-base font-extrabold text-white mt-1">Add Voucher to Misc</h3>
+        </div>
+        <button onclick="closeAddMiscModal()" class="p-1.5 rounded-full bg-neutral-800 text-neutral-400 hover:text-white spring-press" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Form Inputs -->
+      <form onsubmit="event.preventDefault(); submitAddMiscVoucher();" class="space-y-3.5">
+        <!-- 1. Brand Name -->
+        <div class="space-y-1">
+          <label for="misc-brand-name" class="block text-xs font-bold text-neutral-300">Brand Name <span class="text-rose-400">*</span></label>
+          <input type="text" id="misc-brand-name" placeholder="e.g. Amazon Pay, Zomato, Starbucks" required
+                 class="w-full bg-black/60 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+
+        <!-- 2. Voucher Code -->
+        <div class="space-y-1">
+          <label for="misc-voucher-code" class="block text-xs font-bold text-neutral-300">Voucher Code <span class="text-rose-400">*</span></label>
+          <input type="text" id="misc-voucher-code" placeholder="Enter voucher code" required
+                 class="w-full font-mono-apple uppercase bg-black/60 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+
+        <!-- 3. PIN (Optional) -->
+        <div class="space-y-1">
+          <label for="misc-voucher-pin" class="block text-xs font-bold text-neutral-300">PIN <span class="text-[10px] text-neutral-500 font-normal">(Optional)</span></label>
+          <input type="text" id="misc-voucher-pin" placeholder="Enter PIN if applicable"
+                 class="w-full font-mono-apple bg-black/60 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+
+        <!-- 4. Value (Optional, default 500) -->
+        <div class="space-y-1">
+          <label for="misc-voucher-amount" class="block text-xs font-bold text-neutral-300">Value (₹) <span class="text-[10px] text-neutral-500 font-normal">(Optional, default ₹500)</span></label>
+          <input type="number" id="misc-voucher-amount" value="500" min="0" step="50" placeholder="500"
+                 class="w-full font-mono-apple bg-black/60 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors">
+        </div>
+
+        <!-- CTA Save Button -->
+        <button type="submit" id="btn-save-misc-voucher" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span>Save Voucher</span>
+        </button>
+      </form>
     </div>
   </div>
 
@@ -4030,7 +4126,7 @@
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
 
       // Non-destructive actions (additions or in-place status updates) must NEVER be quarantined
-      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY']);
+      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY']);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       }
@@ -4247,6 +4343,7 @@
       { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
       { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' },
       { key: 'SwiggyOne', name: 'Swiggy One', denom: 0, hasPin: false, tag: 'Food & Dining' },
+      { key: 'Misc', name: 'Misc', denom: 500, hasPin: true, tag: 'Custom Brands', isMisc: true },
       { key: 'Redeemed', name: 'Redeemed', denom: 0, hasPin: false, tag: 'Archive', isSpecial: true }
     ];
 
@@ -4270,6 +4367,7 @@
       if (b.includes('thyrocare')) return 'Thyrocare';
       if (b.includes('uber')) return 'Uber';
       if (b.includes('swiggy')) return 'SwiggyOne';
+      if (b.includes('misc') || b.includes('other')) return 'Misc';
       if (b === 'redeemed' || b === 'redeem') return 'Redeemed';
       return brand;
     }
@@ -5558,6 +5656,15 @@
           title: b.name,
           calc: `${count} vouchers × ₹${denom.toLocaleString()} = ₹${total.toLocaleString()}`,
           sub: `Strict 30-day validity from redemption date. Use immediately.`
+        };
+      }
+
+      if (normKey === 'Misc') {
+        const totalMiscVal = vs.reduce((acc, v) => acc + (v.amount || 500), 0);
+        return {
+          title: 'Misc Vouchers',
+          calc: `${count} custom vouchers &middot; ₹${totalMiscVal.toLocaleString()}`,
+          sub: 'Read-only vault for miscellaneous and custom merchant vouchers'
         };
       }
 
@@ -7443,11 +7550,12 @@
       const dtVaultTbody3 = document.getElementById('dt-vault-tbody');
       if (dtVaultTbody3) {
         dtVaultTbody3.innerHTML = vs.length ? vs.map((v, i) => {
-        const vBrandName = getBrandDisplayName(v.brand);
+        const isMisc = (normActiveBrand === 'Misc');
+        const vBrandName = isMisc ? (v.bookingId || v.account || 'Misc') : getBrandDisplayName(v.brand);
         return `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
           <td class="p-3 text-center">
-            <input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-[#0C8C46]">
+            ${isMisc ? `<span class="font-mono-apple text-xs text-neutral-500">#${i + 1}</span>` : `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-[#0C8C46]">`}
           </td>
           <td class="p-3">
             <div class="font-bold text-sm">${vBrandName}</div>
@@ -7469,12 +7577,14 @@
             </span>
           </td>
           <td class="p-3 text-right">
-            ${v.status === 'PENDING' ? `
+            ${isMisc ? `
+              <span class="text-xs text-neutral-400 font-mono-apple font-medium mr-2">Read Only</span>
+            ` : (v.status === 'PENDING' ? `
               <span class="text-xs text-amber-400/90 font-medium mr-3">Awaiting Code</span>
             ` : `
               <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
               <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
-            `}
+            `)}
           </td>
         </tr>
       `;
@@ -7509,12 +7619,17 @@
           </div>
         ` : '';
 
-        return `
-          <div id="mb-card-${v.id}" 
-               data-code="${v.code}" 
-               onclick="handleCardClick('${v.id}')" 
-               class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}">
-            <!-- Top Line: Pass # ONLY (+ checkbox in select mode) -->
+        const isMisc = (normActiveBrand === 'Misc');
+        const specificBrandName = v.bookingId || v.account || 'Misc';
+        const cardTitleHtml = isMisc ? `
+            <div class="flex items-center justify-between text-xs pointer-events-none">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-sm tracking-tight">${specificBrandName}</span>
+                <span class="font-mono-apple font-semibold text-emerald-400 text-xs">₹${(v.amount || 500).toLocaleString()}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono-apple">ACTIVE</span>
+            </div>
+        ` : `
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
@@ -7525,6 +7640,14 @@
                 <span class="font-mono-apple font-bold text-[#F47A21] text-[11px] tracking-wider">PASS #${i + 1}</span>
               </div>
             </div>
+        `;
+
+        return `
+          <div id="mb-card-${v.id}" 
+               data-code="${v.code}" 
+               onclick="handleCardClick('${v.id}')" 
+               class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}">
+            ${cardTitleHtml}
 
             <!-- Monospace Code Box: Code & PIN ONLY -->
             <div class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between pointer-events-auto">
@@ -7613,9 +7736,11 @@
 
         const iconSvg = item.key === 'ActivityLog'
           ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>`
-          : (item.key === 'Redeemed'
-            ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>`
-            : '');
+          : (item.key === 'Misc'
+            ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>`
+            : (item.key === 'Redeemed'
+              ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>`
+              : ''));
 
         return `
           <button id="deck-btn-${item.key}" onclick="filterVaultBrand('${item.key}')" class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition-all text-left ${isSel ? 'bg-[#0C8C46] text-white shadow-lg scale-[1.02]' : 'bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700'}">
@@ -11274,6 +11399,19 @@
 
       const normActiveBrand = normalizeBrandKey(state.activeFilterBrand);
       const isIngestedView = normActiveBrand === 'ActivityLog' && activityFilter === 'added';
+      const isMiscTab = (normActiveBrand === 'Misc');
+      const miscDockContainer = document.getElementById('floating-misc-add-container');
+
+      if (isMiscTab) {
+        if (miscDockContainer) miscDockContainer.classList.remove('hidden');
+        if (actionPill) actionPill.classList.add('hidden');
+        if (toggleBtn) toggleBtn.classList.add('hidden');
+        return;
+      } else {
+        if (miscDockContainer) miscDockContainer.classList.add('hidden');
+        if (actionPill) actionPill.classList.remove('hidden');
+        if (toggleBtn) toggleBtn.classList.remove('hidden');
+      }
 
       // Hide Redeem icon in floating dock when on Ingested page
       if (btnRedeemDock) {
@@ -11494,6 +11632,120 @@
         masterBtn.disabled = false;
         masterBtn.style.pointerEvents = 'auto';
       }
+    }
+
+    /* --- ADD MISC VOUCHER DRAWER ENGINE --- */
+    function openAddMiscModal() {
+      const modal = document.getElementById('modal-add-misc');
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      const bInput = document.getElementById('misc-brand-name');
+      if (bInput) {
+        bInput.value = '';
+        setTimeout(() => bInput.focus(), 150);
+      }
+      const cInput = document.getElementById('misc-voucher-code');
+      if (cInput) cInput.value = '';
+      const pInput = document.getElementById('misc-voucher-pin');
+      if (pInput) pInput.value = '';
+      const aInput = document.getElementById('misc-voucher-amount');
+      if (aInput) aInput.value = '500';
+    }
+
+    function closeAddMiscModal() {
+      const modal = document.getElementById('modal-add-misc');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    async function submitAddMiscVoucher() {
+      const bInput = document.getElementById('misc-brand-name');
+      const cInput = document.getElementById('misc-voucher-code');
+      const pInput = document.getElementById('misc-voucher-pin');
+      const aInput = document.getElementById('misc-voucher-amount');
+
+      const brandName = bInput ? bInput.value.trim() : '';
+      const rawCode = cInput ? cInput.value.trim().toUpperCase() : '';
+      const pin = pInput ? pInput.value.trim() : '';
+      const amount = aInput && Number(aInput.value) > 0 ? Number(aInput.value) : 500;
+
+      if (!brandName) {
+        showToast('Please enter a Brand Name.');
+        if (bInput) bInput.focus();
+        return;
+      }
+      if (!rawCode) {
+        showToast('Please enter a Voucher Code.');
+        if (cInput) cInput.focus();
+        return;
+      }
+
+      closeAddMiscModal();
+
+      // Safeguard 1 & 2: Unquarantine and journal
+      UniversalMutationJournal.unquarantine(rawCode);
+      const journalKey = `misc_${rawCode}`;
+      UniversalMutationJournal.record('MISC_VOUCHER_ADD', {
+        brandName,
+        code: rawCode,
+        pin,
+        amount
+      }, 60000);
+
+      // Safeguard 3: Optimistic local state update
+      const tempId = 'misc_' + Date.now();
+      const optimisticVoucher = {
+        id: tempId,
+        brand: 'Misc',
+        bookingId: brandName,
+        code: rawCode,
+        pin: pin || null,
+        amount: amount,
+        account: brandName,
+        card: 'Manual',
+        status: 'ACTIVE',
+        dateOfIssue: nowIST().split(' ')[0],
+        timestampIST: nowIST(),
+        displayInUI: true
+      };
+
+      const prevVouchers = [...state.vouchers];
+      state.vouchers.unshift(optimisticVoucher);
+      renderVault();
+
+      // Safeguard 3: Interactive Undo Banner
+      let isUndone = false;
+      showCardUndoBanner(`Added ${brandName} voucher`, () => {
+        isUndone = true;
+        UniversalMutationJournal.remove(journalKey);
+        state.vouchers = prevVouchers;
+        renderVault();
+        showToast('Voucher addition cancelled.');
+      });
+
+      // Wait 5s for grace period before dispatching to backend
+      setTimeout(async () => {
+        if (isUndone) return;
+        try {
+          // Safeguard 4 & 5: apiFetch with rollback handler
+          await apiFetch('ADD_MISC_VOUCHER', {
+            brandName,
+            voucherCode: rawCode,
+            pin,
+            amount
+          }, {
+            rollback: () => {
+              state.vouchers = prevVouchers;
+              renderVault();
+              UniversalMutationJournal.remove(journalKey);
+              showToast('Network error: failed to save voucher to sheet.');
+            }
+          });
+          UniversalMutationJournal.remove(journalKey);
+          showToast(`${brandName} voucher saved to sheet.`);
+        } catch (err) {
+          console.error('ADD_MISC_VOUCHER error:', err);
+        }
+      }, 5100);
     }
 
     function updateModalPreview() {
@@ -12099,6 +12351,7 @@
         'cultfit': 'Cult.fit Elite',
         'amazonprime': 'Amazon Prime',
         'tattvaspa': 'Tattva Spa',
+        'misc': 'Misc',
         'redeemed': 'Redeemed'
       };
       const clean = (brand || '').toLowerCase().replace(/[\s\.\-_]/g, '');
