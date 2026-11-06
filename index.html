@@ -1810,6 +1810,65 @@
       transition: transform 200ms ease-out;
     }
 
+    /* --- CARD SCANNER LASER & RECOGNITION ANIMATIONS --- */
+    @keyframes scanLaserLine {
+      0% { top: 6%; opacity: 0.85; }
+      50% { top: 88%; opacity: 1; }
+      100% { top: 6%; opacity: 0.85; }
+    }
+    .card-laser-beam {
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #34d399, #10b981, #34d399, transparent);
+      box-shadow: 0 0 16px #10b981, 0 0 32px rgba(16, 185, 129, 0.7);
+      animation: scanLaserLine 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+      pointer-events: none;
+      border-radius: 9999px;
+      z-index: 15;
+    }
+    .card-laser-trail {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 28px;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.3), transparent);
+      top: 3px;
+      pointer-events: none;
+    }
+
+    @keyframes fieldRecognizedPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 0 25px rgba(16, 185, 129, 0.65);
+        border-color: #10b981 !important;
+        background-color: rgba(16, 185, 129, 0.22) !important;
+      }
+      35% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35), 0 0 40px rgba(16, 185, 129, 0.8);
+        border-color: #34d399 !important;
+        background-color: rgba(16, 185, 129, 0.18) !important;
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 rgba(16, 185, 129, 0);
+        border-color: #10b981 !important;
+        background-color: rgba(16, 185, 129, 0.08) !important;
+      }
+    }
+    .card-recognized-glow {
+      animation: fieldRecognizedPulse 2s ease-out forwards !important;
+    }
+
+    @keyframes digitBlockPop {
+      0% { transform: scale(0.5); opacity: 0; filter: blur(4px); }
+      70% { transform: scale(1.12); opacity: 1; filter: blur(0px); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .digit-pop-1 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
+    .digit-pop-2 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.18s both; }
+    .digit-pop-3 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.31s both; }
+    .digit-pop-4 { animation: digitBlockPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) 0.44s both; }
+
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
@@ -2743,13 +2802,12 @@
         </button>
       </div>
 
-      <!-- Fast Card OCR Scanner Button for Add Card -->
+      <!-- Card Scanner Viewfinder Button for Add Card -->
       <div class="mb-2">
-        <button type="button" onclick="triggerCardOcr('add', 'modal')" id="ocr-btn-add-modal" class="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
-          <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-          <span id="ocr-label-add-modal">Scan Card (Camera / Upload)</span>
+        <button type="button" onclick="triggerCardOcr('add', 'modal')" id="ocr-btn-add-modal" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+          <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <span id="ocr-label-add-modal">Scan Card (Live Camera / Photo)</span>
         </button>
-        <div id="ocr-status-add-modal" class="hidden mt-1 text-[10px] text-amber-300 font-mono-apple flex items-center justify-center gap-1.5 animate-pulse"></div>
       </div>
 
       <div class="space-y-2.5 text-xs">
@@ -2940,6 +2998,123 @@
     </div>
   </div>
 
+
+  <!-- Card Scanner Interactive Viewfinder Modal -->
+  <div id="card-scanner-modal" class="hidden fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none">
+    <div class="w-full max-w-md bg-neutral-900 border border-neutral-700/80 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col gap-3 relative overflow-hidden">
+      
+      <!-- Top Header -->
+      <div class="flex items-center justify-between pb-1">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white tracking-tight">Smart Card Scanner</h3>
+            <p class="text-[10px] text-neutral-400">Align card within the frame</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeCardScannerModal()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Viewfinder Area (Standard Bank Card Ratio 85.6 / 53.98 = 1.586) -->
+      <div class="relative w-full aspect-[85.6/53.98] bg-neutral-950 rounded-2xl border-2 border-neutral-800 overflow-hidden flex items-center justify-center shadow-inner" id="scanner-viewfinder">
+        
+        <!-- Live Video element -->
+        <video id="card-scanner-video" class="hidden absolute inset-0 w-full h-full object-cover" playsinline autoplay muted></video>
+
+        <!-- Preview Image element (for photo upload) -->
+        <img id="card-scanner-preview-img" class="hidden absolute inset-0 w-full h-full object-contain bg-black/60" alt="Card Preview">
+
+        <!-- Viewfinder Guide Frame Corners -->
+        <div class="absolute inset-3 pointer-events-none rounded-xl border border-white/10" id="scanner-guide-box">
+          <!-- Corner brackets -->
+          <span class="absolute -top-[2px] -left-[2px] w-5 h-5 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg"></span>
+          <span class="absolute -top-[2px] -right-[2px] w-5 h-5 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg"></span>
+          <span class="absolute -bottom-[2px] -left-[2px] w-5 h-5 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg"></span>
+          <span class="absolute -bottom-[2px] -right-[2px] w-5 h-5 border-b-2 border-r-2 border-emerald-400 rounded-br-lg"></span>
+        </div>
+
+        <!-- Laser Scan Beam Animation -->
+        <div id="scanner-laser-beam" class="card-laser-beam">
+          <div class="card-laser-trail"></div>
+        </div>
+
+        <!-- Placeholder overlay before camera/photo is loaded -->
+        <div id="scanner-placeholder" class="flex flex-col items-center justify-center text-center p-4 z-10">
+          <div class="w-12 h-12 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center text-neutral-400 mb-2">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+          </div>
+          <p class="text-xs font-semibold text-neutral-200">Start Live Camera or Upload Card Photo</p>
+          <p class="text-[10px] text-neutral-500 mt-0.5">Works with embossed and flat RuPay cards</p>
+        </div>
+
+        <!-- Recognized Card Mockup Overlay (Celebration on detection!) -->
+        <div id="scanner-recognized-overlay" class="hidden absolute inset-0 bg-neutral-950/92 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-4 text-center transition-all">
+          <!-- Success Badge -->
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-3 shadow-[0_0_15px_rgba(16,185,129,0.3)] animate-pulse">
+            <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Card Recognized &amp; Verified!</span>
+          </div>
+
+          <!-- 16-Digit Card Blocks with cascading pop animation -->
+          <div class="w-full max-w-[280px] bg-gradient-to-r from-neutral-800/90 to-neutral-900/90 border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
+            <div class="flex items-center justify-between text-[10px] text-neutral-400 font-mono-apple mb-2">
+              <span class="text-emerald-400 font-bold">RuPay / BANK CARD</span>
+              <span id="scanner-detected-exp" class="text-neutral-300">EXP: --/--</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1 text-center font-mono-apple font-bold text-xs sm:text-sm text-white" id="scanner-digit-blocks">
+              <div id="scanned-block-1" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-1">••••</div>
+              <div id="scanned-block-2" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-2">••••</div>
+              <div id="scanned-block-3" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-3">••••</div>
+              <div id="scanned-block-4" class="py-1 rounded bg-black/60 border border-emerald-500/40 text-emerald-300 digit-pop-4">••••</div>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-emerald-400 font-medium mt-3 flex items-center gap-1.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Auto-filling replacement form...</span>
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Status feedback banner -->
+      <div id="scanner-status-text" class="text-center text-[11px] font-mono-apple text-neutral-400 py-0.5 min-h-[20px] transition-all">
+        Ensure good lighting. Avoid strong reflections or glare.
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button type="button" id="scanner-btn-camera" onclick="startLiveCameraScanner()" class="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-2 border border-neutral-700 transition-all active:scale-95">
+          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <span id="scanner-cam-btn-label">Open Camera</span>
+        </button>
+
+        <button type="button" onclick="triggerFileInputFromModal()" class="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-xs flex items-center justify-center gap-2 transition-all active:scale-95">
+          <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Upload Photo</span>
+        </button>
+      </div>
+
+      <!-- Shutter button when camera is active -->
+      <div id="scanner-shutter-container" class="hidden pt-1">
+        <button type="button" onclick="captureLiveCameraFrame()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-neutral-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all">
+          <span class="w-2.5 h-2.5 rounded-full bg-neutral-950 animate-ping"></span>
+          <span>Snap &amp; Recognize Card</span>
+        </button>
+      </div>
+
+      <!-- Privacy Note -->
+      <div class="text-[10px] text-neutral-500 text-center flex items-center justify-center gap-1">
+        <svg class="w-3 h-3 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <span>100% On-Device Neural Vision • Zero Data Leaves Your Device</span>
+      </div>
+
+    </div>
+  </div>
 
   <!-- Hidden Card OCR File Input for Camera / Photo Scan -->
   <input type="file" id="card-ocr-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleCardOcrFileSelect(event)">
@@ -8321,13 +8496,12 @@
                 </button>
               </div>
 
-              <!-- Fast Card OCR Scanner Button -->
+              <!-- Card Scanner Viewfinder Button -->
               <div class="mb-2.5">
-                <button type="button" onclick="triggerCardOcr('rep', '${rawNum}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
-                  <svg class="w-4 h-4 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                  <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Camera / Upload)</span>
+                <button type="button" onclick="triggerCardOcr('rep', '${rawNum}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+                  <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                  <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Live Camera / Photo)</span>
                 </button>
-                <div id="ocr-status-rep-${rawNum}" class="hidden mt-1.5 text-[10px] text-amber-300 font-mono-apple flex items-center justify-center gap-1.5 animate-pulse"></div>
               </div>
 
               <form onsubmit="event.preventDefault(); submitCardReplacement('${rawNum}');" autocomplete="on" class="space-y-2 text-left">
@@ -8531,12 +8705,14 @@
       }
     }
 
-    /* --- HIGH-SPEED ON-DEVICE CARD OCR ENGINE --- */
+    /* --- ADVANCED ON-DEVICE CARD SCANNER & OCR ENGINE --- */
     let activeOcrTarget = null; // { type: 'rep' | 'add', id: string }
     let tesseractWorkerPromise = null;
+    let liveCameraStream = null;
+    let isOcrProcessing = false;
 
     function isValidLuhn(digits) {
-      const clean = String(digits).replace(/\D/g, '');
+      const clean = String(digits || '').replace(/\D/g, '');
       if (clean.length < 13 || clean.length > 19) return false;
       let sum = 0;
       let shouldDouble = false;
@@ -8552,30 +8728,64 @@
       return (sum % 10) === 0;
     }
 
+    function parseExpiryFromCanvasOrText(rawText) {
+      const text = String(rawText || '').replace(/\r/g, '\n');
+      const matches = text.match(/(?:VALID\s*THRU|EXP|THRU|EXPIRES)?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})\b/i);
+      if (matches) {
+        const mm = matches[1];
+        let yy = matches[2];
+        if (yy.length === 4) yy = yy.slice(-2);
+        const mNum = parseInt(mm, 10);
+        if (mNum >= 1 && mNum <= 12) {
+          return `${mm}/${yy}`;
+        }
+      }
+      return null;
+    }
+
     function parseCardDetailsFromText(rawText) {
       const cleanText = String(rawText || '').replace(/\r/g, '\n');
       
-      // 1. Match card numbers (16 digits in blocks or continuous)
-      // Matches: "6524 9710 0085 5409", "6524-9710-0085-5409", "6524971000855409"
-      const candidateMatches = cleanText.match(/\b(?:\d[ -]?){15,19}\d\b/g) || [];
+      // Normalization pass for common OCR letter/digit confusions on cards
+      const normalized = cleanText
+        .replace(/[OoD]/g, '0')
+        .replace(/[Il|!]/g, '1')
+        .replace(/[Zz]/g, '2')
+        .replace(/[Ss]/g, '5')
+        .replace(/[Bb]/g, '8');
+
       let bestCardNum = null;
 
-      for (const cand of candidateMatches) {
-        const digits = cand.replace(/\D/g, '');
-        if (digits.length === 16) {
-          if (isValidLuhn(digits)) {
-            bestCardNum = digits;
-            break;
-          }
-          if (!bestCardNum && /^(652|653|60|50|35|4|5)/.test(digits)) {
-            bestCardNum = digits;
+      // 1. Match 4x4 digit blocks: "6524 9710 0085 5409", "6524-9710-0085-5409"
+      const blockMatches = normalized.match(/\b\d{4}[ -]\d{4}[ -]\d{4}[ -]\d{4}\b/g) || [];
+      for (const m of blockMatches) {
+        const digits = m.replace(/\D/g, '');
+        if (digits.length === 16 && isValidLuhn(digits)) {
+          bestCardNum = digits;
+          break;
+        }
+      }
+
+      // 2. Match continuous or spaced 15-19 digits
+      if (!bestCardNum) {
+        const candidateMatches = normalized.match(/\b(?:\d[ -]?){15,19}\d\b/g) || [];
+        for (const cand of candidateMatches) {
+          const digits = cand.replace(/\D/g, '');
+          if (digits.length === 16) {
+            if (isValidLuhn(digits)) {
+              bestCardNum = digits;
+              break;
+            }
+            if (!bestCardNum && /^(652|653|60|50|35|4|5)/.test(digits)) {
+              bestCardNum = digits;
+            }
           }
         }
       }
 
-      // Fallback: sliding 16-digit window on all extracted digits
+      // 3. Fallback: sliding 16-digit window on all extracted digits
       if (!bestCardNum) {
-        const allDigits = cleanText.replace(/\D/g, '');
+        const allDigits = normalized.replace(/\D/g, '');
         for (let i = 0; i <= allDigits.length - 16; i++) {
           const sub = allDigits.slice(i, i + 16);
           if (isValidLuhn(sub) && /^(652|653|60|50|35|4|5)/.test(sub)) {
@@ -8583,53 +8793,180 @@
             break;
           }
         }
-      }
-
-      // 2. Match Expiry: MM/YY or MM/YYYY
-      let expiry = null;
-      const expMatches = cleanText.match(/(?:VALID\s*THRU|EXP|THRU)?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})\b/i);
-      if (expMatches) {
-        const mm = expMatches[1];
-        let yy = expMatches[2];
-        if (yy.length === 4) yy = yy.slice(-2);
-        const monthNum = parseInt(mm, 10);
-        if (monthNum >= 1 && monthNum <= 12) {
-          expiry = `${mm}/${yy}`;
+        if (!bestCardNum) {
+          for (let i = 0; i <= allDigits.length - 16; i++) {
+            const sub = allDigits.slice(i, i + 16);
+            if (isValidLuhn(sub)) {
+              bestCardNum = sub;
+              break;
+            }
+          }
         }
       }
+
+      // Expiry check
+      const expiry = parseExpiryFromCanvasOrText(cleanText);
 
       return { cardNumber: bestCardNum, expiry: expiry };
     }
 
     function triggerCardOcr(type, id) {
+      openCardScannerModal(type, id);
+    }
+
+    function openCardScannerModal(type, id) {
       activeOcrTarget = { type, id };
+      const modal = document.getElementById('card-scanner-modal');
+      if (!modal) return;
+      resetScannerModalUI();
+      modal.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    }
+
+    function closeCardScannerModal() {
+      stopLiveCameraStream();
+      const modal = document.getElementById('card-scanner-modal');
+      if (modal) modal.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      resetScannerModalUI();
+    }
+
+    function resetScannerModalUI() {
+      const video = document.getElementById('card-scanner-video');
+      const preview = document.getElementById('card-scanner-preview-img');
+      const placeholder = document.getElementById('scanner-placeholder');
+      const overlay = document.getElementById('scanner-recognized-overlay');
+      const shutter = document.getElementById('scanner-shutter-container');
+      const laser = document.getElementById('scanner-laser-beam');
+      const status = document.getElementById('scanner-status-text');
+      const camBtnLabel = document.getElementById('scanner-cam-btn-label');
+
+      if (video) { video.classList.add('hidden'); video.srcObject = null; }
+      if (preview) { preview.classList.add('hidden'); preview.src = ''; }
+      if (placeholder) placeholder.classList.remove('hidden');
+      if (overlay) overlay.classList.add('hidden');
+      if (shutter) shutter.classList.add('hidden');
+      if (laser) laser.classList.remove('hidden');
+      if (camBtnLabel) camBtnLabel.textContent = 'Open Camera';
+      if (status) status.innerHTML = 'Ensure good lighting. Avoid strong reflections or glare.';
+      isOcrProcessing = false;
+    }
+
+    async function startLiveCameraScanner() {
+      if (liveCameraStream) {
+        stopLiveCameraStream();
+        resetScannerModalUI();
+        return;
+      }
+
+      const status = document.getElementById('scanner-status-text');
+      const placeholder = document.getElementById('scanner-placeholder');
+      const video = document.getElementById('card-scanner-video');
+      const preview = document.getElementById('card-scanner-preview-img');
+      const shutter = document.getElementById('scanner-shutter-container');
+      const camBtnLabel = document.getElementById('scanner-cam-btn-label');
+
+      if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Requesting camera access...</span>';
+
+      try {
+        const constraints = {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        liveCameraStream = stream;
+
+        if (video) {
+          video.srcObject = stream;
+          video.classList.remove('hidden');
+          await video.play();
+        }
+        if (preview) preview.classList.add('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
+        if (shutter) shutter.classList.remove('hidden');
+        if (camBtnLabel) camBtnLabel.textContent = 'Stop Camera';
+        if (status) status.innerHTML = '<span class="text-emerald-400 font-bold">Align card inside frame</span> and tap "Snap &amp; Recognize"';
+
+      } catch (err) {
+        console.warn('Camera access failed:', err);
+        if (status) status.innerHTML = '<span class="text-rose-400 font-bold">Camera unavailable.</span> Please use "Upload Photo".';
+        showToast('Camera access unavailable. Please use photo upload.');
+      }
+    }
+
+    function stopLiveCameraStream() {
+      if (liveCameraStream) {
+        try {
+          liveCameraStream.getTracks().forEach(track => track.stop());
+        } catch (_) {}
+        liveCameraStream = null;
+      }
+    }
+
+    async function captureLiveCameraFrame() {
+      const video = document.getElementById('card-scanner-video');
+      if (!video || !liveCameraStream || isOcrProcessing) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      await processCardImageFromCanvas(canvas);
+    }
+
+    function triggerFileInputFromModal() {
       const fileInput = document.getElementById('card-ocr-file-input');
       if (fileInput) {
-        fileInput.value = ''; // Reset
+        fileInput.value = '';
         fileInput.click();
       }
     }
 
-    function updateOcrButtonState(isScanning, message = '') {
-      if (!activeOcrTarget) return;
-      const { type, id } = activeOcrTarget;
-      const btn = document.getElementById(`ocr-btn-${type}-${id}`);
-      const label = document.getElementById(`ocr-label-${type}-${id}`);
-      const status = document.getElementById(`ocr-status-${type}-${id}`);
+    async function handleCardOcrFileSelect(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
 
-      if (btn) btn.disabled = isScanning;
-      if (label) {
-        label.textContent = isScanning ? (message || 'Scanning Card...') : 'Scan Card (Camera / Upload)';
+      const preview = document.getElementById('card-scanner-preview-img');
+      const video = document.getElementById('card-scanner-video');
+      const placeholder = document.getElementById('scanner-placeholder');
+      const shutter = document.getElementById('scanner-shutter-container');
+      const status = document.getElementById('scanner-status-text');
+
+      stopLiveCameraStream();
+      if (shutter) shutter.classList.add('hidden');
+      if (video) video.classList.add('hidden');
+      if (placeholder) placeholder.classList.add('hidden');
+
+      const imgUrl = URL.createObjectURL(file);
+      if (preview) {
+        preview.src = imgUrl;
+        preview.classList.remove('hidden');
       }
-      if (status) {
-        if (isScanning) {
-          status.classList.remove('hidden');
-          status.textContent = message || 'Processing image...';
-        } else {
-          status.classList.add('hidden');
-          status.textContent = '';
-        }
-      }
+
+      if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Loading photo...</span>';
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = imgUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(imgUrl);
+
+      await processCardImageFromCanvas(canvas);
     }
 
     async function getTesseractWorker() {
@@ -8646,33 +8983,26 @@
         }
         const worker = await Tesseract.createWorker('eng', 1);
         await worker.setParameters({
-          tessedit_char_whitelist: '0123456789/- VALIDTHRUexp'
+          tessedit_char_whitelist: '0123456789 ',
+          tessedit_pageseg_mode: '6'
         });
         return worker;
       })();
       return tesseractWorkerPromise;
     }
 
-    async function handleCardOcrFileSelect(e) {
-      const file = e.target.files && e.target.files[0];
-      if (!file || !activeOcrTarget) return;
+    async function processCardImageFromCanvas(sourceCanvas) {
+      if (isOcrProcessing) return;
+      isOcrProcessing = true;
 
-      const { type, id } = activeOcrTarget;
-      updateOcrButtonState(true, 'Optimizing image for fast OCR...');
+      const status = document.getElementById('scanner-status-text');
+      if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Optimizing card frame...</span>';
 
       try {
-        // Step 1: Load image onto canvas and scale to max 1200px width/height for fast processing
-        const img = new Image();
-        const imgUrl = URL.createObjectURL(file);
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = imgUrl;
-        });
-
-        const maxDim = 1200;
-        let w = img.width;
-        let h = img.height;
+        // Step 1: Scale down to max 1280px dimension for fast processing
+        const maxDim = 1280;
+        let w = sourceCanvas.width;
+        let h = sourceCanvas.height;
         if (w > maxDim || h > maxDim) {
           if (w > h) {
             h = Math.round((h * maxDim) / w);
@@ -8682,93 +9012,241 @@
             h = maxDim;
           }
         }
+        const normCanvas = document.createElement('canvas');
+        normCanvas.width = w;
+        normCanvas.height = h;
+        const normCtx = normCanvas.getContext('2d');
+        normCtx.drawImage(sourceCanvas, 0, 0, w, h);
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        URL.revokeObjectURL(imgUrl);
-
-        // Enhance contrast and grayscale for clean number edges
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const d = imgData.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
-          const enhanced = gray > 140 ? 255 : (gray < 70 ? 0 : gray);
-          d[i] = enhanced;
-          d[i+1] = enhanced;
-          d[i+2] = enhanced;
-        }
-        ctx.putImageData(imgData, 0, 0);
-
-        updateOcrButtonState(true, 'Extracting card numbers...');
-
-        // Step 2: Try native Web TextDetector if available (instant on Android Chrome)
+        // Step 2: Try native Web TextDetector if available (Chromium instant ML)
         let extractedText = '';
         if ('TextDetector' in window) {
           try {
+            if (status) status.innerHTML = '<span class="text-emerald-400 font-bold">Scanning text regions...</span>';
             const detector = new window.TextDetector();
-            const results = await detector.detect(canvas);
+            const results = await detector.detect(normCanvas);
             extractedText = results.map(r => r.rawValue).join('\n');
+            const parsed = parseCardDetailsFromText(extractedText);
+            if (parsed.cardNumber && isValidLuhn(parsed.cardNumber)) {
+              await triggerRecognitionSuccessAnimation(parsed);
+              return;
+            }
           } catch (tdErr) {
-            console.warn('Native TextDetector failed, falling back to Tesseract:', tdErr);
+            console.warn('Native TextDetector failed, falling back to Tesseract neural pipeline:', tdErr);
           }
         }
 
-        // Step 3: Fast Tesseract.js fallback
-        if (!extractedText.trim()) {
-          updateOcrButtonState(true, 'Running OCR engine...');
-          const worker = await getTesseractWorker();
-          const ocrResult = await worker.recognize(canvas);
-          extractedText = ocrResult?.data?.text || '';
+        // Step 3: Focused Horizontal ROI Band (Middle 35% - 75% height)
+        // 99% of payment card numbers reside in this horizontal band
+        const roiY = Math.round(h * 0.35);
+        const roiH = Math.round(h * 0.42);
+        const roiX = Math.round(w * 0.04);
+        const roiW = Math.round(w * 0.92);
+
+        const roiCanvas = document.createElement('canvas');
+        roiCanvas.width = roiW;
+        roiCanvas.height = roiH;
+        const roiCtx = roiCanvas.getContext('2d');
+        roiCtx.drawImage(normCanvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+
+        // Analyze luminance of ROI to determine polarity
+        const roiImgData = roiCtx.getImageData(0, 0, roiW, roiH);
+        const d = roiImgData.data;
+        let totalLum = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          totalLum += (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114);
         }
+        const avgLum = totalLum / (roiW * roiH);
+        const isDarkCard = avgLum < 128;
 
-        // Step 4: Parse Card Number and Expiry
-        const parsed = parseCardDetailsFromText(extractedText);
-
-        // Step 5: Fill target input fields
-        const numInput = type === 'rep'
-          ? document.getElementById(`rep-num-${id}`)
-          : document.getElementById('add-card-num');
-        const expInput = type === 'rep'
-          ? document.getElementById(`rep-exp-${id}`)
-          : document.getElementById('add-card-exp');
-        const cvvInput = type === 'rep'
-          ? document.getElementById(`rep-cvv-${id}`)
-          : document.getElementById('add-card-cvv');
-
-        let filledCount = 0;
-        if (parsed.cardNumber && numInput) {
-          numInput.value = parsed.cardNumber.replace(/(\d{4})/g, '$1 ').trim();
-          onCardNumberInput(numInput);
-          filledCount++;
-        }
-        if (parsed.expiry && expInput) {
-          expInput.value = parsed.expiry;
-          filledCount++;
-        }
-
-        if (filledCount > 0) {
-          if (navigator.vibrate) {
-            try { navigator.vibrate([15, 50, 15]); } catch (_) {}
+        // Enhance contrast & invert if dark card with light embossed digits
+        for (let i = 0; i < d.length; i += 4) {
+          let gray = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+          if (isDarkCard) {
+            gray = 255 - gray; // Invert to black text on white background
           }
-          if (parsed.cardNumber && parsed.expiry) {
-            showToast('Card scanned! 16-digit number & expiry auto-filled. Please enter CVV.');
-          } else if (parsed.cardNumber) {
-            showToast('Card number scanned! Please verify expiry & enter CVV.');
-          }
-          if (cvvInput) cvvInput.focus();
+          gray = Math.min(255, Math.max(0, (gray - 45) * 1.45));
+          d[i] = gray;
+          d[i+1] = gray;
+          d[i+2] = gray;
+        }
+        roiCtx.putImageData(roiImgData, 0, 0);
+
+        if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Recognizing digits...</span>';
+
+        const worker = await getTesseractWorker();
+
+        // 1st Neural Pass on Cropped Number Band with strict digits whitelist
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789 ',
+          tessedit_pageseg_mode: '6'
+        });
+
+        const roiResult = await worker.recognize(roiCanvas);
+        const roiText = roiResult?.data?.text || '';
+        let parsed = parseCardDetailsFromText(roiText);
+
+        // If no valid card number found yet, try wide-angle full canvas scan
+        if (!parsed.cardNumber || !isValidLuhn(parsed.cardNumber)) {
+          if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Running full-frame scan...</span>';
+          await worker.setParameters({
+            tessedit_char_whitelist: '0123456789/- VALIDTHRUexp',
+            tessedit_pageseg_mode: '3'
+          });
+          const fullResult = await worker.recognize(normCanvas);
+          const fullText = fullResult?.data?.text || '';
+          const fullParsed = parseCardDetailsFromText(fullText);
+
+          if (fullParsed.cardNumber) parsed.cardNumber = fullParsed.cardNumber;
+          if (fullParsed.expiry) parsed.expiry = fullParsed.expiry;
+        }
+
+        // Try extracting expiry if not yet detected
+        if (!parsed.expiry) {
+          const exp = parseExpiryFromCanvasOrText(extractedText || roiText);
+          if (exp) parsed.expiry = exp;
+        }
+
+        // Check result
+        if (parsed.cardNumber) {
+          await triggerRecognitionSuccessAnimation(parsed);
         } else {
-          showToast('Could not detect card numbers clearly. Please ensure good lighting or enter manually.');
+          if (status) {
+            status.innerHTML = '<span class="text-rose-400 font-bold">Could not detect 16-digit card number clearly.</span> Ensure card is aligned without glare, or enter manually.';
+          }
+          showToast('Could not detect card numbers clearly. Ensure good lighting without glare.');
         }
 
       } catch (err) {
-        console.error('Card OCR error:', err);
+        console.error('Card OCR processing error:', err);
+        if (status) status.innerHTML = `<span class="text-rose-400 font-bold">Scan error: ${err.message || 'Please enter manually'}</span>`;
         showToast('Card scan error: ' + (err.message || 'Please enter manually.'));
       } finally {
-        updateOcrButtonState(false);
+        isOcrProcessing = false;
       }
+    }
+
+    async function triggerRecognitionSuccessAnimation(parsed) {
+      const { type, id } = activeOcrTarget || {};
+      const status = document.getElementById('scanner-status-text');
+      const laser = document.getElementById('scanner-laser-beam');
+      const overlay = document.getElementById('scanner-recognized-overlay');
+      const shutter = document.getElementById('scanner-shutter-container');
+
+      // Stop camera if running
+      stopLiveCameraStream();
+      if (shutter) shutter.classList.add('hidden');
+      if (laser) laser.classList.add('hidden');
+
+      // Trigger haptic vibration on mobile
+      if (navigator.vibrate) {
+        try { navigator.vibrate([30, 70, 30, 80]); } catch (_) {}
+      }
+
+      // Populate recognized overlay card
+      const cardNum = parsed.cardNumber || '';
+      const b1 = document.getElementById('scanned-block-1');
+      const b2 = document.getElementById('scanned-block-2');
+      const b3 = document.getElementById('scanned-block-3');
+      const b4 = document.getElementById('scanned-block-4');
+      const expElem = document.getElementById('scanner-detected-exp');
+
+      if (b1) b1.textContent = cardNum.slice(0, 4) || '••••';
+      if (b2) b2.textContent = cardNum.slice(4, 8) || '••••';
+      if (b3) b3.textContent = cardNum.slice(8, 12) || '••••';
+      if (b4) b4.textContent = cardNum.slice(12, 16) || '••••';
+      if (expElem) expElem.textContent = parsed.expiry ? `EXP: ${parsed.expiry}` : 'EXP: --/--';
+
+      // Reveal the WOW celebration overlay
+      if (overlay) overlay.classList.remove('hidden');
+      if (status) status.innerHTML = '<span class="text-emerald-300 font-bold">✓ 16-Digit Card &amp; Luhn Check Verified!</span>';
+
+      // Allow user to see the recognized numbers animate on screen (850ms)
+      await new Promise(r => setTimeout(r, 850));
+
+      // Close scanner modal
+      closeCardScannerModal();
+
+      // Find target inputs in the drawer / modal
+      const numInput = type === 'rep'
+        ? document.getElementById(`rep-num-${id}`)
+        : document.getElementById('add-card-num');
+      const expInput = type === 'rep'
+        ? document.getElementById(`rep-exp-${id}`)
+        : document.getElementById('add-card-exp');
+      const cvvInput = type === 'rep'
+        ? document.getElementById(`rep-cvv-${id}`)
+        : document.getElementById('add-card-cvv');
+
+      // Populating Card Number with animated typewriter reveal & energetic glowing ring!
+      if (numInput && cardNum) {
+        const formatted = cardNum.replace(/(\d{4})/g, '$1 ').trim();
+        numInput.value = '';
+
+        // Add glowing animation class
+        numInput.classList.remove('card-recognized-glow');
+        void numInput.offsetWidth; // Force reflow
+        numInput.classList.add('card-recognized-glow');
+
+        // Typewriter effect over ~240ms
+        let curr = 0;
+        const typeInterval = setInterval(() => {
+          curr += 4;
+          numInput.value = formatted.slice(0, curr);
+          onCardNumberInput(numInput);
+          if (curr >= formatted.length) {
+            clearInterval(typeInterval);
+            numInput.value = formatted;
+            onCardNumberInput(numInput);
+          }
+        }, 50);
+
+        // Show or update animated success pill right beneath the input
+        let successPill = document.getElementById(`ocr-success-pill-${type}-${id}`);
+        if (!successPill) {
+          successPill = document.createElement('div');
+          successPill.id = `ocr-success-pill-${type}-${id}`;
+          successPill.className = 'mt-2 p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]';
+          numInput.parentNode.appendChild(successPill);
+        }
+        successPill.innerHTML = `
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Card Recognized &amp; Verified</span>
+          </div>
+          <span class="text-[10px] font-mono-apple bg-emerald-400/20 px-1.5 py-0.5 rounded text-emerald-200">LUHN OK</span>
+        `;
+        successPill.classList.remove('hidden');
+
+        // Fade out pill after 4.5 seconds
+        setTimeout(() => {
+          if (successPill) {
+            successPill.classList.add('opacity-0');
+            setTimeout(() => {
+              successPill.classList.add('hidden');
+              successPill.classList.remove('opacity-0');
+            }, 500);
+          }
+        }, 4500);
+      }
+
+      // Populate Expiry
+      if (expInput && parsed.expiry) {
+        expInput.value = parsed.expiry;
+        expInput.classList.remove('card-recognized-glow');
+        void expInput.offsetWidth;
+        expInput.classList.add('card-recognized-glow');
+      }
+
+      // Focus CVV input
+      if (cvvInput) {
+        setTimeout(() => {
+          cvvInput.focus();
+          cvvInput.placeholder = 'CVV •••';
+        }, 350);
+      }
+
+      showToast('Card recognized! Number & expiry auto-filled. Please enter CVV.');
     }
 
     function getClientEligibleBenefits(bank, type) {
