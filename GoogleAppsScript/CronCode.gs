@@ -1441,6 +1441,46 @@ function doGet(e) {
     }
   }
 
+  // Batch Transition: Switch all PENDING_REVALIDATION vouchers in "New" sheet to PENDING
+  if (e && e.parameter && e.parameter.action === "SWITCH_ALL_REVALIDATED_TO_PENDING") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const rows = nSheet.getDataRange().getValues();
+      const updatedBids = [];
+      for (let i = 1; i < rows.length; i++) {
+        const rowBid = String(rows[i][0] || '').trim().toUpperCase();
+        const rowCode = String(rows[i][1] || '').trim();
+        const rowStatus = String(rows[i][7] || '').trim().toUpperCase();
+        if (rowStatus === "PENDING_REVALIDATION" || rowCode.toLowerCase().includes("revalidat")) {
+          nSheet.getRange(i + 1, 2).setValue('PENDING');
+          nSheet.getRange(i + 1, 8).setValue('PENDING');
+          if (rows[0].length >= 12) {
+            nSheet.getRange(i + 1, 12).setValue('');
+          }
+          addRevalidatedBookingToProperties(rowBid);
+          updatedBids.push(rowBid);
+        } else if (rowStatus === "PENDING" && (rowCode === "PENDING" || rowCode === "")) {
+          // Ensure already pending rows are also preserved in persistent properties
+          addRevalidatedBookingToProperties(rowBid);
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "SWITCH_ALL_REVALIDATED_TO_PENDING",
+        updatedCount: updatedBids.length,
+        updatedBids: updatedBids,
+        activeProperties: Array.from(getRevalidatedBookingsFromProperties())
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Seed / Initialize Misc Tab with initial vouchers
   if (e && e.parameter && e.parameter.action === "SEED_INITIAL_MISC_VOUCHERS") {
     try {
