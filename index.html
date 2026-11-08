@@ -2838,13 +2838,13 @@
     <!-- Backdrop -->
     <div onclick="closeRecordChargeModal()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
 
-    <!-- Sheet Container -->
-    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-5 shadow-2xl space-y-3.5 max-h-[90%] overflow-y-auto no-scrollbar z-10 sheet-enter">
+    <!-- Sheet Container (<50% Screen Size) -->
+    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-4 sm:p-5 shadow-2xl space-y-3 max-h-[48vh] overflow-y-auto no-scrollbar z-10 sheet-enter">
       <!-- Handlebar -->
-      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto"></div>
+      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto mb-1"></div>
 
       <!-- Header -->
-      <div class="flex items-start justify-between pb-1 border-b border-[var(--theme-border)]">
+      <div class="flex items-start justify-between pb-1.5 border-b border-[var(--theme-border)]">
         <div>
           <div class="flex items-center gap-2">
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 uppercase tracking-wider">RuPay Charges</span>
@@ -2857,58 +2857,75 @@
         </button>
       </div>
 
-      <!-- Quick Presets (2x2 Grid) -->
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-[var(--theme-text-muted)]">Quick Presets</label>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb')" id="in-preset-charge-pnb" class="p-2.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold transition-all spring-press text-left">
-            <div>PNB Imperial Issuance</div>
-            <div class="text-[10px] font-normal opacity-80">-₹708 (Debit)</div>
-          </button>
-          <button onclick="selectChargePreset('Jana DC AMC', 588.82, 'jana-amc')" id="in-preset-charge-jana-amc" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
-            <div>Jana DC AMC</div>
-            <div class="text-[10px] font-normal opacity-80">-₹588.82</div>
-          </button>
-          <button onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
-            <div>Jana Replacement</div>
-            <div class="text-[10px] font-normal opacity-80">-₹293.82</div>
-          </button>
-          <button onclick="selectChargePreset('Canara Acc 9491 DC Hostlisting', 177, 'canara')" id="in-preset-charge-canara" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
-            <div>Canara Hotlisting</div>
-            <div class="text-[10px] font-normal opacity-80">-₹177</div>
-          </button>
+      <!-- Quick Presets (Horizontal Scrollable Chips) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <button type="button" onclick="selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb')" id="in-preset-charge-pnb" class="px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+          PNB Imperial (-₹708)
+        </button>
+        <button type="button" onclick="selectChargePreset('Jana DC AMC', 588.82, 'jana-amc')" id="in-preset-charge-jana-amc" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+          Jana AMC (-₹588.82)
+        </button>
+        <button type="button" onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+          Jana Replace (-₹293.82)
+        </button>
+        <button type="button" onclick="selectChargePreset('Canara Acc 9491 DC Hostlisting', 177, 'canara', '', '9491')" id="in-preset-charge-canara" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+          Canara (-₹177)
+        </button>
+      </div>
+
+      <!-- Row 1: Title (60%) + Amount (40%) -->
+      <div class="grid grid-cols-5 gap-2">
+        <div class="col-span-3 space-y-1">
+          <label for="in-charge-input-title" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)]">Fee Title / Description</label>
+          <input type="text" id="in-charge-input-title" value="PNB Imperial DC Issuance Fee" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+        </div>
+        <div class="col-span-2 space-y-1">
+          <label for="in-charge-input-amount" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)]">Amount (₹)</label>
+          <div class="relative">
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-400">-₹</span>
+            <input type="number" id="in-charge-input-amount" value="708" step="any" oninput="updateChargeButtonText()" class="w-full pl-7 pr-2.5 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-extrabold text-rose-400 focus:outline-none focus:border-rose-500">
+          </div>
         </div>
       </div>
 
-      <!-- Title Input -->
-      <div class="space-y-1">
-        <label for="in-charge-input-title" class="text-xs font-bold text-[var(--theme-text-muted)]">Fee Title / Description</label>
-        <input type="text" id="in-charge-input-title" value="PNB Imperial DC Issuance Fee" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
-      </div>
-
-      <!-- Charge Amount Input (Clean Numeric) -->
-      <div class="space-y-1">
-        <label for="in-charge-input-amount" class="text-xs font-bold text-[var(--theme-text-muted)]">Charge Amount (₹)</label>
-        <div class="relative">
-          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-400">-₹</span>
-          <input type="number" id="in-charge-input-amount" value="708" step="any" oninput="updateChargeButtonText()" class="w-full pl-8 pr-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-sm font-extrabold text-rose-400 focus:outline-none focus:border-rose-500">
+      <!-- Row 2: Card Last 4 Digits + Bank Account Last 4 Digits -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="space-y-1">
+          <label for="in-charge-input-card4" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)] flex items-center justify-between">
+            <span>Card Last 4</span>
+            <span class="text-[9px] font-mono-apple opacity-70">Optional</span>
+          </label>
+          <input type="tel" id="in-charge-input-card4" maxlength="4" placeholder="e.g. 7180" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 4); updateChargeCommentPreview();" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-mono-apple font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+        </div>
+        <div class="space-y-1">
+          <label for="in-charge-input-acc4" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)] flex items-center justify-between">
+            <span>Account Last 4</span>
+            <span class="text-[9px] font-mono-apple opacity-70">Optional</span>
+          </label>
+          <input type="tel" id="in-charge-input-acc4" maxlength="4" placeholder="e.g. 2562" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 4); updateChargeCommentPreview();" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs font-mono-apple font-bold text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
         </div>
       </div>
 
-      <!-- Date Input -->
-      <div class="space-y-1">
-        <label for="in-charge-input-date" class="text-xs font-bold text-[var(--theme-text-muted)]">Date</label>
-        <input type="text" id="in-charge-input-date" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+      <!-- Row 3: Date (35%) + Optional Notes / Extra Details (65%) -->
+      <div class="grid grid-cols-5 gap-2">
+        <div class="col-span-2 space-y-1">
+          <label for="in-charge-input-date" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)]">Date</label>
+          <input type="text" id="in-charge-input-date" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] focus:outline-none focus:border-rose-500">
+        </div>
+        <div class="col-span-3 space-y-1">
+          <label for="in-charge-input-comments" class="text-[10px] uppercase font-bold text-[var(--theme-text-muted)]">Extra Notes</label>
+          <input type="text" id="in-charge-input-comments" placeholder="e.g. Crest DC, replacement" oninput="updateChargeCommentPreview()" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-rose-500">
+        </div>
       </div>
 
-      <!-- Comments Input (Label: Comments, Not prefilled) -->
-      <div class="space-y-1">
-        <label for="in-charge-input-comments" class="text-xs font-bold text-[var(--theme-text-muted)]">Comments</label>
-        <input type="text" id="in-charge-input-comments" placeholder="e.g. Card Replacement 9012" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-rose-500">
+      <!-- Formatted Comment Live Preview Pill -->
+      <div class="px-3 py-1.5 rounded-xl bg-black/40 border border-[var(--theme-border)] flex items-center justify-between text-[11px]">
+        <span class="text-[var(--theme-text-sub)] text-[10px] font-bold uppercase tracking-wider">Comment:</span>
+        <span id="in-charge-preview-comment" class="font-mono text-rose-300 font-bold truncate max-w-[280px]">None</span>
       </div>
 
       <!-- Submit Button -->
-      <div class="pt-1.5 pb-1">
+      <div class="pt-1 pb-1">
         <button id="in-btn-confirm-charge" onclick="confirmRecordCharge()" class="w-full py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-950/30 spring-press flex items-center justify-center gap-2">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           <span id="in-btn-confirm-charge-text">Confirm &amp; Deduct Charge (-₹708)</span>
@@ -6299,10 +6316,40 @@
     }
 
     /* --- RECORD A CHARGE FLOW --- */
+    function formatChargeComment(acc4, card4, notes) {
+      const parts = [];
+      if (acc4) parts.push('Acc ••' + acc4);
+      if (card4) parts.push('Card ••' + card4);
+      let base = parts.join(', ');
+      if (notes) {
+        base = base ? (base + ' - ' + notes) : notes;
+      }
+      return base;
+    }
+
+    function updateChargeCommentPreview() {
+      const card4El = document.getElementById('in-charge-input-card4');
+      const card4 = (card4El ? card4El.value : '').replace(/\D/g, '').slice(0, 4);
+      const acc4El = document.getElementById('in-charge-input-acc4');
+      const acc4 = (acc4El ? acc4El.value : '').replace(/\D/g, '').slice(0, 4);
+      const commentsInput = document.getElementById('in-charge-input-comments');
+      const notes = (commentsInput ? commentsInput.value : '').trim();
+      const formatted = formatChargeComment(acc4, card4, notes);
+      const previewEl = document.getElementById('in-charge-preview-comment');
+      if (previewEl) {
+        previewEl.textContent = formatted || 'None';
+      }
+    }
+
     function openRecordChargeModal() {
       selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb');
+      const card4Input = document.getElementById('in-charge-input-card4');
+      if (card4Input) card4Input.value = '';
+      const acc4Input = document.getElementById('in-charge-input-acc4');
+      if (acc4Input) acc4Input.value = '';
       const commentsInput = document.getElementById('in-charge-input-comments');
       if (commentsInput) commentsInput.value = '';
+      updateChargeCommentPreview();
       const dateInput = document.getElementById('in-charge-input-date');
       if (dateInput) dateInput.value = formatTodayDDMMYY();
       const modal = document.getElementById('modal-charge');
@@ -6328,8 +6375,8 @@
       if (amountInput) amountInput.value = amount;
       updateChargeButtonText();
 
-      const activeCls = 'p-2.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold transition-all spring-press text-left';
-      const inactiveCls = 'p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left';
+      const activeCls = 'px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press';
+      const inactiveCls = 'px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press';
 
       const btnPnb = document.getElementById('in-preset-charge-pnb');
       const btnJanaAmc = document.getElementById('in-preset-charge-jana-amc');
@@ -6340,6 +6387,8 @@
       if (btnJanaAmc) btnJanaAmc.className = key === 'jana-amc' ? activeCls : inactiveCls;
       if (btnJanaRep) btnJanaRep.className = key === 'jana-rep' ? activeCls : inactiveCls;
       if (btnCanara) btnCanara.className = key === 'canara' ? activeCls : inactiveCls;
+
+      updateChargeCommentPreview();
     }
 
     async function confirmRecordCharge() {
@@ -6347,8 +6396,14 @@
       const title = (titleInput ? titleInput.value : '').trim() || 'Card Charge';
       const amountInput = document.getElementById('in-charge-input-amount');
       const amount = parseFloat(amountInput ? amountInput.value : 0) || 0;
+      const card4Input = document.getElementById('in-charge-input-card4');
+      const card4 = (card4Input ? card4Input.value : '').replace(/\D/g, '').slice(0, 4);
+      const acc4Input = document.getElementById('in-charge-input-acc4');
+      const acc4 = (acc4Input ? acc4Input.value : '').replace(/\D/g, '').slice(0, 4);
       const commentsInput = document.getElementById('in-charge-input-comments');
-      const comments = (commentsInput ? commentsInput.value : '').trim();
+      const notes = (commentsInput ? commentsInput.value : '').trim();
+      const formattedComments = formatChargeComment(acc4, card4, notes);
+      const accountFormatted = acc4 ? ('••' + acc4) : '';
       const dateInput = document.getElementById('in-charge-input-date');
       const date = (dateInput ? dateInput.value : '').trim() || formatTodayDDMMYY();
 
@@ -6368,8 +6423,8 @@
         title: title,
         date: date,
         price: chargePrice,
-        comments: comments,
-        account: '',
+        comments: formattedComments,
+        account: accountFormatted,
         year: yr
       };
 
@@ -6406,8 +6461,8 @@
           title: title,
           date: date,
           price: chargePrice,
-          comments: comments,
-          account: '',
+          comments: formattedComments,
+          account: accountFormatted,
           type: 'charge'
         }, { rollback });
       } catch (err) {

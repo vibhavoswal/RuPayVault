@@ -1689,12 +1689,12 @@ function doGet(e) {
         testChargeTitle,
         new Date(2025, 5, 15),
         -250,
-        "dummy test charge",
-        "test"
+        "Acc ••2562, Card ••7180 - Test charge notes",
+        "••2562"
       ], testDateMs);
       SpreadsheetApp.flush();
 
-      // Step 3: Verify existence in both sheets
+      // Step 3: Verify existence in both sheets and field formatting
       let incomeVals = incomeSheet.getDataRange().getValues();
       let saleFound = false;
       for (let r = 1; r < incomeVals.length; r++) {
@@ -1706,9 +1706,17 @@ function doGet(e) {
 
       let chargesVals = chargesSheet.getDataRange().getValues();
       let chargeFound = false;
+      let chargeCommentsMatch = false;
+      let chargeAccountMatch = false;
       for (let r = 1; r < chargesVals.length; r++) {
         if (String(chargesVals[r][0] || '').trim() === testChargeTitle) {
           chargeFound = true;
+          if (String(chargesVals[r][3] || '').trim() === "Acc ••2562, Card ••7180 - Test charge notes") {
+            chargeCommentsMatch = true;
+          }
+          if (String(chargesVals[r][4] || '').trim() === "••2562") {
+            chargeAccountMatch = true;
+          }
           break;
         }
       }
@@ -1746,7 +1754,7 @@ function doGet(e) {
         if (String(chargesVals[r][0] || '').trim() === testChargeTitle) residualCount++;
       }
 
-      const allSafeguardsMet = (saleFound && chargeFound && saleCleaned && chargeCleaned && residualCount === 0);
+      const allSafeguardsMet = (saleFound && chargeFound && chargeCommentsMatch && chargeAccountMatch && saleCleaned && chargeCleaned && residualCount === 0);
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -1755,6 +1763,8 @@ function doGet(e) {
         saleRowIdx: saleRowIdx,
         chargeFound: chargeFound,
         chargeRowIdx: chargeRowIdx,
+        chargeCommentsMatch: chargeCommentsMatch,
+        chargeAccountMatch: chargeAccountMatch,
         cleanedUp: saleCleaned && chargeCleaned,
         residualArtifacts: residualCount,
         allSafeguardsMet: allSafeguardsMet
