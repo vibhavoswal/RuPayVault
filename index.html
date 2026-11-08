@@ -4073,19 +4073,38 @@
       return UniversalMutationJournal.isTombstoned(cardNum);
     }
 
-    // Revalidation Register Delegation (delegates to UniversalMutationJournal)
+    // Revalidation Register (Persistent store with zero TTL in localStorage)
     function getRevalidatedBids() {
-      return UniversalMutationJournal.getAll()
-        .filter(e => e.action === 'STAGING_REVALIDATE')
-        .map(e => e.primaryKey);
+      try {
+        const raw = localStorage.getItem('rupay_revalidated_bids') || '[]';
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr.map(b => String(b || '').trim().toUpperCase()).filter(Boolean) : [];
+      } catch (_) {
+        return [];
+      }
     }
 
     function addRevalidatedBid(bid) {
-      UniversalMutationJournal.recordRevalidate(bid);
+      if (!bid) return;
+      const clean = String(bid).trim().toUpperCase();
+      try {
+        const list = getRevalidatedBids();
+        if (!list.includes(clean)) {
+          list.push(clean);
+          localStorage.setItem('rupay_revalidated_bids', JSON.stringify(list));
+        }
+      } catch (_) {}
+      UniversalMutationJournal.recordRevalidate(clean);
     }
 
     function removeRevalidatedBid(bid) {
-      UniversalMutationJournal.removeRevalidate(bid);
+      if (!bid) return;
+      const clean = String(bid).trim().toUpperCase();
+      try {
+        const list = getRevalidatedBids().filter(b => b !== clean);
+        localStorage.setItem('rupay_revalidated_bids', JSON.stringify(list));
+      } catch (_) {}
+      UniversalMutationJournal.removeRevalidate(clean);
     }
 
     function updateSyncPulseIndicator(isSaving) {
@@ -4162,6 +4181,9 @@
               if (data.error.includes('Server is processing another request') && attempt < maxAttempts) {
                 await new Promise(r => setTimeout(r, 1200));
                 continue;
+              }
+              if (options.rollback && typeof options.rollback === 'function') {
+                try { options.rollback(); } catch (rbErr) {}
               }
               if (!options.silent) {
                 showToast(data.error);
@@ -4257,9 +4279,10 @@
           state.accounts = decryptedAccounts;
         }
         if (decryptedStaging && decryptedStaging.length) {
-          const revalSet = new Set(getRevalidatedBids());
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
           state.staging = decryptedStaging.map(s => {
-            if (revalSet.has(s.bookingId)) {
+            const cleanBid = String(s.bookingId || s.id || '').trim().toUpperCase();
+            if (revalSet.has(cleanBid)) {
               const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code);
               if (!isRealCode) {
                 s.status = 'PENDING';
@@ -4773,8 +4796,8 @@
 
       // Find in state.staging
       const item = (state.staging || []).find(s =>
-        (targetBid && s.bookingId === targetBid) ||
-        (targetId && (s.id === targetId || s.bookingId === targetId))
+        (targetBid && String(s.bookingId || '').trim().toUpperCase() === targetBid.toUpperCase()) ||
+        (targetId && (s.id === targetId || String(s.bookingId || '').trim().toUpperCase() === targetId.toUpperCase()))
       );
 
       if (!item) {
@@ -4783,6 +4806,10 @@
       }
 
       const activeBid = item.bookingId || targetBid || targetId;
+      const prevStatus = item.status;
+      const prevCode = item.code;
+      const prevPayUrl = item.payUrl;
+      const prevIsRevalidation = item.isRevalidation;
 
       // 1. Optimistic Local State Update:
       // Change status & code to PENDING, remove revalidation flags and payment URL
@@ -4807,7 +4834,21 @@
       try {
         await apiFetch('MARK_REVALIDATED', {
           bookingId: activeBid
-        }, { silent: true });
+        }, {
+          silent: true,
+          rollback: () => {
+            // SG4 Rollback Handler: revert local state and remove from persistent register
+            removeRevalidatedBid(activeBid);
+            if (targetBid) removeRevalidatedBid(targetBid);
+            item.status = prevStatus || 'PENDING_REVALIDATION';
+            item.code = prevCode || 'Pending revalidation';
+            item.payUrl = prevPayUrl || '';
+            item.isRevalidation = prevIsRevalidation !== undefined ? prevIsRevalidation : true;
+            saveEncryptedStaging(state.staging);
+            renderVault();
+            showToast('Failed to mark revalidated on server. Rolled back.');
+          }
+        });
       } catch (err) {
         console.warn('Background sync error (MARK_REVALIDATED):', err);
       }
@@ -6820,7 +6861,7 @@
         }
 
         if (data.staging && Array.isArray(data.staging)) {
-          const revalSet = new Set(getRevalidatedBids());
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
           const inFlightTags = MutationJournal.getTags();
           state.staging = data.staging
             .filter(s => !isIdentifierQuarantined(s.bookingId) && !isIdentifierQuarantined(s.code))
@@ -6830,12 +6871,15 @@
               let code = s.code || 'PENDING';
               let payUrl = s.payUrl || '';
 
+              const cleanBid = String(bId || '').trim().toUpperCase();
+              const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
+
               // If marked revalidated locally, keep it sticky as PENDING until real code arrives
-              if (revalSet.has(bId) || (s.bookingId && revalSet.has(s.bookingId))) {
+              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid))) {
                 const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code);
                 if (isRealCode) {
-                  removeRevalidatedBid(bId);
-                  if (s.bookingId) removeRevalidatedBid(s.bookingId);
+                  removeRevalidatedBid(cleanBid);
+                  if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
                 } else {
                   status = 'PENDING';
                   code = 'PENDING';
