@@ -152,6 +152,21 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 7 (Context Preservation)**: Retains active filter and selection context.
 - **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_REVAL_DUMMY` on live sheet and safely purged.
 
+#### Operation: `RECORD_INCOME_ENTRY` (Recording Sales into "RuPay Income" and Charges into "RuPay Charges")
+- **Safeguard 1 (Mutation Journal)**: Record optimistic transaction entry in `state.income.ledger` with unique ID (`inc-${Date.now()}`), preventing loss during background syncs.
+- **Safeguard 2 (Quarantine Shield)**: N/A (constructive ledger append). Explicitly listed in `nonQuarantineActions` so newly recorded entries are never suppressed by tombstone filters.
+- **Safeguard 3 (Optimistic UI & Feedback)**: Optimistically insert into `state.income.ledger` in date-sorted order (newest first in UI feed), recalculate KPIs (Gross, Charges, Net), close modal, and display instant toast (`Logged [Title] sale (+Rs.X) in RuPay Income!` or `Deducted [Title] (-Rs.X) in RuPay Charges!`).
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` closure supplied to `apiFetch('RECORD_INCOME_ENTRY', ...)` that filters out `newEntry.id` from `state.income.ledger`, re-renders the tracker, and alerts the user if the server or network fails.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background reads until write completes.
+- **Safeguard 6 (Backend Transactional Integrity & Date-Sorted Insertion)**:
+  - Guarded by top-level `LockService.getScriptLock().tryLock(30000)`.
+  - Routes sales (`price > 0`) to `"RuPay Income"` and card charges (`price < 0`) to `"RuPay Charges"`. Both tabs are registered under `SYSTEM_SHEET_NAMES`.
+  - Automatically initializes `"RuPay Charges"` tab with bold headers and frozen top row if missing.
+  - Scans target sheet's date column and inserts new row at the exact chronological ascending position based on transaction date (before the first row with a later date, and before `TOTAL` row).
+  - Maintains `TOTAL` summary row dynamically on every write.
+- **Safeguard 7 (Context Preservation)**: Preserves active year filter (`all`, `2026`, `2025`, `2024`), type filter (`all`, `income`, `charge`), and active search query.
+- **Mandatory Verification**: Tested live on Google Sheets via `VERIFY_SAFEGUARD_INCOME_DUMMY` across both sheets with sorted insertion verified and 0 residual artifacts.
+
 ### Mandatory Verification via Dummy Row Testing
 Whenever adding a new operation or feature change:
 1. **Insert a tagged dummy row** into the relevant Google Sheet tab (e.g. `TEST-DUMMY-SAFEGUARD` / card `6521999900000001`).

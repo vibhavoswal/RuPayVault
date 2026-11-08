@@ -2847,7 +2847,7 @@
       <div class="flex items-start justify-between pb-1 border-b border-[var(--theme-border)]">
         <div>
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 uppercase tracking-wider">RuPay Income</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 uppercase tracking-wider">RuPay Charges</span>
             <span class="text-xs font-bold text-[var(--theme-text-muted)]">Record a Charge</span>
           </div>
           <h3 class="text-sm font-extrabold text-[var(--theme-text-main)] mt-0.5">Card Fee / Expense Entry</h3>
@@ -5988,6 +5988,22 @@
       return `${day}/${month}/${year}`;
     }
 
+    function parseIncomeDateMs(dateStr) {
+      if (!dateStr) return 0;
+      if (dateStr instanceof Date) return dateStr.getTime();
+      const clean = String(dateStr).replace(/^'/, '').trim();
+      const parts = clean.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        let y = parseInt(parts[2], 10);
+        if (y < 100) y = 2000 + y;
+        return new Date(y, m - 1, d).getTime();
+      }
+      const parsed = Date.parse(clean);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
     function setIncomeYearFilter(year) {
       state.incomeYearFilter = year;
       ['all', '2026', '2025', '2024'].forEach(y => {
@@ -6243,8 +6259,20 @@
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
-      // Optimistic Update
-      state.income.ledger.unshift(newEntry);
+      // Optimistic Date-Sorted Insertion (Newest first for UI ledger feed)
+      const newDateMs = parseIncomeDateMs(date);
+      let inserted = false;
+      for (let i = 0; i < state.income.ledger.length; i++) {
+        const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
+        if (newDateMs >= itemDateMs) {
+          state.income.ledger.splice(i, 0, newEntry);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        state.income.ledger.push(newEntry);
+      }
       closeRecordSaleModal();
       renderIncomeTracker();
       showToast(`Logged ${title} sale (+₹${price}) in RuPay Income!`);
@@ -6262,7 +6290,8 @@
           date: date,
           price: price,
           comments: comments,
-          account: ''
+          account: '',
+          type: 'income'
         }, { rollback });
       } catch (err) {
         console.error('Error recording income sale:', err);
@@ -6347,11 +6376,23 @@
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
-      // Optimistic Update
-      state.income.ledger.unshift(newEntry);
+      // Optimistic Date-Sorted Insertion (Newest first for UI ledger feed)
+      const newDateMs = parseIncomeDateMs(date);
+      let inserted = false;
+      for (let i = 0; i < state.income.ledger.length; i++) {
+        const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
+        if (newDateMs >= itemDateMs) {
+          state.income.ledger.splice(i, 0, newEntry);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        state.income.ledger.push(newEntry);
+      }
       closeRecordChargeModal();
       renderIncomeTracker();
-      showToast(`Deducted ${title} (-₹${amount}) in RuPay Income!`);
+      showToast(`Deducted ${title} (-₹${amount}) in RuPay Charges!`);
 
       // Rollback function in case of error
       const rollback = () => {
@@ -6366,7 +6407,8 @@
           date: date,
           price: chargePrice,
           comments: comments,
-          account: ''
+          account: '',
+          type: 'charge'
         }, { rollback });
       } catch (err) {
         console.error('Error recording card charge:', err);
