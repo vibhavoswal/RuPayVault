@@ -1930,6 +1930,173 @@
     .digit-pop-3 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.24s both; }
     .digit-pop-4 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both; }
 
+    /* ======================================================== */
+    /* 4 DIVERSE FRONTEND DESIGN MODES (SWITCHABLE IN DRAWER)   */
+    /* Mode 1: Default (Existing Native Rules - Unchanged)     */
+    /* Mode 2: Cupertino iOS (Apple Design & HIG Glassmorphism) */
+    /* Mode 3: Editorial Minimalist (Atelier & Anti-Slop Taste) */
+    /* Mode 4: Executive Pro (Fintech Dashboard & Tailwind DS)  */
+    /* ======================================================== */
+
+    /* --- MODE 2: CUPERTINO iOS (Apple HIG & Glassmorphism) --- */
+    html[data-design-mode="cupertino"] {
+      --theme-card-bg: rgba(28, 28, 30, 0.65);
+      --theme-card-subtle: rgba(44, 44, 46, 0.45);
+      --theme-border: rgba(255, 255, 255, 0.14);
+      --drawer-bg: rgba(28, 28, 30, 0.85);
+      --drawer-border: rgba(255, 255, 255, 0.15);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
+    }
+    html.light[data-design-mode="cupertino"] {
+      --theme-card-bg: rgba(255, 255, 255, 0.75);
+      --theme-card-subtle: rgba(242, 242, 247, 0.7);
+      --theme-border: rgba(0, 0, 0, 0.08);
+      --drawer-bg: rgba(245, 245, 247, 0.88);
+      --drawer-border: rgba(0, 0, 0, 0.1);
+    }
+    html[data-design-mode="cupertino"] #mobile-app-container {
+      background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+                  radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+                  #000000 !important;
+    }
+    html.light[data-design-mode="cupertino"] #mobile-app-container {
+      background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 60%),
+                  #f2f2f7 !important;
+    }
+    html[data-design-mode="cupertino"] .rounded-2xl,
+    html[data-design-mode="cupertino"] .rounded-xl {
+      backdrop-filter: blur(24px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25) !important;
+    }
+    html[data-design-mode="cupertino"] #unified-floating-dock {
+      backdrop-filter: blur(32px) saturate(200%) !important;
+      -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+      background: rgba(28, 28, 30, 0.75) !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.5) !important;
+      border-radius: 9999px !important;
+    }
+    html.light[data-design-mode="cupertino"] #unified-floating-dock {
+      background: rgba(255, 255, 255, 0.82) !important;
+      border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      box-shadow: 0 14px 35px -4px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* --- MODE 3: EDITORIAL MINIMALIST (Atelier Anti-Slop & Bespoke Taste) --- */
+    html[data-design-mode="editorial"] {
+      --theme-card-bg: #0d0d0d;
+      --theme-card-subtle: #141414;
+      --theme-border: #222222;
+      --theme-text-main: #f5f5f4;
+      --theme-text-sub: #a8a29e;
+      --theme-text-muted: #78716c;
+      --drawer-bg: #0a0a0a;
+      --drawer-border: #1f1f1f;
+      font-family: "Inter", -apple-system, sans-serif !important;
+    }
+    html.light[data-design-mode="editorial"] {
+      --theme-card-bg: #ffffff;
+      --theme-card-subtle: #f7f7f5;
+      --theme-border: #e7e5e4;
+      --theme-text-main: #1c1917;
+      --theme-text-sub: #78716c;
+      --theme-text-muted: #a8a29e;
+      --drawer-bg: #fafaf9;
+      --drawer-border: #e7e5e4;
+    }
+    html[data-design-mode="editorial"] #mobile-app-container {
+      background-color: #050505 !important;
+    }
+    html.light[data-design-mode="editorial"] #mobile-app-container {
+      background-color: #fcfbf9 !important;
+    }
+    html[data-design-mode="editorial"] h1,
+    html[data-design-mode="editorial"] h2,
+    html[data-design-mode="editorial"] h3,
+    html[data-design-mode="editorial"] .font-extrabold,
+    html[data-design-mode="editorial"] #in-kpi-net-income,
+    html[data-design-mode="editorial"] #cm-total-cards-metric {
+      font-family: "Playfair Display", "Georgia", "Times New Roman", serif !important;
+      letter-spacing: -0.02em !important;
+    }
+    html[data-design-mode="editorial"] .rounded-2xl,
+    html[data-design-mode="editorial"] .rounded-xl,
+    html[data-design-mode="editorial"] .rounded-3xl {
+      border-radius: 6px !important;
+      border-width: 1px !important;
+      box-shadow: none !important;
+    }
+    html[data-design-mode="editorial"] #unified-floating-dock {
+      border-radius: 8px !important;
+      background: #0f0f0f !important;
+      border: 1px solid #262626 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    }
+    html.light[data-design-mode="editorial"] #unified-floating-dock {
+      background: #ffffff !important;
+      border: 1px solid #d6d3d1 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* --- MODE 4: EXECUTIVE PRO (Fintech Data Dashboard & Tailwind DS) --- */
+    html[data-design-mode="executive"] {
+      --theme-card-bg: #0b111e;
+      --theme-card-subtle: #111827;
+      --theme-border: #1e293b;
+      --theme-text-main: #f8fafc;
+      --theme-text-sub: #94a3b8;
+      --theme-text-muted: #64748b;
+      --drawer-bg: #070d18;
+      --drawer-border: #1e293b;
+      font-family: "Inter", -apple-system, sans-serif !important;
+    }
+    html.light[data-design-mode="executive"] {
+      --theme-card-bg: #ffffff;
+      --theme-card-subtle: #f8fafc;
+      --theme-border: #cbd5e1;
+      --theme-text-main: #0f172a;
+      --theme-text-sub: #475569;
+      --theme-text-muted: #64748b;
+      --drawer-bg: #f8fafc;
+      --drawer-border: #cbd5e1;
+    }
+    html[data-design-mode="executive"] #mobile-app-container {
+      background-color: #030712 !important;
+    }
+    html.light[data-design-mode="executive"] #mobile-app-container {
+      background-color: #f1f5f9 !important;
+    }
+    html[data-design-mode="executive"] .font-mono,
+    html[data-design-mode="executive"] #in-kpi-net-income,
+    html[data-design-mode="editorial"] .tabular-nums {
+      font-family: "JetBrains Mono", "SF Mono", Menlo, monospace !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+    html[data-design-mode="executive"] .rounded-2xl,
+    html[data-design-mode="executive"] .rounded-xl {
+      border-radius: 10px !important;
+      border: 1px solid #1e293b !important;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+    }
+    html.light[data-design-mode="executive"] .rounded-2xl,
+    html.light[data-design-mode="executive"] .rounded-xl {
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+    }
+    html[data-design-mode="executive"] #unified-floating-dock {
+      border-radius: 12px !important;
+      background: #0b111e !important;
+      border: 1px solid #1e293b !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+    html.light[data-design-mode="executive"] #unified-floating-dock {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+    }
+
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
@@ -3135,6 +3302,51 @@
                 <span>Light</span>
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- Section: Frontend Design View Switcher (End-to-End Switchable) -->
+        <div>
+          <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5 flex items-center justify-between">
+            <span>Frontend Design View</span>
+            <span id="drawer-design-active-label" class="text-[9px] font-mono font-bold text-emerald-400">Default</span>
+          </div>
+          <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] p-1.5 shadow-sm space-y-1">
+            <!-- 1. Default Mode (Native Unchanged) -->
+            <button onclick="setDesignMode('default')" id="btn-design-default" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 spring-press">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Default</span>
+              </div>
+              <span class="text-[10px] opacity-75 font-normal">Original</span>
+            </button>
+
+            <!-- 2. Cupertino iOS (Apple HIG & Glassmorphism) -->
+            <button onclick="setDesignMode('cupertino')" id="btn-design-cupertino" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                <span>Cupertino iOS</span>
+              </div>
+              <span class="text-[10px] opacity-75 font-normal">Apple Glass</span>
+            </button>
+
+            <!-- 3. Editorial Minimalist (Atelier Anti-Slop) -->
+            <button onclick="setDesignMode('editorial')" id="btn-design-editorial" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Editorial Minimalist</span>
+              </div>
+              <span class="text-[10px] opacity-75 font-normal">Atelier</span>
+            </button>
+
+            <!-- 4. Executive Pro (Fintech Dashboard & Tailwind DS) -->
+            <button onclick="setDesignMode('executive')" id="btn-design-executive" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span>Executive Pro</span>
+              </div>
+              <span class="text-[10px] opacity-75 font-normal">Fintech</span>
+            </button>
           </div>
         </div>
 
@@ -6793,6 +7005,79 @@
       setThemeMode(!state.isDark);
     }
 
+    /* --- FRONTEND DESIGN SYSTEM SWITCHER --- */
+    function setDesignMode(mode) {
+      const validModes = ['default', 'cupertino', 'editorial', 'executive'];
+      const targetMode = validModes.includes(mode) ? mode : 'default';
+
+      if (targetMode === 'default') {
+        document.documentElement.removeAttribute('data-design-mode');
+      } else {
+        document.documentElement.setAttribute('data-design-mode', targetMode);
+      }
+
+      try {
+        localStorage.setItem('rupay_design_mode', targetMode);
+      } catch(e) {}
+
+      updateDesignModeDrawerUI(targetMode);
+
+      const labels = {
+        'default': 'Default',
+        'cupertino': 'Cupertino iOS',
+        'editorial': 'Editorial Minimalist',
+        'executive': 'Executive Pro'
+      };
+
+      showToast(`Switched interface to ${labels[targetMode]}!`);
+    }
+
+    function updateDesignModeDrawerUI(activeMode) {
+      const mode = activeMode || (document.documentElement.getAttribute('data-design-mode') || 'default');
+      const activeLabel = document.getElementById('drawer-design-active-label');
+      if (activeLabel) {
+        const labels = {
+          'default': 'Default',
+          'cupertino': 'Cupertino iOS',
+          'editorial': 'Editorial',
+          'executive': 'Executive Pro'
+        };
+        activeLabel.textContent = labels[mode] || 'Default';
+      }
+
+      ['default', 'cupertino', 'editorial', 'executive'].forEach(m => {
+        const btn = document.getElementById(`btn-design-${m}`);
+        if (!btn) return;
+        if (m === mode) {
+          btn.className = 'w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 spring-press';
+        } else {
+          btn.className = 'w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press';
+        }
+      });
+    }
+
+    function initDesignMode() {
+      let saved = 'default';
+      try {
+        saved = localStorage.getItem('rupay_design_mode') || 'default';
+      } catch(e) {}
+      const validModes = ['default', 'cupertino', 'editorial', 'executive'];
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlMode = urlParams.get('design_mode');
+        if (urlMode && validModes.includes(urlMode.toLowerCase())) {
+          saved = urlMode.toLowerCase();
+        }
+      } catch(e) {}
+      const targetMode = validModes.includes(saved) ? saved : 'default';
+      if (targetMode === 'default') {
+        document.documentElement.removeAttribute('data-design-mode');
+      } else {
+        document.documentElement.setAttribute('data-design-mode', targetMode);
+      }
+      updateDesignModeDrawerUI(targetMode);
+    }
+
     /* --- NAVIGATION DRAWER (VARIATION 1: iOS NATIVE GROUPED INSET) --- */
     function openNavDrawer() {
       const backdrop = document.getElementById('nav-drawer-backdrop');
@@ -6806,6 +7091,7 @@
       }
       updateDrawerSwitcherUI();
       updateDrawerCardCount();
+      updateDesignModeDrawerUI();
 
       backdrop.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -13088,6 +13374,11 @@
         } else {
           setThemeMode(true);
         }
+      } catch(e) {}
+
+      // 0b. Restore cached Frontend Design System Mode
+      try {
+        initDesignMode();
       } catch(e) {}
 
       // 1. Restore cached Google Sheet URL (defaulting to exact RuPay Sheet URL)
