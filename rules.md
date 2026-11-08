@@ -136,7 +136,7 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 6 (Backend Transactional Integrity)**: Locate row in `Redeemed`, copy back to original brand tab with `ACTIVE` status, and safely delete row in descending index order under script lock. Self-healing check verifies if row was already restored.
 - **Safeguard 7 (Context Preservation)**: Restores card into matching brand carousel view.
 
-#### Operation: `MARK_REVALIDATED` (Transitioning Staged Voucher to Revalidated / Awaiting Code)
+#### Operation: `MARK_REVALIDATED` & `SWITCH_ALL_REVALIDATED_TO_PENDING` (Transitioning Staged Voucher to Revalidated / Awaiting Code)
 - **Safeguard 1 (Mutation Journal)**: Dedicated persistent revalidation register (`rupay_revalidated_bids`) with zero time-based expiration. Remains active until the real delivered coupon code arrives. In addition, dual-recorded in `UniversalMutationJournal` for short-term in-flight sync safety.
 - **Safeguard 2 (Quarantine Shield)**: N/A (constructive in-place state transition). Explicitly excluded from destructive quarantine so it is never suppressed.
 - **Safeguard 3 (Optimistic UI & Feedback)**: Optimistically update voucher to red `card-pending` status ("Waiting for voucher code"), clear payment link button, and close detail sheet immediately.
@@ -144,7 +144,7 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background syncs.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
   - Guarded by top-level `LockService.getScriptLock().tryLock(30000)`.
-  - In `MARK_REVALIDATED`: updates `New` tab (Col 2: `'PENDING'`, Col 8: `'PENDING'`, Col 12: `''`).
+  - In `MARK_REVALIDATED` and batch transition `SWITCH_ALL_REVALIDATED_TO_PENDING`: updates `New` tab (Col 2: `'PENDING'`, Col 8: `'PENDING'`, Col 12: `''`).
   - Stores revalidated booking ID in `PropertiesService.getScriptProperties()` under `REVALIDATED_BOOKINGS`.
   - In `recordPendingRevalidation()`: check `isBookingRevalidated(targetBid)` and `(currentStatus === 'PENDING' && currentCode === 'PENDING')` before modifying rows; never clobbers a user-revalidated voucher back to `PENDING_REVALIDATION`.
   - When real coupon code arrives in `processRupayEmails`: purge booking ID from `REVALIDATED_BOOKINGS`.
