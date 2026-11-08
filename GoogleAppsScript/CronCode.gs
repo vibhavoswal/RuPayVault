@@ -167,6 +167,41 @@ function validateAuth(providedToken) {
   return { valid: true, user: email, expiry: expiry };
 }
 
+// --- PERSISTENT USER-REVALIDATED BOOKINGS STORE (SAFEGUARD SG6) ---
+function getRevalidatedBookingsFromProperties() {
+  try {
+    const raw = PropertiesService.getScriptProperties().getProperty("REVALIDATED_BOOKINGS") || "[]";
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.map(b => String(b || '').trim().toUpperCase()).filter(Boolean) : []);
+  } catch(e) {
+    return new Set();
+  }
+}
+
+function addRevalidatedBookingToProperties(bookingId) {
+  if (!bookingId) return;
+  try {
+    const set = getRevalidatedBookingsFromProperties();
+    set.add(String(bookingId).trim().toUpperCase());
+    PropertiesService.getScriptProperties().setProperty("REVALIDATED_BOOKINGS", JSON.stringify(Array.from(set)));
+  } catch(e) {}
+}
+
+function removeRevalidatedBookingFromProperties(bookingId) {
+  if (!bookingId) return;
+  try {
+    const set = getRevalidatedBookingsFromProperties();
+    set.delete(String(bookingId).trim().toUpperCase());
+    PropertiesService.getScriptProperties().setProperty("REVALIDATED_BOOKINGS", JSON.stringify(Array.from(set)));
+  } catch(e) {}
+}
+
+function isBookingRevalidated(bookingId) {
+  if (!bookingId) return false;
+  const set = getRevalidatedBookingsFromProperties();
+  return set.has(String(bookingId).trim().toUpperCase());
+}
+
 /**
  * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
  * Two-Stage RUPS Lifecycle:
@@ -388,7 +423,7 @@ function consolidateRogueTabs(ss) {
     SpreadsheetApp.flush();
   }
 
-  // Auto-heal corrupted revalidations where code was erroneously set to "/service if the" or matching known booking IDs
+  // Auto-heal corrupted revalidations where code was erroneously set to "/service if the"
   try {
     const nSheet = ss.getSheetByName("New");
     if (nSheet) {
@@ -396,7 +431,8 @@ function consolidateRogueTabs(ss) {
       for (let i = 1; i < nRows.length; i++) {
         const rowCode = String(nRows[i][1] || '').trim();
         const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
-        if (rowCode.toLowerCase().startsWith("/service") || rowBid === "RUPS-34AB2FE3" || rowBid === "RUPS-5ACE0C37" || rowBid === "RUPS-B3366AE3") {
+        if (isBookingRevalidated(rowBid)) continue; // Safeguard: Never overwrite user-revalidated vouchers!
+        if (rowCode.toLowerCase().startsWith("/service")) {
           nSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
           nSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
         }
@@ -507,6 +543,8 @@ function processRupayEmails() {
             account: parsed.account,
             receivedDate: parsed.receivedDate
           });
+          // Clean up revalidated register property upon delivery
+          removeRevalidatedBookingFromProperties(parsed.bookingId);
         }
 
         // Mark processed email message as Read in Gmail (does not prevent future reprocessing)
@@ -674,6 +712,12 @@ function recordPendingRevalidation(ss, data) {
   // Determine canonical target brand (Col 11)
   const canonicalBrand = extractBrand(data.brand, "");
   const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+  const targetBid = String(data.bookingId || '').trim().toUpperCase();
+
+  // Guard 0: If user has explicitly marked this booking as revalidated, NEVER revert to PENDING_REVALIDATION!
+  if (isBookingRevalidated(targetBid)) {
+    return;
+  }
 
   // Hardening against duplicate re-staging: Check if Booking ID already exists in Brand tabs!
   const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
@@ -685,12 +729,19 @@ function recordPendingRevalidation(ss, data) {
   // 1. Search "New" tab by Booking ID
   const newRows = newSheet.getDataRange().getValues();
   for (let i = 1; i < newRows.length; i++) {
-    if (String(newRows[i][0]).trim() === data.bookingId) {
+    const rowBid = String(newRows[i][0] || '').trim().toUpperCase();
+    if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid))) {
       const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
       const currentCode = String(newRows[i][1] || '').trim();
+      const currentPayUrl = String(newRows[i][11] || '').trim();
 
-      // Guard: If already ACTIVE with a real delivered code, do not revert!
+      // Guard 1: If already ACTIVE with a real delivered code, do not revert!
       if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation") {
+        return;
+      }
+
+      // Guard 2: If user already marked it as PENDING (revalidated and waiting for code), do not revert!
+      if (currentStatus === "PENDING" && (currentCode === "PENDING" || !currentPayUrl)) {
         return;
       }
 
@@ -1259,6 +1310,137 @@ function doGet(e) {
     }
   }
 
+  // Safeguards Audit Verification Endpoint for MARK_REVALIDATED
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_REVAL_DUMMY") {
+    try {
+      const ss = getSpreadsheet();
+      let nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"New" sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const testBid = "RUPS-TEST-REVAL-999";
+      const nowStr = formatISTTimestamp(new Date());
+      const todayStr = formatISTDate(new Date());
+
+      // Step 1: Insert dummy row in "New" sheet in PENDING_REVALIDATION state
+      nSheet.appendRow([
+        testBid,
+        "'Pending revalidation",
+        "Amazon Prime",
+        500,
+        todayStr,
+        "test@domain.com",
+        "TestCard",
+        "PENDING_REVALIDATION",
+        nowStr,
+        true,
+        "Amazon Prime",
+        "https://dummy.pay.link/reval"
+      ]);
+      SpreadsheetApp.flush();
+
+      // Step 2: Verify dummy row exists in "New" sheet
+      let rows = nSheet.getDataRange().getValues();
+      let foundRow = -1;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+
+      // Step 3: Simulate MARK_REVALIDATED operation
+      let markUpdated = false;
+      if (foundRow > 0) {
+        nSheet.getRange(foundRow, 2).setValue('PENDING');
+        nSheet.getRange(foundRow, 8).setValue('PENDING');
+        if (rows[0].length >= 12) {
+          nSheet.getRange(foundRow, 12).setValue('');
+        }
+        addRevalidatedBookingToProperties(testBid);
+        markUpdated = true;
+        SpreadsheetApp.flush();
+      }
+
+      const isRegisteredInProperties = isBookingRevalidated(testBid);
+
+      // Step 4: Simulate processRupayEmails / recordPendingRevalidation background cron execution
+      // (This is the critical test: background cron must NEVER revert user-revalidated vouchers!)
+      recordPendingRevalidation(ss, {
+        bookingId: testBid,
+        brand: "Amazon Prime",
+        amount: 500,
+        account: "test@domain.com",
+        receivedDate: todayStr,
+        paymentUrl: "https://rogue.pay.link/overwrite"
+      });
+      SpreadsheetApp.flush();
+
+      // Check whether row remained sticky PENDING
+      rows = nSheet.getDataRange().getValues();
+      let codeAfterCron = "";
+      let statusAfterCron = "";
+      let payUrlAfterCron = "";
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
+          codeAfterCron = String(rows[i][1] || '').trim();
+          statusAfterCron = String(rows[i][7] || '').trim().toUpperCase();
+          payUrlAfterCron = String(rows[i][11] || '').trim();
+          break;
+        }
+      }
+
+      const cronProtected = (codeAfterCron === "PENDING" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
+
+      // Step 5: Clean up / purge dummy row immediately
+      let cleanedUp = false;
+      rows = nSheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) {
+        if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
+          nSheet.deleteRow(i + 1);
+          cleanedUp = true;
+        }
+      }
+      removeRevalidatedBookingFromProperties(testBid);
+      SpreadsheetApp.flush();
+
+      // Step 6: Verify zero residual artifacts remain
+      rows = nSheet.getDataRange().getValues();
+      let residualCount = 0;
+      for (let i = 1; i < rows.length; i++) {
+        if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
+          residualCount++;
+        }
+      }
+      const isStillInProperties = isBookingRevalidated(testBid);
+
+      const allSafeguardsMet = (
+        foundRow > 0 &&
+        markUpdated &&
+        isRegisteredInProperties &&
+        cronProtected &&
+        cleanedUp &&
+        residualCount === 0 &&
+        !isStillInProperties
+      );
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_REVAL_DUMMY",
+        insertedAndFound: foundRow > 0,
+        markUpdated: markUpdated,
+        isRegisteredInProperties: isRegisteredInProperties,
+        cronProtected: cronProtected,
+        cleanedUp: cleanedUp,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: allSafeguardsMet
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (rErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: rErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Seed / Initialize Misc Tab with initial vouchers
   if (e && e.parameter && e.parameter.action === "SEED_INITIAL_MISC_VOUCHERS") {
     try {
@@ -1517,12 +1699,13 @@ function doGet(e) {
     }
   }
 
-  // Inspection handler for "RuPay Income" tab
+  // Inspection handler for "RuPay Income" and other tabs
   if (e && e.parameter && e.parameter.action === "INSPECT_RUPAY_INCOME") {
     try {
       const ss = getSpreadsheet();
-      const sheet = ss.getSheetByName("RuPay Income");
-      if (!sheet) return ContentService.createTextOutput(JSON.stringify({ error: "Sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      const targetSheetName = (e.parameter && e.parameter.sheet) ? String(e.parameter.sheet).trim() : "RuPay Income";
+      const sheet = ss.getSheetByName(targetSheetName);
+      if (!sheet) return ContentService.createTextOutput(JSON.stringify({ error: `Sheet "${targetSheetName}" not found` })).setMimeType(ContentService.MimeType.JSON);
       
       const lastRow = sheet.getLastRow();
       const lastCol = sheet.getLastColumn();
@@ -2322,6 +2505,7 @@ function doPost(e) {
               newSheet.getRange(r + 1, 12).setValue('');
             }
             updated = true;
+            addRevalidatedBookingToProperties(targetBid);
             break;
           }
         }
