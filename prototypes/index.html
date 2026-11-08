@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>RuPayVault - Interactive Design System Prototypes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .spring-press:active { transform: scale(0.97); transition: transform 0.1s ease-out; }
+  </style>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-300">
+
+  <!-- Header -->
+  <header class="border-b border-neutral-800 bg-neutral-900/60 backdrop-blur-xl sticky top-0 z-30 px-4 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-tight">RuPayVault Design Studio</h1>
+        <p class="text-[10px] text-neutral-400 font-mono">Interactive Design System Prototypes</p>
+      </div>
+    </div>
+    <a href="../index.html" class="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-xs font-bold text-neutral-200 spring-press flex items-center gap-1.5">
+      <span>Open App</span>
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+  </header>
+
+  <!-- Hero Banner -->
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-8 flex-1 w-full">
+    <div class="space-y-2 text-center max-w-xl mx-auto">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 16h2v2h-2zm0-6h2v4h-2z"/></svg>
+        <span>Agent Skills Ecosystem</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">4 Distinctive Frontend Experiences</h2>
+      <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+        Each prototype leverages specialized design skills to present all four workspaces (Vouchers, Cards, Banks, and Income) through a curated visual philosophy—with 100% end-to-end functionality preserved.
+      </p>
+    </div>
+
+    <!-- 4 Prototype Showcase Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Prototype 1: Default Native -->
+      <div class="rounded-2xl bg-neutral-900 border border-neutral-800 p-5 space-y-4 hover:border-emerald-500/50 transition-colors shadow-sm flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">Production</span>
+            <span class="text-[10px] text-neutral-500 font-mono">Current Base</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">1. Default View</h3>
+            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
+              The existing RuPayVault production layout: high-contrast dark palette, emerald benefit accents, inline card management, and integrated Google Sheets sync.
+            </p>
+          </div>
+          <div class="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 space-y-1">
+            <div class="flex items-center justify-between">
+              <span>Workspaces supported:</span>
+              <span class="font-bold text-neutral-300">Vouchers, Cards, Banks, Income</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Design Foundation:</span>
+              <span class="font-mono text-emerald-400">Native Core</span>
+            </div>
+          </div>
+        </div>
+        <div class="pt-2 flex items-center gap-2">
+          <a href="../index.html?design_mode=default" class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center spring-press shadow-sm flex items-center justify-center gap-1.5">
+            <span>Launch Default</span>
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Prototype 2: Cupertino iOS -->
+      <div class="rounded-2xl bg-neutral-900/70 border border-blue-500/30 p-5 space-y-4 hover:border-blue-500/60 transition-colors shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="space-y-3 relative">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 uppercase tracking-wider">Apple HIG</span>
+            <span class="text-[10px] text-neutral-500 font-mono">apple-design</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">2. Cupertino iOS View</h3>
+            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
+              Inspired by Apple's WWDC Human Interface Guidelines: continuous curvature surfaces, translucent glass materials (`backdrop-blur-2xl`), SF Pro typography, and momentum spring physics.
+            </p>
+          </div>
+          <div class="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 space-y-1">
+            <div class="flex items-center justify-between">
+              <span>Key Skill:</span>
+              <span class="font-mono text-blue-400">apple-design + mobile-ios-design</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Card Radius:</span>
+              <span class="font-mono text-neutral-300">20px continuous rounded</span>
+            </div>
+          </div>
+        </div>
+        <div class="pt-2 flex items-center gap-2 relative">
+          <a href="../index.html?design_mode=cupertino" class="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs text-center spring-press shadow-sm flex items-center justify-center gap-1.5">
+            <span>Launch Cupertino iOS</span>
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Prototype 3: Editorial Minimalist -->
+      <div class="rounded-2xl bg-neutral-900/70 border border-amber-500/30 p-5 space-y-4 hover:border-amber-500/60 transition-colors shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="space-y-3 relative">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 uppercase tracking-wider">Atelier Minimalist</span>
+            <span class="text-[10px] text-neutral-500 font-mono">frontend-design</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white font-serif">3. Editorial Minimalist View</h3>
+            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
+              Curated using Anthropic's frontend-design and Leonxlnx's taste-skill: serif display typography, hairline monolithic outlines, generous spatial cadence, and zero generic pill clutter.
+            </p>
+          </div>
+          <div class="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 space-y-1">
+            <div class="flex items-center justify-between">
+              <span>Key Skill:</span>
+              <span class="font-mono text-amber-400">frontend-design + taste-skill</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Aesthetic:</span>
+              <span class="font-mono text-neutral-300">Editorial Modernism</span>
+            </div>
+          </div>
+        </div>
+        <div class="pt-2 flex items-center gap-2 relative">
+          <a href="../index.html?design_mode=editorial" class="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs text-center spring-press shadow-sm flex items-center justify-center gap-1.5">
+            <span>Launch Editorial</span>
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Prototype 4: Executive Pro -->
+      <div class="rounded-2xl bg-neutral-900/70 border border-cyan-500/30 p-5 space-y-4 hover:border-cyan-500/60 transition-colors shadow-sm flex flex-col justify-between relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="space-y-3 relative">
+          <div class="flex items-center justify-between">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider">Fintech Pro</span>
+            <span class="text-[10px] text-neutral-500 font-mono">tailwind-ds</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">4. Executive Pro View</h3>
+            <p class="text-xs text-neutral-400 mt-1 leading-relaxed">
+              High-density financial dashboard built on Tailwind design tokens: slate/navy surfaces, tabular figures, monospace financial tickers, and structured KPI micro-cards.
+            </p>
+          </div>
+          <div class="pt-2 border-t border-neutral-800/80 text-[11px] text-neutral-400 space-y-1">
+            <div class="flex items-center justify-between">
+              <span>Key Skill:</span>
+              <span class="font-mono text-cyan-400">tailwind-design-system + ui-ux-pro-max</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Data Density:</span>
+              <span class="font-mono text-neutral-300">Tabular High-Density</span>
+            </div>
+          </div>
+        </div>
+        <div class="pt-2 flex items-center gap-2 relative">
+          <a href="../index.html?design_mode=executive" class="flex-1 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs text-center spring-press shadow-sm flex items-center justify-center gap-1.5">
+            <span>Launch Executive Pro</span>
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Switcher Guide Footer Note -->
+    <div class="rounded-2xl bg-neutral-900 border border-neutral-800 p-4 flex items-start gap-3">
+      <div class="w-8 h-8 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-300 shrink-0">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+      </div>
+      <div class="text-xs text-neutral-400 leading-relaxed space-y-1">
+        <div class="font-bold text-neutral-200">How to switch views inside the app</div>
+        <p>
+          Open RuPayVault anytime and tap the <strong>hamburger menu</strong> in the top-left corner. Under the <strong>Frontend Design View</strong> section, tap between <em>Default</em>, <em>Cupertino iOS</em>, <em>Editorial Minimalist</em>, or <em>Executive Pro</em> to seamlessly switch views on the fly.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-neutral-800 text-[10px] text-neutral-500 text-center py-4 font-mono">
+    RuPayVault &bull; 4 Switchable Frontend Design Views &bull; Zero Breaking Changes
+  </footer>
+
+</body>
+</html>
