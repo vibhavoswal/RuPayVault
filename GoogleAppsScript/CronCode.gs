@@ -43,7 +43,8 @@ const SYSTEM_SHEET_NAMES = new Set([
   "Bank Accounts",
   "Shared_Activity",
   "Redeemed",
-  "RuPay Income"
+  "RuPay Income",
+  "RuPay Charges"
 ]);
 
 const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
@@ -71,6 +72,98 @@ function getOrCreateMiscSheet(ss) {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+function getOrCreateRuPayChargesSheet(ss) {
+  let sheet = ss.getSheetByName("RuPay Charges");
+  if (!sheet) {
+    sheet = ss.insertSheet("RuPay Charges");
+    sheet.getRange(1, 1, 1, 5).setValues([["Title", "Date", "Price", "Comments", "Account"]]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#F3F4F6");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function parseDateToTimestamp(dateVal) {
+  if (!dateVal) return 0;
+  if (dateVal instanceof Date) return dateVal.getTime();
+  const clean = String(dateVal).replace(/^'/, '').trim();
+  const parts = clean.split(/[\/\-\.]/);
+  if (parts.length === 3) {
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    let y = parseInt(parts[2], 10);
+    if (y < 100) y = 2000 + y;
+    return new Date(y, m - 1, d).getTime();
+  }
+  const parsed = Date.parse(clean);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function recalculateSheetTotal(sheet) {
+  if (!sheet) return;
+  const vals = sheet.getDataRange().getValues();
+  let totalRowIndex = -1;
+  let sum = 0;
+  for (let r = 1; r < vals.length; r++) {
+    const col0 = String(vals[r][0] || '').trim().toUpperCase();
+    if (col0 === 'TOTAL') {
+      totalRowIndex = r + 1;
+      break;
+    }
+    const num = Number(vals[r][2]);
+    if (!isNaN(num)) sum += num;
+  }
+  if (totalRowIndex > 0) {
+    sheet.getRange(totalRowIndex, 3).setValue(Number(sum.toFixed(2)));
+  }
+}
+
+function insertRowSortedByDate(sheet, newRowData, newDateMs) {
+  const vals = sheet.getDataRange().getValues();
+  let insertRowIndex = -1; // 1-based row index
+
+  // Find the first row whose date is strictly AFTER newDateMs, or the TOTAL row
+  for (let r = 1; r < vals.length; r++) {
+    const firstCol = String(vals[r][0] || '').trim().toUpperCase();
+    if (firstCol === 'TOTAL') {
+      insertRowIndex = r + 1;
+      break;
+    }
+    const rowDateRaw = vals[r][1];
+    let rowDateMs = 0;
+    if (rowDateRaw instanceof Date) {
+      rowDateMs = rowDateRaw.getTime();
+    } else if (rowDateRaw) {
+      rowDateMs = parseDateToTimestamp(String(rowDateRaw));
+    }
+    if (rowDateMs > newDateMs) {
+      insertRowIndex = r + 1; // Insert before this later row
+      break;
+    }
+  }
+
+  // If no later row found, insert before TOTAL row if present, else append at bottom
+  if (insertRowIndex === -1) {
+    const lastRow = sheet.getLastRow();
+    const lastCol0 = String(sheet.getRange(lastRow, 1).getValue() || '').trim().toUpperCase();
+    if (lastCol0 === 'TOTAL') {
+      insertRowIndex = lastRow;
+    } else {
+      insertRowIndex = lastRow + 1;
+    }
+  }
+
+  if (insertRowIndex <= sheet.getLastRow()) {
+    sheet.insertRowBefore(insertRowIndex);
+  }
+  const insertedRange = sheet.getRange(insertRowIndex, 1, 1, newRowData.length);
+  insertedRange.setValues([newRowData]);
+  sheet.getRange(insertRowIndex, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
+
+  recalculateSheetTotal(sheet);
+  return insertRowIndex;
 }
 
 function getTargetBrandSheet(ss, brand) {
@@ -1481,6 +1574,196 @@ function doGet(e) {
     }
   }
 
+  // Data Migration: Split "RuPay Income" by moving negative card charges to "RuPay Charges"
+  if (e && e.parameter && e.parameter.action === "MIGRATE_RUPAY_CHARGES_TAB") {
+    try {
+      const lock = LockService.getScriptLock();
+      lock.tryLock(30000);
+      const ss = getSpreadsheet();
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"RuPay Income" sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const chargesSheet = getOrCreateRuPayChargesSheet(ss);
+      const incomeVals = incomeSheet.getDataRange().getValues();
+      const chargesRows = [];
+      const rowsToDelete = [];
+      let positiveSum = 0;
+      let chargesSum = 0;
+
+      for (let r = 1; r < incomeVals.length; r++) {
+        const title = String(incomeVals[r][0] || '').trim();
+        if (title.toUpperCase() === 'TOTAL') continue;
+        const price = Number(incomeVals[r][2]);
+        if (isNaN(price) || price === 0) continue;
+
+        if (price < 0) {
+          chargesRows.push({
+            data: [
+              incomeVals[r][0],
+              incomeVals[r][1],
+              price,
+              incomeVals[r][3] || '',
+              incomeVals[r][4] || ''
+            ],
+            dateMs: parseDateToTimestamp(incomeVals[r][1])
+          });
+          rowsToDelete.push(r + 1); // 1-based row index in RuPay Income
+          chargesSum += price;
+        } else {
+          positiveSum += price;
+        }
+      }
+
+      // 1. Sort charges rows chronologically ascending
+      chargesRows.sort((a, b) => a.dateMs - b.dateMs);
+
+      // 2. Clear any existing data in chargesSheet (beyond header)
+      const chargesLastRow = chargesSheet.getLastRow();
+      if (chargesLastRow > 1) {
+        chargesSheet.deleteRows(2, chargesLastRow - 1);
+      }
+
+      // 3. Write charges to chargesSheet
+      if (chargesRows.length > 0) {
+        const rawChargeData = chargesRows.map(c => c.data);
+        chargesSheet.getRange(2, 1, rawChargeData.length, 5).setValues(rawChargeData);
+        chargesSheet.getRange(2, 2, rawChargeData.length, 1).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
+        chargesSheet.getRange(2, 3, rawChargeData.length, 1).setNumberFormat("0.00");
+
+        // Append TOTAL row to chargesSheet
+        chargesSheet.appendRow(["TOTAL", "", Number(chargesSum.toFixed(2)), "", ""]);
+        chargesSheet.getRange(chargesSheet.getLastRow(), 1, 1, 5).setFontWeight("bold");
+      }
+
+      // 4. Delete negative rows from incomeSheet bottom-up
+      rowsToDelete.sort((a, b) => b - a);
+      for (const rIdx of rowsToDelete) {
+        incomeSheet.deleteRow(rIdx);
+      }
+
+      // 5. Update TOTAL row in incomeSheet
+      recalculateSheetTotal(incomeSheet);
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "MIGRATE_RUPAY_CHARGES_TAB",
+        chargesMovedCount: chargesRows.length,
+        chargesSum: Number(chargesSum.toFixed(2)),
+        incomeRemainingCount: incomeSheet.getLastRow() - 2,
+        incomeSum: Number(positiveSum.toFixed(2))
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Safeguards Audit Verification Endpoint for RECORD_INCOME_ENTRY & Date-Sorted Insertion
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_INCOME_DUMMY") {
+    try {
+      const lock = LockService.getScriptLock();
+      lock.tryLock(30000);
+      const ss = getSpreadsheet();
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) return ContentService.createTextOutput(JSON.stringify({ error: "RuPay Income sheet not found" })).setMimeType(ContentService.MimeType.JSON);
+      const chargesSheet = getOrCreateRuPayChargesSheet(ss);
+
+      const testSaleTitle = "TEST-SAFEGUARD-SALE-999";
+      const testChargeTitle = "TEST-SAFEGUARD-CHARGE-999";
+      const testDateStr = "15/06/25";
+      const testDateMs = parseDateToTimestamp(testDateStr);
+
+      // Step 1: Insert test sale into RuPay Income (should sort between 2024 and 2026 rows)
+      const saleRowIdx = insertRowSortedByDate(incomeSheet, [
+        testSaleTitle,
+        new Date(2025, 5, 15),
+        999,
+        "dummy test sale",
+        "test"
+      ], testDateMs);
+
+      // Step 2: Insert test charge into RuPay Charges (should sort between 2024 and 2026 rows)
+      const chargeRowIdx = insertRowSortedByDate(chargesSheet, [
+        testChargeTitle,
+        new Date(2025, 5, 15),
+        -250,
+        "dummy test charge",
+        "test"
+      ], testDateMs);
+      SpreadsheetApp.flush();
+
+      // Step 3: Verify existence in both sheets
+      let incomeVals = incomeSheet.getDataRange().getValues();
+      let saleFound = false;
+      for (let r = 1; r < incomeVals.length; r++) {
+        if (String(incomeVals[r][0] || '').trim() === testSaleTitle) {
+          saleFound = true;
+          break;
+        }
+      }
+
+      let chargesVals = chargesSheet.getDataRange().getValues();
+      let chargeFound = false;
+      for (let r = 1; r < chargesVals.length; r++) {
+        if (String(chargesVals[r][0] || '').trim() === testChargeTitle) {
+          chargeFound = true;
+          break;
+        }
+      }
+
+      // Step 4: Clean up test rows immediately
+      let saleCleaned = false;
+      incomeVals = incomeSheet.getDataRange().getValues();
+      for (let r = incomeVals.length - 1; r >= 1; r--) {
+        if (String(incomeVals[r][0] || '').trim() === testSaleTitle) {
+          incomeSheet.deleteRow(r + 1);
+          saleCleaned = true;
+        }
+      }
+      recalculateSheetTotal(incomeSheet);
+
+      let chargeCleaned = false;
+      chargesVals = chargesSheet.getDataRange().getValues();
+      for (let r = chargesVals.length - 1; r >= 1; r--) {
+        if (String(chargesVals[r][0] || '').trim() === testChargeTitle) {
+          chargesSheet.deleteRow(r + 1);
+          chargeCleaned = true;
+        }
+      }
+      recalculateSheetTotal(chargesSheet);
+      SpreadsheetApp.flush();
+
+      // Step 5: Check zero residual artifacts remain
+      let residualCount = 0;
+      incomeVals = incomeSheet.getDataRange().getValues();
+      for (let r = 1; r < incomeVals.length; r++) {
+        if (String(incomeVals[r][0] || '').trim() === testSaleTitle) residualCount++;
+      }
+      chargesVals = chargesSheet.getDataRange().getValues();
+      for (let r = 1; r < chargesVals.length; r++) {
+        if (String(chargesVals[r][0] || '').trim() === testChargeTitle) residualCount++;
+      }
+
+      const allSafeguardsMet = (saleFound && chargeFound && saleCleaned && chargeCleaned && residualCount === 0);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_INCOME_DUMMY",
+        saleFound: saleFound,
+        saleRowIdx: saleRowIdx,
+        chargeFound: chargeFound,
+        chargeRowIdx: chargeRowIdx,
+        cleanedUp: saleCleaned && chargeCleaned,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: allSafeguardsMet
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(vErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: vErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Seed / Initialize Misc Tab with initial vouchers
   if (e && e.parameter && e.parameter.action === "SEED_INITIAL_MISC_VOUCHERS") {
     try {
@@ -1775,6 +2058,126 @@ function doGet(e) {
         timeZone: ss.getSpreadsheetTimeZone(),
         inspectedRows: inspectedRows
       }, null, 2)).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Inspection handler for unified Income & Charges summary
+  if (e && e.parameter && e.parameter.action === "INSPECT_INCOME_SUMMARY") {
+    try {
+      const ss = getSpreadsheet();
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      const chargesSheet = ss.getSheetByName("RuPay Charges");
+
+      const incomeSummary = {
+        allTime: { gross: 0, charges: 0, net: 0, count: 0 },
+        byYear: {},
+        ledger: []
+      };
+
+      if (incomeSheet) {
+        const rows = incomeSheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          const title = String(rows[i][0] || '').trim();
+          if (!title || title.toUpperCase() === 'TOTAL') continue;
+          let dateStr = rows[i][1];
+          if (dateStr instanceof Date) {
+            dateStr = Utilities.formatDate(dateStr, "GMT+05:30", "dd/MM/yy");
+          } else {
+            dateStr = String(dateStr || '').replace(/^'/, '').trim();
+          }
+          const priceVal = Number(rows[i][2]);
+          if (isNaN(priceVal) || priceVal === 0) continue;
+          const comments = String(rows[i][3] || '').trim();
+          const account = String(rows[i][4] || '').trim();
+          let yr = 2026;
+          if (dateStr) {
+            const parts = dateStr.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              const yPart = parts[2].trim();
+              if (yPart.length === 4) yr = parseInt(yPart, 10);
+              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+            }
+          }
+          const entry = {
+            id: 'inc-' + i,
+            title: title,
+            date: dateStr,
+            price: Math.abs(priceVal),
+            comments: comments,
+            account: account,
+            year: yr,
+            type: 'income'
+          };
+          incomeSummary.ledger.push(entry);
+          incomeSummary.allTime.gross += Math.abs(priceVal);
+          incomeSummary.allTime.count++;
+          const yrKey = String(yr);
+          if (!incomeSummary.byYear[yrKey]) {
+            incomeSummary.byYear[yrKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+          }
+          incomeSummary.byYear[yrKey].gross += Math.abs(priceVal);
+          incomeSummary.byYear[yrKey].count++;
+        }
+      }
+
+      if (chargesSheet) {
+        const rows = chargesSheet.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          const title = String(rows[i][0] || '').trim();
+          if (!title || title.toUpperCase() === 'TOTAL') continue;
+          let dateStr = rows[i][1];
+          if (dateStr instanceof Date) {
+            dateStr = Utilities.formatDate(dateStr, "GMT+05:30", "dd/MM/yy");
+          } else {
+            dateStr = String(dateStr || '').replace(/^'/, '').trim();
+          }
+          const priceVal = Number(rows[i][2]);
+          if (isNaN(priceVal) || priceVal === 0) continue;
+          const comments = String(rows[i][3] || '').trim();
+          const account = String(rows[i][4] || '').trim();
+          let yr = 2026;
+          if (dateStr) {
+            const parts = dateStr.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              const yPart = parts[2].trim();
+              if (yPart.length === 4) yr = parseInt(yPart, 10);
+              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+            }
+          }
+          const chargeVal = -Math.abs(priceVal);
+          const entry = {
+            id: 'chg-' + i,
+            title: title,
+            date: dateStr,
+            price: chargeVal,
+            comments: comments,
+            account: account,
+            year: yr,
+            type: 'charge'
+          };
+          incomeSummary.ledger.push(entry);
+          incomeSummary.allTime.charges += Math.abs(chargeVal);
+          incomeSummary.allTime.count++;
+          const yrKey = String(yr);
+          if (!incomeSummary.byYear[yrKey]) {
+            incomeSummary.byYear[yrKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+          }
+          incomeSummary.byYear[yrKey].charges += Math.abs(chargeVal);
+          incomeSummary.byYear[yrKey].count++;
+        }
+      }
+
+      incomeSummary.ledger.sort(function(a, b) {
+        return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+      });
+      incomeSummary.allTime.net = incomeSummary.allTime.gross - incomeSummary.allTime.charges;
+      for (const y in incomeSummary.byYear) {
+        incomeSummary.byYear[y].net = incomeSummary.byYear[y].gross - incomeSummary.byYear[y].charges;
+      }
+
+      return ContentService.createTextOutput(JSON.stringify(incomeSummary, null, 2)).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -2200,35 +2603,74 @@ function doGet(e) {
             id: 'inc-' + i,
             title: title,
             date: dateStr,
-            price: priceVal,
+            price: Math.abs(priceVal),
             comments: comments,
             account: account,
-            year: yr
+            year: yr,
+            type: 'income'
           };
           result.income.ledger.push(entry);
 
-          if (priceVal > 0) {
-            result.income.allTime.gross += priceVal;
-          } else {
-            result.income.allTime.charges += Math.abs(priceVal);
-          }
+          result.income.allTime.gross += Math.abs(priceVal);
           result.income.allTime.count++;
 
           const yrKey = String(yr);
           if (!result.income.byYear[yrKey]) {
             result.income.byYear[yrKey] = { gross: 0, charges: 0, net: 0, count: 0 };
           }
-          if (priceVal > 0) {
-            result.income.byYear[yrKey].gross += priceVal;
-          } else {
-            result.income.byYear[yrKey].charges += Math.abs(priceVal);
-          }
+          result.income.byYear[yrKey].gross += Math.abs(priceVal);
           result.income.byYear[yrKey].count++;
         }
+      } else if (name === "RuPay Charges") {
+        for (let i = 1; i < rows.length; i++) {
+          const title = String(rows[i][0] || '').trim();
+          if (!title || title.toUpperCase() === 'TOTAL') continue;
 
-        result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
-        for (const y in result.income.byYear) {
-          result.income.byYear[y].net = result.income.byYear[y].gross - result.income.byYear[y].charges;
+          let dateStr = rows[i][1];
+          if (dateStr instanceof Date) {
+            dateStr = Utilities.formatDate(dateStr, "GMT+05:30", "dd/MM/yy");
+          } else {
+            dateStr = String(dateStr || '').replace(/^'/, '').trim();
+          }
+
+          const priceVal = Number(rows[i][2]);
+          if (isNaN(priceVal) || priceVal === 0) continue;
+
+          const comments = String(rows[i][3] || '').trim();
+          const account = String(rows[i][4] || '').trim();
+
+          let yr = 2026;
+          if (dateStr) {
+            const parts = dateStr.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              const yPart = parts[2].trim();
+              if (yPart.length === 4) yr = parseInt(yPart, 10);
+              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+            }
+          }
+
+          const chargeVal = -Math.abs(priceVal);
+          const entry = {
+            id: 'chg-' + i,
+            title: title,
+            date: dateStr,
+            price: chargeVal,
+            comments: comments,
+            account: account,
+            year: yr,
+            type: 'charge'
+          };
+          result.income.ledger.push(entry);
+
+          result.income.allTime.charges += Math.abs(chargeVal);
+          result.income.allTime.count++;
+
+          const yrKey = String(yr);
+          if (!result.income.byYear[yrKey]) {
+            result.income.byYear[yrKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+          }
+          result.income.byYear[yrKey].charges += Math.abs(chargeVal);
+          result.income.byYear[yrKey].count++;
         }
       } else if (SYSTEM_SHEET_NAMES.has(name) || name === "Cards") {
         // Dedicated non-voucher system tabs (Blocked Cards, Bank Accounts, Cards):
@@ -2254,6 +2696,15 @@ function doGet(e) {
           });
         }
       }
+    }
+
+    // Sort unified income & charges ledger by date descending (newest on top)
+    result.income.ledger.sort(function(a, b) {
+      return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+    });
+    result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
+    for (const y in result.income.byYear) {
+      result.income.byYear[y].net = result.income.byYear[y].gross - result.income.byYear[y].charges;
     }
 
     try {
@@ -3700,40 +4151,35 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 13. Record RuPay Income Entry (Voucher Sale or Card Fee)
+    // 13. Record RuPay Income Entry (Voucher Sale into "RuPay Income" or Card Fee into "RuPay Charges")
     if (data.action === "RECORD_INCOME_ENTRY") {
-      let incomeSheet = ss.getSheetByName("RuPay Income");
-      if (!incomeSheet) {
-        return ContentService.createTextOutput(JSON.stringify({
-          error: '"RuPay Income" tab not found in spreadsheet'
-        })).setMimeType(ContentService.MimeType.JSON);
-      }
-
       const title = String(data.title || '').trim();
       const rawPrice = Number(data.price);
       if (!title || isNaN(rawPrice) || rawPrice === 0) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Invalid income entry: title and non-zero price are required."
+          error: "Invalid entry: title and non-zero price are required."
         })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const isCharge = rawPrice < 0 || String(data.type || '').toLowerCase() === 'charge';
+      const targetSheetName = isCharge ? "RuPay Charges" : "RuPay Income";
+      let targetSheet = ss.getSheetByName(targetSheetName);
+      if (!targetSheet) {
+        if (isCharge) {
+          targetSheet = getOrCreateRuPayChargesSheet(ss);
+        } else {
+          return ContentService.createTextOutput(JSON.stringify({
+            error: `"${targetSheetName}" tab not found in spreadsheet`
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
       }
 
       const dateStr = String(data.date || Utilities.formatDate(new Date(), "GMT+05:30", "dd/MM/yy")).trim();
       const comments = String(data.comments || '').trim();
       const account = String(data.account || '').trim();
 
-      const vals = incomeSheet.getDataRange().getValues();
-      let insertIndex = -1; // 1-based index
-
-      // Check for bottom "TOTAL" summary row
-      for (let r = vals.length - 1; r >= 0; r--) {
-        const col0 = String(vals[r][0] || '').trim().toUpperCase();
-        if (col0 === 'TOTAL') {
-          insertIndex = r + 1; // 1-based index of the TOTAL row
-          break;
-        }
-      }
-
       let cellDateValue = dateStr;
+      const dateMs = parseDateToTimestamp(dateStr);
       const parts = dateStr.split(/[\/\-\.]/);
       if (parts.length === 3) {
         const d = parseInt(parts[0], 10);
@@ -3743,31 +4189,27 @@ function doPost(e) {
         cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
       }
 
+      const finalPrice = isCharge ? -Math.abs(rawPrice) : Math.abs(rawPrice);
       const newRowData = [
         title,
         cellDateValue,
-        rawPrice,
+        finalPrice,
         comments,
         account
       ];
 
-      const targetRow = insertIndex > 1 ? insertIndex : (incomeSheet.getLastRow() + 1);
-      if (insertIndex > 1) {
-        incomeSheet.insertRowBefore(insertIndex);
-      }
-      const insertedRange = incomeSheet.getRange(targetRow, 1, 1, newRowData.length);
-      insertedRange.setValues([newRowData]);
-      incomeSheet.getRange(targetRow, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
-
+      const insertedRow = insertRowSortedByDate(targetSheet, newRowData, dateMs);
       SpreadsheetApp.flush();
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "RECORD_INCOME_ENTRY",
+        targetSheet: targetSheetName,
+        insertedRow: insertedRow,
         entry: {
           title: title,
           date: dateStr,
-          price: rawPrice,
+          price: finalPrice,
           comments: comments,
           account: account
         }
