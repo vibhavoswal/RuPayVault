@@ -1069,7 +1069,8 @@
       }
       #add-choice-modal > div:last-child,
       #modal-sale > div:last-child,
-      #modal-charge > div:last-child {
+      #modal-charge > div:last-child,
+      #modal-income-info > div:last-child {
         max-width: 480px !important;
         margin-left: auto !important;
         margin-right: auto !important;
@@ -2642,7 +2643,9 @@
       <div class="rounded-2xl p-4 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm relative overflow-hidden">
         <div class="flex items-center justify-between text-xs font-bold text-[var(--theme-text-muted)] mb-1 gap-2">
           <span class="uppercase tracking-wider truncate">Net Income (<span id="in-kpi-year-label">2026</span>)</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-[var(--theme-card-subtle)] text-emerald-500 font-bold border border-[var(--theme-border)] shrink-0">Income - Card Charges</span>
+          <button type="button" onclick="openIncomePlacardInfo('net')" class="p-1 rounded-lg text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press" title="Net Income Breakdown" aria-label="Net Income Info">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+          </button>
         </div>
         <div class="text-3xl font-extrabold text-[var(--theme-text-main)] tracking-tight flex items-baseline gap-1" id="in-kpi-net-income">
           ₹0.00
@@ -2651,21 +2654,31 @@
 
       <!-- 2 Metric Split Grid: Income vs Card Charges -->
       <div class="grid grid-cols-2 gap-2.5">
-        <!-- Income Card: Google Material Design Trending_Up SVG -->
+        <!-- Income Card: Google Material Design Trending_Up SVG + Info Icon -->
         <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm">
           <div class="flex items-center justify-between text-[11px] font-bold text-emerald-500 dark:text-emerald-400">
-            <span>Voucher Income</span>
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            <span class="truncate">Voucher Income</span>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="openIncomePlacardInfo('gross')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-emerald-400 transition-colors spring-press" title="Voucher Income Details" aria-label="Voucher Income Info">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+              </button>
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            </div>
           </div>
           <div class="text-lg font-bold text-emerald-500 dark:text-emerald-400 mt-1" id="in-kpi-gross-income">+₹0.00</div>
           <div class="text-[10px] text-[var(--theme-text-sub)] mt-0.5" id="in-kpi-income-count">0 sold entries</div>
         </div>
 
-        <!-- Card Charges Card: Google Material Design Trending_Down SVG -->
+        <!-- Card Charges Card: Google Material Design Trending_Down SVG + Info Icon -->
         <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm">
           <div class="flex items-center justify-between text-[11px] font-bold text-rose-500 dark:text-rose-400">
-            <span>Card Charges</span>
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+            <span class="truncate">Card Charges</span>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="openIncomePlacardInfo('charges')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-rose-400 transition-colors spring-press" title="Card Charges Details" aria-label="Card Charges Info">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+              </button>
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+            </div>
           </div>
           <div class="text-lg font-bold text-rose-500 dark:text-rose-400 mt-1" id="in-kpi-card-charges">-₹0.00</div>
           <div class="text-[10px] text-[var(--theme-text-sub)] mt-0.5" id="in-kpi-charges-count">0 fee deductions</div>
@@ -2930,6 +2943,38 @@
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           <span id="in-btn-confirm-charge-text">Confirm &amp; Deduct Charge (-₹708)</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: INCOME PLACARD & ITEM INFO (BOTTOM SHEET, <50% HEIGHT) -->
+  <!-- ======================================================== -->
+  <div id="modal-income-info" class="hidden fixed inset-0 z-50 flex flex-col justify-end">
+    <!-- Backdrop -->
+    <div onclick="closeIncomePlacardInfo()" class="absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity"></div>
+
+    <!-- Sheet Container (<48vh screen height) -->
+    <div class="relative w-full max-w-lg mx-auto bg-[var(--theme-card-bg)] border-t border-[var(--theme-border)] rounded-t-3xl p-4 sm:p-5 shadow-2xl space-y-3 max-h-[48vh] overflow-y-auto no-scrollbar z-10 sheet-enter">
+      <!-- Handlebar -->
+      <div class="w-10 h-1 bg-[var(--theme-border)] rounded-full mx-auto mb-1"></div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-1.5 border-b border-[var(--theme-border)]">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-center text-[var(--theme-text-muted)]">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+          </div>
+          <h3 id="in-info-modal-title" class="text-xs sm:text-sm font-extrabold text-[var(--theme-text-main)] truncate max-w-[240px]">Details</h3>
+        </div>
+        <button onclick="closeIncomePlacardInfo()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Dynamic Content Body -->
+      <div id="in-info-modal-body" class="space-y-3">
+        <!-- Injected dynamically -->
       </div>
     </div>
   </div>
@@ -6093,6 +6138,16 @@
       const chgCountEl = document.getElementById('in-kpi-charges-count');
       if (chgCountEl) chgCountEl.textContent = `${chargeCount} fee deductions`;
 
+      // Store summary in state for info placards
+      state.incomeSummary = {
+        year: state.incomeYearFilter === 'all' ? 'All-Time' : state.incomeYearFilter,
+        gross: grossIncome,
+        charges: cardCharges,
+        net: netIncome,
+        incomeCount: incomeCount,
+        chargeCount: chargeCount
+      };
+
       renderIncomeLedger();
     }
 
@@ -6141,8 +6196,11 @@
           ? `+₹${price.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
           : `-₹${Math.abs(price).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
+        const hasDetails = Boolean(item.comments || item.account);
+        const safeItemId = String(item.id || '').replace(/'/g, "\\'");
+
         return `
-          <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm flex items-center justify-between gap-3">
+          <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm flex items-center justify-between gap-3 hover:border-[var(--theme-border)] transition-colors">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} font-bold">
                 ${isPositive ? `
@@ -6152,29 +6210,180 @@
                 `}
               </div>
               <div class="min-w-0">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5">
                   <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${item.title}</h4>
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${isPositive ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'}">
-                    ${isPositive ? 'SALE' : 'FEE'}
-                  </span>
+                  ${hasDetails ? `
+                    <button type="button" onclick="openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press shrink-0" title="View details" aria-label="View details">
+                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                    </button>
+                  ` : ''}
                 </div>
                 <div class="text-[10px] text-[var(--theme-text-sub)] flex items-center gap-1.5 mt-0.5 truncate">
                   <span>${item.date || ''}</span>
-                  ${item.comments ? `<span>•</span><span class="truncate">${item.comments}</span>` : ''}
-                  ${item.account ? `<span>•</span><span class="text-[var(--theme-text-muted)]">${item.account}</span>` : ''}
+                  ${item.account ? `<span>•</span><span class="font-mono text-[9px] opacity-75">${item.account}</span>` : ''}
                 </div>
               </div>
             </div>
 
-            <div class="text-right shrink-0">
+            <div class="text-right shrink-0 flex items-center gap-2">
               <div class="text-xs font-extrabold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} font-mono">
                 ${formattedAmount}
               </div>
-              <div class="text-[9px] text-[var(--theme-text-sub)]">${item.year || ''}</div>
+              ${!hasDetails ? `
+                <button type="button" onclick="openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press shrink-0 opacity-50 hover:opacity-100" title="View details" aria-label="View details">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                </button>
+              ` : ''}
             </div>
           </div>
         `;
       }).join('');
+    }
+
+    /* --- INCOME PLACARD & ITEM INFO MODAL --- */
+    function openIncomePlacardInfo(type, id) {
+      const modal = document.getElementById('modal-income-info');
+      const modalTitle = document.getElementById('in-info-modal-title');
+      const body = document.getElementById('in-info-modal-body');
+      if (!modal || !modalTitle || !body) return;
+
+      const summary = state.incomeSummary || {
+        year: state.incomeYearFilter === 'all' ? 'All-Time' : state.incomeYearFilter,
+        gross: 0,
+        charges: 0,
+        net: 0,
+        incomeCount: 0,
+        chargeCount: 0
+      };
+
+      if (type === 'net') {
+        modalTitle.textContent = 'Net Income Overview';
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-[var(--theme-text-sub)]">Period:</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+            </div>
+            <div class="space-y-1.5 text-xs pt-2 border-t border-[var(--theme-border)]">
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--theme-text-sub)]">Voucher Revenue (Gross):</span>
+                <span class="font-bold font-mono text-emerald-400">+₹${summary.gross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--theme-text-sub)]">Card Fees Deducted:</span>
+                <span class="font-bold font-mono text-rose-400">-₹${summary.charges.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-[var(--theme-border)] text-sm font-extrabold">
+                <span class="text-[var(--theme-text-main)]">Net Income:</span>
+                <span class="font-mono text-[var(--theme-text-main)]">₹${summary.net.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+            <div class="pt-1 text-[11px] text-[var(--theme-text-muted)] text-center font-mono">
+              Net Income = Voucher Income - Card Charges
+            </div>
+          </div>
+        `;
+      } else if (type === 'gross') {
+        modalTitle.textContent = 'Voucher Income Details';
+        const avg = summary.incomeCount > 0 ? (summary.gross / summary.incomeCount) : 0;
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-2.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Period:</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Total Gross Income:</span>
+              <span class="font-bold font-mono text-emerald-400 text-sm">+₹${summary.gross.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Sold Entries:</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${summary.incomeCount} vouchers</span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--theme-border)]">
+              <span class="text-[var(--theme-text-sub)]">Average Revenue / Voucher:</span>
+              <span class="font-bold font-mono text-emerald-400">₹${Math.round(avg).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        `;
+      } else if (type === 'charges') {
+        modalTitle.textContent = 'Card Charges Details';
+        const avg = summary.chargeCount > 0 ? (summary.charges / summary.chargeCount) : 0;
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-2.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Period:</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Total Deductions:</span>
+              <span class="font-bold font-mono text-rose-400 text-sm">-₹${summary.charges.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Fee Events:</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${summary.chargeCount} deductions</span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--theme-border)]">
+              <span class="text-[var(--theme-text-sub)]">Average Charge / Event:</span>
+              <span class="font-bold font-mono text-rose-400">₹${Math.round(avg).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        `;
+      } else if (type === 'item') {
+        const ledger = (state.income && Array.isArray(state.income.ledger)) ? state.income.ledger : [];
+        const item = ledger.find(e => String(e.id) === String(id));
+        if (!item) return;
+
+        const price = Number(item.price) || 0;
+        const isPositive = price > 0;
+        modalTitle.textContent = item.title || 'Transaction Details';
+
+        body.innerHTML = `
+          <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-2.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Type:</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isPositive ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'}">
+                ${isPositive ? 'Voucher Sale' : 'Card Fee Deduction'}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Amount:</span>
+              <span class="font-bold font-mono text-sm ${isPositive ? 'text-emerald-400' : 'text-rose-400'}">
+                ${isPositive ? `+₹${price.toLocaleString('en-IN')}` : `-₹${Math.abs(price).toLocaleString('en-IN')}`}
+              </span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[var(--theme-text-sub)]">Date:</span>
+              <span class="font-medium text-[var(--theme-text-main)]">${item.date || 'N/A'}</span>
+            </div>
+            ${item.account ? `
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--theme-text-sub)]">Account:</span>
+                <span class="font-mono font-bold text-[var(--theme-text-main)]">${item.account}</span>
+              </div>
+            ` : ''}
+            ${item.comments ? `
+              <div class="pt-2 border-t border-[var(--theme-border)] space-y-1">
+                <div class="text-[10px] uppercase font-bold text-[var(--theme-text-sub)]">Comments / Notes</div>
+                <div class="p-2.5 rounded-xl bg-black/20 border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] font-mono break-words leading-relaxed select-text">
+                  ${item.comments}
+                </div>
+              </div>
+            ` : `
+              <div class="pt-1 text-[10px] text-[var(--theme-text-sub)] italic">
+                No extra comments or notes recorded.
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeIncomePlacardInfo() {
+      const modal = document.getElementById('modal-income-info');
+      if (modal) modal.classList.add('hidden');
     }
 
     /* --- "+ ADD" BOTTOM SHEET CONTROLS --- */
