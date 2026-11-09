@@ -1938,21 +1938,28 @@
     /* Mode 4: Executive Pro (Fintech Dashboard & Tailwind DS)  */
     /* ======================================================== */
 
-    /* --- MODE 2: CUPERTINO iOS (Apple HIG & Glassmorphism - Select Button Bug Fixed) --- */
+    /* --- MODE 2: CUPERTINO iOS (Apple HIG & Glassmorphism - Select Button Artifact Fixed) --- */
     html[data-design-mode="cupertino"] {
       --theme-card-bg: rgba(28, 28, 30, 0.65);
       --theme-card-subtle: rgba(44, 44, 46, 0.45);
       --theme-border: rgba(255, 255, 255, 0.14);
-      --drawer-bg: rgba(28, 28, 30, 0.85);
-      --drawer-border: rgba(255, 255, 255, 0.15);
+      --theme-text-main: #ffffff;
+      --theme-text-sub: rgba(235, 235, 245, 0.65);
+      --theme-text-muted: rgba(235, 235, 245, 0.45);
+      --drawer-bg: rgba(28, 28, 30, 0.88);
+      --drawer-border: rgba(255, 255, 255, 0.16);
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
     }
     html.light[data-design-mode="cupertino"] {
       --theme-card-bg: rgba(255, 255, 255, 0.75);
       --theme-card-subtle: rgba(242, 242, 247, 0.7);
       --theme-border: rgba(0, 0, 0, 0.08);
-      --drawer-bg: rgba(245, 245, 247, 0.88);
+      --theme-text-main: #000000;
+      --theme-text-sub: rgba(60, 60, 67, 0.65);
+      --theme-text-muted: rgba(60, 60, 67, 0.45);
+      --drawer-bg: rgba(245, 245, 247, 0.9);
       --drawer-border: rgba(0, 0, 0, 0.1);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
     }
     html[data-design-mode="cupertino"] #mobile-app-container {
       background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
@@ -1963,12 +1970,70 @@
       background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 60%),
                   #f2f2f7 !important;
     }
+    /* Cupertino Glass Headers across all 4 workspaces */
+    html[data-design-mode="cupertino"] #mb-top-header,
+    html[data-design-mode="cupertino"] #cm-header,
+    html[data-design-mode="cupertino"] #bm-header,
+    html[data-design-mode="cupertino"] #in-header {
+      background: rgba(20, 20, 24, 0.72) !important;
+      backdrop-filter: blur(28px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    html.light[data-design-mode="cupertino"] #mb-top-header,
+    html.light[data-design-mode="cupertino"] #cm-header,
+    html.light[data-design-mode="cupertino"] #bm-header,
+    html.light[data-design-mode="cupertino"] #in-header {
+      background: rgba(246, 246, 248, 0.78) !important;
+      backdrop-filter: blur(28px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    /* Cupertino Continuous Rounded Glass Surfaces */
     html[data-design-mode="cupertino"] .rounded-2xl:not(button):not([role="button"]):not(select):not(input),
-    html[data-design-mode="cupertino"] .rounded-xl:not(button):not([role="button"]):not(select):not(input) {
+    html[data-design-mode="cupertino"] .rounded-xl:not(button):not([role="button"]):not(select):not(input),
+    html[data-design-mode="cupertino"] .rounded-3xl:not(button):not([role="button"]):not(select):not(input) {
       backdrop-filter: blur(24px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
       border-radius: 20px !important;
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25) !important;
+      border: 0.5px solid rgba(255, 255, 255, 0.12) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+    }
+    html.light[data-design-mode="cupertino"] .rounded-2xl:not(button):not([role="button"]):not(select):not(input),
+    html.light[data-design-mode="cupertino"] .rounded-xl:not(button):not([role="button"]):not(select):not(input),
+    html.light[data-design-mode="cupertino"] .rounded-3xl:not(button):not([role="button"]):not(select):not(input) {
+      backdrop-filter: blur(24px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+      border-radius: 20px !important;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+      border: 0.5px solid rgba(0, 0, 0, 0.07) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+    }
+    /* Cupertino Bottom Sheets and Modals */
+    html[data-design-mode="cupertino"] .sheet-enter,
+    html[data-design-mode="cupertino"] #nav-drawer-panel,
+    html[data-design-mode="cupertino"] #modal-charge > div:nth-child(2),
+    html[data-design-mode="cupertino"] #modal-sale > div:nth-child(2),
+    html[data-design-mode="cupertino"] #modal-add-card > div:nth-child(2),
+    html[data-design-mode="cupertino"] #modal-add-bank > div:nth-child(2) {
+      background: rgba(30, 30, 34, 0.88) !important;
+      backdrop-filter: blur(36px) saturate(200%) !important;
+      -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+      border-radius: 28px 28px 0 0 !important;
+    }
+    html.light[data-design-mode="cupertino"] .sheet-enter,
+    html.light[data-design-mode="cupertino"] #nav-drawer-panel,
+    html.light[data-design-mode="cupertino"] #modal-charge > div:nth-child(2),
+    html.light[data-design-mode="cupertino"] #modal-sale > div:nth-child(2),
+    html.light[data-design-mode="cupertino"] #modal-add-card > div:nth-child(2),
+    html.light[data-design-mode="cupertino"] #modal-add-bank > div:nth-child(2) {
+      background: rgba(248, 248, 252, 0.92) !important;
+      backdrop-filter: blur(36px) saturate(200%) !important;
+      -webkit-backdrop-filter: blur(36px) saturate(200%) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.95) !important;
+      border-radius: 28px 28px 0 0 !important;
     }
     /* Cupertino Dock: Transparent container prevents white rectangle behind detached satellite button */
     html[data-design-mode="cupertino"] #unified-floating-dock,
@@ -1979,19 +2044,23 @@
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
       border-radius: 0 !important;
+      pointer-events: none !important;
+    }
+    html[data-design-mode="cupertino"] #unified-floating-dock > * {
+      pointer-events: auto !important;
     }
     html[data-design-mode="cupertino"] .action-pill.expanded {
-      background: rgba(28, 28, 30, 0.78) !important;
-      backdrop-filter: blur(28px) saturate(190%) !important;
-      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      background: rgba(28, 28, 30, 0.8) !important;
+      backdrop-filter: blur(30px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
       border: 1px solid rgba(255, 255, 255, 0.16) !important;
-      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.5) !important;
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.55) !important;
       border-radius: 9999px !important;
     }
     html.light[data-design-mode="cupertino"] .action-pill.expanded {
-      background: rgba(255, 255, 255, 0.82) !important;
-      backdrop-filter: blur(28px) saturate(190%) !important;
-      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      background: rgba(255, 255, 255, 0.84) !important;
+      backdrop-filter: blur(30px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
       border: 1px solid rgba(0, 0, 0, 0.08) !important;
       box-shadow: 0 14px 35px -4px rgba(0, 0, 0, 0.12) !important;
       border-radius: 9999px !important;
@@ -1999,21 +2068,35 @@
     html[data-design-mode="cupertino"] .dock-satellite-btn.collapsed,
     html.light[data-design-mode="cupertino"] .dock-satellite-btn.collapsed {
       background: #F47A21 !important;
-      box-shadow: 0 10px 24px -4px rgba(244, 122, 33, 0.45) !important;
+      box-shadow: 0 10px 24px -4px rgba(244, 122, 33, 0.48), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
       border: 1px solid rgba(255, 255, 255, 0.25) !important;
       border-radius: 9999px !important;
+      isolation: isolate !important;
+    }
+    html[data-design-mode="cupertino"] .dock-satellite-btn.collapsed:active,
+    html.light[data-design-mode="cupertino"] .dock-satellite-btn.collapsed:active {
+      transform: scale(0.92) !important;
     }
     html[data-design-mode="cupertino"] .dock-satellite-btn.expanded {
       background: rgba(28, 28, 30, 0.85) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      border-radius: 9999px !important;
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.6) !important;
     }
     html.light[data-design-mode="cupertino"] .dock-satellite-btn.expanded {
       background: rgba(255, 255, 255, 0.88) !important;
       backdrop-filter: blur(28px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      border-radius: 9999px !important;
+      box-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.14) !important;
+    }
+    html[data-design-mode="cupertino"] #mb-select-all-btn,
+    html.light[data-design-mode="cupertino"] #mb-select-all-btn {
+      color: #34C759 !important;
+      font-weight: 600 !important;
     }
 
     /* --- MODE 3: CUPERTINO iOS (FROM SCRATCH - Apple HIG Inset Grouped) --- */
@@ -7458,9 +7541,12 @@
     }
 
     function initDesignMode() {
-      let saved = 'default';
+      let saved = 'cupertino';
       try {
-        saved = localStorage.getItem('rupay_design_mode') || 'default';
+        const stored = localStorage.getItem('rupay_design_mode');
+        if (stored && ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'].includes(stored)) {
+          saved = stored;
+        }
       } catch(e) {}
       const validModes = ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'];
       try {
@@ -7468,9 +7554,10 @@
         const urlMode = urlParams.get('design_mode');
         if (urlMode && validModes.includes(urlMode.toLowerCase())) {
           saved = urlMode.toLowerCase();
+          try { localStorage.setItem('rupay_design_mode', saved); } catch(e) {}
         }
       } catch(e) {}
-      const targetMode = validModes.includes(saved) ? saved : 'default';
+      const targetMode = validModes.includes(saved) ? saved : 'cupertino';
       if (targetMode === 'default') {
         document.documentElement.removeAttribute('data-design-mode');
       } else {
