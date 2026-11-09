@@ -3930,8 +3930,20 @@
       return localStorage.getItem('rupay_session_token') || '';
     }
 
+    function isDevEnvironment() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('dev_unlock') === 'true' ||
+               window.location.hostname === 'localhost' ||
+               window.location.hostname === '127.0.0.1';
+      } catch(e) {
+        return false;
+      }
+    }
+
     // Check if 24-Hour session is active and not expired
     function isSessionValid() {
+      if (isDevEnvironment()) return true;
       const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
       const token = getSessionToken();
       return !!(token && expiry && Date.now() < expiry);
@@ -3939,6 +3951,7 @@
 
     // Pre-flight check: Usable if valid and has at least 30 seconds remaining
     function isTokenUsable() {
+      if (isDevEnvironment()) return true;
       const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
       const token = getSessionToken();
       return !!(token && expiry && (expiry - Date.now() > 30000));
@@ -4965,9 +4978,9 @@
     }
 
     // Lock Vault and Wipe Memory
-    async function lockVault() {
-      const isDevUnlock = (new URLSearchParams(window.location.search)).get('dev_unlock') === 'true';
-      if (isDevUnlock) return;
+    async function lockVault(force = false) {
+      const isDevUnlock = isDevEnvironment();
+      if (isDevUnlock && !force) return;
       securityState.isUnlocked = false;
       securityState.enteredPin = '';
       clearOtpInput();
@@ -4991,7 +5004,10 @@
       securityState.cryptoKey = null;
 
       const lockEl = document.getElementById('vault-lock-screen');
-      if (lockEl) lockEl.classList.remove('hidden');
+      if (lockEl) {
+        lockEl.classList.remove('hidden');
+        lockEl.style.display = 'flex';
+      }
 
       renderAll();
     }
@@ -5000,7 +5016,7 @@
     async function lockVaultManual() {
       localStorage.removeItem('rupay_session_token');
       localStorage.removeItem('rupay_session_expiry');
-      await lockVault();
+      await lockVault(true);
       showToast('Vault locked & session terminated');
     }
 
@@ -7594,7 +7610,7 @@
         
         if (data && data.error) {
           if (data.error.toLowerCase().includes('session expired') || data.error.toLowerCase().includes('unauthorized')) {
-            const isDevUnlock = (new URLSearchParams(window.location.search)).get('dev_unlock') === 'true';
+            const isDevUnlock = isDevEnvironment();
             if (!isDevUnlock) {
               lockVault();
               showToast('Session expired. Please enter OTP to re-authenticate.');
@@ -13745,6 +13761,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
       // Clean up legacy plaintext caches & dev seed if present
       localStorage.removeItem('rupay_cards_cache');
       localStorage.removeItem('rupay_accounts_cache');
@@ -13775,8 +13792,7 @@
       if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
       // 2. Initialize security: Check 24-Hour session & hydrate encrypted cache
-      const urlParams = new URLSearchParams(window.location.search);
-      const isDevUnlock = urlParams.get('dev_unlock') === 'true';
+      const isDevUnlock = isDevEnvironment();
 
       if (isSessionValid() || isDevUnlock) {
         if (isDevUnlock) {
