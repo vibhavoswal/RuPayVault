@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-design-mode="cupertino">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1948,11 +1948,9 @@
     .digit-pop-4 { animation: digitBlockPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.34s both; }
 
     /* ======================================================== */
-    /* 4 DIVERSE FRONTEND DESIGN MODES (SWITCHABLE IN DRAWER)   */
-    /* Mode 1: Default (Existing Native Rules - Unchanged)     */
-    /* Mode 2: Cupertino iOS (Apple Design & HIG Glassmorphism) */
-    /* Mode 3: Editorial Minimalist (Atelier & Anti-Slop Taste) */
-    /* Mode 4: Executive Pro (Fintech Dashboard & Tailwind DS)  */
+    /* FRONTEND DESIGN MODES (DEFAULT & CUPERTINO iOS)          */
+    /* Mode 1: Default (Native RuPay Vault Theme)               */
+    /* Mode 2: Cupertino iOS (Apple HIG Glassmorphism)          */
     /* ======================================================== */
 
     /* --- MODE 2: CUPERTINO iOS (Apple HIG & Glassmorphism - Select Button Artifact Fixed) --- */
@@ -2116,461 +2114,7 @@
       font-weight: 600 !important;
     }
 
-    /* --- MODE 3: CUPERTINO iOS (FROM SCRATCH - Apple HIG Inset Grouped) --- */
-    html[data-design-mode="cupertino-scratch"] {
-      --theme-bg: #000000;
-      --theme-card-bg: #1c1c1e;
-      --theme-card-subtle: #2c2c2e;
-      --theme-border: rgba(255, 255, 255, 0.09);
-      --theme-text-main: #ffffff;
-      --theme-text-sub: rgba(235, 235, 245, 0.6);
-      --theme-text-muted: rgba(235, 235, 245, 0.35);
-      --drawer-bg: rgba(28, 28, 30, 0.94);
-      --drawer-border: rgba(255, 255, 255, 0.12);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] {
-      --theme-bg: #f2f2f7;
-      --theme-card-bg: #ffffff;
-      --theme-card-subtle: #f8f8fa;
-      --theme-border: rgba(60, 60, 67, 0.12);
-      --theme-text-main: #000000;
-      --theme-text-sub: rgba(60, 60, 67, 0.6);
-      --theme-text-muted: rgba(60, 60, 67, 0.35);
-      --drawer-bg: rgba(245, 245, 247, 0.94);
-      --drawer-border: rgba(60, 60, 67, 0.15);
-    }
-    html[data-design-mode="cupertino-scratch"] #mobile-app-container {
-      background-color: #000000 !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] #mobile-app-container {
-      background-color: #f2f2f7 !important;
-    }
-    html[data-design-mode="cupertino-scratch"] #mb-top-header,
-    html[data-design-mode="cupertino-scratch"] #cm-header,
-    html[data-design-mode="cupertino-scratch"] #bm-header,
-    html[data-design-mode="cupertino-scratch"] #in-header {
-      background: rgba(18, 18, 20, 0.8) !important;
-      backdrop-filter: blur(25px) saturate(180%) !important;
-      -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-      border-bottom: 0.5px solid rgba(255, 255, 255, 0.12) !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] #mb-top-header,
-    html.light[data-design-mode="cupertino-scratch"] #cm-header,
-    html.light[data-design-mode="cupertino-scratch"] #bm-header,
-    html.light[data-design-mode="cupertino-scratch"] #in-header {
-      background: rgba(250, 250, 252, 0.82) !important;
-      backdrop-filter: blur(25px) saturate(180%) !important;
-      -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-      border-bottom: 0.5px solid rgba(60, 60, 67, 0.15) !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .rounded-2xl,
-    html[data-design-mode="cupertino-scratch"] .rounded-xl,
-    html[data-design-mode="cupertino-scratch"] .rounded-3xl {
-      border-radius: 14px !important;
-      background: #1c1c1e !important;
-      border: 0.5px solid rgba(255, 255, 255, 0.08) !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] .rounded-2xl,
-    html.light[data-design-mode="cupertino-scratch"] .rounded-xl,
-    html.light[data-design-mode="cupertino-scratch"] .rounded-3xl {
-      background: #ffffff !important;
-      border: 0.5px solid rgba(0, 0, 0, 0.04) !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.02) !important;
-    }
-    html[data-design-mode="cupertino-scratch"] #mb-deck-selector {
-      background: #000000 !important;
-      border-bottom: 0.5px solid rgba(255, 255, 255, 0.08) !important;
-      padding: 8px 12px !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] #mb-deck-selector {
-      background: #f2f2f7 !important;
-      border-bottom: 0.5px solid rgba(60, 60, 67, 0.1) !important;
-      padding: 8px 12px !important;
-    }
-    html[data-design-mode="cupertino-scratch"] #mb-deck-selector button {
-      border-radius: 10px !important;
-      font-size: 11.5px !important;
-      font-weight: 600 !important;
-    }
-    html[data-design-mode="cupertino-scratch"] #unified-floating-dock,
-    html.light[data-design-mode="cupertino-scratch"] #unified-floating-dock {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .action-pill.expanded {
-      background: rgba(30, 30, 32, 0.88) !important;
-      backdrop-filter: blur(30px) saturate(200%) !important;
-      -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
-      border: 0.5px solid rgba(255, 255, 255, 0.16) !important;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6) !important;
-      border-radius: 9999px !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] .action-pill.expanded {
-      background: rgba(255, 255, 255, 0.9) !important;
-      backdrop-filter: blur(30px) saturate(200%) !important;
-      -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
-      border: 0.5px solid rgba(60, 60, 67, 0.18) !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
-      border-radius: 9999px !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .dock-satellite-btn.collapsed,
-    html.light[data-design-mode="cupertino-scratch"] .dock-satellite-btn.collapsed {
-      background: #007AFF !important;
-      border: 0.5px solid rgba(255, 255, 255, 0.25) !important;
-      box-shadow: 0 8px 24px -2px rgba(0, 122, 255, 0.45) !important;
-      border-radius: 9999px !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .dock-satellite-btn.expanded {
-      background: rgba(44, 44, 46, 0.92) !important;
-      border: 0.5px solid rgba(255, 255, 255, 0.18) !important;
-      border-radius: 9999px !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] .dock-satellite-btn.expanded {
-      background: rgba(235, 235, 240, 0.95) !important;
-      border: 0.5px solid rgba(60, 60, 67, 0.2) !important;
-      border-radius: 9999px !important;
-      color: #000000 !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .bg-\[\#0C8C46\],
-    html[data-design-mode="cupertino-scratch"] .bg-emerald-500,
-    html[data-design-mode="cupertino-scratch"] .bg-emerald-600 {
-      background: #34C759 !important;
-      border-radius: 10px !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] .bg-\[\#0C8C46\],
-    html.light[data-design-mode="cupertino-scratch"] .bg-emerald-500,
-    html.light[data-design-mode="cupertino-scratch"] .bg-emerald-600 {
-      background: #34C759 !important;
-      border-radius: 10px !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .text-emerald-400,
-    html[data-design-mode="cupertino-scratch"] .text-emerald-500 {
-      color: #34C759 !important;
-    }
-    html.light[data-design-mode="cupertino-scratch"] .text-emerald-400,
-    html.light[data-design-mode="cupertino-scratch"] .text-emerald-500 {
-      color: #28a745 !important;
-    }
-    html[data-design-mode="cupertino-scratch"] .font-mono,
-    html[data-design-mode="cupertino-scratch"] .tabular-nums,
-    html[data-design-mode="cupertino-scratch"] #in-kpi-net-income,
-    html[data-design-mode="cupertino-scratch"] #in-kpi-gross-income,
-    html[data-design-mode="cupertino-scratch"] #in-kpi-card-charges,
-    html[data-design-mode="cupertino-scratch"] #cm-total-cards-metric {
-      font-variant-numeric: tabular-nums !important;
-      letter-spacing: -0.015em !important;
-    }
-
-    /* --- MODE 4: OBSIDIAN OLED (UI/UX Pro Max Fintech Dark OLED) --- */
-    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-    html[data-design-mode="obsidian"] {
-      --theme-bg: #000000;
-      --theme-card-bg: #09090b;
-      --theme-card-subtle: #141417;
-      --theme-border: #27272a;
-      --theme-text-main: #f4f4f5;
-      --theme-text-sub: #a1a1aa;
-      --theme-text-muted: #71717a;
-      --drawer-bg: #050507;
-      --drawer-border: #27272a;
-      font-family: "Fira Sans", -apple-system, sans-serif !important;
-    }
-    html.light[data-design-mode="obsidian"] {
-      --theme-bg: #ffffff;
-      --theme-card-bg: #f8fafc;
-      --theme-card-subtle: #f1f5f9;
-      --theme-border: #e2e8f0;
-      --theme-text-main: #09090b;
-      --theme-text-sub: #64748b;
-      --theme-text-muted: #94a3b8;
-      --drawer-bg: #ffffff;
-      --drawer-border: #e2e8f0;
-    }
-    html[data-design-mode="obsidian"] #mobile-app-container {
-      background-color: #000000 !important;
-    }
-    html.light[data-design-mode="obsidian"] #mobile-app-container {
-      background-color: #f8fafc !important;
-    }
-    html[data-design-mode="obsidian"] .rounded-2xl,
-    html[data-design-mode="obsidian"] .rounded-xl,
-    html[data-design-mode="obsidian"] .rounded-3xl {
-      border-radius: 6px !important;
-      border: 1px solid #27272a !important;
-      box-shadow: none !important;
-      background: #09090b !important;
-    }
-    html.light[data-design-mode="obsidian"] .rounded-2xl,
-    html.light[data-design-mode="obsidian"] .rounded-xl,
-    html.light[data-design-mode="obsidian"] .rounded-3xl {
-      background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    }
-    html[data-design-mode="obsidian"] #mb-top-header,
-    html[data-design-mode="obsidian"] #cm-header,
-    html[data-design-mode="obsidian"] #bm-header,
-    html[data-design-mode="obsidian"] #in-header {
-      background: #000000 !important;
-      border-bottom: 1px solid #1f1f23 !important;
-    }
-    html.light[data-design-mode="obsidian"] #mb-top-header,
-    html.light[data-design-mode="obsidian"] #cm-header,
-    html.light[data-design-mode="obsidian"] #bm-header,
-    html.light[data-design-mode="obsidian"] #in-header {
-      background: #ffffff !important;
-      border-bottom: 1px solid #e2e8f0 !important;
-    }
-    html[data-design-mode="obsidian"] #unified-floating-dock,
-    html.light[data-design-mode="obsidian"] #unified-floating-dock {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-    html[data-design-mode="obsidian"] .action-pill.expanded {
-      background: #0e0e11 !important;
-      border: 1px solid #27272a !important;
-      border-radius: 8px !important;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8) !important;
-    }
-    html.light[data-design-mode="obsidian"] .action-pill.expanded {
-      background: #ffffff !important;
-      border: 1px solid #cbd5e1 !important;
-      border-radius: 8px !important;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
-    }
-    html[data-design-mode="obsidian"] .dock-satellite-btn.collapsed,
-    html.light[data-design-mode="obsidian"] .dock-satellite-btn.collapsed {
-      background: #10b981 !important;
-      border: 1px solid #34d399 !important;
-      border-radius: 8px !important;
-      box-shadow: 0 0 18px rgba(16, 185, 129, 0.4) !important;
-    }
-    html[data-design-mode="obsidian"] .dock-satellite-btn.expanded {
-      background: #18181b !important;
-      border: 1px solid #3f3f46 !important;
-      border-radius: 8px !important;
-    }
-    html.light[data-design-mode="obsidian"] .dock-satellite-btn.expanded {
-      background: #f1f5f9 !important;
-      border: 1px solid #cbd5e1 !important;
-      border-radius: 8px !important;
-      color: #0f172a !important;
-    }
-    html[data-design-mode="obsidian"] .font-mono,
-    html[data-design-mode="obsidian"] .tabular-nums,
-    html[data-design-mode="obsidian"] #in-kpi-net-income,
-    html[data-design-mode="obsidian"] #in-kpi-gross-income,
-    html[data-design-mode="obsidian"] #in-kpi-card-charges,
-    html[data-design-mode="obsidian"] #cm-total-cards-metric,
-    html[data-design-mode="obsidian"] .font-mono-apple {
-      font-family: "Fira Code", monospace !important;
-      font-variant-numeric: tabular-nums !important;
-      letter-spacing: -0.02em !important;
-    }
-    html[data-design-mode="obsidian"] .bg-\[\#0C8C46\],
-    html[data-design-mode="obsidian"] .bg-emerald-500,
-    html[data-design-mode="obsidian"] .bg-emerald-600 {
-      background: #10b981 !important;
-      border-radius: 6px !important;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
-    }
-    html.light[data-design-mode="obsidian"] .bg-\[\#0C8C46\],
-    html.light[data-design-mode="obsidian"] .bg-emerald-500,
-    html.light[data-design-mode="obsidian"] .bg-emerald-600 {
-      background: #059669 !important;
-      border-radius: 6px !important;
-      color: #ffffff !important;
-    }
-    html[data-design-mode="obsidian"] #mb-deck-selector {
-      background: #000000 !important;
-      border-bottom: 1px solid #1f1f23 !important;
-    }
-    html.light[data-design-mode="obsidian"] #mb-deck-selector {
-      background: #f8fafc !important;
-      border-bottom: 1px solid #e2e8f0 !important;
-    }
-    html[data-design-mode="obsidian"] #mb-deck-selector button {
-      border-radius: 6px !important;
-      font-family: "Fira Sans", sans-serif !important;
-    }
-    html[data-design-mode="obsidian"] #nav-drawer-panel {
-      background: #050507 !important;
-      border-right: 1px solid #27272a !important;
-    }
-    html.light[data-design-mode="obsidian"] #nav-drawer-panel {
-      background: #ffffff !important;
-      border-right: 1px solid #e2e8f0 !important;
-    }
-
-    /* --- MODE 5: SWISS PRECISION (Tailwind DS & Web Design Guidelines) --- */
-    html[data-design-mode="swiss"] {
-      --theme-bg: #0e0d0c;
-      --theme-card-bg: #161514;
-      --theme-card-subtle: #1e1d1b;
-      --theme-border: #282624;
-      --theme-text-main: #f5f2eb;
-      --theme-text-sub: #a8a095;
-      --theme-text-muted: #6e675d;
-      --drawer-bg: #0e0d0c;
-      --drawer-border: #282624;
-      font-family: "IBM Plex Sans", -apple-system, sans-serif !important;
-    }
-    html.light[data-design-mode="swiss"] {
-      --theme-bg: #fcfbf8;
-      --theme-card-bg: #ffffff;
-      --theme-card-subtle: #f5f3ee;
-      --theme-border: #e4ded4;
-      --theme-text-main: #1c1917;
-      --theme-text-sub: #78716c;
-      --theme-text-muted: #a8a29e;
-      --drawer-bg: #fcfbf8;
-      --drawer-border: #e4ded4;
-    }
-    html[data-design-mode="swiss"] #mobile-app-container {
-      background-color: #0e0d0c !important;
-    }
-    html.light[data-design-mode="swiss"] #mobile-app-container {
-      background-color: #fcfbf8 !important;
-    }
-    html[data-design-mode="swiss"] .rounded-2xl,
-    html[data-design-mode="swiss"] .rounded-xl,
-    html[data-design-mode="swiss"] .rounded-3xl {
-      border-radius: 2px !important;
-      border: 1px solid #282624 !important;
-      box-shadow: none !important;
-      background: #161514 !important;
-    }
-    html.light[data-design-mode="swiss"] .rounded-2xl,
-    html.light[data-design-mode="swiss"] .rounded-xl,
-    html.light[data-design-mode="swiss"] .rounded-3xl {
-      background: #ffffff !important;
-      border: 1px solid #e4ded4 !important;
-      box-shadow: none !important;
-    }
-    html[data-design-mode="swiss"] #mb-top-header,
-    html[data-design-mode="swiss"] #cm-header,
-    html[data-design-mode="swiss"] #bm-header,
-    html[data-design-mode="swiss"] #in-header {
-      background: #0e0d0c !important;
-      border-bottom: 2px solid #d4a94a !important;
-    }
-    html.light[data-design-mode="swiss"] #mb-top-header,
-    html.light[data-design-mode="swiss"] #cm-header,
-    html.light[data-design-mode="swiss"] #bm-header,
-    html.light[data-design-mode="swiss"] #in-header {
-      background: #fcfbf8 !important;
-      border-bottom: 2px solid #b8860b !important;
-    }
-    html[data-design-mode="swiss"] #unified-floating-dock,
-    html.light[data-design-mode="swiss"] #unified-floating-dock {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-    }
-    html[data-design-mode="swiss"] .action-pill.expanded {
-      background: #161514 !important;
-      border: 1px solid #d4a94a !important;
-      border-radius: 2px !important;
-      box-shadow: 2px 2px 0 #d4a94a !important;
-    }
-    html.light[data-design-mode="swiss"] .action-pill.expanded {
-      background: #ffffff !important;
-      border: 1px solid #b8860b !important;
-      border-radius: 2px !important;
-      box-shadow: 2px 2px 0 #b8860b !important;
-    }
-    html[data-design-mode="swiss"] .dock-satellite-btn.collapsed,
-    html.light[data-design-mode="swiss"] .dock-satellite-btn.collapsed {
-      background: #d4a94a !important;
-      color: #0e0d0c !important;
-      border: 1px solid #f3cf7a !important;
-      border-radius: 2px !important;
-      box-shadow: 2px 2px 0 rgba(212, 169, 74, 0.4) !important;
-    }
-    html[data-design-mode="swiss"] .dock-satellite-btn.expanded {
-      background: #1e1d1b !important;
-      border: 1px solid #d4a94a !important;
-      border-radius: 2px !important;
-    }
-    html.light[data-design-mode="swiss"] .dock-satellite-btn.expanded {
-      background: #f5f3ee !important;
-      border: 1px solid #b8860b !important;
-      border-radius: 2px !important;
-      color: #1c1917 !important;
-    }
-    html[data-design-mode="swiss"] .font-mono,
-    html[data-design-mode="swiss"] .tabular-nums,
-    html[data-design-mode="swiss"] #in-kpi-net-income,
-    html[data-design-mode="swiss"] #in-kpi-gross-income,
-    html[data-design-mode="swiss"] #in-kpi-card-charges,
-    html[data-design-mode="swiss"] #cm-total-cards-metric,
-    html[data-design-mode="swiss"] .font-mono-apple {
-      font-family: "IBM Plex Mono", monospace !important;
-      font-variant-numeric: tabular-nums !important;
-      letter-spacing: 0.02em !important;
-    }
-    html[data-design-mode="swiss"] h1,
-    html[data-design-mode="swiss"] h2,
-    html[data-design-mode="swiss"] .text-lg,
-    html[data-design-mode="swiss"] .text-xl,
-    html[data-design-mode="swiss"] .font-extrabold {
-      font-family: "IBM Plex Sans", sans-serif !important;
-      font-weight: 700 !important;
-      letter-spacing: -0.015em !important;
-    }
-    html[data-design-mode="swiss"] button.rounded-full,
-    html[data-design-mode="swiss"] .rounded-full {
-      border-radius: 2px !important;
-    }
-    html[data-design-mode="swiss"] .bg-\[\#0C8C46\],
-    html[data-design-mode="swiss"] .bg-emerald-500,
-    html[data-design-mode="swiss"] .bg-emerald-600 {
-      background: #d4a94a !important;
-      color: #0e0d0c !important;
-      border-radius: 2px !important;
-    }
-    html.light[data-design-mode="swiss"] .bg-\[\#0C8C46\],
-    html.light[data-design-mode="swiss"] .bg-emerald-500,
-    html.light[data-design-mode="swiss"] .bg-emerald-600 {
-      background: #b8860b !important;
-      color: #ffffff !important;
-      border-radius: 2px !important;
-    }
-    html[data-design-mode="swiss"] .text-emerald-400,
-    html[data-design-mode="swiss"] .text-emerald-500 {
-      color: #d4a94a !important;
-    }
-    html.light[data-design-mode="swiss"] .text-emerald-400,
-    html.light[data-design-mode="swiss"] .text-emerald-500 {
-      color: #b8860b !important;
-    }
-    html[data-design-mode="swiss"] #mb-deck-selector {
-      background: #0e0d0c !important;
-      border-bottom: 1px solid #282624 !important;
-    }
-    html.light[data-design-mode="swiss"] #mb-deck-selector {
-      background: #fcfbf8 !important;
-      border-bottom: 1px solid #e4ded4 !important;
-    }
-    html[data-design-mode="swiss"] #nav-drawer-panel {
-      background: #0e0d0c !important;
-      border-right: 2px solid #d4a94a !important;
-    }
-    html.light[data-design-mode="swiss"] #nav-drawer-panel {
-      background: #fcfbf8 !important;
-      border-right: 2px solid #b8860b !important;
-    }
-
+    
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
@@ -3795,40 +3339,13 @@
               <span class="text-[10px] opacity-75 font-normal">Original</span>
             </button>
 
-            <!-- 2. Cupertino iOS (Apple HIG & Glassmorphism - Bug Fixed) -->
+            <!-- 2. Cupertino iOS (Apple HIG & Glassmorphism) -->
             <button onclick="setDesignMode('cupertino')" id="btn-design-cupertino" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
               <div class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-blue-400"></span>
                 <span>Cupertino iOS</span>
               </div>
               <span class="text-[10px] opacity-75 font-normal">Apple Glass</span>
-            </button>
-
-            <!-- 3. Cupertino iOS (From Scratch - Apple HIG Inset Grouped) -->
-            <button onclick="setDesignMode('cupertino-scratch')" id="btn-design-cupertino-scratch" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                <span>Cupertino (Scratch)</span>
-              </div>
-              <span class="text-[10px] opacity-75 font-normal">HIG Native</span>
-            </button>
-
-            <!-- 4. Obsidian OLED (UI/UX Pro Max Fintech Dark OLED) -->
-            <button onclick="setDesignMode('obsidian')" id="btn-design-obsidian" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                <span>Obsidian OLED</span>
-              </div>
-              <span class="text-[10px] opacity-75 font-normal">Fira Code</span>
-            </button>
-
-            <!-- 5. Swiss Precision (Tailwind DS & Web Design Guidelines) -->
-            <button onclick="setDesignMode('swiss')" id="btn-design-swiss" class="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-bold transition-all flex items-center justify-between text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] border border-transparent spring-press">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                <span>Swiss Precision</span>
-              </div>
-              <span class="text-[10px] opacity-75 font-normal">IBM Plex</span>
             </button>
           </div>
         </div>
@@ -7537,7 +7054,7 @@
 
     /* --- FRONTEND DESIGN SYSTEM SWITCHER --- */
     function setDesignMode(mode) {
-      const validModes = ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'];
+      const validModes = ['default', 'cupertino'];
       const targetMode = validModes.includes(mode) ? mode : 'default';
 
       if (targetMode === 'default') {
@@ -7554,10 +7071,7 @@
 
       const labels = {
         'default': 'Default',
-        'cupertino': 'Cupertino iOS',
-        'cupertino-scratch': 'Cupertino (Scratch)',
-        'obsidian': 'Obsidian OLED',
-        'swiss': 'Swiss Precision'
+        'cupertino': 'Cupertino iOS'
       };
 
       showToast(`Switched interface to ${labels[targetMode]}!`);
@@ -7569,15 +7083,12 @@
       if (activeLabel) {
         const labels = {
           'default': 'Default',
-          'cupertino': 'Cupertino iOS',
-          'cupertino-scratch': 'Cupertino (Scratch)',
-          'obsidian': 'Obsidian OLED',
-          'swiss': 'Swiss Precision'
+          'cupertino': 'Cupertino iOS'
         };
         activeLabel.textContent = labels[mode] || 'Default';
       }
 
-      ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'].forEach(m => {
+      ['default', 'cupertino'].forEach(m => {
         const btn = document.getElementById(`btn-design-${m}`);
         if (!btn) return;
         if (m === mode) {
@@ -7589,14 +7100,14 @@
     }
 
     function initDesignMode() {
-      let saved = 'cupertino';
+      let saved = 'default';
       try {
         const stored = localStorage.getItem('rupay_design_mode');
-        if (stored && ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'].includes(stored)) {
+        if (stored && ['default', 'cupertino'].includes(stored)) {
           saved = stored;
         }
       } catch(e) {}
-      const validModes = ['default', 'cupertino', 'cupertino-scratch', 'obsidian', 'swiss'];
+      const validModes = ['default', 'cupertino'];
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const urlMode = urlParams.get('design_mode');
@@ -7605,7 +7116,7 @@
           try { localStorage.setItem('rupay_design_mode', saved); } catch(e) {}
         }
       } catch(e) {}
-      const targetMode = validModes.includes(saved) ? saved : 'cupertino';
+      const targetMode = validModes.includes(saved) ? saved : 'default';
       if (targetMode === 'default') {
         document.documentElement.removeAttribute('data-design-mode');
       } else {
