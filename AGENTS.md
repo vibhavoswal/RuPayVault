@@ -24,6 +24,10 @@
 - The app must **always default to ⚡ Activity Log on page load/reload**.
 - Deck selector must NOT show false-active glowing borders on unselected tabs.
 
+### 4. No Redundant Status Labels on Cards (STRICT)
+- **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`) onto mobile cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation, or emerald for active/arrived) already provides the definitive semantic signal.
+- The title row must display **Brand name ONLY** (+ linked Card tag when tagged). Red color is sufficient signal. Detail text belongs in the inspection sheet (`(i)`), not on the card.
+
 ---
 
 ## Strict Backend & Data Integrity Rules
