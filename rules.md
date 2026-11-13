@@ -24,9 +24,15 @@
 - Do not generate arbitrary single-letter initial boxes (e.g., `[L]`, `[F]`, `[K]`, `[M]`) as placeholders for brands.
 - Use clean brand typography, logos, or semantic category icons instead.
 
+## 5. No Redundant Status Text Labels (Color & Placard State Sufficiency)
+- **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`, `"Awaiting"`) onto cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation, or emerald for arrived/active) already serves as the definitive semantic signal.
+- **Card Title / Line 1 Rule**: The title row must display **Brand name ONLY** (+ linked Card tag when tagged). Never clutter card headers with redundant state labels.
+- Color, borders, and left accent stripes convey lifecycle state cleanly with zero visual noise.
+- Descriptive status text is strictly reserved for the detailed inspection modal / sheet (`(i)` detail sheet), keeping primary list feeds sleek, clean, and scannable.
+
 ---
 
-## 5. Safeguards Audit Across Operations (Mandatory Pre-Flight Gate)
+## 6. Safeguards Audit Across Operations (Mandatory Pre-Flight Gate)
 Before adding or modifying **any** operation, mutation, or workflow in the codebase (frontend or Google Apps Script backend), you must audit the operation against this checklist and integrate every safeguard that applies.
 
 ### Core Safeguards Matrix
