@@ -389,7 +389,8 @@ function parseRupayVoucherEmail(msg) {
   }
 
   // 5. Binary Check: Is it a delay placeholder or a real code?
-  const isDelay = !rawVal || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a|revalidation/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
+  const isProcessing = /processing/i.test(rawVal) || /code will be sent within|within 24[-–]48\s*hours/i.test(body);
+  const isDelay = !rawVal || isProcessing || /will be sent|delay|within|hrs|days|pending|\bna\b|n\/a|revalidation/i.test(rawVal) || rawVal.toUpperCase().startsWith("RUPS");
   if (isDelay) {
     return {
       bookingId: bookingId,
@@ -397,9 +398,9 @@ function parseRupayVoucherEmail(msg) {
       amount: amount,
       dateOfIssue: dateOfIssue,
       account: account,
-      code: "PENDING",
+      code: isProcessing ? "Processing" : "PENDING",
       pin: "",
-      status: "PENDING",
+      status: isProcessing ? "PROCESSING" : "PENDING",
       receivedDate: receivedDate,
       isDelivered: false
     };
@@ -739,7 +740,7 @@ function extractAmount(body) {
  */
 function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
   const bUpper = (bookingId && bookingId !== '-' && !bookingId.startsWith('#')) ? String(bookingId).trim().toUpperCase() : '';
-  const cUpper = (code && code !== '-' && code.toUpperCase() !== 'PENDING') ? String(code).trim().toUpperCase() : '';
+  const cUpper = (code && code !== '-' && code.toUpperCase() !== 'PENDING' && !/processing/i.test(code)) ? String(code).trim().toUpperCase() : '';
   if (!bUpper && !cUpper) return null;
 
   const checkSheet = (sheet) => {
@@ -829,7 +830,7 @@ function recordPendingRevalidation(ss, data) {
       const currentPayUrl = String(newRows[i][11] || '').trim();
 
       // Guard 1: If already ACTIVE with a real delivered code, do not revert!
-      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation") {
+      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation" && !/processing/i.test(currentCode)) {
         return;
       }
 
@@ -914,13 +915,13 @@ function recordPendingRedemption(ss, data) {
 
   const rowData = [
     data.bookingId,                                      // Col 1: Booking ID (RUPS...)
-    "PENDING",                                           // Col 2: Code
+    data.code || "PENDING",                              // Col 2: Code
     "",                                                  // Col 3: PIN
     data.amount || 500,                                  // Col 4: Value
     data.dateOfIssue || "",                              // Col 5: Date of Issue
     data.account || "",                                  // Col 6: Account
     "Unassigned",                                        // Col 7: Card
-    "PENDING",                                           // Col 8: Status
+    data.status || "PENDING",                            // Col 8: Status
     formatISTTimestamp(data.receivedDate || new Date()), // Col 9: Appended Timestamp (IST) - Immutable for Stage 1
     true,                                                // Col 10: Display in UI
     targetBrand                                          // Col 11: Target Brand
@@ -949,7 +950,7 @@ function fulfillVoucherCode(ss, data) {
       const currentStatus = String(rows[i][7] || '').trim().toUpperCase();
 
       // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
-      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation") {
+      if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation" && !/processing/i.test(currentCode)) {
         return; // No-op, do not re-stamp
       }
 
@@ -1028,7 +1029,7 @@ function reconcilePendingVouchers(ss) {
     const currentPin = String(sRows[i][2] || '').trim();
     const status = String(sRows[i][7] || '').trim();
 
-    if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || code === 'PENDING' || code === 'Pending revalidation') && /^RUPS/i.test(bid)) {
+    if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || status === 'PROCESSING' || code === 'PENDING' || code === 'Pending revalidation' || /processing/i.test(code) || /processing/i.test(status)) && /^RUPS/i.test(bid)) {
       // In-memory data sanitization for pending rows (Gmail search is handled centrally in processRupayEmails batch)
       if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
         newSheet.getRange(i + 1, 3).setValue("");
@@ -4044,7 +4045,7 @@ function doPost(e) {
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
           .map(c => String(c).trim().toUpperCase())
-          .filter(c => c && c !== 'PENDING' && c !== '-' && !c.startsWith('#'))
+          .filter(c => c && c !== 'PENDING' && !/processing/i.test(c) && c !== '-' && !c.startsWith('#'))
       );
       if (data.bookingId) {
         const b = String(data.bookingId).trim().toUpperCase();

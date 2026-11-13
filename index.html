@@ -198,6 +198,23 @@
       background: #E0F2FE !important;
       border-color: #06b6d4 !important;
     }
+    /* Processing badge and pending text inside cards in light mode */
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .text-rose-400,
+    html.light .mobile-view [id^="mb-card-"] .text-rose-400 {
+      color: #e11d48 !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .bg-rose-500\/15,
+    html.light .mobile-view [id^="mb-card-"] .bg-rose-500\/15 {
+      background-color: #ffe4e6 !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"] .border-rose-500\/25,
+    html.light .mobile-view [id^="mb-card-"] .border-rose-500\/25 {
+      border-color: rgba(244, 63, 94, 0.35) !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .text-rose-400,
+    html.light #voucher-detail-sheet .text-rose-400 {
+      color: #e11d48 !important;
+    }
     /* Brand names and code text inside cards in light mode */
     [data-theme="light"] .mobile-view [id^="mb-card-"] .text-white,
     html.light .mobile-view [id^="mb-card-"] .text-white {
@@ -5036,7 +5053,7 @@
           state.staging = decryptedStaging.map(s => {
             const cleanBid = String(s.bookingId || s.id || '').trim().toUpperCase();
             if (revalSet.has(cleanBid)) {
-              const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code);
+              const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code) && !/processing/i.test(s.code);
               if (!isRealCode) {
                 s.status = 'PENDING';
                 s.code = 'PENDING';
@@ -5228,7 +5245,37 @@
       copyToClipboard(text);
     }
 
-    /* --- VOUCHER DETAIL iOS BOTTOM SHEET (MATERIAL SVG ℹ️) --- */
+    /* --- VOUCHER STATUS PREDICATES & CLASSIFIERS --- */
+    function isVoucherRevalidation(v) {
+      if (!v) return false;
+      const s = String(v.status || '').trim().toUpperCase();
+      const c = String(v.code || '').trim();
+      return s === 'PENDING_REVALIDATION' || c === 'Pending revalidation' || /revalidation/i.test(c);
+    }
+
+    function isVoucherProcessing(v) {
+      if (!v) return false;
+      const s = String(v.status || '').trim().toUpperCase();
+      const c = String(v.code || '').trim();
+      return s === 'PROCESSING' || /processing/i.test(s) || /processing/i.test(c);
+    }
+
+    function isVoucherPending(v) {
+      if (!v) return false;
+      if (isVoucherRevalidation(v)) return false;
+      const s = String(v.status || '').trim().toUpperCase();
+      const c = String(v.code || '').trim();
+      return isVoucherProcessing(v) || s === 'PENDING' || c.toUpperCase() === 'PENDING' || c === '-' || !c;
+    }
+
+    function isVoucherArrived(v) {
+      if (!v) return false;
+      if (isVoucherRevalidation(v) || isVoucherPending(v)) return false;
+      const c = String(v.code || '').trim();
+      return !!c && c.toUpperCase() !== 'PENDING' && c !== '-' && !/processing/i.test(c) && !/revalidat/i.test(c);
+    }
+
+    /* --- VOUCHER DETAIL iOS BOTTOM SHEET (MATERIAL SVG INFO ICON) --- */
     function openVoucherDetailSheet(id) {
       let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
       let isStaging = !!act;
@@ -5264,9 +5311,10 @@
 
       const brandDisplay = getBrandDisplayName(act.brand);
       const isTagged = isCardTagged(act.card);
-      const isRevalidation = act.status === 'PENDING_REVALIDATION' || act.code === 'Pending revalidation' || /revalidation/i.test(act.code);
-      const isPending = !isRevalidation && (act.status === 'PENDING' || act.code === 'PENDING');
-      const hasArrived = !isPending && !isRevalidation && act.code && act.code !== 'PENDING' && act.code !== '-' && act.code !== 'Pending revalidation';
+      const isRevalidation = isVoucherRevalidation(act);
+      const isProcessing = isVoucherProcessing(act);
+      const isPending = isVoucherPending(act);
+      const hasArrived = isVoucherArrived(act);
       const timeStr = act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
       const relTime = formatRelativeTime(timeStr);
 
@@ -5290,7 +5338,7 @@
                 ${hasArrived ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Voucher Code Delivered</span>' : (isRevalidation ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Validation Pending</span>' : '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Fulfillment Status</span>')}
               </span>
               <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasArrived ? 'bg-emerald-500/15 text-emerald-400' : (isRevalidation ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400')} font-mono-apple">
-                ${hasArrived ? 'Active & Usable' : (isRevalidation ? 'Payment Link Sent' : 'Awaiting Delivery')}
+                ${hasArrived ? 'Active & Usable' : (isRevalidation ? 'Payment Link Sent' : (isProcessing ? 'Processing (24–48h)' : 'Awaiting Delivery'))}
               </span>
             </div>
 
@@ -5317,6 +5365,13 @@
                 <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
                 <span>On Hold – Validation Pending. Payment link sent. Kindly process payment.</span>
               </div>
+            ` : (isProcessing ? `
+              <div class="p-3 rounded-xl bg-black/60 border border-rose-500/30 flex items-center gap-2 text-rose-400 font-medium text-xs">
+                <svg class="w-4 h-4 shrink-0 inline-block text-rose-400" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/>
+                </svg>
+                <span>Voucher code is processing (will be sent within 24–48 hours).</span>
+              </div>
             ` : `
               <div class="p-3 rounded-xl bg-black/60 border border-neutral-800 flex items-center gap-2 text-rose-400 font-medium text-xs">
                 <svg class="w-4 h-4 shrink-0 inline-block text-rose-400" viewBox="0 0 24 24" fill="currentColor">
@@ -5324,7 +5379,7 @@
                 </svg>
                 <span>Voucher code is pending delivery from Gmail (24-48h).</span>
               </div>
-            `)}
+            `))}
           </div>
 
           <!-- AUDIT METADATA BOX -->
@@ -5418,8 +5473,8 @@
               </div>
             ` : `
               <div class="flex-1 py-2.5 px-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-neutral-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                <span>Awaiting Delivery</span>
+                <svg class="w-3.5 h-3.5 ${isProcessing ? 'text-rose-400' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                <span>${isProcessing ? 'Processing Delivery' : 'Awaiting Delivery'}</span>
               </div>
             `)}
             <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
@@ -5468,7 +5523,7 @@
     let sharedActivity = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
     saveSharedActivity();
     let redeemedList = (JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]'))
-      .filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && String(r.code).trim() !== '-');
+      .filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && !/processing/i.test(r.code) && String(r.code).trim() !== '-');
     saveRedeemedList();
 
     function isVoucherRedeemed(v) {
@@ -5476,7 +5531,7 @@
       const vCode = (typeof v === 'string' ? v : (v.code || '')).trim().toUpperCase();
       const vBid = (typeof v === 'object' && v.bookingId ? String(v.bookingId).trim().toUpperCase() : '');
 
-      const hasValidCode = vCode && vCode !== 'PENDING' && vCode !== '-';
+      const hasValidCode = vCode && vCode !== 'PENDING' && !/processing/i.test(vCode) && vCode !== '-';
       const hasValidBid = vBid && vBid !== '-' && !vBid.startsWith('#');
 
       if (!hasValidCode && !hasValidBid) return false;
@@ -5484,7 +5539,7 @@
       return redeemedList.some(r => {
         const rc = (r.code || '').trim().toUpperCase();
         const rb = (r.bookingId || '').trim().toUpperCase();
-        const codeMatch = hasValidCode && rc && rc !== 'PENDING' && rc !== '-' && rc === vCode;
+        const codeMatch = hasValidCode && rc && rc !== 'PENDING' && !/processing/i.test(rc) && rc !== '-' && rc === vCode;
         const bidMatch = hasValidBid && rb && rb !== '-' && !rb.startsWith('#') && rb === vBid;
         return codeMatch || bidMatch;
       });
@@ -5625,7 +5680,7 @@
     }
 
     async function markVoucherAsRedeemed(code, brand) {
-      if (!code || String(code).trim().toUpperCase() === 'PENDING' || String(code).trim() === '-') {
+      if (!code || String(code).trim().toUpperCase() === 'PENDING' || /processing/i.test(code) || String(code).trim() === '-') {
         showToast('Pending vouchers cannot be redeemed yet');
         return;
       }
@@ -6008,7 +6063,7 @@
       const rawCodes = (targets || []).flatMap(t => [t.bookingId, t.code]).filter(c => {
         if (!c) return false;
         const s = String(c).trim().toUpperCase();
-        return s !== '' && s !== 'PENDING' && s !== '-' && !s.startsWith('#');
+        return s !== '' && s !== 'PENDING' && !/processing/i.test(s) && s !== '-' && !s.startsWith('#');
       });
       const codes = Array.from(new Set(rawCodes));
       if (!codes.length) return;
@@ -7956,7 +8011,7 @@
 
               // If marked revalidated locally, keep it sticky as PENDING until real code arrives
               if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid))) {
-                const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code);
+                const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code) && !/processing/i.test(code);
                 if (isRealCode) {
                   removeRevalidatedBid(cleanBid);
                   if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
@@ -8186,14 +8241,12 @@
 
         // Sort Priority for Ingested:
         // 1. Revalidation Pending at the very top (highest action priority)
-        // 2. Red ones (code not arrived / PENDING delivery 24-48h) in the middle
+        // 2. Red ones (code not arrived / PENDING delivery 24-48h / Processing) in the middle
         // 3. Code arrived (Green / ACTIVE / delivered) at the bottom
         // Within each priority tier: newest arrivals first (reverse-chronological)
         const getPriorityTier = (a) => {
-          const isReval = a.status === 'PENDING_REVALIDATION' || a.code === 'Pending revalidation' || /revalidation/i.test(a.code);
-          if (isReval) return 1;
-          const isPending = a.status === 'PENDING' || a.code === 'PENDING' || a.code === '-' || !a.code;
-          if (isPending) return 2;
+          if (isVoucherRevalidation(a)) return 1;
+          if (isVoucherPending(a)) return 2;
           return 3;
         };
 
@@ -8217,9 +8270,10 @@
           const vBrandName = getBrandDisplayName(act.brand);
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
-          const isRevalidation = act.status === 'PENDING_REVALIDATION' || act.code === 'Pending revalidation' || /revalidation/i.test(act.code);
-          const isPending = !isRevalidation && (act.status === 'PENDING' || act.code === 'PENDING');
-          const hasArrived = !isPending && !isRevalidation && act.code && act.code !== 'PENDING' && act.code !== '-' && act.code !== 'Pending revalidation';
+          const isRevalidation = isVoucherRevalidation(act);
+          const isProcessing = isVoucherProcessing(act);
+          const isPending = isVoucherPending(act);
+          const hasArrived = isVoucherArrived(act);
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
           let rightTagOrTime = '';
@@ -8306,9 +8360,10 @@
         document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
-          const isRevalidation = act.status === 'PENDING_REVALIDATION' || act.code === 'Pending revalidation' || /revalidation/i.test(act.code);
-          const isPending = !isRevalidation && (act.status === 'PENDING' || act.code === 'PENDING');
-          const hasArrived = !isPending && !isRevalidation && act.code && act.code !== 'PENDING' && act.code !== '-' && act.code !== 'Pending revalidation';
+          const isRevalidation = isVoucherRevalidation(act);
+          const isProcessing = isVoucherProcessing(act);
+          const isPending = isVoucherPending(act);
+          const hasArrived = isVoucherArrived(act);
           const brandDisplay = getBrandDisplayName(act.brand);
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
@@ -8340,6 +8395,12 @@
                       <!-- LINE 1: Brand name ONLY (no redundant Revalidate badge) + Card tag if tagged -->
                       <div class="flex items-center gap-1.5 text-xs truncate">
                         <span class="font-bold text-white truncate text-[13px]">${brandDisplay}</span>
+                        ${isProcessing ? `
+                          <span class="text-[9.5px] px-1.5 py-0.5 rounded font-mono-apple font-bold bg-rose-500/15 text-rose-400 border border-rose-500/25 shrink-0 flex items-center gap-1">
+                            <svg class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg>
+                            Processing
+                          </span>
+                        ` : ''}
                         ${isTaggedView && isCardTagged(act.card) ? `
                           <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
                             <svg class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
@@ -8709,19 +8770,21 @@
             ${v.redeemedOn ? `<span class="text-[#F47A21] font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
           <td class="p-3">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${v.status === 'PENDING' ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
-              ${v.status === 'PENDING' ? '<span class="inline-flex items-center gap-1"><svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PENDING</span>' : v.status}
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${isVoucherProcessing(v) ? 'text-rose-400 bg-rose-950/60 border border-rose-500/30' : (v.status === 'PENDING' ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30'))}">
+              ${isVoucherProcessing(v) ? '<span class="inline-flex items-center gap-1"><svg class="w-3 h-3 text-rose-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PROCESSING</span>' : (v.status === 'PENDING' ? '<span class="inline-flex items-center gap-1"><svg class="w-3 h-3 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PENDING</span>' : v.status)}
             </span>
           </td>
           <td class="p-3 text-right">
             ${isMisc ? `
               <span class="text-xs text-neutral-400 font-mono-apple font-medium mr-2">Read Only</span>
+            ` : (isVoucherProcessing(v) ? `
+              <span class="text-xs text-rose-400/90 font-medium mr-3">Processing (24-48h)</span>
             ` : (v.status === 'PENDING' ? `
               <span class="text-xs text-amber-400/90 font-medium mr-3">Awaiting Code</span>
             ` : `
               <button onclick="shareSingle('${v.id}')" class="text-xs font-bold text-emerald-400 hover:underline mr-3">WhatsApp</button>
               <button onclick="toggleSingleStatus('${v.id}')" class="text-xs font-medium text-neutral-400 hover:text-white">${v.status === 'USED' ? 'Activate' : 'Mark Redeemed'}</button>
-            `)}
+            `))}
           </td>
         </tr>
       `;
@@ -8791,7 +8854,7 @@
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : (v.status === 'PENDING' ? 'text-amber-400 text-xs font-semibold' : '')}">${v.status === 'PENDING' ? 'Pending Delivery (24-48h)' : v.code}</span>
+                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : (isVoucherProcessing(v) ? 'text-rose-400 text-xs font-semibold' : (v.status === 'PENDING' ? 'text-amber-400 text-xs font-semibold' : ''))}">${isVoucherProcessing(v) ? 'Processing Delivery (24-48h)' : (v.status === 'PENDING' ? 'Pending Delivery (24-48h)' : v.code)}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
@@ -8800,7 +8863,11 @@
                   </div>
                 ` : ''}
               </div>
-              ${v.status === 'PENDING' ? `
+              ${isVoucherProcessing(v) ? `
+                <span class="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-rose-400 bg-rose-500/10 border border-rose-500/20">
+                  Processing
+                </span>
+              ` : (v.status === 'PENDING' ? `
                 <span class="px-2.5 py-1 rounded-xl text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20">
                   Awaiting Delivery
                 </span>
@@ -8808,9 +8875,8 @@
                 <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
                   Copy
                 </button>
-              `}
+              `)}
             </div>
-
             <!-- Bottom Line (Present ONLY on recent arrivals < 7 days) -->
             ${bottomLineHtml}
           </div>
@@ -12626,19 +12692,13 @@
           );
 
           const hasNonApprovable = selectedStaging.some(s =>
-            s.status === 'PENDING' ||
-            s.status === 'PENDING_REVALIDATION' ||
-            s.code === 'PENDING' ||
-            s.code === 'Pending revalidation' ||
-            /revalidation/i.test(s.code) ||
-            !s.code
+            isVoucherPending(s) ||
+            isVoucherRevalidation(s) ||
+            isVoucherProcessing(s) ||
+            !isVoucherArrived(s)
           );
           allGreen = selectedStaging.length > 0 && !hasNonApprovable && selectedStaging.length === count && selectedStaging.every(s =>
-            s.status === 'ACTIVE' &&
-            s.code !== 'PENDING' &&
-            s.code !== 'Pending revalidation' &&
-            !/revalidation/i.test(s.code) &&
-            !!s.code
+            isVoucherArrived(s)
           );
         }
 
@@ -12668,14 +12728,12 @@
       if (!selectedStaging.length) return;
 
       if (selectedStaging.some(s =>
-        s.status === 'PENDING' ||
-        s.status === 'PENDING_REVALIDATION' ||
-        s.code === 'PENDING' ||
-        s.code === 'Pending revalidation' ||
-        /revalidation/i.test(s.code) ||
-        !s.code
+        isVoucherPending(s) ||
+        isVoucherRevalidation(s) ||
+        isVoucherProcessing(s) ||
+        !isVoucherArrived(s)
       )) {
-        showToast('Cannot approve pending vouchers or vouchers awaiting revalidation');
+        showToast('Cannot approve pending vouchers or vouchers awaiting delivery/revalidation');
         return;
       }
 
@@ -13617,6 +13675,10 @@
         showToast("Please select at least 1 voucher");
         return;
       }
+      if (sel.some(v => isVoucherPending(v) || isVoucherProcessing(v) || isVoucherRevalidation(v))) {
+        showToast("Cannot share pending vouchers awaiting code delivery");
+        return;
+      }
       document.getElementById('share-preview-text').value = fmtWhatsApp(sel);
       document.getElementById('modal-share').classList.remove('hidden');
     }
@@ -13711,7 +13773,7 @@
         return;
       }
 
-      const pendingTargets = targetVouchers.filter(v => v.status === 'PENDING' || (v.code || '').toUpperCase() === 'PENDING');
+      const pendingTargets = targetVouchers.filter(v => isVoucherPending(v) || isVoucherProcessing(v) || isVoucherRevalidation(v));
       if (pendingTargets.length > 0) {
         showToast("Cannot redeem pending vouchers awaiting code delivery");
         return;
