@@ -417,24 +417,43 @@
     }
     [data-theme="light"] #mb-sync-pill-btn,
     [data-theme="light"] #cm-sync-pill-btn,
+    [data-theme="light"] #ba-sync-pill-btn,
+    [data-theme="light"] #in-sync-pill-btn,
     html.light #mb-sync-pill-btn,
-    html.light #cm-sync-pill-btn {
+    html.light #cm-sync-pill-btn,
+    html.light #ba-sync-pill-btn,
+    html.light #in-sync-pill-btn {
       background-color: #f1f5f9 !important;
       border-color: #e2e8f0 !important;
       color: #334155 !important;
     }
     [data-theme="light"] #mb-sync-pill-btn:hover,
     [data-theme="light"] #cm-sync-pill-btn:hover,
+    [data-theme="light"] #ba-sync-pill-btn:hover,
+    [data-theme="light"] #in-sync-pill-btn:hover,
     html.light #mb-sync-pill-btn:hover,
-    html.light #cm-sync-pill-btn:hover {
+    html.light #cm-sync-pill-btn:hover,
+    html.light #ba-sync-pill-btn:hover,
+    html.light #in-sync-pill-btn:hover {
       background-color: #e2e8f0 !important;
       color: #0f172a !important;
     }
-    [data-theme="light"] #mb-sync-time,
-    [data-theme="light"] #cm-sync-time,
-    html.light #mb-sync-time,
-    html.light #cm-sync-time {
+    [data-theme="light"] #mb-sync-time:not(.is-syncing):not(.is-error),
+    [data-theme="light"] #cm-sync-time:not(.is-syncing):not(.is-error),
+    [data-theme="light"] #ba-sync-time:not(.is-syncing):not(.is-error),
+    [data-theme="light"] #in-sync-time:not(.is-syncing):not(.is-error),
+    html.light #mb-sync-time:not(.is-syncing):not(.is-error),
+    html.light #cm-sync-time:not(.is-syncing):not(.is-error),
+    html.light #ba-sync-time:not(.is-syncing):not(.is-error),
+    html.light #in-sync-time:not(.is-syncing):not(.is-error) {
       color: #64748b !important;
+    }
+    .is-syncing {
+      color: #ea580c !important;
+      font-weight: 600 !important;
+    }
+    .is-error {
+      color: #e11d48 !important;
     }
     [data-theme="light"] .mobile-view #mb-select-btn,
     html.light .mobile-view #mb-select-btn {
@@ -2234,10 +2253,10 @@
       <!-- Right Cell: Sync Time OR Select All Button in Select Mode -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <div id="mb-header-tools" class="flex items-center gap-1.5">
-          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
-            <svg id="mb-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span id="mb-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
+          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Sheets">
+            <span id="mb-sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] transition-all"></span>
+            <svg id="mb-sync-spinner" class="w-3 h-3 text-[#0C8C46] transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span id="mb-sync-time" class="text-[10px] text-neutral-400 transition-colors">12:25 AM</span>
           </button>
         </div>
         <!-- Select All / Deselect All Button (visible only in select mode) -->
@@ -2676,10 +2695,10 @@
 
       <!-- Right Cell: Sync Time + Spinner, + Add Card -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
-        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
-          <svg id="cm-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span id="cm-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
+        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Sheets">
+          <span id="cm-sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] transition-all"></span>
+          <svg id="cm-sync-spinner" class="w-3 h-3 text-[#0C8C46] transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="cm-sync-time" class="text-[10px] text-neutral-400 transition-colors">12:25 AM</span>
         </button>
         <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm" title="Add RuPay Card">
           <span>+ Add</span>
@@ -2751,10 +2770,10 @@
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </span>
         </button>
-        <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Bank Accounts">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
-          <svg id="ba-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span id="ba-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
+        <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Bank Accounts">
+          <span id="ba-sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] transition-all"></span>
+          <svg id="ba-sync-spinner" class="w-3 h-3 text-[#0C8C46] transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span id="ba-sync-time" class="text-[10px] text-neutral-400 transition-colors">12:25 AM</span>
         </button>
       </div>
     </header>
@@ -2797,9 +2816,10 @@
       </div>
 
       <!-- Sync Status Pill -->
-      <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors" title="Sync with Google Sheets">
-        <svg id="in-sync-spinner" class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        <span id="in-sync-time">RuPay Income</span>
+      <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-card-bg)] active:scale-95 border border-[var(--theme-border)] text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync with Google Sheets">
+        <span id="in-sync-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] transition-all"></span>
+        <svg id="in-sync-spinner" class="w-3.5 h-3.5 text-emerald-500 transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <span id="in-sync-time" class="text-[10px] text-neutral-400 transition-colors">12:25 AM</span>
       </button>
     </header>
 
@@ -3382,10 +3402,10 @@
               </span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
-            <button onclick="syncWithGoogleSheets(true); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+            <button id="drawer-sync-btn" onclick="triggerDrawerSync()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
               <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-                <span>Sync Cloud Database</span>
+                <svg id="drawer-sync-spinner" class="w-3.5 h-3.5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                <span id="drawer-sync-label">Sync Cloud Database</span>
               </span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
@@ -7206,42 +7226,102 @@
     }
 
     let isSyncing = false;
+    let syncStartTime = 0;
+    let queuedManualSync = false;
+    let activeSyncController = null;
     let lastManualEmailSyncMs = 0;
+
+    function triggerDrawerSync() {
+      const spinner = document.getElementById('drawer-sync-spinner');
+      const label = document.getElementById('drawer-sync-label');
+      if (spinner) {
+        spinner.classList.add('animate-spin', 'text-amber-500');
+        spinner.classList.remove('text-neutral-400');
+      }
+      if (label) label.textContent = 'Syncing...';
+      syncWithGoogleSheets(true);
+      setTimeout(() => {
+        closeNavDrawer();
+      }, 200);
+    }
 
     /* --- UNIFIED SYNC UI CONTROLLER (ALL WORKSPACES & PLATFORMS) --- */
     function updateAllSyncIndicators(status, timeStr) {
-      const spinnerIds = ['mb-sync-spinner', 'cm-sync-spinner', 'ba-sync-spinner', 'in-sync-spinner'];
+      const spinnerIds = ['mb-sync-spinner', 'cm-sync-spinner', 'ba-sync-spinner', 'in-sync-spinner', 'drawer-sync-spinner'];
       const timeIds = ['mb-sync-time', 'cm-sync-time', 'ba-sync-time', 'in-sync-time'];
+      const dotIds = ['mb-sync-dot', 'cm-sync-dot', 'ba-sync-dot', 'in-sync-dot'];
+      const pillIds = ['mb-sync-pill-btn', 'cm-sync-pill-btn', 'ba-sync-pill-btn', 'in-sync-pill-btn'];
 
       if (status === 'syncing') {
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.classList.add('animate-spin');
+          if (el) {
+            el.classList.add('animate-spin', 'text-amber-500');
+            el.classList.remove('text-[#0C8C46]', 'text-emerald-500', 'text-neutral-400', 'text-rose-400');
+          }
+        });
+        dotIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] animate-pulse transition-all';
+          }
         });
         timeIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
             el.textContent = 'Syncing...';
-            el.classList.add('text-[#F47A21]');
-            el.classList.remove('text-neutral-400', 'text-rose-400');
+            el.classList.add('is-syncing', 'text-[#ea580c]', 'dark:text-[#F47A21]');
+            el.classList.remove('is-error', 'text-neutral-400', 'text-rose-400');
           }
         });
+        pillIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('border-amber-500/40', 'bg-amber-500/10');
+            el.classList.remove('border-rose-500/30');
+          }
+        });
+        const drawerLabel = document.getElementById('drawer-sync-label');
+        if (drawerLabel) drawerLabel.textContent = 'Syncing...';
         const dtStatus = document.getElementById('dt-sync-status');
         if (dtStatus) dtStatus.textContent = 'Syncing now...';
       } else if (status === 'success') {
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.classList.remove('animate-spin');
+          if (el) {
+            el.classList.remove('animate-spin', 'text-amber-500', 'text-rose-400');
+            if (id === 'in-sync-spinner') {
+              el.classList.add('text-emerald-500');
+            } else if (id === 'drawer-sync-spinner') {
+              el.classList.add('text-neutral-400');
+            } else {
+              el.classList.add('text-[#0C8C46]');
+            }
+          }
+        });
+        dotIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981] transition-all';
+          }
         });
         const displayTime = timeStr ? `Synced at ${timeStr}` : 'Synced';
         timeIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
             el.textContent = displayTime;
-            el.classList.remove('text-[#F47A21]', 'text-rose-400');
+            el.classList.remove('is-syncing', 'is-error', 'text-[#ea580c]', 'dark:text-[#F47A21]', 'text-rose-400');
             el.classList.add('text-neutral-400');
           }
         });
+        pillIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.remove('border-amber-500/40', 'bg-amber-500/10', 'border-rose-500/30');
+          }
+        });
+        const drawerLabel = document.getElementById('drawer-sync-label');
+        if (drawerLabel) drawerLabel.textContent = 'Sync Cloud Database';
         const dtStatus = document.getElementById('dt-sync-status');
         if (dtStatus) dtStatus.textContent = `Live (${state.vouchers ? state.vouchers.length : 0})`;
         const dtDot = document.getElementById('dt-sync-dot');
@@ -7249,17 +7329,35 @@
       } else if (status === 'error') {
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.classList.remove('animate-spin');
+          if (el) {
+            el.classList.remove('animate-spin', 'text-amber-500');
+            el.classList.add('text-rose-400');
+          }
+        });
+        dotIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.className = 'w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_6px_#f43f5e] transition-all';
+          }
         });
         const displayTime = timeStr ? `Synced at ${timeStr} (cached)` : 'Offline (cached)';
         timeIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
             el.textContent = displayTime;
-            el.classList.remove('text-[#F47A21]');
-            el.classList.add('text-rose-400');
+            el.classList.remove('is-syncing', 'text-[#ea580c]', 'dark:text-[#F47A21]');
+            el.classList.add('is-error', 'text-rose-400');
           }
         });
+        pillIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.remove('border-amber-500/40', 'bg-amber-500/10');
+            el.classList.add('border-rose-500/30');
+          }
+        });
+        const drawerLabel = document.getElementById('drawer-sync-label');
+        if (drawerLabel) drawerLabel.textContent = 'Sync Cloud Database';
         const dtStatus = document.getElementById('dt-sync-status');
         if (dtStatus) dtStatus.textContent = 'Offline (cached)';
         const dtDot = document.getElementById('dt-sync-dot');
@@ -7268,7 +7366,11 @@
         // Idle
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.classList.remove('animate-spin');
+          if (el) el.classList.remove('animate-spin', 'text-amber-500');
+        });
+        pillIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('border-amber-500/40', 'bg-amber-500/10');
         });
       }
     }
@@ -7290,26 +7392,53 @@
 
     /* --- LIVE GOOGLE SHEETS FETCH (WITH REAL-TIME ON-DEMAND INGESTION) --- */
     async function syncWithGoogleSheets(isManual = false) {
+      // 0ms IMMEDIATE TACTILE CLICK ACKNOWLEDGMENT
+      if (isManual) {
+        const activePills = ['mb-sync-pill-btn', 'cm-sync-pill-btn', 'ba-sync-pill-btn', 'in-sync-pill-btn', 'drawer-sync-btn'];
+        activePills.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.add('ring-2', 'ring-amber-400/60');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-amber-400/60'), 250);
+          }
+        });
+      }
+
       if (isSyncing) {
-        if (isManual) {
-          showToast('Sync already in progress...');
+        const elapsed = Date.now() - syncStartTime;
+        // If an existing sync has been hanging for > 20s, forcibly reset so user is never stuck
+        if (elapsed > 20000 && activeSyncController) {
+          console.warn('Sync in-flight stalled (>20s). Aborting and starting fresh sync.');
+          try { activeSyncController.abort(); } catch (_) {}
+          isSyncing = false;
+        } else {
+          if (isManual) {
+            queuedManualSync = true;
+            // Visually acknowledge user click immediately
+            const timeIds = ['mb-sync-time', 'cm-sync-time', 'ba-sync-time', 'in-sync-time'];
+            timeIds.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.textContent = 'Sync in progress...';
+            });
+          }
+          return;
         }
-        return;
       }
 
       // Mutation Mutex Shield: Prevent premature read during active write operations
       if (pendingMutationsCount > 0) {
         syncPendingAfterMutation = true;
-        showToast("Saving changes to Google Sheets... sync queued");
+        const timeIds = ['mb-sync-time', 'cm-sync-time', 'ba-sync-time', 'in-sync-time'];
+        timeIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = 'Saving changes...';
+        });
         return;
       }
 
       isSyncing = true;
+      syncStartTime = Date.now();
       updateAllSyncIndicators('syncing');
-
-      if (isManual) {
-        showToast('Syncing with Google Sheets...');
-      }
 
       try {
         // Flush any persisted uncommitted redemptions from previous sessions
@@ -7331,14 +7460,18 @@
         }
 
         const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + params.toString();
-        const { signal, cleanup } = createTimeoutSignal(35000);
+        activeSyncController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          try { activeSyncController.abort(); } catch (_) {}
+        }, 35000);
+
         let res, data;
         try {
-          res = await fetch(syncUrl, { signal: signal });
-          cleanup();
+          res = await fetch(syncUrl, { signal: activeSyncController.signal });
+          clearTimeout(timeoutId);
           data = await res.json();
         } catch (fetchErr) {
-          cleanup();
+          clearTimeout(timeoutId);
           throw fetchErr;
         }
         
@@ -7699,7 +7832,14 @@
         }
       } finally {
         isSyncing = false;
+        activeSyncController = null;
         updateAllSyncIndicators('idle');
+
+        // If user tapped sync while a background sync was already running, auto-dispatch the queued manual sync!
+        if (queuedManualSync) {
+          queuedManualSync = false;
+          setTimeout(() => syncWithGoogleSheets(true), 150);
+        }
       }
     }
 
