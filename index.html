@@ -2234,7 +2234,7 @@
       <!-- Right Cell: Sync Time OR Select All Button in Select Mode -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <div id="mb-header-tools" class="flex items-center gap-1.5">
-          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
             <svg id="mb-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span id="mb-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
@@ -2676,7 +2676,7 @@
 
       <!-- Right Cell: Sync Time + Spinner, + Add Card -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
-        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
+        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Sheets">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
           <svg id="cm-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="cm-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
@@ -2751,7 +2751,7 @@
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </span>
         </button>
-        <button id="ba-sync-pill-btn" onclick="syncBankAccountsWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Bank Accounts">
+        <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all" title="Sync Bank Accounts">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]"></span>
           <svg id="ba-sync-spinner" class="w-3 h-3 text-[#0C8C46]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="ba-sync-time" class="text-[10px] text-neutral-400">12:25 AM</span>
@@ -2797,7 +2797,7 @@
       </div>
 
       <!-- Sync Status Pill -->
-      <button onclick="syncWithGoogleSheets()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors" title="Sync with Google Sheets">
+      <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors" title="Sync with Google Sheets">
         <svg id="in-sync-spinner" class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
         <span id="in-sync-time">RuPay Income</span>
       </button>
@@ -3382,7 +3382,7 @@
               </span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
-            <button onclick="syncWithGoogleSheets(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
+            <button onclick="syncWithGoogleSheets(true); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                 <span>Sync Cloud Database</span>
@@ -6127,9 +6127,8 @@
         const cmTitle = document.getElementById('cm-capsule-brand-title');
         if (cmTitle) cmTitle.textContent = `${currentCardCategoryFilter || 'Debit'} Cards`;
 
-        const cmSync = document.getElementById('cm-sync-time');
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (cmSync && savedSyncTime) cmSync.textContent = savedSyncTime;
+        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'banks') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -6140,9 +6139,8 @@
 
         renderBankManager();
 
-        const baSync = document.getElementById('ba-sync-time');
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (baSync && savedSyncTime) baSync.textContent = savedSyncTime;
+        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'income') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -6153,9 +6151,8 @@
 
         renderIncomeTracker();
 
-        const inSync = document.getElementById('in-sync-time');
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (inSync && savedSyncTime) inSync.textContent = savedSyncTime;
+        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -7209,10 +7206,96 @@
     }
 
     let isSyncing = false;
+    let lastManualEmailSyncMs = 0;
+
+    /* --- UNIFIED SYNC UI CONTROLLER (ALL WORKSPACES & PLATFORMS) --- */
+    function updateAllSyncIndicators(status, timeStr) {
+      const spinnerIds = ['mb-sync-spinner', 'cm-sync-spinner', 'ba-sync-spinner', 'in-sync-spinner'];
+      const timeIds = ['mb-sync-time', 'cm-sync-time', 'ba-sync-time', 'in-sync-time'];
+
+      if (status === 'syncing') {
+        spinnerIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('animate-spin');
+        });
+        timeIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = 'Syncing...';
+            el.classList.add('text-[#F47A21]');
+            el.classList.remove('text-neutral-400', 'text-rose-400');
+          }
+        });
+        const dtStatus = document.getElementById('dt-sync-status');
+        if (dtStatus) dtStatus.textContent = 'Syncing now...';
+      } else if (status === 'success') {
+        spinnerIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('animate-spin');
+        });
+        const displayTime = timeStr ? `Synced at ${timeStr}` : 'Synced';
+        timeIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = displayTime;
+            el.classList.remove('text-[#F47A21]', 'text-rose-400');
+            el.classList.add('text-neutral-400');
+          }
+        });
+        const dtStatus = document.getElementById('dt-sync-status');
+        if (dtStatus) dtStatus.textContent = `Live (${state.vouchers ? state.vouchers.length : 0})`;
+        const dtDot = document.getElementById('dt-sync-dot');
+        if (dtDot) dtDot.style.background = 'var(--system-green)';
+      } else if (status === 'error') {
+        spinnerIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('animate-spin');
+        });
+        const displayTime = timeStr ? `Synced at ${timeStr} (cached)` : 'Offline (cached)';
+        timeIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = displayTime;
+            el.classList.remove('text-[#F47A21]');
+            el.classList.add('text-rose-400');
+          }
+        });
+        const dtStatus = document.getElementById('dt-sync-status');
+        if (dtStatus) dtStatus.textContent = 'Offline (cached)';
+        const dtDot = document.getElementById('dt-sync-dot');
+        if (dtDot) dtDot.style.background = 'var(--system-orange)';
+      } else {
+        // Idle
+        spinnerIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('animate-spin');
+        });
+      }
+    }
+
+    function syncBankAccountsQuietly() {
+      const token = getSessionToken();
+      fetch(`${API_ENDPOINT}?action=GET_BANK_ACCOUNTS&token=${encodeURIComponent(token)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
+            localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(data.accounts));
+            if (state.activeWorkspace === 'banks') {
+              renderBankManager();
+            }
+          }
+        })
+        .catch(err => console.warn('Quiet bank accounts sync warning:', err));
+    }
 
     /* --- LIVE GOOGLE SHEETS FETCH (WITH REAL-TIME ON-DEMAND INGESTION) --- */
-    async function syncWithGoogleSheets() {
-      if (isSyncing) return;
+    async function syncWithGoogleSheets(isManual = false) {
+      if (isSyncing) {
+        if (isManual) {
+          showToast('Sync already in progress...');
+        }
+        return;
+      }
 
       // Mutation Mutex Shield: Prevent premature read during active write operations
       if (pendingMutationsCount > 0) {
@@ -7222,27 +7305,32 @@
       }
 
       isSyncing = true;
+      updateAllSyncIndicators('syncing');
 
-      // Flush any persisted uncommitted redemptions from previous sessions
-      flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
-
-      const mbSyncTime = document.getElementById('mb-sync-time');
-      if (mbSyncTime) {
-        mbSyncTime.textContent = 'Syncing now...';
-        mbSyncTime.classList.add('text-[#F47A21]');
-        mbSyncTime.classList.remove('text-neutral-400');
+      if (isManual) {
+        showToast('Syncing with Google Sheets...');
       }
-      if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Syncing now...';
-      const spinner = document.getElementById('mb-sync-spinner');
-      if (spinner) spinner.classList.add('animate-spin');
-      const inSpinner = document.getElementById('in-sync-spinner');
-      if (inSpinner) inSpinner.classList.add('animate-spin');
-      const inSyncTime = document.getElementById('in-sync-time');
-      if (inSyncTime) inSyncTime.textContent = 'Syncing...';
-      
+
       try {
+        // Flush any persisted uncommitted redemptions from previous sessions
+        flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
+
+        const nowMs = Date.now();
+        // If manual sync, trigger on-demand Gmail email check (throttled to at most once per 15s to protect quota)
+        const shouldIngestEmails = isManual && (nowMs - lastManualEmailSyncMs > 15000);
+        if (shouldIngestEmails) {
+          lastManualEmailSyncMs = nowMs;
+        }
+
         const token = getSessionToken();
-        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token) + '&ingest=false';
+        const params = new URLSearchParams();
+        if (token) params.set('token', token);
+        params.set('ingest', shouldIngestEmails ? 'true' : 'false');
+        if (shouldIngestEmails) {
+          params.set('sync_emails', 'true');
+        }
+
+        const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + params.toString();
         const { signal, cleanup } = createTimeoutSignal(35000);
         let res, data;
         try {
@@ -7261,6 +7349,15 @@
               lockVault();
               showToast('Session expired. Please enter OTP to re-authenticate.');
               return;
+            } else {
+              console.warn('Dev unlock active; remote reported:', data.error);
+              if (!Array.isArray(data.vouchers) || data.vouchers.length === 0) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                updateAllSyncIndicators('success', timeStr);
+                if (isManual) showToast('Local cache active (Dev mode)');
+                return;
+              }
             }
           }
         }
@@ -7574,13 +7671,7 @@
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         localStorage.setItem('rupay_sync_time', timeStr);
-        if (mbSyncTime) {
-          mbSyncTime.textContent = `Synced at ${timeStr}`;
-          mbSyncTime.classList.remove('text-[#F47A21]');
-          mbSyncTime.classList.add('text-neutral-400');
-        }
-        const inSyncTime = document.getElementById('in-sync-time');
-        if (inSyncTime) inSyncTime.textContent = `Synced at ${timeStr}`;
+        updateAllSyncIndicators('success', timeStr);
 
         const drawerSheetCount = document.getElementById('drawer-sheet-count');
         if (drawerSheetCount) {
@@ -7589,24 +7680,26 @@
 
         renderAll();
         updateHubStats();
+
+        if (isManual) {
+          showToast(shouldIngestEmails ? 'Synced database & checked Gmail for new vouchers' : 'Synced with Google Sheets');
+        }
+
+        // Parallel sync for bank accounts when in bank tab or manual sync
+        if (state.activeWorkspace === 'banks' || isManual) {
+          syncBankAccountsQuietly();
+        }
       } catch (err) {
         console.error("Sync error:", err);
-        if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = 'Offline (cached)';
-        if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-orange)';
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (mbSyncTime) {
-          mbSyncTime.textContent = `Synced at ${timeStr} (cached)`;
-          mbSyncTime.classList.remove('text-[#F47A21]');
-          mbSyncTime.classList.add('text-neutral-400');
+        updateAllSyncIndicators('error', timeStr);
+        if (isManual) {
+          showToast('Sync failed: Network timeout or server busy');
         }
-        const inSyncTime = document.getElementById('in-sync-time');
-        if (inSyncTime) inSyncTime.textContent = `Synced at ${timeStr} (cached)`;
       } finally {
         isSyncing = false;
-        if (spinner) spinner.classList.remove('animate-spin');
-        const inSpinner = document.getElementById('in-sync-spinner');
-        if (inSpinner) inSpinner.classList.remove('animate-spin');
+        updateAllSyncIndicators('idle');
       }
     }
 
@@ -13448,11 +13541,10 @@
       localStorage.removeItem('rupay_active_brand');
       setActivityFilter('added');
 
-      // 4. Restore last synced time to header
+      // 4. Restore last synced time to all headers
       const savedTime = localStorage.getItem('rupay_sync_time');
       if (savedTime) {
-        const mbSyncTime = document.getElementById('mb-sync-time');
-        if (mbSyncTime) mbSyncTime.textContent = `Synced at ${savedTime}`;
+        updateAllSyncIndicators('success', savedTime);
       }
 
       // Initialize drawer sheet count if cache exists
