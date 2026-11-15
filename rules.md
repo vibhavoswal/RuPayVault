@@ -152,7 +152,7 @@ Every operation must be evaluated against these 7 core safeguards:
   - Guarded by top-level `LockService.getScriptLock().tryLock(30000)`.
   - In `MARK_REVALIDATED` and batch transition `SWITCH_ALL_REVALIDATED_TO_PENDING`: updates `New` tab (Col 2: `'PENDING'`, Col 8: `'PENDING'`, Col 12: `''`).
   - Stores revalidated booking ID in `PropertiesService.getScriptProperties()` under `REVALIDATED_BOOKINGS`.
-  - In `recordPendingRevalidation()`: check `isBookingRevalidated(targetBid)` and `(currentStatus === 'PENDING' && currentCode === 'PENDING')` before modifying rows; never clobbers a user-revalidated voucher back to `PENDING_REVALIDATION`.
+  - In `recordPendingRevalidation()`: check `isBookingRevalidated(targetBid)` before modifying rows; never clobbers a user-revalidated voucher back to `PENDING_REVALIDATION`, while cleanly transitioning fresh Stage 1 vouchers (`PENDING`/`PROCESSING`) to `PENDING_REVALIDATION` with their payment URL.
   - When real coupon code arrives in `processRupayEmails`: purge booking ID from `REVALIDATED_BOOKINGS`.
   - Removed legacy hardcoded auto-heal clobber list.
 - **Safeguard 7 (Context Preservation)**: Retains active filter and selection context.

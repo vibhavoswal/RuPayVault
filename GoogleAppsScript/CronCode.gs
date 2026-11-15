@@ -308,9 +308,11 @@ function isBookingRevalidated(bookingId) {
 function parseRupayVoucherEmail(msg) {
   const subject = msg.getSubject() || "";
   const body = msg.getPlainBody() || "";
+  const htmlBody = (typeof msg.getBody === 'function') ? (msg.getBody() || "") : "";
+  const fullBody = body + "\n" + htmlBody;
 
   // 1. Guard: Must contain RUPS- booking reference
-  const bidMatch = subject.match(/\b(RUPS-[A-Za-z0-9]+)\b/i) || body.match(/\b(RUPS-[A-Za-z0-9]+)\b/i);
+  const bidMatch = subject.match(/\b(RUPS-[A-Za-z0-9]+)\b/i) || fullBody.match(/\b(RUPS-[A-Za-z0-9]+)\b/i);
   if (!bidMatch) return null;
   const bookingId = bidMatch[1].toUpperCase();
 
@@ -330,26 +332,28 @@ function parseRupayVoucherEmail(msg) {
   const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
 
   // 3B. Guard: Is this an "On Hold – Validation Pending / Payment Link" email?
-  const tokenUrlMatch = body.match(/https:\/\/rupayselect\.truztee\.com\/#\/pay\?token=[A-Za-z0-9_\-]+/i);
+  const tokenUrlMatch = fullBody.match(/https?:\/\/rupayselect\.truztee\.com\/#\/pay\?token=[A-Za-z0-9_\-]+/i);
   let payUrl = tokenUrlMatch ? tokenUrlMatch[0] : "";
   if (!payUrl) {
-    // Look for link associated with "Pay Now" or re-validation
-    const payNowBtnMatch = body.match(/href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["'][\s\S]{0,200}?>\s*Pay\s*Now/i) ||
-                           body.match(/Pay\s*Now[\s\S]{0,200}?href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["']/i);
+    // Look for link associated with "Pay Now" or re-validation in HTML and plain text
+    const payNowBtnMatch = htmlBody.match(/<a[^>]*href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["'][^>]*>[\s\S]{0,100}?Pay\s*Now/i) ||
+                           htmlBody.match(/Pay\s*Now[\s\S]{0,100}?<a[^>]*href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["']/i) ||
+                           fullBody.match(/href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["'][\s\S]{0,200}?>\s*Pay\s*Now/i) ||
+                           fullBody.match(/Pay\s*Now[\s\S]{0,200}?href=["'](https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^"'>\s]+)["']/i);
     if (payNowBtnMatch) {
       payUrl = payNowBtnMatch[1];
     } else {
-      const anyClickMatch = body.match(/https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^\s\r\n"'>]+/i);
-      if (anyClickMatch && (/payment\s*link/i.test(subject) || /re-validation|revalidation/i.test(body))) {
+      const anyClickMatch = fullBody.match(/https?:\/\/[a-z0-9.]*truztee\.com\/ls\/click\?[^\s\r\n"'>]+/i);
+      if (anyClickMatch && (/payment\s*link/i.test(subject) || /re-validation|revalidation/i.test(fullBody))) {
         payUrl = anyClickMatch[0];
       }
     }
   }
 
   const isRevalMatch = /payment\s*link/i.test(subject) ||
-                       /undergoing\s*validation.*re-validation/i.test(body) ||
+                       /undergoing\s*validation.*re-validation/i.test(fullBody) ||
                        /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(subject) ||
-                       /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(body);
+                       /on\s*hold|validation\s*pending|payment\s*link\s*sent|process\s*the\s*payment/i.test(fullBody);
   if (isRevalMatch) {
     return {
       bookingId: bookingId,
@@ -617,7 +621,9 @@ function processRupayEmails() {
             amount: parsed.amount,
             account: parsed.account,
             dateOfIssue: parsed.dateOfIssue,
-            receivedDate: parsed.receivedDate
+            receivedDate: parsed.receivedDate,
+            code: parsed.code,
+            status: parsed.status
           });
 
           // B. Start 24h cooldown timer on this account immediately after row is recorded
@@ -834,17 +840,13 @@ function recordPendingRevalidation(ss, data) {
         return;
       }
 
-      // Guard 2: If user already marked it as PENDING (revalidated and waiting for code), do not revert!
-      if (currentStatus === "PENDING" && (currentCode === "PENDING" || !currentPayUrl)) {
-        return;
-      }
-
       // Update Code & Status, but leave Col 9 (Timestamp) untouched!
       newSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
       newSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
       newSheet.getRange(i + 1, 10).setValue(true);
-      if (data.payUrl) {
-        newSheet.getRange(i + 1, 12).setValue(data.payUrl);
+      const urlToSave = data.payUrl || data.paymentUrl || "";
+      if (urlToSave) {
+        newSheet.getRange(i + 1, 12).setValue(urlToSave);
       }
       return;
     }
@@ -1404,7 +1406,7 @@ function doGet(e) {
     }
   }
 
-  // Safeguards Audit Verification Endpoint for MARK_REVALIDATED
+  // Safeguards Audit Verification Endpoint for MARK_REVALIDATED & Revalidation Ingestion Lifecycle
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_REVAL_DUMMY") {
     try {
       const ss = getSpreadsheet();
@@ -1417,34 +1419,71 @@ function doGet(e) {
       const nowStr = formatISTTimestamp(new Date());
       const todayStr = formatISTDate(new Date());
 
-      // Step 1: Insert dummy row in "New" sheet in PENDING_REVALIDATION state
+      // Ensure clean starting state for test BID
+      removeRevalidatedBookingFromProperties(testBid);
+      let initRows = nSheet.getDataRange().getValues();
+      for (let i = initRows.length - 1; i >= 1; i--) {
+        if (String(initRows[i][0] || '').trim().toUpperCase() === testBid) {
+          nSheet.deleteRow(i + 1);
+        }
+      }
+      SpreadsheetApp.flush();
+
+      // Phase 1: Test Fresh Stage 1 Ingestion -> Revalidation Email Transition
+      // Step 1: Insert dummy row in Stage 1 state (PENDING, no payment URL)
       nSheet.appendRow([
         testBid,
-        "'Pending revalidation",
-        "Amazon Prime",
+        "PENDING",
+        "",
         500,
         todayStr,
         "test@domain.com",
         "TestCard",
-        "PENDING_REVALIDATION",
+        "PENDING",
         nowStr,
         true,
         "Amazon Prime",
-        "https://dummy.pay.link/reval"
+        ""
       ]);
       SpreadsheetApp.flush();
 
-      // Step 2: Verify dummy row exists in "New" sheet
+      // Step 2: Simulate Truztee Revalidation Email Arriving via recordPendingRevalidation
+      const testPayUrl = "https://rupayselect.truztee.com/#/pay?token=TEST_VALIDATION_TOKEN_999";
+      recordPendingRevalidation(ss, {
+        bookingId: testBid,
+        brand: "Amazon Prime",
+        amount: 500,
+        account: "test@domain.com",
+        receivedDate: todayStr,
+        payUrl: testPayUrl
+      });
+      SpreadsheetApp.flush();
+
+      // Step 3: Verify row successfully transitioned to PENDING_REVALIDATION with payment link
       let rows = nSheet.getDataRange().getValues();
       let foundRow = -1;
+      let codeAfterStage15 = "";
+      let statusAfterStage15 = "";
+      let payUrlAfterStage15 = "";
       for (let i = 1; i < rows.length; i++) {
         if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
           foundRow = i + 1;
+          codeAfterStage15 = String(rows[i][1] || '').trim();
+          statusAfterStage15 = String(rows[i][7] || '').trim().toUpperCase();
+          payUrlAfterStage15 = String(rows[i][11] || '').trim();
           break;
         }
       }
 
-      // Step 3: Simulate MARK_REVALIDATED operation
+      const stage15TransitionSuccess = (
+        foundRow > 0 &&
+        codeAfterStage15 === "Pending revalidation" &&
+        statusAfterStage15 === "PENDING_REVALIDATION" &&
+        payUrlAfterStage15 === testPayUrl
+      );
+
+      // Phase 2: Test User-Revalidation Safeguard (Mark Revalidated -> Sticky PENDING)
+      // Step 4: Simulate MARK_REVALIDATED operation
       let markUpdated = false;
       if (foundRow > 0) {
         nSheet.getRange(foundRow, 2).setValue('PENDING');
@@ -1459,19 +1498,18 @@ function doGet(e) {
 
       const isRegisteredInProperties = isBookingRevalidated(testBid);
 
-      // Step 4: Simulate processRupayEmails / recordPendingRevalidation background cron execution
-      // (This is the critical test: background cron must NEVER revert user-revalidated vouchers!)
+      // Step 5: Simulate repeat background cron execution (must NEVER clobber user-revalidated row)
       recordPendingRevalidation(ss, {
         bookingId: testBid,
         brand: "Amazon Prime",
         amount: 500,
         account: "test@domain.com",
         receivedDate: todayStr,
-        paymentUrl: "https://rogue.pay.link/overwrite"
+        payUrl: "https://rogue.pay.link/overwrite"
       });
       SpreadsheetApp.flush();
 
-      // Check whether row remained sticky PENDING
+      // Verify row remained sticky PENDING
       rows = nSheet.getDataRange().getValues();
       let codeAfterCron = "";
       let statusAfterCron = "";
@@ -1487,7 +1525,7 @@ function doGet(e) {
 
       const cronProtected = (codeAfterCron === "PENDING" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
 
-      // Step 5: Clean up / purge dummy row immediately
+      // Phase 3: Cleanup and verify zero residual artifacts
       let cleanedUp = false;
       rows = nSheet.getDataRange().getValues();
       for (let i = rows.length - 1; i >= 1; i--) {
@@ -1499,7 +1537,6 @@ function doGet(e) {
       removeRevalidatedBookingFromProperties(testBid);
       SpreadsheetApp.flush();
 
-      // Step 6: Verify zero residual artifacts remain
       rows = nSheet.getDataRange().getValues();
       let residualCount = 0;
       for (let i = 1; i < rows.length; i++) {
@@ -1510,6 +1547,7 @@ function doGet(e) {
       const isStillInProperties = isBookingRevalidated(testBid);
 
       const allSafeguardsMet = (
+        stage15TransitionSuccess &&
         foundRow > 0 &&
         markUpdated &&
         isRegisteredInProperties &&
@@ -1522,6 +1560,7 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "VERIFY_SAFEGUARD_REVAL_DUMMY",
+        stage15TransitionSuccess: stage15TransitionSuccess,
         insertedAndFound: foundRow > 0,
         markUpdated: markUpdated,
         isRegisteredInProperties: isRegisteredInProperties,
