@@ -2804,14 +2804,14 @@
           </div>
         </div>
 
-        <!-- Gpay received from (with 1-click 'Same as sold to' button) -->
+        <!-- Gpay received from (with 'Same as sold to' clickable checkbox) -->
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="text-[11px] font-semibold text-neutral-300">Gpay received from</label>
-            <button type="button" id="ms-btn-same-gpay" onclick="toggleSameGpay()" class="text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-lg border active:scale-95 transition-all inline-flex items-center gap-1">
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              <span>Same as sold to</span>
-            </button>
+            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none py-0.5 px-1 rounded hover:bg-neutral-800/40 dark:hover:bg-neutral-800/40 transition-colors">
+              <input type="checkbox" id="ms-chk-same-gpay" onchange="toggleSameGpay(this.checked)" checked class="w-3.5 h-3.5 rounded border border-neutral-500 bg-neutral-900 accent-neutral-600 dark:accent-neutral-500 cursor-pointer" style="accent-color: #525252;">
+              <span class="text-[11px] font-medium text-neutral-300">Same as sold to</span>
+            </label>
           </div>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
@@ -5440,28 +5440,34 @@
       activeMarkSoldVoucher = null;
     }
 
-    function toggleSameGpay() {
-      isSameGpayActive = !isSameGpayActive;
+    function toggleSameGpay(forceVal) {
+      if (typeof forceVal === 'boolean') {
+        isSameGpayActive = forceVal;
+      } else {
+        isSameGpayActive = !isSameGpayActive;
+      }
       updateSameGpayUI();
+      const soldInput = document.getElementById('ms-input-sold-to');
+      const gpayInput = document.getElementById('ms-input-gpay');
       if (isSameGpayActive) {
-        const soldInput = document.getElementById('ms-input-sold-to');
-        const gpayInput = document.getElementById('ms-input-gpay');
         if (soldInput && gpayInput) gpayInput.value = soldInput.value.trim();
+      } else {
+        if (gpayInput) gpayInput.focus();
       }
     }
 
     function updateSameGpayUI() {
-      const btn = document.getElementById('ms-btn-same-gpay');
+      const chk = document.getElementById('ms-chk-same-gpay');
       const gpayInput = document.getElementById('ms-input-gpay');
-      if (!btn) return;
-      if (isSameGpayActive) {
-        btn.className = 'text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-lg border border-emerald-500/40 bg-emerald-500/20 text-emerald-400 active:scale-95 transition-all inline-flex items-center gap-1';
-        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Same as sold to</span>`;
-        if (gpayInput) gpayInput.readOnly = true;
-      } else {
-        btn.className = 'text-[10px] font-mono-apple font-medium px-2 py-0.5 rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-white active:scale-95 transition-all inline-flex items-center gap-1';
-        btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-sm border border-neutral-500 inline-block"></span><span>Different payer</span>`;
-        if (gpayInput) gpayInput.readOnly = false;
+      if (chk) chk.checked = isSameGpayActive;
+      if (gpayInput) {
+        if (isSameGpayActive) {
+          gpayInput.readOnly = true;
+          gpayInput.classList.add('opacity-75');
+        } else {
+          gpayInput.readOnly = false;
+          gpayInput.classList.remove('opacity-75');
+        }
       }
     }
 
