@@ -8525,20 +8525,10 @@
         // Flush any persisted uncommitted redemptions from previous sessions
         flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
 
-        const nowMs = Date.now();
-        // If manual sync, trigger on-demand Gmail email check (throttled to at most once per 15s to protect quota)
-        const shouldIngestEmails = isManual && (nowMs - lastManualEmailSyncMs > 15000);
-        if (shouldIngestEmails) {
-          lastManualEmailSyncMs = nowMs;
-        }
-
         const token = getSessionToken();
         const params = new URLSearchParams();
         if (token) params.set('token', token);
-        params.set('ingest', shouldIngestEmails ? 'true' : 'false');
-        if (shouldIngestEmails) {
-          params.set('sync_emails', 'true');
-        }
+        params.set('ingest', 'false');
 
         const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + params.toString();
         activeSyncController = new AbortController();
@@ -8923,7 +8913,7 @@
         updateHubStats();
 
         if (isManual) {
-          showToast(shouldIngestEmails ? 'Synced database & checked Gmail for new vouchers' : 'Synced with Google Sheets');
+          showToast('Synced with Google Sheets');
         }
 
         // Parallel sync for bank accounts when in bank tab or manual sync
