@@ -2762,7 +2762,7 @@
             <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Selling Price (₹)</label>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-neutral-400 font-bold font-mono-apple text-xs">₹</span>
-              <input type="number" id="ms-input-price" step="50" min="1" placeholder="1500" class="w-full pl-7 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple font-bold text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+              <input type="number" id="ms-input-price" step="50" min="1" placeholder="1200" class="w-full pl-7 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple font-bold text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
             </div>
           </div>
           <div>
@@ -5584,10 +5584,13 @@
       const refEl = document.getElementById('ms-ref-id');
       if (refEl) refEl.textContent = act.bookingId || act.code || '';
 
-      // Default price: 1500 for Cult, 500 for Prime
-      const defaultPrice = isPrime ? (act.amount || 500) : (act.amount >= 1000 ? act.amount : 1500);
+      // Default price: 1200 for Cult, 500 for Prime (fully editable)
+      const defaultPrice = isPrime ? (act.amount || 500) : 1200;
       const priceInput = document.getElementById('ms-input-price');
-      if (priceInput) priceInput.value = defaultPrice;
+      if (priceInput) {
+        priceInput.value = defaultPrice;
+        priceInput.placeholder = String(defaultPrice);
+      }
 
       // Pre-fill "Redeemed in Account" strictly from the account the voucher was tagged to
       const prefillAccount = getPrefillAccountForVoucher(act);
