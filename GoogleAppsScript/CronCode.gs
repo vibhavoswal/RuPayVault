@@ -112,6 +112,106 @@ function parseDateToTimestamp(dateVal) {
   return 0;
 }
 
+function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
+  soldTo = String(soldTo || '').trim();
+  mobile = String(mobile || '').trim();
+  redeemedAccount = String(redeemedAccount || '').trim();
+  gpayName = String(gpayName || '').trim();
+  card = String(card || '').trim();
+  if (card === 'Unassigned' || card === '-') card = '';
+
+  const segments = [];
+
+  // Segment 1: Buyer + Account combination
+  if (soldTo && redeemedAccount) {
+    const buyer = mobile ? `${soldTo} (${mobile})` : soldTo;
+    segments.push(`${buyer}: ${redeemedAccount}`);
+  } else if (soldTo) {
+    segments.push(mobile ? `${soldTo} (${mobile})` : soldTo);
+  } else if (redeemedAccount) {
+    if (mobile) {
+      segments.push(`Mobile: ${mobile}`);
+    }
+    segments.push(`Account: ${redeemedAccount}`);
+  } else if (mobile) {
+    segments.push(`Mobile: ${mobile}`);
+  }
+
+  // Segment 2: GPay (if provided and different from soldTo)
+  if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+    segments.push(`GPay: ${gpayName}`);
+  }
+
+  // Segment 3: Card
+  if (card) {
+    segments.push(card);
+  }
+
+  return segments.join(' | ');
+}
+
+function parseIncomeSale(comments) {
+  if (!comments) return null;
+  const s = String(comments).trim();
+  const parts = s.split(/\s*\|\s*/);
+  
+  let soldTo = '';
+  let mobile = '';
+  let account = '';
+  let gpay = '';
+  let card = '';
+
+  parts.forEach(function(part) {
+    part = part.trim();
+    if (!part) return;
+
+    const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
+    if (gpayMatch) {
+      gpay = gpayMatch[1].trim();
+      return;
+    }
+
+    const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
+    if (accMatch) {
+      account = accMatch[1].trim();
+      return;
+    }
+
+    const mobMatch = part.match(/^Mobile:\s*(\d{10})$/i);
+    if (mobMatch) {
+      mobile = mobMatch[1].trim();
+      return;
+    }
+
+    const comboMatch = part.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)$/i);
+    if (comboMatch) {
+      soldTo = comboMatch[1].trim().replace(/^[gG]\//, '');
+      if (comboMatch[2]) mobile = comboMatch[2].trim();
+      account = comboMatch[3].trim();
+      return;
+    }
+
+    const buyerMobMatch = part.match(/^([^(:|]+?)\s*\((\d{10})\)$/i);
+    if (buyerMobMatch) {
+      soldTo = buyerMobMatch[1].trim().replace(/^[gG]\//, '');
+      mobile = buyerMobMatch[2].trim();
+      return;
+    }
+
+    const isCard = /(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay|\b\d{4}\b)/i.test(part);
+    if (isCard) {
+      card = part;
+      return;
+    }
+
+    if (!soldTo) {
+      soldTo = part.replace(/^[gG]\//, '').trim();
+    }
+  });
+
+  return { soldTo: soldTo, mobile: mobile, account: account, gpay: gpay, card: card };
+}
+
 function recalculateSheetTotal(sheet) {
   if (!sheet) return;
   const vals = sheet.getDataRange().getValues();
@@ -2551,7 +2651,11 @@ function doGet(e) {
           const priceVal = Number(rows[i][2]);
           if (isNaN(priceVal) || priceVal === 0) continue;
           const comments = String(rows[i][3] || '').trim();
-          const account = String(rows[i][4] || '').trim();
+          let account = String(rows[i][4] || '').trim();
+          if (!account && comments) {
+            const parsed = parseIncomeSale(comments);
+            if (parsed) account = parsed.card || parsed.account || '';
+          }
           let yr = 2026;
           if (dateStr) {
             const parts = dateStr.split(/[\/\-\.]/);
@@ -2597,7 +2701,11 @@ function doGet(e) {
           const priceVal = Number(rows[i][2]);
           if (isNaN(priceVal) || priceVal === 0) continue;
           const comments = String(rows[i][3] || '').trim();
-          const account = String(rows[i][4] || '').trim();
+          let account = String(rows[i][4] || '').trim();
+          if (!account && comments) {
+            const parsed = parseIncomeSale(comments);
+            if (parsed) account = parsed.card || parsed.account || '';
+          }
           let yr = 2026;
           if (dateStr) {
             const parts = dateStr.split(/[\/\-\.]/);
@@ -3061,7 +3169,11 @@ function doGet(e) {
           if (isNaN(priceVal) || priceVal === 0) continue;
 
           const comments = String(rows[i][3] || '').trim();
-          const account = String(rows[i][4] || '').trim();
+          let account = String(rows[i][4] || '').trim();
+          if (!account && comments) {
+            const parsed = parseIncomeSale(comments);
+            if (parsed) account = parsed.card || parsed.account || '';
+          }
 
           let yr = 2026;
           if (dateStr) {
@@ -3111,7 +3223,11 @@ function doGet(e) {
           if (isNaN(priceVal) || priceVal === 0) continue;
 
           const comments = String(rows[i][3] || '').trim();
-          const account = String(rows[i][4] || '').trim();
+          let account = String(rows[i][4] || '').trim();
+          if (!account && comments) {
+            const parsed = parseIncomeSale(comments);
+            if (parsed) account = parsed.card || parsed.account || '';
+          }
 
           let yr = 2026;
           if (dateStr) {
@@ -4680,13 +4796,28 @@ function doPost(e) {
       }
 
       const finalPrice = isCharge ? -Math.abs(rawPrice) : Math.abs(rawPrice);
-      const newRowData = [
-        title,
-        cellDateValue,
-        finalPrice,
-        comments,
-        account
-      ];
+      let newRowData;
+      if (isCharge) {
+        newRowData = [
+          title,
+          cellDateValue,
+          finalPrice,
+          comments,
+          account
+        ];
+      } else {
+        // RuPay Income has exactly 4 columns: [Brand, Date, Sale Value, Comments]
+        let finalComments = comments;
+        if (account && !finalComments.includes(account)) {
+          finalComments = finalComments ? `${finalComments} | ${account}` : account;
+        }
+        newRowData = [
+          title,
+          cellDateValue,
+          finalPrice,
+          finalComments
+        ];
+      }
 
       const insertedRow = insertRowSortedByDate(targetSheet, newRowData, dateMs);
       SpreadsheetApp.flush();
@@ -4747,13 +4878,37 @@ function doPost(e) {
       const rawBrand = String(data.brand || '').trim();
       const isStaging = !!data.isStaging;
       const keepInStaging = !!data.keepInStaging || !!data.onlyLogIncome;
-      const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "Cult Fit");
+      const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "");
+
+      // Mandatory Validation 1: Brand is mandatory
+      if (!targetBrand || targetBrand === "Other" || targetBrand === "⚡ Unassigned") {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Brand is mandatory to record sale."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       const sale = data.saleDetails || {};
       const sellingPrice = Math.abs(Number(sale.price) || 0);
 
-      if (!sellingPrice) {
+      // Mandatory Validation 2: Sale value is mandatory
+      if (!sellingPrice || sellingPrice <= 0) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Invalid selling price: Non-zero price is required to record sale."
+          error: "Sale value is mandatory and must be greater than 0."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const dateStr = String(sale.date || '').trim();
+
+      // Mandatory Validation 3: Date is mandatory
+      if (!dateStr) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Sale date is mandatory."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+      const dateMs = parseDateToTimestamp(dateStr);
+      if (!dateMs || dateMs <= 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Invalid sale date: Date must be in dd/MM/yy format."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -4887,22 +5042,11 @@ function doPost(e) {
         incomeTitle = "Amazon Prime";
       }
 
-      // Build comments matching exact user style: Abhijeet Kulkarni (9561029324): ayaanshekhawat
-      let commentStr = "";
-      if (soldTo) {
-        commentStr += soldTo;
-        if (mobile) commentStr += ` (${mobile})`;
-        if (redeemedAccount) commentStr += `: ${redeemedAccount}`;
-        if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
-          commentStr += ` | GPay: ${gpayName}`;
-        }
-      } else {
-        commentStr = `${redeemedAccount || 'Customer'}${mobile ? ' (' + mobile + ')' : ''}`;
-      }
+      // Build unified comments matching user format: Buyer (mobile): Account | GPay: Name | Card
+      const cardAccount = finalCard && finalCard !== 'Unassigned' ? finalCard : (data.card && data.card !== 'Unassigned' ? String(data.card).trim() : '');
+      const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
 
-      const dateStr = String(sale.date || Utilities.formatDate(new Date(), "GMT+05:30", "dd/MM/yy")).trim();
       let cellDateValue = dateStr;
-      const dateMs = parseDateToTimestamp(dateStr);
       const parts = dateStr.split(/[\/\-\.]/);
       let parsedYear = 2026;
       if (parts.length === 3) {
@@ -4914,13 +5058,12 @@ function doPost(e) {
         cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
       }
 
-      const cardAccount = finalCard && finalCard !== 'Unassigned' ? finalCard : finalAccount;
+      // Exactly 4 columns in RuPay Income: [Brand, Date, Sale Value, Comments]
       const newIncomeRow = [
         incomeTitle,
         cellDateValue,
         sellingPrice,
-        commentStr,
-        cardAccount
+        commentStr
       ];
 
       const insertedRow = insertRowSortedByDate(incomeSheet, newIncomeRow, dateMs);

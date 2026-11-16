@@ -5453,31 +5453,104 @@
       return (bid && list.includes(bid)) || (code && code !== 'PENDING' && code !== '-' && list.includes(code));
     }
 
+    function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
+      soldTo = String(soldTo || '').trim();
+      mobile = String(mobile || '').trim();
+      redeemedAccount = String(redeemedAccount || '').trim();
+      gpayName = String(gpayName || '').trim();
+      card = String(card || '').trim();
+      if (card === 'Unassigned' || card === '-') card = '';
+
+      const segments = [];
+
+      // Segment 1: Buyer + Account combination
+      if (soldTo && redeemedAccount) {
+        const buyer = mobile ? `${soldTo} (${mobile})` : soldTo;
+        segments.push(`${buyer}: ${redeemedAccount}`);
+      } else if (soldTo) {
+        segments.push(mobile ? `${soldTo} (${mobile})` : soldTo);
+      } else if (redeemedAccount) {
+        if (mobile) {
+          segments.push(`Mobile: ${mobile}`);
+        }
+        segments.push(`Account: ${redeemedAccount}`);
+      } else if (mobile) {
+        segments.push(`Mobile: ${mobile}`);
+      }
+
+      // Segment 2: GPay (if provided and different from soldTo)
+      if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+        segments.push(`GPay: ${gpayName}`);
+      }
+
+      // Segment 3: Card
+      if (card) {
+        segments.push(card);
+      }
+
+      return segments.join(' | ');
+    }
+
     function parseIncomeSale(comments) {
       if (!comments) return null;
       const s = String(comments).trim();
-      const p1 = s.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)(?:\s*\|\s*GPay:\s*(.+))?$/i);
-      if (p1) {
-        return {
-          soldTo: p1[1].trim().replace(/^[gG]\//, ''),
-          mobile: p1[2] || '',
-          account: p1[3] || '',
-          gpay: p1[4] ? p1[4].trim() : ''
-        };
-      }
-      const p2 = s.match(/^(?:[gG]\/)?([^(:|]+?)(?:\s*\(([^)]+)\))?$/i);
-      if (p2) {
-        const candidateName = p2[1].trim();
-        const bracketContent = (p2[2] || '').trim();
-        const isMobile = /^\d{10}$/.test(bracketContent);
-        return {
-          soldTo: candidateName,
-          mobile: isMobile ? bracketContent : '',
-          account: '',
-          cardStr: !isMobile ? bracketContent : ''
-        };
-      }
-      return { soldTo: s.replace(/^[gG]\//, '').split(/[(:|]/)[0].trim(), mobile: '', account: '' };
+      const parts = s.split(/\s*\|\s*/);
+      
+      let soldTo = '';
+      let mobile = '';
+      let account = '';
+      let gpay = '';
+      let card = '';
+
+      parts.forEach(part => {
+        part = part.trim();
+        if (!part) return;
+
+        const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
+        if (gpayMatch) {
+          gpay = gpayMatch[1].trim();
+          return;
+        }
+
+        const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
+        if (accMatch) {
+          account = accMatch[1].trim();
+          return;
+        }
+
+        const mobMatch = part.match(/^Mobile:\s*(\d{10})$/i);
+        if (mobMatch) {
+          mobile = mobMatch[1].trim();
+          return;
+        }
+
+        const comboMatch = part.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)$/i);
+        if (comboMatch) {
+          soldTo = comboMatch[1].trim().replace(/^[gG]\//, '');
+          if (comboMatch[2]) mobile = comboMatch[2].trim();
+          account = comboMatch[3].trim();
+          return;
+        }
+
+        const buyerMobMatch = part.match(/^([^(:|]+?)\s*\((\d{10})\)$/i);
+        if (buyerMobMatch) {
+          soldTo = buyerMobMatch[1].trim().replace(/^[gG]\//, '');
+          mobile = buyerMobMatch[2].trim();
+          return;
+        }
+
+        const isCard = /(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay|\b\d{4}\b)/i.test(part);
+        if (isCard) {
+          card = part;
+          return;
+        }
+
+        if (!soldTo) {
+          soldTo = part.replace(/^[gG]\//, '').trim();
+        }
+      });
+
+      return { soldTo, mobile, account, gpay, card };
     }
 
     function getPrefillAccountForVoucher(act) {
@@ -5685,18 +5758,6 @@
         return;
       }
 
-      const rawPrice = Number(document.getElementById('ms-input-price').value);
-      if (isNaN(rawPrice) || rawPrice <= 0) {
-        showToast('Please enter a valid selling price');
-        return;
-      }
-
-      const soldTo = document.getElementById('ms-input-sold-to').value.trim();
-      if (!soldTo) {
-        showToast('Please enter the buyer name in "Sold to"');
-        return;
-      }
-
       const v = activeMarkSoldVoucher;
       const isStaging = !!v.isStaging;
       const isStagingNotArrived = isStaging && !isVoucherArrived(v);
@@ -5705,22 +5766,47 @@
       const brandKey = normalizeBrandKey(v.brand || v.targetBrand || 'Cult Fit');
       const brandDisplay = getBrandDisplayName(brandKey);
 
+      // Mandatory validation: brand
+      if (!brandKey || brandKey === 'Unassigned') {
+        showToast('Please select a valid brand');
+        return;
+      }
+
+      // Mandatory validation: sale value
+      const priceInput = document.getElementById('ms-input-price');
+      const rawPrice = Number(priceInput ? priceInput.value : 0);
+      if (isNaN(rawPrice) || rawPrice <= 0) {
+        showToast('Please enter a valid sale value');
+        return;
+      }
+
+      // Mandatory validation: date
+      const dateInput = document.getElementById('ms-input-date');
+      const saleDate = (dateInput ? dateInput.value : '').trim();
+      if (!saleDate || parseIncomeDateMs(saleDate) <= 0) {
+        showToast('Please enter a valid sale date (dd/mm/yy)');
+        return;
+      }
+
+      // Optional fields:
+      const soldToInput = document.getElementById('ms-input-sold-to');
+      const soldTo = (soldToInput ? soldToInput.value : '').trim();
+
       // Build canonical title and comment string
       const isPrime = brandKey.toLowerCase().includes('prime') || brandKey.toLowerCase().includes('amazon');
       const incomeTitle = isPrime ? 'Amazon Prime' : 'Cult Fit';
 
       // Amazon Prime does not use or log mobile number
-      const mobile = isPrime ? '' : document.getElementById('ms-input-mobile').value.trim();
-      const redeemedAccount = document.getElementById('ms-input-account').value.trim();
-      const gpayName = isSameGpayActive ? soldTo : (document.getElementById('ms-input-gpay').value.trim() || soldTo);
-      const saleDate = document.getElementById('ms-input-date').value.trim() || getTodayDDMMYY();
+      const mobileInput = document.getElementById('ms-input-mobile');
+      const mobile = isPrime ? '' : (mobileInput ? mobileInput.value.trim() : '');
+      const accInput = document.getElementById('ms-input-account');
+      const redeemedAccount = accInput ? accInput.value.trim() : '';
+      const gpayInput = document.getElementById('ms-input-gpay');
+      const gpayName = isSameGpayActive ? soldTo : (gpayInput ? gpayInput.value.trim() : '');
+      const cardAccount = (v.card && v.card !== 'Unassigned' && v.card !== '-') ? v.card : '';
 
-      let commentStr = soldTo;
-      if (mobile) commentStr += ` (${mobile})`;
-      if (redeemedAccount) commentStr += `: ${redeemedAccount}`;
-      if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
-        commentStr += ` | GPay: ${gpayName}`;
-      }
+      // Unified single comment separated by | for any combination of fields
+      const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
 
       // Persist latest sale preferences for this brand and card for instant future pre-filling
       try {
@@ -5803,6 +5889,16 @@
       }
 
       // Optimistically add to state.income.ledger
+      let yr = 2026;
+      if (saleDate) {
+        const parts = saleDate.split(/[\/\-\.]/);
+        if (parts.length === 3) {
+          const yPart = parts[2].trim();
+          if (yPart.length === 4) yr = parseInt(yPart, 10);
+          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
+        }
+      }
+
       const optimisticIncomeId = 'inc-' + Date.now();
       const optimisticIncomeEntry = {
         id: optimisticIncomeId,
@@ -5810,8 +5906,8 @@
         date: saleDate,
         price: rawPrice,
         comments: commentStr,
-        account: v.card || v.account || '',
-        year: 2026,
+        account: cardAccount,
+        year: yr,
         type: 'income'
       };
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
@@ -5852,9 +5948,10 @@
       if (state.activeWorkspace === 'income') renderIncomeTracker();
 
       // Show Undo Banner (SG3)
+      const buyerPart = soldTo ? ` to ${soldTo}` : '';
       const bannerMsg = isStagingNotArrived
-        ? `Added sale details for ${brandDisplay} (+₹${rawPrice.toLocaleString()})`
-        : `Marked ${brandDisplay} sold to ${soldTo} (+₹${rawPrice.toLocaleString()})`;
+        ? `Added sale details for ${brandDisplay}${buyerPart} (+₹${rawPrice.toLocaleString()})`
+        : `Marked ${brandDisplay} sold${buyerPart} (+₹${rawPrice.toLocaleString()})`;
       showCardUndoBanner(bannerMsg, async () => {
         // Rollback
         if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
@@ -5890,15 +5987,18 @@
           onlyLogIncome: isStagingNotArrived,
           amount: v.amount || rawPrice,
           dateOfIssue: v.dateOfIssue || '',
-          account: v.account || '',
-          card: v.card || 'Unassigned',
+          account: redeemedAccount || v.account || '',
+          card: cardAccount,
           timestampIST: v.timestampIST || '',
+          comments: commentStr,
           saleDetails: {
             price: rawPrice,
             soldTo: soldTo,
             mobile: mobile,
             redeemedAccount: redeemedAccount,
             gpayName: gpayName,
+            card: cardAccount,
+            comments: commentStr,
             date: saleDate
           }
         };
@@ -7695,13 +7795,28 @@
 
     async function confirmRecordSale() {
       const titleInput = document.getElementById('in-sale-input-title');
-      const title = (titleInput ? titleInput.value : '').trim() || 'Cult Fit';
+      const title = (titleInput ? titleInput.value : '').trim();
+      if (!title) {
+        showToast('Please enter or select a brand');
+        return;
+      }
+
       const priceInput = document.getElementById('in-sale-input-price');
-      const price = parseInt(priceInput ? priceInput.value : 1200, 10) || 1200;
+      const price = Number(priceInput ? priceInput.value : 0);
+      if (isNaN(price) || price <= 0) {
+        showToast('Please enter a valid sale value');
+        return;
+      }
+
+      const dateInput = document.getElementById('in-sale-input-date');
+      const date = (dateInput ? dateInput.value : '').trim();
+      if (!date || parseIncomeDateMs(date) <= 0) {
+        showToast('Please enter a valid date (dd/mm/yy)');
+        return;
+      }
+
       const commentsInput = document.getElementById('in-sale-input-comments');
       const comments = (commentsInput ? commentsInput.value : '').trim();
-      const dateInput = document.getElementById('in-sale-input-date');
-      const date = (dateInput ? dateInput.value : '').trim() || formatTodayDDMMYY();
 
       // Determine year
       let yr = 2026;
