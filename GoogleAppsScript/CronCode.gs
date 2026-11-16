@@ -2624,6 +2624,67 @@ function doGet(e) {
     }
   }
 
+  // Action: Remove RuPay Income row & unmark sale in "New" tab
+  if (e && e.parameter && e.parameter.action === "REMOVE_RUPAY_INCOME_AND_UNMARK_SALE") {
+    try {
+      const lock = LockService.getScriptLock();
+      lock.tryLock(30000);
+      const ss = getSpreadsheet();
+      
+      const targetBid = String(e.parameter.bookingId || "RUPS-38B3BF39").trim();
+      const targetComments = String(e.parameter.comments || "Account: lakshaysharma2067 | Jana DC 7267").trim();
+      
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      let deletedIncomeRow = -1;
+      let deletedData = null;
+      if (incomeSheet) {
+        const iVals = incomeSheet.getDataRange().getValues();
+        for (let r = 1; r < iVals.length; r++) {
+          const col0 = String(iVals[r][0] || '').trim().toUpperCase();
+          if (col0 === 'TOTAL') continue;
+          const comm = String(iVals[r][3] || '').trim();
+          if ((comm.includes("lakshaysharma2067") && comm.includes("7267")) || (targetComments && comm === targetComments)) {
+            deletedIncomeRow = r + 1;
+            deletedData = iVals[r];
+            incomeSheet.deleteRow(r + 1);
+            break;
+          }
+        }
+        if (deletedIncomeRow > 0) {
+          recalculateSheetTotal(incomeSheet);
+        }
+      }
+
+      const newSheet = ss.getSheetByName("New");
+      let unmarkedNewRow = -1;
+      if (newSheet) {
+        const nVals = newSheet.getDataRange().getValues();
+        for (let r = 1; r < nVals.length; r++) {
+          const bId = String(nVals[r][0] || '').trim();
+          if (bId.toUpperCase() === targetBid.toUpperCase()) {
+            unmarkedNewRow = r + 1;
+            if (newSheet.getLastColumn() >= 13) {
+              newSheet.getRange(r + 1, 13).setValue("");
+            }
+            break;
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      try { lock.releaseLock(); } catch(_) {}
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        deletedIncomeRow: deletedIncomeRow,
+        deletedData: deletedData,
+        unmarkedNewRow: unmarkedNewRow
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Inspection handler for unified Income & Charges summary
   if (e && e.parameter && e.parameter.action === "INSPECT_INCOME_SUMMARY") {
     try {
@@ -5087,6 +5148,55 @@ function doPost(e) {
           year: parsedYear,
           type: "income"
         }
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 16C. Unmark Ingested Voucher Sale (Clears Col 13 in "New" tab and deletes matching row in "RuPay Income")
+    if (data.action === "UNMARK_INGESTED_SALE") {
+      const targetBid = String(data.bookingId || '').trim();
+      const targetComments = String(data.comments || '').trim();
+      
+      const newSheet = ss.getSheetByName("New");
+      let unmarkedNewRow = -1;
+      if (newSheet && targetBid) {
+        const nVals = newSheet.getDataRange().getValues();
+        for (let i = 1; i < nVals.length; i++) {
+          const bId = String(nVals[i][0] || '').trim();
+          if (bId.toUpperCase() === targetBid.toUpperCase()) {
+            unmarkedNewRow = i + 1;
+            if (newSheet.getLastColumn() >= 13) {
+              newSheet.getRange(i + 1, 13).setValue("");
+            }
+            break;
+          }
+        }
+      }
+
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      let deletedIncomeRow = -1;
+      if (incomeSheet && targetComments) {
+        const iVals = incomeSheet.getDataRange().getValues();
+        for (let r = 1; r < iVals.length; r++) {
+          const col0 = String(iVals[r][0] || '').trim().toUpperCase();
+          if (col0 === 'TOTAL') continue;
+          const comm = String(iVals[r][3] || '').trim();
+          if (comm === targetComments) {
+            deletedIncomeRow = r + 1;
+            incomeSheet.deleteRow(r + 1);
+            break;
+          }
+        }
+        if (deletedIncomeRow > 0) {
+          recalculateSheetTotal(incomeSheet);
+        }
+      }
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "UNMARK_INGESTED_SALE",
+        unmarkedNewRow: unmarkedNewRow,
+        deletedIncomeRow: deletedIncomeRow
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
