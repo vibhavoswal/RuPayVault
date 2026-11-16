@@ -5051,8 +5051,8 @@
 
       const catEl = document.getElementById('vdetail-category');
       if (catEl) {
-        if (isShared) catEl.textContent = 'SHARED ACTIVITY ARCHIVE';
-        else if (isStaging) catEl.textContent = `INGESTED STAGING · ${isTagged ? 'TAGGED' : 'UNTAGGED'}`;
+        if (isShared) catEl.textContent = 'SHARED VOUCHER';
+        else if (isStaging) catEl.textContent = 'INGESTED VOUCHER';
         else catEl.textContent = `${brandDisplay.toUpperCase()} VAULT PASS`;
       }
 
@@ -5062,19 +5062,17 @@
       const contentEl = document.getElementById('vdetail-content');
       if (contentEl) {
         contentEl.innerHTML = `
-          <!-- VOUCHER CODE & PIN BOX (WITH COMBINED 1-TAP COPY) -->
-          <div class="p-3.5 rounded-2xl border ${hasArrived ? 'bg-emerald-950/30 border-emerald-500/40' : (isRevalidation ? 'bg-amber-950/25 border-amber-500/35' : 'bg-rose-950/20 border-rose-500/30')} space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] uppercase font-bold tracking-wider ${hasArrived ? 'text-emerald-400' : (isRevalidation ? 'text-amber-400' : 'text-rose-400')}">
-                ${hasArrived ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Voucher Code Delivered</span>' : (isRevalidation ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Validation Pending</span>' : '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Fulfillment Status</span>')}
-              </span>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasArrived ? 'bg-emerald-500/15 text-emerald-400' : (isRevalidation ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-rose-500/15 text-rose-400')} font-mono-apple">
-                ${hasArrived ? 'Active & Usable' : (isRevalidation ? 'Payment Link Sent' : 'Awaiting Delivery')}
-              </span>
-            </div>
-
+          <!-- STATUS & VOUCHER CODE BOX -->
+          <div class="p-3 rounded-2xl border ${hasArrived ? 'bg-emerald-950/20 border-emerald-500/30' : (isRevalidation ? 'bg-amber-950/20 border-amber-500/30' : 'bg-rose-950/20 border-rose-500/25')}">
             ${hasArrived ? `
-              <div class="p-2.5 rounded-xl bg-black/80 border border-neutral-800 flex items-center justify-between gap-2">
+              <div class="flex items-center justify-between pb-2 mb-2 border-b border-emerald-500/20">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400 inline-flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  <span>Code Delivered</span>
+                </span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple">Active</span>
+              </div>
+              <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0 flex-1">
                   <div class="font-mono-apple text-sm font-bold text-white tracking-wider truncate">
                     ${act.code}
@@ -5085,32 +5083,34 @@
                     </div>
                   ` : ''}
                 </div>
-
-                <!-- Combined Copy Button (Copies Code + PIN together!) -->
                 <button onclick="copyCodeAndPin('${act.code}', '${act.pin || ''}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow transition-all shrink-0">
                   ${act.pin ? 'Copy Code + PIN' : 'Copy Code'}
                 </button>
               </div>
             ` : (isRevalidation ? `
-              <div class="p-3 rounded-xl bg-black/60 border border-amber-500/30 flex items-center gap-2 text-amber-400 font-medium text-xs">
-                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
-                <span>On Hold – Validation Pending. Payment link sent. Kindly process payment.</span>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-amber-300 text-xs">
+                  <svg class="w-4 h-4 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                  <span class="font-medium">Validation link pending payment</span>
+                </div>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono-apple">Action Required</span>
               </div>
             ` : `
-              <div class="p-3 rounded-xl bg-black/60 border border-rose-500/30 flex items-center gap-2 text-rose-400 font-medium text-xs">
-                <svg class="w-4 h-4 shrink-0 inline-block text-rose-400" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/>
-                </svg>
-                <span>Voucher code is pending delivery from Gmail (24-48h).</span>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-rose-300 text-xs">
+                  <svg class="w-4 h-4 shrink-0 text-rose-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                  <span class="font-medium">Pending delivery from Gmail (24–48h)</span>
+                </div>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/25 font-mono-apple">Awaiting Code</span>
               </div>
             `)}
           </div>
 
           <!-- AUDIT METADATA BOX -->
-          <div class="p-3.5 rounded-2xl bg-black/60 border border-neutral-800 space-y-2">
+          <div class="p-3.5 rounded-2xl bg-black/60 border border-neutral-800 space-y-2.5">
             ${act.bookingId ? `
               <div class="flex justify-between items-center text-xs">
-                <span class="text-neutral-400">Booking Reference:</span>
+                <span class="text-neutral-400">Booking ID:</span>
                 <div class="flex items-center gap-1.5">
                   <span class="font-mono-apple font-bold text-neutral-200">${act.bookingId}</span>
                   <button onclick="copyToClipboard('${act.bookingId}')" class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 active:scale-95 transition-all">Copy</button>
@@ -5120,28 +5120,23 @@
 
             ${isStaging && act.targetBrand ? `
               <div class="flex justify-between items-center text-xs">
-                <span class="text-neutral-400">Destination Brand Tab:</span>
+                <span class="text-neutral-400">Destination Brand:</span>
                 <span class="font-mono-apple text-emerald-400 font-bold">${act.targetBrand}</span>
               </div>
             ` : ''}
 
             <div class="flex justify-between items-center text-xs">
-              <span class="text-neutral-400">Account Tag:</span>
+              <span class="text-neutral-400">Account:</span>
               <span class="font-mono-apple text-blue-400 font-bold">@${act.account || '-'}</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
-              <span class="text-neutral-400">Appended Timestamp:</span>
-              <span class="font-mono-apple font-bold text-white text-[11px]">${timeStr || 'Recent'}</span>
+              <span class="text-neutral-400">Received:</span>
+              <span class="font-mono-apple text-neutral-300 text-[11px]">${timeStr ? (relTime && relTime !== 'Recent' && relTime !== timeStr ? `${timeStr} · ${relTime}` : timeStr) : (relTime || 'Recent')}</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
-              <span class="text-neutral-400">Relative Age:</span>
-              <span class="text-[#F47A21] font-semibold">${relTime}</span>
-            </div>
-
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-neutral-400">${isShared ? 'Platform:' : 'Payment Card:'}</span>
+              <span class="text-neutral-400">${isShared ? 'Platform:' : 'Card:'}</span>
               <span class="font-mono-apple ${isShared ? 'text-[#F47A21]' : (isTagged ? 'text-emerald-400' : 'text-amber-400')} font-bold">
                 ${isShared ? 'WhatsApp Export' : (isTagged ? act.card : '<span class="inline-flex items-center gap-1 text-amber-400"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Untagged (Needs Card Tag)</span>')}
               </span>
@@ -5190,17 +5185,12 @@
                   <span>Mark Revalidated</span>
                 </button>
               </div>
-            ` : `
-              <div class="flex-1 py-2.5 px-3 rounded-xl bg-neutral-900/80 border border-neutral-800 text-neutral-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                <span>Awaiting Delivery</span>
-              </div>
-            `)}
-            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="py-2.5 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border border-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-800 dark:hover:text-rose-400 hover:text-rose-600 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95" title="Dismiss voucher">
+            ` : '')}
+            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="${isTagged && !hasArrived && !isRevalidation ? 'flex-1' : 'px-4'} py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95" title="Dismiss voucher">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
               <span>Dismiss</span>
             </button>
-            <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
+            <button onclick="closeVoucherDetailSheet();" class="${isTagged && !hasArrived && !isRevalidation ? 'flex-1' : 'px-4'} py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
               Done
             </button>
           `;
