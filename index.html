@@ -3299,7 +3299,7 @@
       <!-- Comments Input (Label: Comments, Not prefilled) -->
       <div class="space-y-1">
         <label for="in-sale-input-comments" class="text-xs font-bold text-[var(--theme-text-muted)]">Comments</label>
-        <input type="text" id="in-sale-input-comments" placeholder="e.g. Sold to Siddharth" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
+        <input type="text" id="in-sale-input-comments" placeholder="e.g. Sold via WhatsApp" value="" class="w-full px-3 py-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
       </div>
 
       <!-- Submit Button -->
@@ -5401,88 +5401,21 @@
       return { soldTo: s.replace(/^[gG]\//, '').split(/[(:|]/)[0].trim(), mobile: '', account: '' };
     }
 
-    function getPrefillDetailsForCard(act, isPrime) {
-      if (!act) return null;
-
-      // 0. Use explicitly recorded saleDetails if already saved on this voucher
-      if (act.saleDetails && (act.saleDetails.soldTo || act.saleDetails.mobile)) {
-        return {
-          soldTo: act.saleDetails.soldTo || '',
-          mobile: act.saleDetails.mobile || '',
-          redeemedAccount: act.saleDetails.redeemedAccount || '',
-          price: Number(act.saleDetails.price) || (isPrime ? 500 : 1500),
-          gpayName: act.saleDetails.gpayName || act.saleDetails.soldTo || ''
-        };
-      }
-
-      if (!isCardTagged(act.card)) {
-        return null;
-      }
-
-      const cardStr = String(act.card || '').trim();
-      const cardDigits = cardStr.replace(/\D/g, '');
-      const last4 = cardDigits.length >= 4 ? cardDigits.slice(-4) : cardDigits;
-      const brandKey = isPrime ? 'prime' : 'cult';
-
-      // 1. Check localStorage for card-specific cached sale
-      try {
-        const cachedCard = localStorage.getItem(`rupay_last_sale_card_${cardStr}`);
-        if (cachedCard) {
-          const parsed = JSON.parse(cachedCard);
-          if (parsed && (parsed.soldTo || parsed.mobile)) return parsed;
-        }
-      } catch (e) {}
-
-      // 2. Search state.income.ledger for entry matching this card's digits or card name
-      const ledger = (state.income && Array.isArray(state.income.ledger)) ? state.income.ledger : [];
-      if (last4) {
-        for (const item of ledger) {
-          const itTitle = String(item.title || '').toLowerCase();
-          const itComments = String(item.comments || '');
-          const isMatchingBrand = isPrime ? itTitle.includes('prime') : itTitle.includes('cult');
-          if (isMatchingBrand && (itComments.includes(last4) || (cardStr && itComments.includes(cardStr)))) {
-            const parsed = parseIncomeSale(itComments);
-            if (parsed && parsed.soldTo) {
-              return {
-                soldTo: parsed.soldTo,
-                mobile: parsed.mobile || '',
-                redeemedAccount: parsed.account || '',
-                price: Number(item.price) || (isPrime ? 500 : 1500),
-                gpayName: parsed.gpay || parsed.soldTo
-              };
-            }
-          }
+    function getPrefillAccountForVoucher(act) {
+      if (!act) return '';
+      let acc = (act.account && act.account !== '-' && act.account !== 'Unassigned') ? String(act.account).replace(/^@/, '').trim() : '';
+      if (!acc && act.card) {
+        const cardDigits = String(act.card).replace(/\D/g, '');
+        const last4 = cardDigits.slice(-4);
+        const matchedCard = (state.cards || []).find(c => {
+          const cNum = String(c.cardNumber || '').replace(/\D/g, '');
+          return last4 && cNum.endsWith(last4);
+        });
+        if (matchedCard && matchedCard.linkedAccount && matchedCard.linkedAccount !== 'NA') {
+          acc = String(matchedCard.linkedAccount).trim();
         }
       }
-
-      // 3. Check localStorage for brand-specific cached sale
-      try {
-        const cachedBrand = localStorage.getItem(`rupay_last_sale_${brandKey}`);
-        if (cachedBrand) {
-          const parsed = JSON.parse(cachedBrand);
-          if (parsed && (parsed.soldTo || parsed.mobile)) return parsed;
-        }
-      } catch (e) {}
-
-      // 4. Fallback to most recent sale of this brand in ledger
-      for (const item of ledger) {
-        const itTitle = String(item.title || '').toLowerCase();
-        const isMatchingBrand = isPrime ? itTitle.includes('prime') : itTitle.includes('cult');
-        if (isMatchingBrand && item.comments && item.price > 0) {
-          const parsed = parseIncomeSale(item.comments);
-          if (parsed && parsed.soldTo && !parsed.soldTo.toLowerCase().includes('sold')) {
-            return {
-              soldTo: parsed.soldTo,
-              mobile: parsed.mobile || '',
-              redeemedAccount: parsed.account || '',
-              price: Number(item.price) || (isPrime ? 500 : 1500),
-              gpayName: parsed.gpay || parsed.soldTo
-            };
-          }
-        }
-      }
-
-      return null;
+      return acc;
     }
 
     function openMarkSoldSheet(id) {
@@ -5520,34 +5453,22 @@
       const priceInput = document.getElementById('ms-input-price');
       if (priceInput) priceInput.value = defaultPrice;
 
-      // Pre-fill account from voucher
-      const prefillAccount = (act.account && act.account !== '-' && act.account !== 'Unassigned') ? act.account : '';
+      // Pre-fill "Redeemed in Account" strictly from the account the voucher was tagged to
+      const prefillAccount = getPrefillAccountForVoucher(act);
       const accInput = document.getElementById('ms-input-account');
+      if (accInput) accInput.value = prefillAccount;
+
+      // "Sold to", "Gpay received from", and "Mobile" strictly blank by default
       const mobInput = document.getElementById('ms-input-mobile');
       const soldInput = document.getElementById('ms-input-sold-to');
       const gpayInput = document.getElementById('ms-input-gpay');
+      if (soldInput) soldInput.value = '';
+      if (gpayInput) gpayInput.value = '';
+      if (mobInput) mobInput.value = '';
 
-      // Smart pre-fill: if voucher is tagged with card, auto-fill buyer, mobile, account, and price
-      const prefill = getPrefillDetailsForCard(act, isPrime);
-      if (prefill) {
-        if (priceInput && prefill.price) priceInput.value = prefill.price;
-        if (accInput) accInput.value = prefill.redeemedAccount || prefillAccount;
-        if (mobInput) mobInput.value = isPrime ? '' : (prefill.mobile || '');
-        if (soldInput) soldInput.value = prefill.soldTo || '';
-        if (prefill.gpayName && prefill.gpayName.toLowerCase() !== (prefill.soldTo || '').toLowerCase()) {
-          isSameGpayActive = false;
-          if (gpayInput) gpayInput.value = prefill.gpayName;
-        } else {
-          isSameGpayActive = true;
-          if (gpayInput) gpayInput.value = prefill.soldTo || '';
-        }
-      } else {
-        if (accInput) accInput.value = prefillAccount;
-        if (mobInput) mobInput.value = '';
-        if (soldInput) soldInput.value = '';
-        if (gpayInput) gpayInput.value = '';
-        isSameGpayActive = true;
-      }
+      isSameGpayActive = true;
+      const sameGpayChk = document.getElementById('ms-chk-same-gpay');
+      if (sameGpayChk) sameGpayChk.checked = true;
       updateSameGpayUI();
 
       // Mobile field visibility: strictly hidden for Amazon Prime, visible for Cult
@@ -5673,10 +5594,6 @@
           gpayName,
           isSameGpay: isSameGpayActive
         };
-        localStorage.setItem(`rupay_last_sale_${isPrime ? 'prime' : 'cult'}`, JSON.stringify(salePref));
-        if (v.card && isCardTagged(v.card)) {
-          localStorage.setItem(`rupay_last_sale_card_${String(v.card).trim()}`, JSON.stringify(salePref));
-        }
       } catch (e) {}
 
       // Close sheet immediately
