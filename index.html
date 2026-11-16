@@ -5062,15 +5062,15 @@
       const contentEl = document.getElementById('vdetail-content');
       if (contentEl) {
         contentEl.innerHTML = `
-          <!-- STATUS & VOUCHER CODE BOX -->
-          <div class="p-3 rounded-2xl border ${hasArrived ? 'bg-emerald-950/20 border-emerald-500/30' : (isRevalidation ? 'bg-amber-950/20 border-amber-500/30' : 'bg-rose-950/20 border-rose-500/25')}">
-            ${hasArrived ? `
-              <div class="flex items-center justify-between pb-2 mb-2 border-b border-emerald-500/20">
+          ${hasArrived ? `
+            <!-- VOUCHER CODE & PIN BOX -->
+            <div class="p-3.5 rounded-2xl border bg-emerald-950/20 border-emerald-500/30 space-y-2">
+              <div class="flex items-center justify-between">
                 <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400 inline-flex items-center gap-1">
                   <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                   <span>Code Delivered</span>
                 </span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple">Active</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple">Active & Usable</span>
               </div>
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0 flex-1">
@@ -5087,24 +5087,17 @@
                   ${act.pin ? 'Copy Code + PIN' : 'Copy Code'}
                 </button>
               </div>
-            ` : (isRevalidation ? `
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 text-amber-300 text-xs">
-                  <svg class="w-4 h-4 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                  <span class="font-medium">Validation link pending payment</span>
-                </div>
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono-apple">Action Required</span>
+            </div>
+          ` : (isRevalidation ? `
+            <!-- VALIDATION PENDING NOTICE -->
+            <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2 text-amber-300">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                <span class="font-medium">Validation link pending payment</span>
               </div>
-            ` : `
-              <div class="flex items-center justify-between gap-2">
-                <div class="flex items-center gap-2 text-rose-300 text-xs">
-                  <svg class="w-4 h-4 shrink-0 text-rose-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                  <span class="font-medium">Pending delivery from Gmail (24–48h)</span>
-                </div>
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/25 font-mono-apple">Awaiting Code</span>
-              </div>
-            `)}
-          </div>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-mono-apple">Action Required</span>
+            </div>
+          ` : '')}
 
           <!-- AUDIT METADATA BOX -->
           <div class="p-3.5 rounded-2xl bg-black/60 border border-neutral-800 space-y-2.5">
@@ -5115,6 +5108,16 @@
                   <span class="font-mono-apple font-bold text-neutral-200">${act.bookingId}</span>
                   <button onclick="copyToClipboard('${act.bookingId}')" class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 active:scale-95 transition-all">Copy</button>
                 </div>
+              </div>
+            ` : ''}
+
+            ${!hasArrived && !isRevalidation ? `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-neutral-400">Status:</span>
+                <span class="font-mono-apple text-rose-400 font-semibold text-[11px] inline-flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse"></span>
+                  Pending delivery (24–48h)
+                </span>
               </div>
             ` : ''}
 
