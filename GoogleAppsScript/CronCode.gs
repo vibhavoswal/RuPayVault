@@ -1932,6 +1932,178 @@ function doGet(e) {
     }
   }
 
+  // Safeguards Audit Verification Endpoint for MARK_VOUCHER_AS_SOLD (Atomic Ingested/Brand -> Redeemed + RuPay Income)
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_SOLD_DUMMY") {
+    try {
+      const lock = LockService.getScriptLock();
+      lock.tryLock(30000);
+      const ss = getSpreadsheet();
+      let nSheet = ss.getSheetByName("New");
+      if (!nSheet) {
+        nSheet = ss.insertSheet("New");
+        nSheet.appendRow(UNIFIED_NEW_HEADERS);
+        nSheet.setFrozenRows(1);
+      }
+      let rSheet = ss.getSheetByName("Redeemed");
+      if (!rSheet) {
+        rSheet = ss.insertSheet("Redeemed");
+        rSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
+        rSheet.setFrozenRows(1);
+      }
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) return ContentService.createTextOutput(JSON.stringify({ error: '"RuPay Income" sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+
+      const testBid = "RUPS-TEST-SOLD-999";
+      const testCode = "TEST-CULT-CODE-999";
+      const testSoldTo = "Test Buyer";
+      const testMobile = "9876543210";
+      const testPrice = 1500;
+      const nowStr = formatISTTimestamp(new Date());
+      const todayStr = formatISTDate(new Date());
+
+      // Pre-cleanup
+      [nSheet, rSheet].forEach(sheet => {
+        const rows = sheet.getDataRange().getValues();
+        for (let i = rows.length - 1; i >= 1; i--) {
+          if (String(rows[i][0] || '').trim().toUpperCase() === testBid || String(rows[i][1] || '').trim().toUpperCase() === testBid) {
+            sheet.deleteRow(i + 1);
+          }
+        }
+      });
+      const inRows = incomeSheet.getDataRange().getValues();
+      for (let i = inRows.length - 1; i >= 1; i--) {
+        if (String(inRows[i][3] || '').includes(testBid) || String(inRows[i][3] || '').includes("9876543210")) {
+          incomeSheet.deleteRow(i + 1);
+        }
+      }
+      recalculateSheetTotal(incomeSheet);
+      SpreadsheetApp.flush();
+
+      // Step 1: Insert dummy row into "New"
+      nSheet.appendRow([
+        testBid,
+        testCode,
+        "",
+        500,
+        todayStr,
+        "vibhavoswal9",
+        "PNB DC 9762",
+        "ACTIVE",
+        nowStr,
+        true,
+        "Cult Fit",
+        ""
+      ]);
+      SpreadsheetApp.flush();
+
+      // Step 2: Execute MARK_VOUCHER_AS_SOLD logic
+      let nRows = nSheet.getDataRange().getValues();
+      let foundInNew = false;
+      for (let i = nRows.length - 1; i >= 1; i--) {
+        if (String(nRows[i][0] || '').trim().toUpperCase() === testBid) {
+          foundInNew = true;
+          nSheet.deleteRow(i + 1);
+          break;
+        }
+      }
+
+      rSheet.appendRow([
+        "Cult Fit",
+        `'${testBid}`,
+        `'${testCode}`,
+        "",
+        500,
+        todayStr,
+        "vibhavoswal9",
+        "PNB DC 9762",
+        "USED",
+        nowStr,
+        "Cult Fit",
+        nowStr,
+        true
+      ]);
+
+      const commentStr = `${testSoldTo} (${testMobile}): vibhavoswal9 [${testBid}]`;
+      const dateMs = parseDateToTimestamp("16/11/26");
+      insertRowSortedByDate(incomeSheet, [
+        "Cult Fit",
+        new Date(2026, 10, 16),
+        testPrice,
+        commentStr,
+        "PNB DC 9762"
+      ], dateMs);
+      recalculateSheetTotal(incomeSheet);
+      SpreadsheetApp.flush();
+
+      // Step 3: Verify assertions
+      let stillInNew = false;
+      nRows = nSheet.getDataRange().getValues();
+      for (let i = 1; i < nRows.length; i++) {
+        if (String(nRows[i][0] || '').trim().toUpperCase() === testBid) stillInNew = true;
+      }
+
+      let foundInRedeemed = false;
+      const rRows = rSheet.getDataRange().getValues();
+      for (let i = 1; i < rRows.length; i++) {
+        if (String(rRows[i][1] || '').trim().toUpperCase() === testBid) {
+          foundInRedeemed = true;
+          break;
+        }
+      }
+
+      let foundInIncome = false;
+      const iRows = incomeSheet.getDataRange().getValues();
+      for (let i = 1; i < iRows.length; i++) {
+        if (String(iRows[i][3] || '').includes(testBid)) {
+          foundInIncome = true;
+          break;
+        }
+      }
+
+      // Step 4: Cleanup
+      for (let i = rRows.length - 1; i >= 1; i--) {
+        if (String(rRows[i][1] || '').trim().toUpperCase() === testBid) {
+          rSheet.deleteRow(i + 1);
+        }
+      }
+      for (let i = iRows.length - 1; i >= 1; i--) {
+        if (String(iRows[i][3] || '').includes(testBid)) {
+          incomeSheet.deleteRow(i + 1);
+        }
+      }
+      recalculateSheetTotal(incomeSheet);
+      SpreadsheetApp.flush();
+
+      let residualCount = 0;
+      [nSheet, rSheet].forEach(s => {
+        const rows = s.getDataRange().getValues();
+        for (let i = 1; i < rows.length; i++) {
+          if (String(rows[i][0] || '').includes(testBid) || String(rows[i][1] || '').includes(testBid)) residualCount++;
+        }
+      });
+      const finalIRows = incomeSheet.getDataRange().getValues();
+      for (let i = 1; i < finalIRows.length; i++) {
+        if (String(finalIRows[i][3] || '').includes(testBid)) residualCount++;
+      }
+
+      const allSafeguardsMet = (foundInNew && !stillInNew && foundInRedeemed && foundInIncome && residualCount === 0);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_SOLD_DUMMY",
+        foundInNew: foundInNew,
+        deletedFromNew: !stillInNew,
+        foundInRedeemed: foundInRedeemed,
+        foundInIncome: foundInIncome,
+        cleanedUp: residualCount === 0,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: allSafeguardsMet
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Safeguards Audit Verification Endpoint for Tombstone Architecture (New & Redeemed promotion to Deleted_Tombstones)
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_TOMBSTONE_DUMMY") {
     try {
@@ -4538,6 +4710,199 @@ function doPost(e) {
         action: "DISMISS_STAGING",
         dismissedCount: dismissed.length,
         dismissedBids: dismissed
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 16B. Mark Voucher As Sold (Direct from Ingested/New or Brand Tab -> Redeemed Tab + RuPay Income Entry)
+    if (data.action === "MARK_VOUCHER_AS_SOLD") {
+      const rawBid = String(data.bookingId || '').trim();
+      const rawCode = String(data.code || '').trim();
+      const rawPin = String(data.pin || '').trim();
+      const rawBrand = String(data.brand || '').trim();
+      const isStaging = !!data.isStaging;
+      const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "Cult Fit");
+      const sale = data.saleDetails || {};
+      const sellingPrice = Math.abs(Number(sale.price) || 0);
+
+      if (!sellingPrice) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Invalid selling price: Non-zero price is required to record sale."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Step 1: Ensure "Redeemed" sheet exists
+      let rSheet = ss.getSheetByName("Redeemed");
+      if (!rSheet) {
+        rSheet = ss.insertSheet("Redeemed");
+        rSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
+        rSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+        rSheet.setFrozenRows(1);
+      }
+
+      let voucherFound = false;
+      let finalBid = rawBid;
+      let finalCode = rawCode;
+      let finalPin = rawPin;
+      let finalAmount = Number(data.amount) || 500;
+      let finalDateOfIssue = String(data.dateOfIssue || '');
+      let finalAccount = String(data.account || '');
+      let finalCard = String(data.card || 'Unassigned');
+      let finalAppendedTs = String(data.timestampIST || '');
+      const redeemedTs = formatISTTimestamp(new Date());
+
+      if (isStaging) {
+        // Find & remove from "New" sheet
+        const nSheet = ss.getSheetByName("New");
+        if (nSheet) {
+          const nRows = nSheet.getDataRange().getValues();
+          const targetBidUpper = rawBid.toUpperCase();
+          const targetCodeUpper = rawCode.toUpperCase();
+          for (let i = nRows.length - 1; i >= 1; i--) {
+            const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
+            const rowCode = String(nRows[i][1] || '').trim().toUpperCase();
+            const matchBid = targetBidUpper && (rowBid === targetBidUpper || (rowBid.startsWith("RUPS-") && targetBidUpper.includes(rowBid)) || (targetBidUpper.startsWith("RUPS-") && rowBid.includes(targetBidUpper)));
+            const matchCode = targetCodeUpper && targetCodeUpper !== 'PENDING' && targetCodeUpper !== '-' && rowCode === targetCodeUpper;
+            if (matchBid || matchCode) {
+              finalBid = String(nRows[i][0] || finalBid);
+              finalCode = String(nRows[i][1] || finalCode);
+              finalPin = String(nRows[i][2] || finalPin);
+              finalAmount = Number(nRows[i][3]) || finalAmount;
+              finalDateOfIssue = String(nRows[i][4] || finalDateOfIssue);
+              finalAccount = String(nRows[i][5] || finalAccount);
+              finalCard = String(nRows[i][6] || finalCard);
+              finalAppendedTs = String(nRows[i][8] || finalAppendedTs);
+              nSheet.deleteRow(i + 1);
+              voucherFound = true;
+              break;
+            }
+          }
+        }
+      } else {
+        // Find & remove from Brand tab (or any brand tab)
+        const brandSheet = ss.getSheetByName(targetBrand) || ss.getSheetByName(rawBrand);
+        if (brandSheet) {
+          const bRows = brandSheet.getDataRange().getValues();
+          const targetBidUpper = rawBid.toUpperCase();
+          const targetCodeUpper = rawCode.toUpperCase();
+          for (let i = bRows.length - 1; i >= 1; i--) {
+            const rowBid = String(bRows[i][0] || '').trim().toUpperCase();
+            const rowCode = String(bRows[i][1] || '').trim().toUpperCase();
+            const matchBid = targetBidUpper && (rowBid === targetBidUpper || (rowBid.startsWith("RUPS-") && targetBidUpper.includes(rowBid)) || (targetBidUpper.startsWith("RUPS-") && rowBid.includes(targetBidUpper)));
+            const matchCode = targetCodeUpper && targetCodeUpper !== 'PENDING' && targetCodeUpper !== '-' && rowCode === targetCodeUpper;
+            if (matchBid || matchCode) {
+              finalBid = String(bRows[i][0] || finalBid);
+              finalCode = String(bRows[i][1] || finalCode);
+              finalPin = String(bRows[i][2] || finalPin);
+              finalAmount = Number(bRows[i][3]) || finalAmount;
+              finalDateOfIssue = String(bRows[i][4] || finalDateOfIssue);
+              finalAccount = String(bRows[i][5] || finalAccount);
+              finalCard = String(bRows[i][6] || finalCard);
+              finalAppendedTs = String(bRows[i][8] || finalAppendedTs);
+              brandSheet.deleteRow(i + 1);
+              voucherFound = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // Format code & PIN with apostrophe to prevent scientific notation in Google Sheets
+      const safeCode = (finalCode && finalCode !== 'PENDING' && finalCode !== '-') ? `'${finalCode.replace(/^'/, '')}` : (rawCode ? `'${rawCode.replace(/^'/, '')}` : "SOLD");
+      const safePin = finalPin ? `'${finalPin.replace(/^'/, '')}` : "";
+      const safeBid = finalBid ? `'${finalBid.replace(/^'/, '')}` : "";
+
+      // Append to "Redeemed" tab
+      rSheet.appendRow([
+        targetBrand,           // Col 1: Brand
+        safeBid,               // Col 2: Booking ID
+        safeCode,              // Col 3: Code
+        safePin,               // Col 4: PIN
+        finalAmount,           // Col 5: Value
+        finalDateOfIssue,      // Col 6: Date of Issue
+        finalAccount,          // Col 7: Account
+        finalCard,             // Col 8: Card
+        "USED",                // Col 9: Status
+        redeemedTs,            // Col 10: Redeemed Timestamp (IST)
+        targetBrand,           // Col 11: Original Tab
+        finalAppendedTs,       // Col 12: Appended Timestamp (IST)
+        true                   // Col 13: Display in UI
+      ]);
+
+      // Step 2: Format Comment & Insert into "RuPay Income" Tab
+      let incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: '"RuPay Income" tab not found in spreadsheet'
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const soldTo = String(sale.soldTo || '').trim();
+      const mobile = String(sale.mobile || '').trim();
+      const redeemedAccount = String(sale.redeemedAccount || finalAccount || '').trim();
+      const gpayName = String(sale.gpayName || '').trim();
+
+      // Canonical RuPay Income title: "Cult Fit" or "Amazon Prime"
+      let incomeTitle = "Cult Fit";
+      const bLow = targetBrand.toLowerCase();
+      if (bLow.includes("prime") || bLow.includes("amazon")) {
+        incomeTitle = "Amazon Prime";
+      }
+
+      // Build comments matching exact user style: Abhijeet Kulkarni (9561029324): ayaanshekhawat
+      let commentStr = "";
+      if (soldTo) {
+        commentStr += soldTo;
+        if (mobile) commentStr += ` (${mobile})`;
+        if (redeemedAccount) commentStr += `: ${redeemedAccount}`;
+        if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+          commentStr += ` | GPay: ${gpayName}`;
+        }
+      } else {
+        commentStr = `${redeemedAccount || 'Customer'}${mobile ? ' (' + mobile + ')' : ''}`;
+      }
+
+      const dateStr = String(sale.date || Utilities.formatDate(new Date(), "GMT+05:30", "dd/MM/yy")).trim();
+      let cellDateValue = dateStr;
+      const dateMs = parseDateToTimestamp(dateStr);
+      const parts = dateStr.split(/[\/\-\.]/);
+      let parsedYear = 2026;
+      if (parts.length === 3) {
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        let y = parseInt(parts[2], 10);
+        if (y < 100) y = 2000 + y;
+        parsedYear = y;
+        cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+      }
+
+      const cardAccount = finalCard && finalCard !== 'Unassigned' ? finalCard : finalAccount;
+      const newIncomeRow = [
+        incomeTitle,
+        cellDateValue,
+        sellingPrice,
+        commentStr,
+        cardAccount
+      ];
+
+      const insertedRow = insertRowSortedByDate(incomeSheet, newIncomeRow, dateMs);
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "MARK_VOUCHER_AS_SOLD",
+        bookingId: finalBid,
+        code: safeCode.replace(/^'/, ''),
+        brand: targetBrand,
+        incomeEntry: {
+          id: "inc-" + insertedRow,
+          title: incomeTitle,
+          date: dateStr,
+          price: sellingPrice,
+          comments: commentStr,
+          account: cardAccount,
+          year: parsedYear,
+          type: "income"
+        }
       })).setMimeType(ContentService.MimeType.JSON);
     }
 

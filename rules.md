@@ -174,6 +174,18 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 7 (Context Preservation)**: Preserves active year filter (`all`, `2026`, `2025`, `2024`), type filter (`all`, `income`, `charge`), and active search query.
 - **Mandatory Verification**: Tested live on Google Sheets via `VERIFY_SAFEGUARD_INCOME_DUMMY` across both sheets with sorted insertion verified and 0 residual artifacts.
 
+#### Operation: `MARK_VOUCHER_AS_SOLD` (Direct Ingested/Brand -> Redeemed Tab + RuPay Income Entry for Cult & Amazon Prime)
+- **Safeguard 1 (Mutation Journal)**: Optimistic entries recorded in `UniversalMutationJournal` for voucher redemption and income ledger creation, protecting state against background polling.
+- **Safeguard 2 (Quarantine Shield)**: Booking ID and code are quarantined to prevent ghost re-emergence in Ingested or Brand feeds during syncs.
+- **Safeguard 3 (Optimistic UI & Feedback)**: Voucher immediately leaves staging/brand views and unshifts into `redeemedList`; sale unshifts into `state.income.ledger` with dynamic KPI recalculations; displays 5-second interactive Undo banner (`"Marked [Brand] sold to [Buyer] (+₹[Price]) · Tap to Undo"`).
+- **Safeguard 4 (Rollback Handler)**: Explicit `rollback` callback supplied to `apiFetch('MARK_VOUCHER_AS_SOLD', ...)` restoring `state.staging` or `state.vouchers`, un-redeeming from `redeemedList`, removing the ledger sale, and alerting user upon network failure.
+- **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring background syncs until atomic write completes.
+- **Safeguard 6 (Backend Transactional Integrity & Single-Lock Atomicity)**:
+  - Guarded by `LockService.getScriptLock().tryLock(30000)`.
+  - Atomically moves row to `"Redeemed"` sheet (from `"New"` or brand tab) and inserts sorted row into `"RuPay Income"` sheet with updated `TOTAL` summary row.
+- **Safeguard 7 (Context Preservation)**: Preserves active brand filter and closes inspection bottom sheets.
+- **Mandatory Verification**: Tested live on Google Sheets via `VERIFY_SAFEGUARD_SOLD_DUMMY` asserting row movement to Redeemed, sorted insertion into RuPay Income, and 0 residual artifacts.
+
 ### Mandatory Verification via Dummy Row Testing
 Whenever adding a new operation or feature change:
 1. **Insert a tagged dummy row** into the relevant Google Sheet tab (e.g. `TEST-DUMMY-SAFEGUARD` / card `6521999900000001`).

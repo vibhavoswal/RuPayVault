@@ -348,18 +348,25 @@
       color: #ffffff !important;
     }
     [data-theme="light"] #voucher-detail-sheet > div,
-    html.light #voucher-detail-sheet > div {
+    html.light #voucher-detail-sheet > div,
+    [data-theme="light"] #mark-sold-sheet > div,
+    html.light #mark-sold-sheet > div {
       background-color: #ffffff !important;
       border-color: rgba(12, 140, 70, 0.2) !important;
       color: #141212 !important;
       box-shadow: 0 -12px 45px rgba(0,0,0,0.15) !important;
     }
+    [data-theme="light"] #voucher-detail-sheet .bg-black\/50,
+    html.light #voucher-detail-sheet .bg-black\/50,
+    [data-theme="light"] #mark-sold-sheet .bg-black\/50,
+    html.light #mark-sold-sheet .bg-black\/50,
     [data-theme="light"] #voucher-detail-sheet .bg-black\/60,
     html.light #voucher-detail-sheet .bg-black\/60,
     [data-theme="light"] #voucher-detail-sheet .bg-black\/80,
     html.light #voucher-detail-sheet .bg-black\/80 {
       background-color: #f4f7f4 !important;
       border-color: rgba(12, 140, 70, 0.15) !important;
+      color: #141212 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-emerald-950\/30,
     html.light #voucher-detail-sheet .bg-emerald-950\/30 {
@@ -372,25 +379,39 @@
       border-color: rgba(244, 63, 94, 0.3) !important;
     }
     [data-theme="light"] #voucher-detail-sheet .text-white,
-    html.light #voucher-detail-sheet .text-white {
+    html.light #voucher-detail-sheet .text-white,
+    [data-theme="light"] #mark-sold-sheet .text-white,
+    html.light #mark-sold-sheet .text-white {
       color: #141212 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .text-neutral-200,
-    html.light #voucher-detail-sheet .text-neutral-200 {
+    html.light #voucher-detail-sheet .text-neutral-200,
+    [data-theme="light"] #mark-sold-sheet .text-neutral-200,
+    html.light #mark-sold-sheet .text-neutral-200,
+    [data-theme="light"] #voucher-detail-sheet .text-neutral-300,
+    html.light #voucher-detail-sheet .text-neutral-300,
+    [data-theme="light"] #mark-sold-sheet .text-neutral-300,
+    html.light #mark-sold-sheet .text-neutral-300 {
       color: #141212 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .text-neutral-400,
-    html.light #voucher-detail-sheet .text-neutral-400 {
+    html.light #voucher-detail-sheet .text-neutral-400,
+    [data-theme="light"] #mark-sold-sheet .text-neutral-400,
+    html.light #mark-sold-sheet .text-neutral-400 {
       color: #5e5959 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .border-neutral-800,
-    html.light #voucher-detail-sheet .border-neutral-800 {
+    html.light #voucher-detail-sheet .border-neutral-800,
+    [data-theme="light"] #mark-sold-sheet .border-neutral-800,
+    html.light #mark-sold-sheet .border-neutral-800 {
       border-color: rgba(12, 140, 70, 0.15) !important;
     }
     [data-theme="light"] #voucher-detail-sheet button.bg-neutral-800,
     html.light #voucher-detail-sheet button.bg-neutral-800,
     [data-theme="light"] #voucher-detail-sheet button.bg-neutral-900,
-    html.light #voucher-detail-sheet button.bg-neutral-900 {
+    html.light #voucher-detail-sheet button.bg-neutral-900,
+    [data-theme="light"] #mark-sold-sheet button.bg-neutral-800,
+    html.light #mark-sold-sheet button.bg-neutral-800 {
       background-color: #f0f6f2 !important;
       border-color: rgba(12, 140, 70, 0.20) !important;
       color: #141212 !important;
@@ -2702,6 +2723,114 @@
       <!-- Sheet Actions Footer -->
       <div id="vdetail-footer" class="pt-2 flex gap-2">
         <!-- Injected via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MARK AS SOLD iOS BOTTOM SHEET MODAL (Cult & Amazon Prime) -->
+  <!-- ======================================================== -->
+  <div id="mark-sold-backdrop" onclick="closeMarkSoldSheet()" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-opacity duration-200"></div>
+  <div id="mark-sold-sheet" class="hidden fixed bottom-0 left-0 right-0 max-h-[90%] z-50 p-3 sm:p-4 transition-transform duration-250 ease-out flex justify-center pointer-events-none">
+    <div class="w-full max-w-lg bg-[#181617] border border-neutral-700/80 rounded-3xl p-5 shadow-[0_-12px_45px_rgba(0,0,0,0.9)] space-y-3.5 pointer-events-auto backdrop-blur-2xl flex flex-col overflow-hidden max-h-[88vh]">
+      <!-- Drag handle -->
+      <div class="w-10 h-1 bg-neutral-600 rounded-full mx-auto -mt-1 mb-1 shrink-0"></div>
+
+      <!-- Sheet Header -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800 shrink-0">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/>
+            </svg>
+          </span>
+          <div class="truncate">
+            <span id="ms-ref-id" class="text-[10px] font-mono-apple text-neutral-400 font-bold uppercase tracking-wider block truncate">RUPS-XXXX</span>
+            <h4 id="ms-title-brand" class="text-sm font-bold text-white truncate">Mark Cult.fit as Sold</h4>
+          </div>
+        </div>
+        <button onclick="closeMarkSoldSheet()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-colors shrink-0" aria-label="Close sheet">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <!-- Form Body (Scrollable) -->
+      <div class="space-y-3 overflow-y-auto pr-0.5 text-xs flex-1">
+        <!-- Selling Price & Date Row -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Selling Price (₹)</label>
+            <div class="relative">
+              <span class="absolute left-3 top-2.5 text-neutral-400 font-bold font-mono-apple text-xs">₹</span>
+              <input type="number" id="ms-input-price" step="50" min="1" placeholder="1500" class="w-full pl-7 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple font-bold text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Sale Date</label>
+            <input type="text" id="ms-input-date" placeholder="dd/MM/yy" class="w-full px-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Redeemed in Account -->
+        <div>
+          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Redeemed in Account</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-neutral-400">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            </span>
+            <input type="text" id="ms-input-account" placeholder="e.g. ayaanshekhawat or vibhavoswal9" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Mobile Number -->
+        <div>
+          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Mobile Number</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-neutral-400">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            </span>
+            <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Sold To -->
+        <div>
+          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Sold to</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-neutral-400">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </span>
+            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Gpay received from (with 1-click 'Same as sold to' button) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-[11px] font-semibold text-neutral-300">Gpay received from</label>
+            <button type="button" id="ms-btn-same-gpay" onclick="toggleSameGpay()" class="text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-lg border active:scale-95 transition-all inline-flex items-center gap-1">
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <span>Same as sold to</span>
+            </button>
+          </div>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 text-neutral-400">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            </span>
+            <input type="text" id="ms-input-gpay" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-2 flex items-center gap-2 border-t border-neutral-800 shrink-0">
+        <button onclick="closeMarkSoldSheet()" class="py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold active:scale-95 transition-all">
+          Cancel
+        </button>
+        <button onclick="executeMarkAsSold()" id="ms-confirm-btn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <span>Confirm Sale &amp; Log Income</span>
+        </button>
       </div>
     </div>
   </div>
@@ -5151,7 +5280,14 @@
             </button>
           `;
         } else if (isStaging) {
+          const isTargetBrandSoldEligible = isCultOrPrime(act.brand) || isCultOrPrime(act.targetBrand);
           footerEl.innerHTML = `
+            ${isTargetBrandSoldEligible ? `
+              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="Mark as sold and log to RuPay Income">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                <span>Mark as Sold</span>
+              </button>
+            ` : ''}
             ${!isTagged ? `
               <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
@@ -5188,14 +5324,21 @@
             </button>
           `;
         } else {
+          const isTargetBrandSoldEligible = isCultOrPrime(act.brand);
           footerEl.innerHTML = `
+            ${isTargetBrandSoldEligible ? `
+              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="Mark as sold and log to RuPay Income">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                <span>Mark as Sold</span>
+              </button>
+            ` : ''}
             ${!isTagged ? `
               <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Payment Card</span>
               </button>
             ` : ''}
-            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5">
+            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
               <span>WhatsApp</span>
             </button>
@@ -5221,6 +5364,315 @@
       const sheet = document.getElementById('voucher-detail-sheet');
       if (backdrop) backdrop.classList.add('hidden');
       if (sheet) sheet.classList.add('hidden');
+    }
+
+    /* --- MARK AS SOLD MODAL LOGIC (CULT & AMAZON PRIME) --- */
+    let activeMarkSoldVoucher = null;
+    let isSameGpayActive = true;
+
+    function isCultOrPrime(brand) {
+      if (!brand) return false;
+      const b = String(brand).toLowerCase().replace(/[^a-z0-9]/g, '');
+      return b.includes('cult') || b.includes('prime') || b.includes('amazon');
+    }
+
+    function openMarkSoldSheet(id) {
+      let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
+      let isStaging = !!act;
+      if (!act) {
+        act = state.vouchers.find(v => v.id === id || v.code === id);
+      }
+      if (!act) {
+        showToast('Voucher not found');
+        return;
+      }
+
+      activeMarkSoldVoucher = { ...act, isStaging: isStaging };
+      closeVoucherDetailSheet();
+
+      const rawBrand = act.brand || act.targetBrand || 'Cult Fit';
+      const brandDisplay = getBrandDisplayName(rawBrand);
+      const bLow = String(rawBrand).toLowerCase();
+      const isPrime = bLow.includes('prime') || bLow.includes('amazon');
+
+      const titleEl = document.getElementById('ms-title-brand');
+      if (titleEl) titleEl.textContent = `Mark ${brandDisplay} as Sold`;
+      const refEl = document.getElementById('ms-ref-id');
+      if (refEl) refEl.textContent = act.bookingId || act.code || '';
+
+      // Default price: 1500 for Cult, 500 for Prime
+      const defaultPrice = isPrime ? (act.amount || 500) : (act.amount >= 1000 ? act.amount : 1500);
+      const priceInput = document.getElementById('ms-input-price');
+      if (priceInput) priceInput.value = defaultPrice;
+
+      // Pre-fill account
+      const prefillAccount = (act.account && act.account !== '-' && act.account !== 'Unassigned') ? act.account : '';
+      const accInput = document.getElementById('ms-input-account');
+      if (accInput) accInput.value = prefillAccount;
+
+      // Reset text inputs
+      const mobInput = document.getElementById('ms-input-mobile');
+      if (mobInput) mobInput.value = '';
+      const soldInput = document.getElementById('ms-input-sold-to');
+      if (soldInput) soldInput.value = '';
+      const gpayInput = document.getElementById('ms-input-gpay');
+      if (gpayInput) gpayInput.value = '';
+
+      // Reset Same as Sold To toggle
+      isSameGpayActive = true;
+      updateSameGpayUI();
+
+      // Date: today in dd/MM/yy
+      const dateInput = document.getElementById('ms-input-date');
+      if (dateInput) dateInput.value = getTodayDDMMYY();
+
+      const backdrop = document.getElementById('mark-sold-backdrop');
+      const sheet = document.getElementById('mark-sold-sheet');
+      if (backdrop) backdrop.classList.remove('hidden');
+      if (sheet) sheet.classList.remove('hidden');
+    }
+
+    function closeMarkSoldSheet() {
+      const backdrop = document.getElementById('mark-sold-backdrop');
+      const sheet = document.getElementById('mark-sold-sheet');
+      if (backdrop) backdrop.classList.add('hidden');
+      if (sheet) sheet.classList.add('hidden');
+      activeMarkSoldVoucher = null;
+    }
+
+    function toggleSameGpay() {
+      isSameGpayActive = !isSameGpayActive;
+      updateSameGpayUI();
+      if (isSameGpayActive) {
+        const soldInput = document.getElementById('ms-input-sold-to');
+        const gpayInput = document.getElementById('ms-input-gpay');
+        if (soldInput && gpayInput) gpayInput.value = soldInput.value.trim();
+      }
+    }
+
+    function updateSameGpayUI() {
+      const btn = document.getElementById('ms-btn-same-gpay');
+      const gpayInput = document.getElementById('ms-input-gpay');
+      if (!btn) return;
+      if (isSameGpayActive) {
+        btn.className = 'text-[10px] font-mono-apple font-bold px-2 py-0.5 rounded-lg border border-emerald-500/40 bg-emerald-500/20 text-emerald-400 active:scale-95 transition-all inline-flex items-center gap-1';
+        btn.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Same as sold to</span>`;
+        if (gpayInput) gpayInput.readOnly = true;
+      } else {
+        btn.className = 'text-[10px] font-mono-apple font-medium px-2 py-0.5 rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-white active:scale-95 transition-all inline-flex items-center gap-1';
+        btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-sm border border-neutral-500 inline-block"></span><span>Different payer</span>`;
+        if (gpayInput) gpayInput.readOnly = false;
+      }
+    }
+
+    function onSoldToInput() {
+      if (isSameGpayActive) {
+        const soldInput = document.getElementById('ms-input-sold-to');
+        const gpayInput = document.getElementById('ms-input-gpay');
+        if (soldInput && gpayInput) gpayInput.value = soldInput.value.trim();
+      }
+    }
+
+    function getTodayDDMMYY() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    }
+
+    async function executeMarkAsSold() {
+      if (!activeMarkSoldVoucher) {
+        showToast('No active voucher selected');
+        return;
+      }
+
+      const rawPrice = Number(document.getElementById('ms-input-price').value);
+      if (isNaN(rawPrice) || rawPrice <= 0) {
+        showToast('Please enter a valid selling price');
+        return;
+      }
+
+      const soldTo = document.getElementById('ms-input-sold-to').value.trim();
+      if (!soldTo) {
+        showToast('Please enter the buyer name in "Sold to"');
+        return;
+      }
+
+      const mobile = document.getElementById('ms-input-mobile').value.trim();
+      const redeemedAccount = document.getElementById('ms-input-account').value.trim();
+      const gpayName = isSameGpayActive ? soldTo : (document.getElementById('ms-input-gpay').value.trim() || soldTo);
+      const saleDate = document.getElementById('ms-input-date').value.trim() || getTodayDDMMYY();
+
+      const v = activeMarkSoldVoucher;
+      const isStaging = !!v.isStaging;
+      const cleanBid = String(v.bookingId || '').trim();
+      const cleanCode = String(v.code || '').trim();
+      const brandKey = normalizeBrandKey(v.brand || v.targetBrand || 'Cult Fit');
+      const brandDisplay = getBrandDisplayName(brandKey);
+
+      // Build canonical title and comment string
+      const isPrime = brandKey.toLowerCase().includes('prime') || brandKey.toLowerCase().includes('amazon');
+      const incomeTitle = isPrime ? 'Amazon Prime' : 'Cult Fit';
+
+      let commentStr = soldTo;
+      if (mobile) commentStr += ` (${mobile})`;
+      if (redeemedAccount) commentStr += `: ${redeemedAccount}`;
+      if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+        commentStr += ` | GPay: ${gpayName}`;
+      }
+
+      // Close sheet immediately
+      closeMarkSoldSheet();
+
+      // Snapshots for SG4 rollback
+      const prevStaging = (state.staging || []).map(s => ({ ...s }));
+      const prevVouchers = state.vouchers.map(x => ({ ...x }));
+      const prevRedeemed = [...redeemedList];
+      const prevIncomeLedger = [...(state.income?.ledger || [])];
+
+      // SG1 & SG2: Quarantine identifier & journal entry
+      if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, 'voucher');
+      if (cleanBid && cleanBid.startsWith('RUPS-')) UniversalMutationJournal.recordTombstone(cleanBid, 'voucher');
+
+      // Optimistic Local State Updates:
+      if (isStaging) {
+        state.staging = (state.staging || []).filter(s =>
+          (!cleanBid || s.bookingId !== cleanBid) && (!cleanCode || s.code !== cleanCode)
+        );
+      } else {
+        const found = state.vouchers.find(x => (cleanCode && x.code === cleanCode) || (cleanBid && x.bookingId === cleanBid));
+        if (found) found.status = 'USED';
+      }
+
+      // Add to redeemedList
+      const timeStr = nowIST();
+      const redeemedEntry = {
+        code: cleanCode || cleanBid,
+        bookingId: cleanBid,
+        brand: brandKey,
+        amount: v.amount || rawPrice,
+        pin: v.pin || '',
+        account: v.account || '',
+        card: v.card || 'Unassigned',
+        dateOfIssue: v.dateOfIssue || '',
+        expiry: '31 Dec 2026',
+        timestampIST: v.timestampIST || timeStr,
+        redeemedTimestampIST: timeStr,
+        originalTab: brandKey
+      };
+      redeemedList.unshift(redeemedEntry);
+      saveRedeemedList();
+
+      // Optimistically add to state.income.ledger
+      const optimisticIncomeId = 'inc-' + Date.now();
+      const optimisticIncomeEntry = {
+        id: optimisticIncomeId,
+        title: incomeTitle,
+        date: saleDate,
+        price: rawPrice,
+        comments: commentStr,
+        account: v.card || v.account || '',
+        year: 2026,
+        type: 'income'
+      };
+      if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
+      if (!state.income.ledger) state.income.ledger = [];
+
+      // Insert sorted by date
+      const newDateMs = parseIncomeDateMs(saleDate);
+      let inserted = false;
+      for (let i = 0; i < state.income.ledger.length; i++) {
+        const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
+        if (newDateMs >= itemDateMs) {
+          state.income.ledger.splice(i, 0, optimisticIncomeEntry);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        state.income.ledger.push(optimisticIncomeEntry);
+      }
+
+      // Persist encrypted caches & re-render
+      await Promise.all([
+        saveEncryptedStaging(state.staging),
+        saveEncryptedVouchers(state.vouchers)
+      ]);
+      renderDeckSelector();
+      renderVault();
+      if (state.activeWorkspace === 'income') renderIncomeTracker();
+
+      // Show Undo Banner (SG3)
+      showCardUndoBanner(`Marked ${brandDisplay} sold to ${soldTo} (+₹${rawPrice.toLocaleString()})`, async () => {
+        // Rollback
+        state.staging = prevStaging;
+        state.vouchers = prevVouchers;
+        redeemedList = prevRedeemed;
+        if (state.income) state.income.ledger = prevIncomeLedger;
+        saveRedeemedList();
+        await Promise.all([
+          saveEncryptedStaging(state.staging),
+          saveEncryptedVouchers(state.vouchers)
+        ]);
+        if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+        if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+        renderDeckSelector();
+        renderVault();
+        if (state.activeWorkspace === 'income') renderIncomeTracker();
+        showToast('Sale marked as undone');
+      });
+
+      // Background Dispatch via apiFetch (SG4, SG5, SG6)
+      try {
+        const payload = {
+          bookingId: cleanBid,
+          code: cleanCode,
+          pin: v.pin || '',
+          brand: brandKey,
+          isStaging: isStaging,
+          amount: v.amount || rawPrice,
+          dateOfIssue: v.dateOfIssue || '',
+          account: v.account || '',
+          card: v.card || 'Unassigned',
+          timestampIST: v.timestampIST || '',
+          saleDetails: {
+            price: rawPrice,
+            soldTo: soldTo,
+            mobile: mobile,
+            redeemedAccount: redeemedAccount,
+            gpayName: gpayName,
+            date: saleDate
+          }
+        };
+
+        const res = await apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
+          rollback: async () => {
+            state.staging = prevStaging;
+            state.vouchers = prevVouchers;
+            redeemedList = prevRedeemed;
+            if (state.income) state.income.ledger = prevIncomeLedger;
+            saveRedeemedList();
+            await Promise.all([
+              saveEncryptedStaging(state.staging),
+              saveEncryptedVouchers(state.vouchers)
+            ]);
+            if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+            if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+            renderDeckSelector();
+            renderVault();
+            if (state.activeWorkspace === 'income') renderIncomeTracker();
+            showToast('Failed to record sale on server. Reverted.');
+          }
+        });
+
+        if (res && res.incomeEntry && res.incomeEntry.id) {
+          const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
+          if (item) item.id = res.incomeEntry.id;
+        }
+      } catch (err) {
+        console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
+      }
     }
 
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
