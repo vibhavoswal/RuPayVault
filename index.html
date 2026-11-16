@@ -5131,8 +5131,8 @@
             </div>
 
             <div class="flex justify-between items-center text-xs">
-              <span class="text-neutral-400">Received:</span>
-              <span class="font-mono-apple text-neutral-300 text-[11px]">${timeStr ? (relTime && relTime !== 'Recent' && relTime !== timeStr ? `${timeStr} · ${relTime}` : timeStr) : (relTime || 'Recent')}</span>
+              <span class="text-neutral-400">Timestamp:</span>
+              <span class="font-mono-apple text-neutral-300 text-[11px]">${timeStr || 'Recent'}</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
