@@ -5440,6 +5440,15 @@
       const clean = String(bidOrCode).trim().toUpperCase();
       const updated = list.filter(x => x !== clean);
       localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(updated));
+      const found = (state.staging || []).find(s =>
+        (s.bookingId && String(s.bookingId).trim().toUpperCase() === clean) ||
+        (s.code && String(s.code).trim().toUpperCase() === clean)
+      );
+      if (found) {
+        found.isSaleMarked = false;
+        found.saleMarked = false;
+        found.saleDetails = null;
+      }
     }
 
     function isIngestedVoucherSold(act) {
@@ -8856,10 +8865,14 @@
                 }
               }
 
-              const isMarkedSold = !!(s.isSaleMarked || s.saleMarked || (prevItem && (prevItem.isSaleMarked || prevItem.saleMarked)) || isIngestedVoucherSold(s) || (cleanBid && isIngestedVoucherSold({ bookingId: cleanBid })));
+              // Remote Google Sheet is the authoritative source of truth for sale logged state
+              const isMarkedSold = !!(s.isSaleMarked || s.saleMarked);
               if (isMarkedSold) {
                 if (cleanBid) markIngestedVoucherSold(cleanBid);
                 if (cleanOrigBid) markIngestedVoucherSold(cleanOrigBid);
+              } else {
+                if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
+                if (cleanOrigBid) unmarkIngestedVoucherSold(cleanOrigBid);
               }
 
               return {
