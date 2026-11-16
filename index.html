@@ -2721,7 +2721,7 @@
       </div>
 
       <!-- Sheet Actions Footer -->
-      <div id="vdetail-footer" class="pt-2 flex gap-2">
+      <div id="vdetail-footer" class="pt-2 flex items-center gap-2 w-full">
         <!-- Injected via JS -->
       </div>
     </div>
@@ -5271,12 +5271,15 @@
       if (footerEl) {
         if (isShared) {
           footerEl.innerHTML = `
-            <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}'); closeVoucherDetailSheet();" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Mark as Redeemed</span>
             </button>
-            <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="py-2.5 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white text-xs font-semibold transition-all active:scale-95">
-              Dismiss
+            <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+            </button>
+            <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all" title="Done" aria-label="Done">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         } else if (isStaging) {
@@ -5285,71 +5288,64 @@
           const saleBtnTitle = hasArrived ? 'Mark as sold and log to RuPay Income' : 'Add sale details and log to RuPay Income';
           footerEl.innerHTML = `
             ${isTargetBrandSoldEligible ? `
-              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="${saleBtnTitle}">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
-                <span>${saleBtnLabel}</span>
+              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="${saleBtnTitle}">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                <span class="truncate">${saleBtnLabel}</span>
               </button>
             ` : ''}
             ${!isTagged ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Card</span>
               </button>
             ` : ''}
             ${hasArrived ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); executeApproveSelectedStaging();" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                <span>Approve to Brand Tab</span>
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span class="truncate">Approve to Brand Tab</span>
               </button>
             ` : (isRevalidation ? `
-              <div class="flex-1 flex items-center gap-2">
-                ${act.payUrl ? `
-                  <a href="${act.payUrl}" target="_blank" class="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-center text-xs font-black shadow-lg flex items-center justify-center gap-1.5 transition-all">
-                    <span>Revalidate ↗</span>
-                  </a>
-                ` : `
-                  <div class="flex-1 py-2.5 px-3 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-400 text-center text-xs font-semibold flex items-center justify-center gap-1.5">
-                    <span>Awaiting link</span>
-                  </div>
-                `}
-                <button onclick="closeVoucherDetailSheet(); markRevalidated('${act.id}', '${act.bookingId}');" class="btn-mark-reval flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all">
-                  <span>Mark Revalidated</span>
-                </button>
-              </div>
+              ${act.payUrl ? `
+                <a href="${act.payUrl}" target="_blank" class="w-10 h-10 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-all active:scale-95" title="Open Revalidation Link" aria-label="Open Revalidation Link">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                </a>
+              ` : ''}
+              <button onclick="closeVoucherDetailSheet(); markRevalidated('${act.id}', '${act.bookingId}');" class="btn-mark-reval ${isTargetBrandSoldEligible ? 'w-10 h-10 shrink-0' : 'flex-1 min-w-0 px-3'} h-10 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all whitespace-nowrap" title="Mark Revalidated" aria-label="Mark Revalidated">
+                <svg class="w-4 h-4 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                ${!isTargetBrandSoldEligible ? '<span>Mark Revalidated</span>' : ''}
+              </button>
             ` : '')}
-            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="${isTagged && !hasArrived && !isRevalidation ? 'flex-1' : 'px-4'} py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95" title="Dismiss voucher">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              <span>Dismiss</span>
+            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 transition-all flex items-center justify-center active:scale-95" title="Dismiss voucher" aria-label="Dismiss voucher">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
-            <button onclick="closeVoucherDetailSheet();" class="${isTagged && !hasArrived && !isRevalidation ? 'flex-1' : 'px-4'} py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
-              Done
+            <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         } else {
           const isTargetBrandSoldEligible = isCultOrPrime(act.brand);
           footerEl.innerHTML = `
             ${isTargetBrandSoldEligible ? `
-              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="Mark as sold and log to RuPay Income">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
-                <span>Mark as Sold</span>
+              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Mark as sold and log to RuPay Income">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                <span class="truncate">Mark as Sold</span>
               </button>
             ` : ''}
             ${!isTagged ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
-                <span>Tag Payment Card</span>
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
+                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                <span>Tag Card</span>
               </button>
             ` : ''}
-            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="py-2.5 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-              <span>WhatsApp</span>
+            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[#25D366] hover:text-white transition-all active:scale-95 flex items-center justify-center" title="Share via WhatsApp" aria-label="Share via WhatsApp">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
-            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}');" class="py-2.5 px-3 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Redeem</span>
             </button>
-            <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
-              Done
+            <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         }
@@ -7049,7 +7045,7 @@
         if (cmTitle) cmTitle.textContent = `${currentCardCategoryFilter || 'Debit'} Cards`;
 
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
+        if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'banks') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -7061,7 +7057,7 @@
         renderBankManager();
 
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
+        if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'income') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -7073,7 +7069,7 @@
         renderIncomeTracker();
 
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
+        if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
         if (cardEl) cardEl.classList.add('hidden');
@@ -7088,7 +7084,7 @@
 
         const mbSync = document.getElementById('mb-sync-time');
         const savedSyncTime = localStorage.getItem('rupay_sync_time');
-        if (mbSync && savedSyncTime) mbSync.textContent = savedSyncTime;
+        if (!isSyncing && mbSync && savedSyncTime) mbSync.textContent = savedSyncTime;
 
         renderDeckSelector();
         renderVault();

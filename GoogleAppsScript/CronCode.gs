@@ -2832,15 +2832,15 @@ function doGet(e) {
       }
     }
 
+    const sheets = ss.getSheets();
+    const sheetNameSet = new Set(sheets.map(s => s.getName()));
     // Ensure persistent system tabs exist if missing
-    if (!ss.getSheetByName("⏱ Cooldowns")) {
+    if (!sheetNameSet.has("⏱ Cooldowns")) {
       getOrInitCooldownsSheet(ss);
     }
-    if (!ss.getSheetByName("Shared_Activity")) {
+    if (!sheetNameSet.has("Shared_Activity")) {
       getOrInitSharedActivitySheet(ss);
     }
-
-    const sheets = ss.getSheets();
     const result = {
       sheetUrl: ss.getUrl(),
       unassigned: [],
@@ -2867,6 +2867,7 @@ function doGet(e) {
     for (const sheet of sheets) {
       const name = sheet.getName();
       if (SKIPPED_SYNC_SHEETS.has(name)) continue;
+      if (sheet.getLastRow() <= 1) continue;
 
       const rows = sheet.getDataRange().getValues();
       if (rows.length <= 1) continue;
