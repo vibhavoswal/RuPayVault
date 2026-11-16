@@ -5376,6 +5376,104 @@
       return b.includes('cult') || b.includes('prime') || b.includes('amazon');
     }
 
+    function parseIncomeSale(comments) {
+      if (!comments) return null;
+      const s = String(comments).trim();
+      const p1 = s.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)(?:\s*\|\s*GPay:\s*(.+))?$/i);
+      if (p1) {
+        return {
+          soldTo: p1[1].trim().replace(/^[gG]\//, ''),
+          mobile: p1[2] || '',
+          account: p1[3] || '',
+          gpay: p1[4] ? p1[4].trim() : ''
+        };
+      }
+      const p2 = s.match(/^(?:[gG]\/)?([^(:|]+?)(?:\s*\(([^)]+)\))?$/i);
+      if (p2) {
+        const candidateName = p2[1].trim();
+        const bracketContent = (p2[2] || '').trim();
+        const isMobile = /^\d{10}$/.test(bracketContent);
+        return {
+          soldTo: candidateName,
+          mobile: isMobile ? bracketContent : '',
+          account: '',
+          cardStr: !isMobile ? bracketContent : ''
+        };
+      }
+      return { soldTo: s.replace(/^[gG]\//, '').split(/[(:|]/)[0].trim(), mobile: '', account: '' };
+    }
+
+    function getPrefillDetailsForCard(act, isPrime) {
+      if (!act || !isCardTagged(act.card)) {
+        return null;
+      }
+
+      const cardStr = String(act.card || '').trim();
+      const cardDigits = cardStr.replace(/\D/g, '');
+      const last4 = cardDigits.length >= 4 ? cardDigits.slice(-4) : cardDigits;
+      const brandKey = isPrime ? 'prime' : 'cult';
+
+      // 1. Check localStorage for card-specific cached sale
+      try {
+        const cachedCard = localStorage.getItem(`rupay_last_sale_card_${cardStr}`);
+        if (cachedCard) {
+          const parsed = JSON.parse(cachedCard);
+          if (parsed && (parsed.soldTo || parsed.mobile)) return parsed;
+        }
+      } catch (e) {}
+
+      // 2. Search state.income.ledger for entry matching this card's digits or card name
+      const ledger = (state.income && Array.isArray(state.income.ledger)) ? state.income.ledger : [];
+      if (last4) {
+        for (const item of ledger) {
+          const itTitle = String(item.title || '').toLowerCase();
+          const itComments = String(item.comments || '');
+          const isMatchingBrand = isPrime ? itTitle.includes('prime') : itTitle.includes('cult');
+          if (isMatchingBrand && (itComments.includes(last4) || (cardStr && itComments.includes(cardStr)))) {
+            const parsed = parseIncomeSale(itComments);
+            if (parsed && parsed.soldTo) {
+              return {
+                soldTo: parsed.soldTo,
+                mobile: parsed.mobile || '',
+                redeemedAccount: parsed.account || '',
+                price: Number(item.price) || (isPrime ? 500 : 1500),
+                gpayName: parsed.gpay || parsed.soldTo
+              };
+            }
+          }
+        }
+      }
+
+      // 3. Check localStorage for brand-specific cached sale
+      try {
+        const cachedBrand = localStorage.getItem(`rupay_last_sale_${brandKey}`);
+        if (cachedBrand) {
+          const parsed = JSON.parse(cachedBrand);
+          if (parsed && (parsed.soldTo || parsed.mobile)) return parsed;
+        }
+      } catch (e) {}
+
+      // 4. Fallback to most recent sale of this brand in ledger
+      for (const item of ledger) {
+        const itTitle = String(item.title || '').toLowerCase();
+        const isMatchingBrand = isPrime ? itTitle.includes('prime') : itTitle.includes('cult');
+        if (isMatchingBrand && item.comments && item.price > 0) {
+          const parsed = parseIncomeSale(item.comments);
+          if (parsed && parsed.soldTo && !parsed.soldTo.toLowerCase().includes('sold')) {
+            return {
+              soldTo: parsed.soldTo,
+              mobile: parsed.mobile || '',
+              redeemedAccount: parsed.account || '',
+              price: Number(item.price) || (isPrime ? 500 : 1500),
+              gpayName: parsed.gpay || parsed.soldTo
+            };
+          }
+        }
+      }
+
+      return null;
+    }
+
     function openMarkSoldSheet(id) {
       let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
       let isStaging = !!act;
@@ -5405,21 +5503,34 @@
       const priceInput = document.getElementById('ms-input-price');
       if (priceInput) priceInput.value = defaultPrice;
 
-      // Pre-fill account
+      // Pre-fill account from voucher
       const prefillAccount = (act.account && act.account !== '-' && act.account !== 'Unassigned') ? act.account : '';
       const accInput = document.getElementById('ms-input-account');
-      if (accInput) accInput.value = prefillAccount;
-
-      // Reset text inputs
       const mobInput = document.getElementById('ms-input-mobile');
-      if (mobInput) mobInput.value = '';
       const soldInput = document.getElementById('ms-input-sold-to');
-      if (soldInput) soldInput.value = '';
       const gpayInput = document.getElementById('ms-input-gpay');
-      if (gpayInput) gpayInput.value = '';
 
-      // Reset Same as Sold To toggle
-      isSameGpayActive = true;
+      // Smart pre-fill: if voucher is tagged with card, auto-fill buyer, mobile, account, and price
+      const prefill = getPrefillDetailsForCard(act, isPrime);
+      if (prefill) {
+        if (priceInput && prefill.price) priceInput.value = prefill.price;
+        if (accInput) accInput.value = prefill.redeemedAccount || prefillAccount;
+        if (mobInput) mobInput.value = prefill.mobile || '';
+        if (soldInput) soldInput.value = prefill.soldTo || '';
+        if (prefill.gpayName && prefill.gpayName.toLowerCase() !== (prefill.soldTo || '').toLowerCase()) {
+          isSameGpayActive = false;
+          if (gpayInput) gpayInput.value = prefill.gpayName;
+        } else {
+          isSameGpayActive = true;
+          if (gpayInput) gpayInput.value = prefill.soldTo || '';
+        }
+      } else {
+        if (accInput) accInput.value = prefillAccount;
+        if (mobInput) mobInput.value = '';
+        if (soldInput) soldInput.value = '';
+        if (gpayInput) gpayInput.value = '';
+        isSameGpayActive = true;
+      }
       updateSameGpayUI();
 
       // Date: today in dd/MM/yy
@@ -5527,6 +5638,22 @@
       if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
         commentStr += ` | GPay: ${gpayName}`;
       }
+
+      // Persist latest sale preferences for this brand and card for instant future pre-filling
+      try {
+        const salePref = {
+          soldTo,
+          mobile,
+          redeemedAccount,
+          price: rawPrice,
+          gpayName,
+          isSameGpay: isSameGpayActive
+        };
+        localStorage.setItem(`rupay_last_sale_${isPrime ? 'prime' : 'cult'}`, JSON.stringify(salePref));
+        if (v.card && isCardTagged(v.card)) {
+          localStorage.setItem(`rupay_last_sale_card_${String(v.card).trim()}`, JSON.stringify(salePref));
+        }
+      } catch (e) {}
 
       // Close sheet immediately
       closeMarkSoldSheet();
