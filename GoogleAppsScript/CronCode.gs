@@ -2829,44 +2829,65 @@ function doPost(e) {
       try {
         const subject = "[RuPayVault] Login Code: " + otp + " (Valid for 10 mins)";
         const plainBody = "Hello Vibhav,\n\n" +
-          "Your RuPayVault one-time login verification code is:\n\n" +
+          "Your RuPayVault login verification code is:\n\n" +
           "      " + otp + "\n\n" +
-          "This code will expire in 10 minutes.\n" +
-          "If you did not request this login code, please verify your account security.\n\n" +
-          "— RuPayVault Security";
+          "This code is valid for 10 minutes and can only be used once.\n" +
+          "If you did not request this code, you can safely ignore this email.\n\n" +
+          "— RuPay Vault";
 
-        const htmlBody = '<div style="background-color: #0A0A0C; padding: 28px 14px; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">' +
-          '<div style="max-width: 420px; margin: 0 auto; background: #161517; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 28px 24px; text-align: center; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);">' +
-          '<div style="display: inline-block; padding: 6px 14px; background: rgba(12, 140, 70, 0.15); border: 1px solid rgba(12, 140, 70, 0.35); border-radius: 9999px; color: #10B981; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 20px;">' +
-          'RUPAY VAULT SECURITY' +
+        const htmlBody = '<!DOCTYPE html>' +
+          '<html lang="en">' +
+          '<head>' +
+          '<meta charset="UTF-8">' +
+          '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+          '<style>' +
+          ':root { color-scheme: light dark; supported-color-schemes: light dark; } ' +
+          '@media (prefers-color-scheme: dark) { ' +
+          '.vault-card { background-color: #16181d !important; border-color: rgba(255, 255, 255, 0.08) !important; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4) !important; } ' +
+          '.vault-pill { background-color: rgba(12, 140, 70, 0.15) !important; border-color: rgba(12, 140, 70, 0.3) !important; color: #34d399 !important; } ' +
+          '.vault-title { color: #f3f4f6 !important; } ' +
+          '.vault-sub { color: #9ca3af !important; } ' +
+          '.vault-code-box { background-color: #1f2127 !important; border-color: rgba(12, 140, 70, 0.35) !important; color: #34d399 !important; } ' +
+          '.vault-exp { color: #9ca3af !important; } ' +
+          '.vault-divider { border-top-color: rgba(255, 255, 255, 0.08) !important; } ' +
+          '.vault-email { color: #d1d5db !important; } ' +
+          '} ' +
+          '</style>' +
+          '</head>' +
+          '<body style="margin: 0; padding: 24px 12px; background-color: transparent; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">' +
+          '<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: transparent; border-collapse: collapse;">' +
+          '<tr>' +
+          '<td align="center" style="background-color: transparent; padding: 0;">' +
+          '<div class="vault-card" style="max-width: 400px; width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 36px 24px; box-sizing: border-box; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">' +
+          '<div style="margin-bottom: 16px;">' +
+          '<span class="vault-pill" style="display: inline-block; padding: 4px 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9999px; font-size: 11px; font-weight: 600; color: #15803d; letter-spacing: 0.3px;">' +
+          'RuPay Vault' +
+          '</span>' +
           '</div>' +
-          '<h2 style="color: #ffffff; font-size: 20px; font-weight: 700; margin: 0 0 8px 0; letter-spacing: -0.3px;">Authentication Code</h2>' +
-          '<p style="color: #9CA3AF; font-size: 13px; margin: 0 0 24px 0; line-height: 1.5;">' +
-          'Use the one-time code below to authenticate your private RuPay voucher vault session.' +
+          '<h1 class="vault-title" style="margin: 0 0 8px 0; font-size: 22px; font-weight: 700; color: #111827; letter-spacing: -0.4px;">' +
+          'Your verification code' +
+          '</h1>' +
+          '<p class="vault-sub" style="margin: 0 0 24px 0; font-size: 13.5px; line-height: 1.5; color: #6b7280;">' +
+          'Use this one-time code to sign in to your vault.' +
           '</p>' +
-          '<div style="background: #000000; border: 1.5px solid #0C8C46; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(12, 140, 70, 0.2);">' +
-          '<div style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 36px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-indent: 10px;">' +
+          '<div class="vault-code-box" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 12px; margin-bottom: 22px;">' +
+          '<div style="font-family: ui-monospace, \'SF Mono\', Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0C8C46; text-indent: 8px;">' +
           otp +
           '</div>' +
           '</div>' +
-          '<div style="background: rgba(244, 122, 33, 0.08); border: 1px solid rgba(244, 122, 33, 0.25); border-radius: 12px; padding: 12px 14px; text-align: left; margin-bottom: 24px;">' +
-          '<div style="color: #F47A21; font-size: 11px; font-weight: 700; margin-bottom: 2px;">' +
-          'Valid for 10 minutes &middot; Single use' +
-          '</div>' +
-          '<div style="color: #9CA3AF; font-size: 11px; line-height: 1.4;">' +
-          'If you did not initiate this login request, please verify your account credentials immediately.' +
-          '</div>' +
-          '</div>' +
-          '<div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px;">' +
-          '<p style="color: #6B7280; font-size: 11px; margin: 0 0 4px 0;">' +
-          'Sent to <span style="color: #9CA3AF;">vibhavoswal3@gmail.com</span>' +
+          '<p class="vault-exp" style="margin: 0 0 24px 0; font-size: 12px; line-height: 1.5; color: #9ca3af;">' +
+          'Valid for 10 minutes &middot; Single use<br>' +
+          'If you didn&rsquo;t request this code, you can safely ignore this email.' +
           '</p>' +
-          '<p style="color: #4B5563; font-size: 10px; margin: 0;">' +
-          'RuPayVault Automated Security System &middot; 24h HMAC Protection' +
-          '</p>' +
+          '<div class="vault-divider" style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 11px; color: #9ca3af;">' +
+          'Sent to <span class="vault-email" style="color: #4b5563; font-weight: 500;">vibhavoswal3@gmail.com</span>' +
           '</div>' +
           '</div>' +
-          '</div>';
+          '</td>' +
+          '</tr>' +
+          '</table>' +
+          '</body>' +
+          '</html>';
 
         GmailApp.sendEmail(
           AUTHORIZED_USER,
