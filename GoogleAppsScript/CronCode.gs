@@ -2857,8 +2857,17 @@ function doGet(e) {
       }
     };
 
+    const SKIPPED_SYNC_SHEETS = new Set([
+      "Deleted_Tombstones",
+      "Blocked Cards",
+      "Bank Accounts",
+      "Cards"
+    ]);
+
     for (const sheet of sheets) {
       const name = sheet.getName();
+      if (SKIPPED_SYNC_SHEETS.has(name)) continue;
+
       const rows = sheet.getDataRange().getValues();
       if (rows.length <= 1) continue;
 
