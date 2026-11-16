@@ -4204,9 +4204,6 @@
               if (verifyBtn) verifyBtn.disabled = false;
               if (verifyBtnText) verifyBtnText.textContent = 'Log In to Vault';
 
-              try {
-                sessionStorage.setItem('rupay_active_workspace', 'cards');
-              } catch (e) {}
               await unlockVaultDirect(String(data.token));
 
               // Replay queued mutation if mid-operation re-auth
@@ -4791,12 +4788,12 @@
         console.warn('Hydration warning during unlock:', err);
       } finally {
         UniversalMutationJournal.unquarantine("6524000000003955");
-        renderAll();
-        flushUncommittedRedeems();
-        syncWithGoogleSheets();
         const urlWs = (new URLSearchParams(window.location.search)).get('ws');
-        const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'cards';
+        const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         switchWorkspace(savedWorkspace);
+        renderAll();
+        flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
+        syncWithGoogleSheets(true);
       }
     }
 
@@ -6343,7 +6340,7 @@
 
     const state = {
       isDark: true,
-      activeWorkspace: 'cards',
+      activeWorkspace: 'vouchers',
       activeTab: 'vault',
       isSelectMode: false,
       selectedIds: new Set(),
@@ -6367,7 +6364,7 @@
 
     /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS, BANKS, INCOME) --- */
     function switchWorkspace(target) {
-      state.activeWorkspace = (target === 'hub' ? 'cards' : target) || 'cards';
+      state.activeWorkspace = (target === 'hub' ? 'vouchers' : target) || 'vouchers';
       try {
         sessionStorage.setItem('rupay_active_workspace', state.activeWorkspace);
       } catch (e) {}
@@ -8332,7 +8329,12 @@
         }).join('') : `
           <tr>
             <td colspan="5" class="p-12 text-center text-sm text-neutral-400">
-              ${activityFilter === 'shared' ? 'No shared activity in the last 7 days.' : (state.ingestFilter === 'untagged' ? 'All recent redemptions have been tagged with a payment card.' : 'No tagged vouchers found in the last 7 days.')}
+              ${isSyncing ? `
+                <div class="flex flex-col items-center justify-center gap-2 py-4">
+                  <div class="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from database...</span>
+                </div>
+              ` : (activityFilter === 'shared' ? 'No shared activity in the last 7 days.' : (state.ingestFilter === 'untagged' ? 'All recent redemptions have been tagged with a payment card.' : 'No tagged vouchers found in the last 7 days.'))}
             </td>
           </tr>
         `;
@@ -8511,7 +8513,12 @@
 
             </div>
           `;
-        }).join('') : `
+        }).join('') : (isSyncing ? `
+          <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
+            <div class="w-7 h-7 mx-auto border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from Google Sheets...</p>
+          </div>
+        ` : `
           <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
             <div class="w-12 h-12 mx-auto rounded-full bg-[#0C8C46]/10 border border-[#0C8C46]/20 flex items-center justify-center text-[#0C8C46] text-xl font-bold">
               ${activityFilter === 'shared' 
@@ -8528,7 +8535,7 @@
               ${activityFilter === 'shared' ? 'Vouchers you share within the last 7 days will appear here.' : (state.ingestFilter === 'untagged' ? 'All recent redemptions have been tagged with a card.' : 'Tag untagged vouchers to view them here.')}
             </p>
           </div>
-        `;
+        `);
 
         updateClearTrashBadges();
         updateFloatingDock();
@@ -8847,7 +8854,12 @@
             ${bottomLineHtml}
           </div>
         `;
-      }).join('') : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`;
+      }).join('') : (isSyncing ? `
+        <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
+          <div class="w-7 h-7 mx-auto border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from Google Sheets...</p>
+        </div>
+      ` : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`);
 
       updateFloatingDock();
       renderDeckSelector();
@@ -13945,9 +13957,9 @@
 
       setTab('vault');
 
-      // 5. Default to Card Manager on first load, or retain active workspace across refreshes
+      // 5. Default to Voucher Manager on first load, or retain active workspace across refreshes
       const urlWs = urlParams.get('ws');
-      const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'cards';
+      const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
       switchWorkspace(savedWorkspace);
 
       if (urlParams.get('popup') === 'add') toggleAddMenu();
