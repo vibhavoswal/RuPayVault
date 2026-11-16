@@ -3372,7 +3372,7 @@
         <button type="button" onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           Jana Replace (-₹293.82)
         </button>
-        <button type="button" onclick="selectChargePreset('Canara Acc 9491 DC Hostlisting', 177, 'canara', '', '9491')" id="in-preset-charge-canara" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+        <button type="button" onclick="selectChargePreset('Canara Acc 9491 DC Hotlisting', 177, 'canara', '', '9491')" id="in-preset-charge-canara" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           Canara (-₹177)
         </button>
       </div>
@@ -4053,6 +4053,36 @@
         return Array.isArray(staging) ? staging : null;
       } catch (err) {
         console.warn("Encrypted staging cache decryption failed:", err);
+        return null;
+      }
+    }
+
+    // Save income tracker data to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedIncome(income) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify(income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] });
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_income_encrypted_cache', JSON.stringify(encrypted));
+      } catch (err) {
+        console.warn("Failed to save encrypted income cache:", err);
+      }
+    }
+
+    // Load and decrypt income data from cache
+    async function loadEncryptedIncome() {
+      try {
+        const cached = localStorage.getItem('rupay_income_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const income = JSON.parse(decryptedJson);
+        if (income && Array.isArray(income.ledger)) {
+          return income;
+        }
+        return null;
+      } catch (err) {
+        console.warn("Encrypted income cache decryption failed:", err);
         return null;
       }
     }
@@ -4908,11 +4938,12 @@
           securityState.cryptoKey = null;
         }
 
-        const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging] = await Promise.all([
+        const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging, decryptedIncome] = await Promise.all([
           loadEncryptedVouchers(),
           loadEncryptedCards(),
           loadEncryptedAccounts(),
-          loadEncryptedStaging()
+          loadEncryptedStaging(),
+          loadEncryptedIncome()
         ]);
 
         if (decryptedVouchers && decryptedVouchers.length) {
@@ -4923,6 +4954,9 @@
         }
         if (decryptedAccounts && decryptedAccounts.length) {
           state.accounts = decryptedAccounts;
+        }
+        if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) {
+          state.income = decryptedIncome;
         }
         if (decryptedStaging && decryptedStaging.length) {
           const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
@@ -4967,7 +5001,8 @@
           state.vouchers && state.vouchers.length ? saveEncryptedVouchers(state.vouchers) : Promise.resolve(),
           state.cards && state.cards.length ? saveEncryptedCards(state.cards) : Promise.resolve(),
           state.accounts && state.accounts.length ? saveEncryptedAccounts(state.accounts) : Promise.resolve(),
-          state.staging && state.staging.length ? saveEncryptedStaging(state.staging) : Promise.resolve()
+          state.staging && state.staging.length ? saveEncryptedStaging(state.staging) : Promise.resolve(),
+          state.income && state.income.ledger && state.income.ledger.length ? saveEncryptedIncome(state.income) : Promise.resolve()
         ]);
       } catch (e) {
         console.warn('Error saving encrypted cache on lock:', e);
@@ -4977,6 +5012,7 @@
       state.cards = [];
       state.accounts = [];
       state.staging = [];
+      state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       state.selectedIds.clear();
       securityState.cryptoKey = null;
 
@@ -7149,24 +7185,6 @@
       }
     }
 
-    const DEFAULT_INCOME_LEDGER = [
-      { id: 'inc-1', title: 'Amazon Prime', date: '13/10/26', price: 4000, comments: '4 sold', account: 'ICICI 8821', year: 2026 },
-      { id: 'inc-2', title: 'Cult Fit', date: '16/10/26', price: 1500, comments: 'g/Siddharth Agrawal', account: 'ICICI 8821', year: 2026 },
-      { id: 'inc-3', title: 'PNB Imperial DC Issuance Fee', date: '19/10/26', price: -708, comments: 'Card Replacement 9012', account: 'PNB', year: 2026 },
-      { id: 'inc-4', title: 'Canara Acc 9491 DC Hostlisting', date: '24/10/26', price: -177, comments: 'Hotlisting fee', account: 'Canara', year: 2026 },
-      { id: 'inc-5', title: 'Jana DC AMC', date: '27/10/26', price: -588.82, comments: 'Annual Maintenance', account: 'Jana', year: 2026 },
-      { id: 'inc-6', title: 'Amazon Prime', date: '28/09/26', price: 3000, comments: '3 sold to group', account: 'ICICI 8821', year: 2026 },
-      { id: 'inc-7', title: 'Cult Fit Elite', date: '12/09/26', price: 2400, comments: '2 sold (₹1200 ea)', account: 'HDFC', year: 2026 },
-      { id: 'inc-8', title: 'PNB DC Replacement', date: '05/08/26', price: -708, comments: 'Lost card replacement', account: 'PNB', year: 2026 },
-      { id: 'inc-9', title: 'Historical 2026 Voucher Sales', date: '01/08/26', price: 31600, comments: 'Previous 2026 voucher sales', account: 'Vault', year: 2026 },
-      { id: 'inc-10', title: '2025 Voucher Sales (Aggregated)', date: '31/12/25', price: 112000, comments: 'All 2025 voucher sales', account: 'Vault', year: 2025 },
-      { id: 'inc-11', title: '202 Card Issuance & Fees', date: '15/10/25', price: -5400, comments: '2025 replacement charges', account: 'Bank Accounts', year: 2025 },
-      { id: 'inc-12', title: '2024 Voucher Sales (Aggregated)', date: '31/12/24', price: 51000, comments: 'All 2024 voucher sales', account: 'Vault', year: 2024 },
-      { id: 'inc-13', title: 'Jana DC Replacement', date: '20/05/24', price: -293.82, comments: 'Jana DC replacement fee', account: 'Jana', year: 2024 },
-      { id: 'inc-14', title: 'PNB CC Replacements', date: '15/07/24', price: -1180, comments: 'Double CC replacement', account: 'PNB', year: 2024 },
-      { id: 'inc-15', title: '2024 Card Fees & AMC', date: '10/01/24', price: -3201.38, comments: 'Other 2024 bank charges', account: 'Bank Accounts', year: 2024 }
-    ];
-
     const state = {
       isDark: true,
       activeWorkspace: 'vouchers',
@@ -7185,7 +7203,7 @@
       income: {
         allTime: { gross: 0, charges: 0, net: 0, count: 0 },
         byYear: {},
-        ledger: JSON.parse(JSON.stringify(DEFAULT_INCOME_LEDGER))
+        ledger: []
       },
       incomeYearFilter: '2026',
       incomeLedgerTypeFilter: 'all'
@@ -7604,11 +7622,20 @@
 
       // 3. Filter by Search Query
       if (search) {
-        list = list.filter(item =>
-          (item.title || '').toLowerCase().includes(search) ||
-          (item.comments || '').toLowerCase().includes(search) ||
-          (item.account || '').toLowerCase().includes(search)
-        );
+        list = list.filter(item => {
+          const title = (item.title || '').toLowerCase();
+          const comments = (item.comments || '').toLowerCase();
+          const account = (item.account || '').toLowerCase();
+          const date = (item.date || '').toLowerCase();
+          const price = String(item.price || '');
+          const absPrice = String(Math.abs(Number(item.price) || 0));
+          return title.includes(search) ||
+            comments.includes(search) ||
+            account.includes(search) ||
+            date.includes(search) ||
+            price.includes(search) ||
+            absPrice.includes(search);
+        });
       }
 
       if (!list.length) {
@@ -7627,11 +7654,10 @@
           ? `+₹${price.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
           : `-₹${Math.abs(price).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
-        const hasDetails = Boolean(item.comments || item.account);
         const safeItemId = String(item.id || '').replace(/'/g, "\\'");
 
         return `
-          <div class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm flex items-center justify-between gap-3 hover:border-[var(--theme-border)] transition-colors">
+          <div onclick="openIncomePlacardInfo('item', '${safeItemId}')" class="rounded-xl p-3 bg-[var(--theme-card-bg)] border border-[var(--theme-border)] shadow-sm flex items-center justify-between gap-3 hover:border-emerald-500/40 hover:bg-[var(--theme-card-subtle)] transition-all cursor-pointer group spring-press">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} font-bold">
                 ${isPositive ? `
@@ -7643,11 +7669,9 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
                   <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${item.title}</h4>
-                  ${hasDetails ? `
-                    <button type="button" onclick="openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press shrink-0" title="View details" aria-label="View details">
-                      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
-                    </button>
-                  ` : ''}
+                  <button type="button" onclick="event.stopPropagation(); openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors shrink-0" title="View details" aria-label="View details">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                  </button>
                 </div>
                 <div class="text-[10px] text-[var(--theme-text-sub)] flex items-center gap-1.5 mt-0.5 truncate">
                   <span>${item.date || ''}</span>
@@ -7660,11 +7684,6 @@
               <div class="text-xs font-extrabold ${isPositive ? 'text-emerald-400' : 'text-rose-400'} font-mono">
                 ${formattedAmount}
               </div>
-              ${!hasDetails ? `
-                <button type="button" onclick="openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press shrink-0 opacity-50 hover:opacity-100" title="View details" aria-label="View details">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
-                </button>
-              ` : ''}
             </div>
           </div>
         `;
@@ -7780,7 +7799,7 @@
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Amount:</span>
               <span class="font-bold font-mono text-sm ${isPositive ? 'text-emerald-400' : 'text-rose-400'}">
-                ${isPositive ? `+₹${price.toLocaleString('en-IN')}` : `-₹${Math.abs(price).toLocaleString('en-IN')}`}
+                ${isPositive ? `+₹${price.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : `-₹${Math.abs(price).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
               </span>
             </div>
             <div class="flex items-center justify-between">
@@ -7938,6 +7957,7 @@
         state.income.ledger.push(newEntry);
       }
       recomputeIncomeSummaryStats();
+      saveEncryptedIncome(state.income);
       closeRecordSaleModal();
       renderIncomeTracker();
       showToast(`Logged ${title} sale (+₹${price}) in RuPay Income!`);
@@ -7946,12 +7966,13 @@
       const rollback = () => {
         state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
         recomputeIncomeSummaryStats();
+        saveEncryptedIncome(state.income);
         renderIncomeTracker();
         showToast(`Failed to persist ${title} sale. Reverted.`);
       };
 
       try {
-        await apiFetch('RECORD_INCOME_ENTRY', {
+        const res = await apiFetch('RECORD_INCOME_ENTRY', {
           title: title,
           date: normalizedDate,
           price: price,
@@ -7959,6 +7980,10 @@
           account: '',
           type: 'income'
         }, { rollback });
+        if (res && res.insertedRow) {
+          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + res.insertedRow;
+          saveEncryptedIncome(state.income);
+        }
       } catch (err) {
         console.error('Error recording income sale:', err);
       }
@@ -7991,11 +8016,7 @@
     }
 
     function openRecordChargeModal() {
-      selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb');
-      const card4Input = document.getElementById('in-charge-input-card4');
-      if (card4Input) card4Input.value = '';
-      const acc4Input = document.getElementById('in-charge-input-acc4');
-      if (acc4Input) acc4Input.value = '';
+      selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb', '', '');
       const commentsInput = document.getElementById('in-charge-input-comments');
       if (commentsInput) commentsInput.value = '';
       updateChargeCommentPreview();
@@ -8017,11 +8038,19 @@
       if (btnText) btnText.textContent = `Confirm & Deduct Charge (-₹${val.toLocaleString('en-IN')})`;
     }
 
-    function selectChargePreset(title, amount, key) {
+    function selectChargePreset(title, amount, key, card4 = '', acc4 = '') {
       const titleInput = document.getElementById('in-charge-input-title');
       if (titleInput) titleInput.value = title;
       const amountInput = document.getElementById('in-charge-input-amount');
       if (amountInput) amountInput.value = amount;
+      if (card4 !== undefined) {
+        const card4Input = document.getElementById('in-charge-input-card4');
+        if (card4Input) card4Input.value = card4;
+      }
+      if (acc4 !== undefined) {
+        const acc4Input = document.getElementById('in-charge-input-acc4');
+        if (acc4Input) acc4Input.value = acc4;
+      }
       updateChargeButtonText();
 
       const activeCls = 'px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press';
@@ -8092,6 +8121,7 @@
         state.income.ledger.push(newEntry);
       }
       recomputeIncomeSummaryStats();
+      saveEncryptedIncome(state.income);
       closeRecordChargeModal();
       renderIncomeTracker();
       showToast(`Deducted ${title} (-₹${amount}) in RuPay Charges!`);
@@ -8100,12 +8130,13 @@
       const rollback = () => {
         state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
         recomputeIncomeSummaryStats();
+        saveEncryptedIncome(state.income);
         renderIncomeTracker();
         showToast(`Failed to persist charge ${title}. Reverted.`);
       };
 
       try {
-        await apiFetch('RECORD_INCOME_ENTRY', {
+        const res = await apiFetch('RECORD_INCOME_ENTRY', {
           title: title,
           date: normalizedDate,
           price: chargePrice,
@@ -8113,6 +8144,10 @@
           account: accountFormatted,
           type: 'charge'
         }, { rollback });
+        if (res && res.insertedRow) {
+          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + res.insertedRow;
+          saveEncryptedIncome(state.income);
+        }
       } catch (err) {
         console.error('Error recording card charge:', err);
       }
@@ -8973,6 +9008,7 @@
 
         if (data.income) {
           state.income = data.income;
+          await saveEncryptedIncome(state.income);
           if (state.activeWorkspace === 'income') {
             renderIncomeTracker();
           }
