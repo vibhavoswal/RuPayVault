@@ -5201,6 +5201,10 @@
                 <span>Awaiting Delivery</span>
               </div>
             `)}
+            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="py-2.5 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-600 border border-neutral-200 dark:bg-neutral-900 dark:hover:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-800 dark:hover:text-rose-400 hover:text-rose-600 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 active:scale-95" title="Dismiss voucher">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              <span>Dismiss</span>
+            </button>
             <button onclick="closeVoucherDetailSheet();" class="py-2.5 px-3 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-all">
               Done
             </button>
@@ -5387,6 +5391,77 @@
       } catch (err) {
         console.warn('Background sync error (MARK_REVALIDATED):', err);
       }
+    }
+
+    /* --- DISMISS STAGING VOUCHER (MOVES TO TOMBSTONE / ARCHIVE) --- */
+    async function dismissStagingVoucher(id, bookingId) {
+      const targetBid = String(bookingId || '').trim();
+      const targetId = String(id || '').trim();
+
+      const item = (state.staging || []).find(s =>
+        (targetBid && String(s.bookingId || '').trim().toUpperCase() === targetBid.toUpperCase()) ||
+        (targetId && (s.id === targetId || String(s.bookingId || '').trim().toUpperCase() === targetId.toUpperCase()))
+      );
+
+      if (!item) {
+        showToast('Voucher not found in staging');
+        return;
+      }
+
+      const activeBid = item.bookingId || targetBid || targetId;
+      const brandName = item.brand || 'Ingested';
+      const previousStaging = (state.staging || []).map(s => ({ ...s }));
+
+      // Safeguard 1 & 2: Ephemeral Quarantine & Optimistic Local Update
+      item.displayInUI = false;
+      quarantineIdentifiers([activeBid]);
+      if (item.id) quarantineIdentifiers([item.id]);
+
+      await saveEncryptedStaging(state.staging);
+      renderDeckSelector();
+      renderVault();
+      updateClearTrashBadges();
+
+      if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
+        closeVoucherDetailSheet();
+      }
+
+      // Safeguard 3: Interactive 5-second Undo Banner
+      let isUndone = false;
+      showCardUndoBanner(`Dismissed ${brandName} voucher`, () => {
+        isUndone = true;
+        state.staging = previousStaging;
+        UniversalMutationJournal.unquarantine(activeBid);
+        if (item.id) UniversalMutationJournal.unquarantine(item.id);
+        saveEncryptedStaging(state.staging);
+        renderDeckSelector();
+        renderVault();
+        updateClearTrashBadges();
+        showToast('Dismissal undone.');
+      });
+
+      // Safeguard 4 & 5: Wait 5s for grace period, then dispatch to backend with rollback handler
+      setTimeout(async () => {
+        if (isUndone) return;
+        try {
+          await apiFetch('DISMISS_STAGING', {
+            bookingId: activeBid
+          }, {
+            rollback: async () => {
+              state.staging = previousStaging;
+              UniversalMutationJournal.unquarantine(activeBid);
+              if (item.id) UniversalMutationJournal.unquarantine(item.id);
+              await saveEncryptedStaging(state.staging);
+              renderDeckSelector();
+              renderVault();
+              updateClearTrashBadges();
+              showToast('Dismissal failed on server. Voucher restored.');
+            }
+          });
+        } catch (err) {
+          console.warn('Backend DISMISS_STAGING error:', err);
+        }
+      }, 5100);
     }
 
     function dismissSharedActivity(code) {
@@ -12985,13 +13060,16 @@
 
         const targetCount = allTargets.length;
         const lookupCodesSet = new Set();
+        const PLACEHOLDER_CODES = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', '-', '']);
+        const isPlaceholder = c => !c || PLACEHOLDER_CODES.has(String(c).trim().toUpperCase()) || /^processing$/i.test(c);
+
         targetVouchers.forEach(v => {
           if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) lookupCodesSet.add(v.bookingId);
-          if (v.code && v.code !== '-' && v.code !== 'PENDING') lookupCodesSet.add(v.code);
+          if (v.code && !isPlaceholder(v.code)) lookupCodesSet.add(v.code);
         });
         targetStaging.forEach(s => {
           if (s.bookingId && s.bookingId !== '-' && !s.bookingId.startsWith('#')) lookupCodesSet.add(s.bookingId);
-          if (s.code && s.code !== '-' && s.code !== 'PENDING') lookupCodesSet.add(s.code);
+          if (s.code && !isPlaceholder(s.code)) lookupCodesSet.add(s.code);
         });
         const lookupCodes = Array.from(lookupCodesSet);
         MutationJournal.recordTags(lookupCodes, cardTag);

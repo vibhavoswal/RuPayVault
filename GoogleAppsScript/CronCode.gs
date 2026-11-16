@@ -44,7 +44,8 @@ const SYSTEM_SHEET_NAMES = new Set([
   "Shared_Activity",
   "Redeemed",
   "RuPay Income",
-  "RuPay Charges"
+  "RuPay Charges",
+  "Deleted_Tombstones"
 ]);
 
 const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
@@ -296,6 +297,37 @@ function isBookingRevalidated(bookingId) {
 }
 
 /**
+ * Retrieves or creates the user label "Ingested" in Gmail.
+ * Used to ensure strict query-level idempotency so processed threads are never re-fetched.
+ */
+function getOrCreateIngestedLabel() {
+  try {
+    return GmailApp.getUserLabelByName("Ingested") || GmailApp.createLabel("Ingested");
+  } catch (e) {
+    console.warn("getOrCreateIngestedLabel error:", e.message);
+    return null;
+  }
+}
+
+/**
+ * Initializes and returns the "Deleted_Tombstones" sheet tab with a standardized 10-column schema.
+ */
+function getOrInitTombstonesSheet(ss) {
+  if (!ss) ss = getSpreadsheet();
+  let tSheet = ss.getSheetByName("Deleted_Tombstones");
+  if (!tSheet) {
+    tSheet = ss.insertSheet("Deleted_Tombstones");
+    const headers = [
+      "Booking ID", "Code", "PIN", "Brand", "Value", "Account", "Card", "Source Tab", "Original Status", "Tombstoned Timestamp (IST)"
+    ];
+    tSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    tSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
+    tSheet.setFrozenRows(1);
+  }
+  return tSheet;
+}
+
+/**
  * 1. AUTOMATIC EMAIL INGESTION (Triggered via cron or instant on-demand sync)
  * Two-Stage RUPS Lifecycle:
  *  - Stage 1 (Ack Email): Detects RUPS booking ID, delay/pending message -> records in Brand Tab as "PENDING" & starts 24h cooldown
@@ -327,7 +359,11 @@ function parseRupayVoucherEmail(msg) {
 
   // 3. Extract Amount, Date, Account
   const amount = extractAmount(body);
-  const dateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
+  let rawDateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
+  const dateOfIssue = String(rawDateOfIssue)
+    .replace(/\s*\)\s*\+\s*Add to calendar.*/i, '')
+    .replace(/\s*Add to calendar.*/i, '')
+    .trim();
   const account = extractAccountName(msg.getTo(), body, msg.getFrom()) || "vibhavoswal9";
   const receivedDate = (msg && typeof msg.getDate === 'function') ? msg.getDate() : new Date();
 
@@ -402,9 +438,9 @@ function parseRupayVoucherEmail(msg) {
       amount: amount,
       dateOfIssue: dateOfIssue,
       account: account,
-      code: isProcessing ? "Processing" : "PENDING",
+      code: "Pending",
       pin: "",
-      status: isProcessing ? "PROCESSING" : "PENDING",
+      status: "PENDING",
       receivedDate: receivedDate,
       isDelivered: false
     };
@@ -559,13 +595,29 @@ function processRupayEmails() {
 
   try {
     const ss = getSpreadsheet();
+    const START_MS = Date.now();
 
     // 0. Auto-consolidate any rogue tabs created previously
     consolidateRogueTabs(ss);
 
-    // Broad resilient search for RuPay / RUPS emails from the last 2 days
-    // Avoid quote on RUPS- because hyphen in quotes breaks Gmail token boundary search
-    const query = 'newer_than:2d (RUPS OR subject:RUPS OR from:rupay OR "rupay@truztee.com" OR "RuPay Select")';
+    // Pre-load tombstone booking IDs to prevent ghost re-ingestion
+    const tombstoneBids = new Set();
+    try {
+      const tSheet = ss.getSheetByName("Deleted_Tombstones");
+      if (tSheet) {
+        const tVals = tSheet.getDataRange().getValues();
+        for (let t = 1; t < tVals.length; t++) {
+          const b = String(tVals[t][0] || '').trim().toUpperCase();
+          if (b) tombstoneBids.add(b);
+        }
+      }
+    } catch (eTomb) {
+      console.warn("Could not load tombstones in processRupayEmails:", eTomb.message);
+    }
+
+    // Label-based idempotent search: exclude threads already processed
+    const ingestedLabel = getOrCreateIngestedLabel();
+    const query = 'newer_than:2d -(label:Ingested) (RUPS OR subject:RUPS OR from:rupay OR "rupay@truztee.com" OR "RuPay Select")';
     let threads = [];
     try {
       threads = GmailApp.search(query, 0, 30);
@@ -590,10 +642,27 @@ function processRupayEmails() {
     if (!threads || !threads.length) return;
 
     for (const thread of threads) {
+      // Circuit Breaker: 4-minute maximum batch execution window
+      if (Date.now() - START_MS > 240000) {
+        console.warn("processRupayEmails: 4-minute time budget reached, terminating batch early.");
+        break;
+      }
+
       const messages = thread.getMessages();
       for (const msg of messages) {
+        if (Date.now() - START_MS > 240000) {
+          console.warn("processRupayEmails: 4-minute time budget reached in message loop.");
+          break;
+        }
+
         const parsed = parseRupayVoucherEmail(msg);
         if (!parsed) continue;
+
+        // Ingestion Tombstone Guard: Never re-ingest dismissed or deleted bookings
+        if (parsed.bookingId && tombstoneBids.has(parsed.bookingId.toUpperCase())) {
+          console.log(`processRupayEmails: Skipping tombstoned booking ${parsed.bookingId}`);
+          continue;
+        }
 
         if (parsed.isRevalidationPending) {
           // ==========================================
@@ -646,12 +715,14 @@ function processRupayEmails() {
           // Clean up revalidated register property upon delivery
           removeRevalidatedBookingFromProperties(parsed.bookingId);
         }
+      }
 
-        // Mark processed email message as Read in Gmail (does not prevent future reprocessing)
+      // Mark processed thread with "Ingested" label so it is never re-fetched
+      if (ingestedLabel) {
         try {
-          msg.markRead();
-        } catch (eMark) {
-          console.warn("Could not mark message as read:", eMark.message);
+          thread.addLabel(ingestedLabel);
+        } catch (eLabel) {
+          console.warn("Could not apply Ingested label to thread:", eLabel.message);
         }
       }
     }
@@ -1810,6 +1881,105 @@ function doGet(e) {
         allSafeguardsMet: allSafeguardsMet
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(vErr) {
+      return ContentService.createTextOutput(JSON.stringify({ error: vErr.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Safeguards Audit Verification Endpoint for Tombstone Architecture (New & Redeemed promotion to Deleted_Tombstones)
+  if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_TOMBSTONE_DUMMY") {
+    try {
+      const ss = getSpreadsheet();
+      const nSheet = ss.getSheetByName("New");
+      const rSheet = ss.getSheetByName("Redeemed");
+      const testBidNew = "RUPS-TEST-DUMMY-NEW-TOMB";
+      const testBidRed = "RUPS-TEST-DUMMY-RED-TOMB";
+      const stepsPassed = [];
+
+      // Step 1: Pre-cleanup any prior stale dummy rows
+      [nSheet, rSheet].forEach(sheet => {
+        if (!sheet) return;
+        const vals = sheet.getDataRange().getValues();
+        for (let i = vals.length - 1; i >= 1; i--) {
+          const bid = String(vals[i][0] || vals[i][1] || '').trim();
+          if (bid === testBidNew || bid === testBidRed) {
+            sheet.deleteRow(i + 1);
+          }
+        }
+      });
+      SpreadsheetApp.flush();
+
+      // Step 2: Seed dummy row in "New" tab with Display in UI = false (Col 10)
+      if (nSheet) {
+        nSheet.appendRow([
+          testBidNew, "Pending", "", 500, "16-Nov-2026", "testuser369", "Unassigned", "PENDING", formatISTTimestamp(new Date()), false, "CultFit"
+        ]);
+        SpreadsheetApp.flush();
+        stepsPassed.push("STEP_1_SEED_NEW_TAB_DUMMY");
+      }
+
+      // Step 3: Seed dummy row in "Redeemed" tab with Display in UI = false (Col 13)
+      if (rSheet) {
+        rSheet.appendRow([
+          "CultFit", testBidRed, "CLTESTCODE999", "1234", 500, "16-Nov-2026", "testuser369", "PNB DC 9762", "REDEEMED", formatISTTimestamp(new Date()), "CultFit", formatISTTimestamp(new Date()), false
+        ]);
+        SpreadsheetApp.flush();
+        stepsPassed.push("STEP_2_SEED_REDEEMED_TAB_DUMMY");
+      }
+
+      // Step 4: Run promoteTombstones(ss)
+      const promoResult = promoteTombstones(ss);
+      stepsPassed.push("STEP_3_EXECUTE_PROMOTE_TOMBSTONES");
+
+      // Step 5: Verify records exist in Deleted_Tombstones
+      const tSheet = getOrInitTombstonesSheet(ss);
+      const tVals = tSheet.getDataRange().getValues();
+      const foundNewInTomb = tVals.some(r => String(r[0] || '').trim() === testBidNew && String(r[7] || '') === 'New');
+      const foundRedInTomb = tVals.some(r => String(r[0] || '').trim() === testBidRed && String(r[7] || '') === 'Redeemed');
+
+      if (foundNewInTomb && foundRedInTomb) {
+        stepsPassed.push("STEP_4_TOMBSTONES_ARCHIVE_VERIFIED");
+      }
+
+      // Step 6: Verify records were purged from New and Redeemed tabs
+      const nAfter = nSheet ? nSheet.getDataRange().getValues().some(r => String(r[0] || '').trim() === testBidNew) : false;
+      const rAfter = rSheet ? rSheet.getDataRange().getValues().some(r => String(r[1] || '').trim() === testBidRed) : false;
+      const purgedFromSource = (!nAfter && !rAfter);
+      if (purgedFromSource) {
+        stepsPassed.push("STEP_5_PURGED_FROM_SOURCE_TABS");
+      }
+
+      // Step 7: Post-test Cleanup: purge dummy rows from Deleted_Tombstones
+      const tVals2 = tSheet.getDataRange().getValues();
+      for (let i = tVals2.length - 1; i >= 1; i--) {
+        const bid = String(tVals2[i][0] || '').trim();
+        if (bid === testBidNew || bid === testBidRed) {
+          tSheet.deleteRow(i + 1);
+        }
+      }
+      SpreadsheetApp.flush();
+
+      // Check residual artifacts
+      const tVals3 = tSheet.getDataRange().getValues();
+      let residualCount = 0;
+      for (let i = 1; i < tVals3.length; i++) {
+        const bid = String(tVals3[i][0] || '').trim();
+        if (bid === testBidNew || bid === testBidRed) residualCount++;
+      }
+
+      const allSafeguardsMet = (foundNewInTomb && foundRedInTomb && purgedFromSource && residualCount === 0);
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "VERIFY_SAFEGUARD_TOMBSTONE_DUMMY",
+        stepsPassed: stepsPassed,
+        promoResult: promoResult,
+        foundNewInTomb: foundNewInTomb,
+        foundRedInTomb: foundRedInTomb,
+        purgedFromSource: purgedFromSource,
+        residualArtifacts: residualCount,
+        allSafeguardsMet: allSafeguardsMet
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch (vErr) {
       return ContentService.createTextOutput(JSON.stringify({ error: vErr.message })).setMimeType(ContentService.MimeType.JSON);
     }
   }
@@ -3920,7 +4090,12 @@ function doPost(e) {
     if (data.action === "TAG_CARD") {
       const cardTag = String(data.cardTag || data.card || "").trim();
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set(Array.isArray(rawCodes) ? rawCodes.map(c => String(c).trim().toUpperCase()).filter(Boolean) : []);
+      const PLACEHOLDER_BACKEND = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', '-']);
+      const codes = new Set(
+        (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
+          .map(c => String(c).trim().toUpperCase())
+          .filter(c => c && !PLACEHOLDER_BACKEND.has(c) && !/^processing$/i.test(c))
+      );
       if (!cardTag || codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Missing cardTag or voucher codes."
@@ -4300,6 +4475,45 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 16. Dismiss Ingested / Staged Voucher (Sets Display in UI = FALSE in "New" tab)
+    if (data.action === "DISMISS_STAGING") {
+      const rawBids = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
+      const targetBids = new Set((Array.isArray(rawBids) ? rawBids : [rawBids]).map(b => String(b).trim().toUpperCase()).filter(Boolean));
+      if (targetBids.size === 0) {
+        return ContentService.createTextOutput(JSON.stringify({
+          error: "Cannot dismiss: No booking ID specified."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      const dismissed = [];
+      const nSheet = ss.getSheetByName("New");
+      if (nSheet) {
+        const vals = nSheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const rowBid = String(vals[i][0] || "").trim().toUpperCase();
+          if (targetBids.has(rowBid)) {
+            nSheet.getRange(i + 1, 10).setValue(false); // Col 10: Display in UI = FALSE
+            dismissed.push(rowBid);
+            removeRevalidatedBookingFromProperties(rowBid);
+          }
+        }
+      }
+      SpreadsheetApp.flush();
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "DISMISS_STAGING",
+        dismissedCount: dismissed.length,
+        dismissedBids: dismissed
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 17. Promote Tombstones (Moves Display in UI = FALSE rows from "New" and "Redeemed" to "Deleted_Tombstones")
+    if (data.action === "PROMOTE_TOMBSTONES") {
+      const result = promoteTombstones(ss);
+      return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({
       error: `Unknown or unhandled action: "${data.action || 'undefined'}"`
     })).setMimeType(ContentService.MimeType.JSON);
@@ -4310,6 +4524,111 @@ function doPost(e) {
 
   } catch(err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * Cron Job: Moves vouchers with Display in UI === FALSE from "New" and "Redeemed" tabs
+ * into "Deleted_Tombstones" sheet and permanently deletes their rows from the active tabs.
+ * Runs on a 72-hour trigger or on-demand via action PROMOTE_TOMBSTONES.
+ */
+function promoteTombstones(ss) {
+  if (!ss) ss = getSpreadsheet();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    console.warn("promoteTombstones: Script is locked by another execution, skipping.");
+    return { success: false, error: "Locked by another execution" };
+  }
+
+  try {
+    const tSheet = getOrInitTombstonesSheet(ss);
+    const nowIst = formatISTDate(new Date());
+    let promotedTotal = 0;
+
+    // 1. Scan "New" Tab (Col 10: Display in UI)
+    const nSheet = ss.getSheetByName("New");
+    if (nSheet) {
+      const nVals = nSheet.getDataRange().getValues();
+      const nRowsToDelete = [];
+      const nRowsToAppend = [];
+
+      for (let i = 1; i < nVals.length; i++) {
+        const row = nVals[i];
+        const isDisp = row[9];
+        if (isDisp === false || String(isDisp).toLowerCase() === 'false') {
+          nRowsToAppend.push([
+            row[0] || "",             // Booking ID
+            row[1] || "",             // Code
+            row[2] || "",             // PIN
+            row[10] || "Other",       // Brand
+            row[3] || "",             // Value
+            row[5] || "",             // Account
+            row[6] || "",             // Card
+            "New",                    // Source Tab
+            row[7] || "PENDING",      // Original Status
+            nowIst                    // Tombstoned Timestamp (IST)
+          ]);
+          nRowsToDelete.push(i + 1);
+        }
+      }
+
+      if (nRowsToAppend.length > 0) {
+        const lastRow = tSheet.getLastRow();
+        tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, nRowsToAppend[0].length).setValues(nRowsToAppend);
+        // Delete rows in descending index order to preserve row positions
+        for (let d = nRowsToDelete.length - 1; d >= 0; d--) {
+          nSheet.deleteRow(nRowsToDelete[d]);
+        }
+        promotedTotal += nRowsToAppend.length;
+      }
+    }
+
+    // 2. Scan "Redeemed" Tab (Col 13: Display in UI)
+    const rSheet = ss.getSheetByName("Redeemed");
+    if (rSheet) {
+      const rVals = rSheet.getDataRange().getValues();
+      const rRowsToDelete = [];
+      const rRowsToAppend = [];
+
+      for (let i = 1; i < rVals.length; i++) {
+        const row = rVals[i];
+        const isDisp = row[12];
+        if (isDisp === false || String(isDisp).toLowerCase() === 'false') {
+          rRowsToAppend.push([
+            row[1] || "",             // Booking ID
+            row[2] || "",             // Code
+            row[3] || "",             // PIN
+            row[0] || "Other",        // Brand
+            row[4] || "",             // Value
+            row[6] || "",             // Account
+            row[7] || "",             // Card
+            "Redeemed",               // Source Tab
+            row[8] || "REDEEMED",     // Original Status
+            nowIst                    // Tombstoned Timestamp (IST)
+          ]);
+          rRowsToDelete.push(i + 1);
+        }
+      }
+
+      if (rRowsToAppend.length > 0) {
+        const lastRow = tSheet.getLastRow();
+        tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, rRowsToAppend[0].length).setValues(rRowsToAppend);
+        // Delete rows in descending index order to preserve row positions
+        for (let d = rRowsToDelete.length - 1; d >= 0; d--) {
+          rSheet.deleteRow(rRowsToDelete[d]);
+        }
+        promotedTotal += rRowsToAppend.length;
+      }
+    }
+
+    SpreadsheetApp.flush();
+    console.log(`promoteTombstones: Successfully archived ${promotedTotal} records to Deleted_Tombstones.`);
+    return { success: true, action: "PROMOTE_TOMBSTONES", promotedCount: promotedTotal };
+  } catch (err) {
+    console.error("Error in promoteTombstones:", err);
+    return { success: false, error: err.message };
+  } finally {
+    try { lock.releaseLock(); } catch(_) {}
   }
 }
 
