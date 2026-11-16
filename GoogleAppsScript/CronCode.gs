@@ -4729,6 +4729,7 @@ function doPost(e) {
       const rawPin = String(data.pin || '').trim();
       const rawBrand = String(data.brand || '').trim();
       const isStaging = !!data.isStaging;
+      const keepInStaging = !!data.keepInStaging || !!data.onlyLogIncome;
       const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "Cult Fit");
       const sale = data.saleDetails || {};
       const sellingPrice = Math.abs(Number(sale.price) || 0);
@@ -4739,13 +4740,16 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // Step 1: Ensure "Redeemed" sheet exists
-      let rSheet = ss.getSheetByName("Redeemed");
-      if (!rSheet) {
-        rSheet = ss.insertSheet("Redeemed");
-        rSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
-        rSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
-        rSheet.setFrozenRows(1);
+      // Step 1: Ensure "Redeemed" sheet exists if moving voucher to Redeemed
+      let rSheet = null;
+      if (!keepInStaging) {
+        rSheet = ss.getSheetByName("Redeemed");
+        if (!rSheet) {
+          rSheet = ss.insertSheet("Redeemed");
+          rSheet.appendRow(UNIFIED_REDEEMED_HEADERS);
+          rSheet.getRange(1, 1, 1, UNIFIED_REDEEMED_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
+          rSheet.setFrozenRows(1);
+        }
       }
 
       let voucherFound = false;
@@ -4760,7 +4764,7 @@ function doPost(e) {
       const redeemedTs = formatISTTimestamp(new Date());
 
       if (isStaging) {
-        // Find & remove from "New" sheet
+        // Resolve voucher metadata from "New" sheet (and remove ONLY if NOT keepInStaging)
         const nSheet = ss.getSheetByName("New");
         if (nSheet) {
           const nRows = nSheet.getDataRange().getValues();
@@ -4780,7 +4784,9 @@ function doPost(e) {
               finalAccount = String(nRows[i][5] || finalAccount);
               finalCard = String(nRows[i][6] || finalCard);
               finalAppendedTs = String(nRows[i][8] || finalAppendedTs);
-              nSheet.deleteRow(i + 1);
+              if (!keepInStaging) {
+                nSheet.deleteRow(i + 1);
+              }
               voucherFound = true;
               break;
             }
@@ -4820,22 +4826,24 @@ function doPost(e) {
       const safePin = finalPin ? `'${finalPin.replace(/^'/, '')}` : "";
       const safeBid = finalBid ? `'${finalBid.replace(/^'/, '')}` : "";
 
-      // Append to "Redeemed" tab
-      rSheet.appendRow([
-        targetBrand,           // Col 1: Brand
-        safeBid,               // Col 2: Booking ID
-        safeCode,              // Col 3: Code
-        safePin,               // Col 4: PIN
-        finalAmount,           // Col 5: Value
-        finalDateOfIssue,      // Col 6: Date of Issue
-        finalAccount,          // Col 7: Account
-        finalCard,             // Col 8: Card
-        "USED",                // Col 9: Status
-        redeemedTs,            // Col 10: Redeemed Timestamp (IST)
-        targetBrand,           // Col 11: Original Tab
-        finalAppendedTs,       // Col 12: Appended Timestamp (IST)
-        true                   // Col 13: Display in UI
-      ]);
+      // Append to "Redeemed" tab ONLY if NOT keepInStaging
+      if (!keepInStaging && rSheet) {
+        rSheet.appendRow([
+          targetBrand,           // Col 1: Brand
+          safeBid,               // Col 2: Booking ID
+          safeCode,              // Col 3: Code
+          safePin,               // Col 4: PIN
+          finalAmount,           // Col 5: Value
+          finalDateOfIssue,      // Col 6: Date of Issue
+          finalAccount,          // Col 7: Account
+          finalCard,             // Col 8: Card
+          "USED",                // Col 9: Status
+          redeemedTs,            // Col 10: Redeemed Timestamp (IST)
+          targetBrand,           // Col 11: Original Tab
+          finalAppendedTs,       // Col 12: Appended Timestamp (IST)
+          true                   // Col 13: Display in UI
+        ]);
+      }
 
       // Step 2: Format Comment & Insert into "RuPay Income" Tab
       let incomeSheet = ss.getSheetByName("RuPay Income");

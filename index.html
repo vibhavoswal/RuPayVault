@@ -5281,11 +5281,13 @@
           `;
         } else if (isStaging) {
           const isTargetBrandSoldEligible = isCultOrPrime(act.brand) || isCultOrPrime(act.targetBrand);
+          const saleBtnLabel = hasArrived ? 'Mark as Sold' : 'Add Sale Details';
+          const saleBtnTitle = hasArrived ? 'Mark as sold and log to RuPay Income' : 'Add sale details and log to RuPay Income';
           footerEl.innerHTML = `
             ${isTargetBrandSoldEligible ? `
-              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="Mark as sold and log to RuPay Income">
+              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5" title="${saleBtnTitle}">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
-                <span>Mark as Sold</span>
+                <span>${saleBtnLabel}</span>
               </button>
             ` : ''}
             ${!isTagged ? `
@@ -5404,7 +5406,20 @@
     }
 
     function getPrefillDetailsForCard(act, isPrime) {
-      if (!act || !isCardTagged(act.card)) {
+      if (!act) return null;
+
+      // 0. Use explicitly recorded saleDetails if already saved on this voucher
+      if (act.saleDetails && (act.saleDetails.soldTo || act.saleDetails.mobile)) {
+        return {
+          soldTo: act.saleDetails.soldTo || '',
+          mobile: act.saleDetails.mobile || '',
+          redeemedAccount: act.saleDetails.redeemedAccount || '',
+          price: Number(act.saleDetails.price) || (isPrime ? 500 : 1500),
+          gpayName: act.saleDetails.gpayName || act.saleDetails.soldTo || ''
+        };
+      }
+
+      if (!isCardTagged(act.card)) {
         return null;
       }
 
@@ -5485,7 +5500,9 @@
         return;
       }
 
-      activeMarkSoldVoucher = { ...act, isStaging: isStaging };
+      const hasArrived = isVoucherArrived(act);
+      const isStagingNotArrived = isStaging && !hasArrived;
+      activeMarkSoldVoucher = { ...act, isStaging: isStaging, hasArrived: hasArrived, isStagingNotArrived: isStagingNotArrived };
       closeVoucherDetailSheet();
 
       const rawBrand = act.brand || act.targetBrand || 'Cult Fit';
@@ -5494,7 +5511,11 @@
       const isPrime = bLow.includes('prime') || bLow.includes('amazon');
 
       const titleEl = document.getElementById('ms-title-brand');
-      if (titleEl) titleEl.textContent = `Mark ${brandDisplay} as Sold`;
+      if (titleEl) {
+        titleEl.textContent = isStagingNotArrived
+          ? `Add Sale Details for ${brandDisplay}`
+          : `Mark ${brandDisplay} as Sold`;
+      }
       const refEl = document.getElementById('ms-ref-id');
       if (refEl) refEl.textContent = act.bookingId || act.code || '';
 
@@ -5623,6 +5644,7 @@
 
       const v = activeMarkSoldVoucher;
       const isStaging = !!v.isStaging;
+      const isStagingNotArrived = isStaging && !isVoucherArrived(v);
       const cleanBid = String(v.bookingId || '').trim();
       const cleanCode = String(v.code || '').trim();
       const brandKey = normalizeBrandKey(v.brand || v.targetBrand || 'Cult Fit');
@@ -5670,38 +5692,60 @@
       const prevRedeemed = [...redeemedList];
       const prevIncomeLedger = [...(state.income?.ledger || [])];
 
-      // SG1 & SG2: Quarantine identifier & journal entry
-      if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, 'voucher');
-      if (cleanBid && cleanBid.startsWith('RUPS-')) UniversalMutationJournal.recordTombstone(cleanBid, 'voucher');
+      // SG1 & SG2: Quarantine identifier & journal entry ONLY if voucher is leaving vault
+      if (!isStagingNotArrived) {
+        if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, 'voucher');
+        if (cleanBid && cleanBid.startsWith('RUPS-')) UniversalMutationJournal.recordTombstone(cleanBid, 'voucher');
+      }
 
       // Optimistic Local State Updates:
       if (isStaging) {
-        state.staging = (state.staging || []).filter(s =>
-          (!cleanBid || s.bookingId !== cleanBid) && (!cleanCode || s.code !== cleanCode)
-        );
+        if (isStagingNotArrived) {
+          // Keep in staging! Store sale details on the voucher instance
+          const foundStaging = (state.staging || []).find(s =>
+            (cleanBid && s.bookingId === cleanBid) || (cleanCode && s.code === cleanCode) || s.id === v.id
+          );
+          if (foundStaging) {
+            foundStaging.saleDetails = {
+              soldTo,
+              mobile: isPrime ? '' : mobile,
+              redeemedAccount,
+              price: rawPrice,
+              gpayName,
+              date: saleDate,
+              loggedAt: new Date().toISOString()
+            };
+          }
+        } else {
+          state.staging = (state.staging || []).filter(s =>
+            (!cleanBid || s.bookingId !== cleanBid) && (!cleanCode || s.code !== cleanCode)
+          );
+        }
       } else {
         const found = state.vouchers.find(x => (cleanCode && x.code === cleanCode) || (cleanBid && x.bookingId === cleanBid));
         if (found) found.status = 'USED';
       }
 
-      // Add to redeemedList
-      const timeStr = nowIST();
-      const redeemedEntry = {
-        code: cleanCode || cleanBid,
-        bookingId: cleanBid,
-        brand: brandKey,
-        amount: v.amount || rawPrice,
-        pin: v.pin || '',
-        account: v.account || '',
-        card: v.card || 'Unassigned',
-        dateOfIssue: v.dateOfIssue || '',
-        expiry: '31 Dec 2026',
-        timestampIST: v.timestampIST || timeStr,
-        redeemedTimestampIST: timeStr,
-        originalTab: brandKey
-      };
-      redeemedList.unshift(redeemedEntry);
-      saveRedeemedList();
+      // Add to redeemedList ONLY if NOT keepInStaging
+      if (!isStagingNotArrived) {
+        const timeStr = nowIST();
+        const redeemedEntry = {
+          code: cleanCode || cleanBid,
+          bookingId: cleanBid,
+          brand: brandKey,
+          amount: v.amount || rawPrice,
+          pin: v.pin || '',
+          account: v.account || '',
+          card: v.card || 'Unassigned',
+          dateOfIssue: v.dateOfIssue || '',
+          expiry: '31 Dec 2026',
+          timestampIST: v.timestampIST || timeStr,
+          redeemedTimestampIST: timeStr,
+          originalTab: brandKey
+        };
+        redeemedList.unshift(redeemedEntry);
+        saveRedeemedList();
+      }
 
       // Optimistically add to state.income.ledger
       const optimisticIncomeId = 'inc-' + Date.now();
@@ -5733,6 +5777,16 @@
         state.income.ledger.push(optimisticIncomeEntry);
       }
 
+      // Update all-time & year totals
+      state.income.allTime.gross += rawPrice;
+      state.income.allTime.count++;
+      const curYearKey = '2026';
+      if (!state.income.byYear[curYearKey]) {
+        state.income.byYear[curYearKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+      }
+      state.income.byYear[curYearKey].gross += rawPrice;
+      state.income.byYear[curYearKey].count++;
+
       // Persist encrypted caches & re-render
       await Promise.all([
         saveEncryptedStaging(state.staging),
@@ -5743,7 +5797,10 @@
       if (state.activeWorkspace === 'income') renderIncomeTracker();
 
       // Show Undo Banner (SG3)
-      showCardUndoBanner(`Marked ${brandDisplay} sold to ${soldTo} (+₹${rawPrice.toLocaleString()})`, async () => {
+      const bannerMsg = isStagingNotArrived
+        ? `Added sale details for ${brandDisplay} (+₹${rawPrice.toLocaleString()})`
+        : `Marked ${brandDisplay} sold to ${soldTo} (+₹${rawPrice.toLocaleString()})`;
+      showCardUndoBanner(bannerMsg, async () => {
         // Rollback
         state.staging = prevStaging;
         state.vouchers = prevVouchers;
@@ -5754,8 +5811,10 @@
           saveEncryptedStaging(state.staging),
           saveEncryptedVouchers(state.vouchers)
         ]);
-        if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-        if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+        if (!isStagingNotArrived) {
+          if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+          if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+        }
         renderDeckSelector();
         renderVault();
         if (state.activeWorkspace === 'income') renderIncomeTracker();
@@ -5770,6 +5829,8 @@
           pin: v.pin || '',
           brand: brandKey,
           isStaging: isStaging,
+          keepInStaging: isStagingNotArrived,
+          onlyLogIncome: isStagingNotArrived,
           amount: v.amount || rawPrice,
           dateOfIssue: v.dateOfIssue || '',
           account: v.account || '',
@@ -5796,8 +5857,10 @@
               saveEncryptedStaging(state.staging),
               saveEncryptedVouchers(state.vouchers)
             ]);
-            if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-            if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+            if (!isStagingNotArrived) {
+              if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+              if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+            }
             renderDeckSelector();
             renderVault();
             if (state.activeWorkspace === 'income') renderIncomeTracker();
