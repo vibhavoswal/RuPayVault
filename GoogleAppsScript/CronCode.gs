@@ -86,30 +86,62 @@ function getOrCreateRuPayChargesSheet(ss) {
   return sheet;
 }
 
-function parseDateToTimestamp(dateVal) {
-  if (!dateVal) return 0;
+function parseDateComponents(dateVal) {
+  if (!dateVal) return null;
   if (dateVal instanceof Date) {
+    if (isNaN(dateVal.getTime())) return null;
     const istStr = Utilities.formatDate(dateVal, "GMT+05:30", "yyyy-MM-dd");
     const p = istStr.split("-");
-    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
+    return {
+      year: parseInt(p[0], 10),
+      month: parseInt(p[1], 10),
+      day: parseInt(p[2], 10)
+    };
   }
   const clean = String(dateVal).replace(/^'/, '').trim();
+  if (!clean) return null;
+
   const parts = clean.split(/[\/\-\.]/);
   if (parts.length === 3) {
-    const d = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10);
-    let y = parseInt(parts[2], 10);
-    if (y < 100) y = 2000 + y;
-    return new Date(y, m - 1, d).getTime();
+    let d, m, y;
+    if (parts[0].length === 4) {
+      y = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      d = parseInt(parts[2], 10);
+    } else {
+      d = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+      y = parseInt(parts[2], 10);
+      if (y < 100) y = 2000 + y;
+    }
+    if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > 2100) {
+      return null;
+    }
+    const dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) {
+      return null;
+    }
+    return { year: y, month: m, day: d };
   }
+
   const parsed = Date.parse(clean);
   if (!isNaN(parsed)) {
     const dObj = new Date(parsed);
     const istStr = Utilities.formatDate(dObj, "GMT+05:30", "yyyy-MM-dd");
     const p = istStr.split("-");
-    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
+    return {
+      year: parseInt(p[0], 10),
+      month: parseInt(p[1], 10),
+      day: parseInt(p[2], 10)
+    };
   }
-  return 0;
+  return null;
+}
+
+function parseDateToTimestamp(dateVal) {
+  const comp = parseDateComponents(dateVal);
+  if (!comp) return 0;
+  return new Date(comp.year, comp.month - 1, comp.day).getTime();
 }
 
 function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
@@ -3236,18 +3268,15 @@ function doGet(e) {
             if (parsed) account = parsed.card || parsed.account || '';
           }
 
-          let yr = 2026;
-          if (dateStr) {
-            const parts = dateStr.split(/[\/\-\.]/);
-            if (parts.length === 3) {
-              const yPart = parts[2].trim();
-              if (yPart.length === 4) yr = parseInt(yPart, 10);
-              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-            }
+          const comp = parseDateComponents(dateStr);
+          const yr = comp ? comp.year : 2026;
+          if (comp) {
+            dateStr = Utilities.formatString("%02d/%02d/%02d", comp.day, comp.month, comp.year % 100);
           }
 
           const entry = {
             id: 'inc-' + i,
+            sheetRowIndex: i,
             title: title,
             date: dateStr,
             price: Math.abs(priceVal),
@@ -3290,19 +3319,16 @@ function doGet(e) {
             if (parsed) account = parsed.card || parsed.account || '';
           }
 
-          let yr = 2026;
-          if (dateStr) {
-            const parts = dateStr.split(/[\/\-\.]/);
-            if (parts.length === 3) {
-              const yPart = parts[2].trim();
-              if (yPart.length === 4) yr = parseInt(yPart, 10);
-              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-            }
+          const comp = parseDateComponents(dateStr);
+          const yr = comp ? comp.year : 2026;
+          if (comp) {
+            dateStr = Utilities.formatString("%02d/%02d/%02d", comp.day, comp.month, comp.year % 100);
           }
 
           const chargeVal = -Math.abs(priceVal);
           const entry = {
             id: 'chg-' + i,
+            sheetRowIndex: i,
             title: title,
             date: dateStr,
             price: chargeVal,
@@ -3349,9 +3375,11 @@ function doGet(e) {
       }
     }
 
-    // Sort unified income & charges ledger by date descending (newest on top)
+    // Sort unified income & charges ledger by date descending (newest on top; for same date, retain chronological entry order)
     result.income.ledger.sort(function(a, b) {
-      return parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+      const diff = parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+      if (diff !== 0) return diff;
+      return (b.sheetRowIndex || 0) - (a.sheetRowIndex || 0);
     });
     result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
     for (const y in result.income.byYear) {
@@ -4845,15 +4873,11 @@ function doPost(e) {
       const comments = String(data.comments || '').trim();
       const account = String(data.account || '').trim();
 
+      const comp = parseDateComponents(dateStr);
+      const dateMs = comp ? new Date(comp.year, comp.month - 1, comp.day).getTime() : 0;
       let cellDateValue = dateStr;
-      const dateMs = parseDateToTimestamp(dateStr);
-      const parts = dateStr.split(/[\/\-\.]/);
-      if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10);
-        let y = parseInt(parts[2], 10);
-        if (y < 100) y = 2000 + y;
-        cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+      if (comp) {
+        cellDateValue = new Date(Date.UTC(comp.year, comp.month - 1, comp.day, 6, 30, 0));
       }
 
       const finalPrice = isCharge ? -Math.abs(rawPrice) : Math.abs(rawPrice);
@@ -4966,10 +4990,11 @@ function doPost(e) {
           error: "Sale date is mandatory."
         })).setMimeType(ContentService.MimeType.JSON);
       }
-      const dateMs = parseDateToTimestamp(dateStr);
+      const comp = parseDateComponents(dateStr);
+      const dateMs = comp ? new Date(comp.year, comp.month - 1, comp.day).getTime() : 0;
       if (!dateMs || dateMs <= 0) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Invalid sale date: Date must be in dd/MM/yy format."
+          error: "Invalid sale date: Date must be a valid date (dd/MM/yy or yyyy-MM-dd)."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -5108,15 +5133,10 @@ function doPost(e) {
       const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
 
       let cellDateValue = dateStr;
-      const parts = dateStr.split(/[\/\-\.]/);
       let parsedYear = 2026;
-      if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10);
-        let y = parseInt(parts[2], 10);
-        if (y < 100) y = 2000 + y;
-        parsedYear = y;
-        cellDateValue = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+      if (comp) {
+        parsedYear = comp.year;
+        cellDateValue = new Date(Date.UTC(comp.year, comp.month - 1, comp.day, 6, 30, 0));
       }
 
       // Exactly 4 columns in RuPay Income: [Brand, Date, Sale Value, Comments]
@@ -5151,36 +5171,81 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 16C. Unmark Ingested Voucher Sale (Clears Col 13 in "New" tab and deletes matching row in "RuPay Income")
-    if (data.action === "UNMARK_INGESTED_SALE") {
+    // 16C. Unmark Voucher Sale (Clears Col 13 in "New" tab or restores to Brand tab from "Redeemed", and deletes matching row in "RuPay Income")
+    if (data.action === "UNMARK_INGESTED_SALE" || data.action === "UNMARK_VOUCHER_SALE") {
       const targetBid = String(data.bookingId || '').trim();
+      const targetCode = String(data.code || '').trim();
       const targetComments = String(data.comments || '').trim();
+      const brand = String(data.brand || '').trim();
+      const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '⚡ Unassigned');
       
-      const newSheet = ss.getSheetByName("New");
       let unmarkedNewRow = -1;
-      if (newSheet && targetBid) {
-        const nVals = newSheet.getDataRange().getValues();
-        for (let i = 1; i < nVals.length; i++) {
-          const bId = String(nVals[i][0] || '').trim();
-          if (bId.toUpperCase() === targetBid.toUpperCase()) {
-            unmarkedNewRow = i + 1;
-            if (newSheet.getLastColumn() >= 13) {
-              newSheet.getRange(i + 1, 13).setValue("");
+      let restoredBrandRow = -1;
+
+      if (isStaging) {
+        const newSheet = ss.getSheetByName("New");
+        if (newSheet && (targetBid || targetCode)) {
+          const nVals = newSheet.getDataRange().getValues();
+          for (let i = 1; i < nVals.length; i++) {
+            const bId = String(nVals[i][0] || '').trim();
+            const cd = String(nVals[i][1] || '').trim();
+            const matchBid = targetBid && bId.toUpperCase() === targetBid.toUpperCase();
+            const matchCode = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && cd.toUpperCase() === targetCode.toUpperCase();
+            if (matchBid || matchCode) {
+              unmarkedNewRow = i + 1;
+              if (newSheet.getLastColumn() >= 13) {
+                newSheet.getRange(i + 1, 13).setValue("");
+              }
+              break;
             }
-            break;
+          }
+        }
+      } else {
+        // Move back from Redeemed sheet to Brand tab
+        const rSheet = ss.getSheetByName("Redeemed");
+        if (rSheet && (targetBid || targetCode)) {
+          const rVals = rSheet.getDataRange().getValues();
+          for (let i = rVals.length - 1; i >= 1; i--) {
+            const bId = String(rVals[i][1] || '').trim().replace(/^'/, '');
+            const cd = String(rVals[i][2] || '').trim().replace(/^'/, '');
+            const matchBid = targetBid && bId.toUpperCase() === targetBid.toUpperCase();
+            const matchCode = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && cd.toUpperCase() === targetCode.toUpperCase();
+            if (matchBid || matchCode) {
+              const brandSheet = getTargetBrandSheet(ss, brand || String(rVals[i][0] || ''));
+              if (brandSheet) {
+                brandSheet.appendRow([
+                  rVals[i][1], // Booking ID
+                  rVals[i][2], // Code
+                  rVals[i][3], // PIN
+                  rVals[i][4], // Value
+                  rVals[i][5], // Date of Issue
+                  rVals[i][6], // Account
+                  rVals[i][7], // Card
+                  "ACTIVE",    // Status
+                  rVals[i][11] || formatISTTimestamp(new Date()), // Appended Timestamp
+                  true         // Display in UI
+                ]);
+                restoredBrandRow = brandSheet.getLastRow();
+              }
+              rSheet.deleteRow(i + 1);
+              break;
+            }
           }
         }
       }
 
       const incomeSheet = ss.getSheetByName("RuPay Income");
       let deletedIncomeRow = -1;
-      if (incomeSheet && targetComments) {
+      if (incomeSheet && (targetComments || targetBid || targetCode)) {
         const iVals = incomeSheet.getDataRange().getValues();
         for (let r = 1; r < iVals.length; r++) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
-          if (comm === targetComments) {
+          const matchComment = targetComments && comm === targetComments;
+          const matchBidInComm = targetBid && comm.includes(targetBid);
+          const matchCodeInComm = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && comm.includes(targetCode);
+          if (matchComment || matchBidInComm || matchCodeInComm) {
             deletedIncomeRow = r + 1;
             incomeSheet.deleteRow(r + 1);
             break;
@@ -5196,6 +5261,7 @@ function doPost(e) {
         success: true,
         action: "UNMARK_INGESTED_SALE",
         unmarkedNewRow: unmarkedNewRow,
+        restoredBrandRow: restoredBrandRow,
         deletedIncomeRow: deletedIncomeRow
       })).setMimeType(ContentService.MimeType.JSON);
     }

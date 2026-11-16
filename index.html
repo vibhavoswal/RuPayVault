@@ -5796,6 +5796,8 @@
         showToast('Please enter a valid sale date (dd/mm/yy)');
         return;
       }
+      const normalizedSaleDate = normalizeDateToDDMMYY(saleDate);
+      const yr = getIncomeYearFromDate(normalizedSaleDate);
 
       // Optional fields:
       const soldToInput = document.getElementById('ms-input-sold-to');
@@ -5860,7 +5862,7 @@
               redeemedAccount,
               price: rawPrice,
               gpayName,
-              date: saleDate,
+              date: normalizedSaleDate,
               loggedAt: new Date().toISOString()
             };
           }
@@ -5874,6 +5876,7 @@
       } else {
         const found = state.vouchers.find(x => (cleanCode && x.code === cleanCode) || (cleanBid && x.bookingId === cleanBid));
         if (found) found.status = 'USED';
+        state.vouchers = state.vouchers.filter(x => (!cleanCode || x.code !== cleanCode) && (!cleanBid || x.bookingId !== cleanBid));
       }
 
       // Add to redeemedList ONLY if NOT keepInStaging
@@ -5898,21 +5901,11 @@
       }
 
       // Optimistically add to state.income.ledger
-      let yr = 2026;
-      if (saleDate) {
-        const parts = saleDate.split(/[\/\-\.]/);
-        if (parts.length === 3) {
-          const yPart = parts[2].trim();
-          if (yPart.length === 4) yr = parseInt(yPart, 10);
-          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-        }
-      }
-
       const optimisticIncomeId = 'inc-' + Date.now();
       const optimisticIncomeEntry = {
         id: optimisticIncomeId,
         title: incomeTitle,
-        date: saleDate,
+        date: normalizedSaleDate,
         price: rawPrice,
         comments: commentStr,
         account: cardAccount,
@@ -5923,7 +5916,7 @@
       if (!state.income.ledger) state.income.ledger = [];
 
       // Insert sorted by date (for same date, append at the end of that date group)
-      const newDateMs = parseIncomeDateMs(saleDate);
+      const newDateMs = parseIncomeDateMs(normalizedSaleDate);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
@@ -5937,15 +5930,8 @@
         state.income.ledger.push(optimisticIncomeEntry);
       }
 
-      // Update all-time & year totals
-      state.income.allTime.gross += rawPrice;
-      state.income.allTime.count++;
-      const curYearKey = '2026';
-      if (!state.income.byYear[curYearKey]) {
-        state.income.byYear[curYearKey] = { gross: 0, charges: 0, net: 0, count: 0 };
-      }
-      state.income.byYear[curYearKey].gross += rawPrice;
-      state.income.byYear[curYearKey].count++;
+      // Recompute dynamic income summary stats
+      recomputeIncomeSummaryStats();
 
       // Persist encrypted caches & re-render
       await Promise.all([
@@ -5969,6 +5955,7 @@
         state.vouchers = prevVouchers;
         redeemedList = prevRedeemed;
         if (state.income) state.income.ledger = prevIncomeLedger;
+        recomputeIncomeSummaryStats();
         saveRedeemedList();
         await Promise.all([
           saveEncryptedStaging(state.staging),
@@ -5981,6 +5968,20 @@
         renderDeckSelector();
         renderVault();
         if (state.activeWorkspace === 'income') renderIncomeTracker();
+        
+        // Dispatch backend unmark to Google Sheets
+        try {
+          await apiFetch('UNMARK_INGESTED_SALE', {
+            bookingId: cleanBid,
+            code: cleanCode,
+            comments: commentStr,
+            brand: brandKey,
+            isStaging: isStaging,
+            amount: v.amount || rawPrice
+          });
+        } catch (e) {
+          console.error('Failed to unmark sale on backend', e);
+        }
         showToast('Sale marked as undone');
       });
 
@@ -6008,7 +6009,7 @@
             gpayName: gpayName,
             card: cardAccount,
             comments: commentStr,
-            date: saleDate
+            date: normalizedSaleDate
           }
         };
 
@@ -6020,6 +6021,7 @@
             state.vouchers = prevVouchers;
             redeemedList = prevRedeemed;
             if (state.income) state.income.ledger = prevIncomeLedger;
+            recomputeIncomeSummaryStats();
             saveRedeemedList();
             await Promise.all([
               saveEncryptedStaging(state.staging),
@@ -7395,26 +7397,104 @@
       return `${day}/${month}/${year}`;
     }
 
-    function parseIncomeDateMs(dateStr) {
-      if (!dateStr) return 0;
-      if (dateStr instanceof Date) {
-        return new Date(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate()).getTime();
+    function parseDateComponents(dateVal) {
+      if (!dateVal) return null;
+      if (dateVal instanceof Date) {
+        if (isNaN(dateVal.getTime())) return null;
+        return {
+          year: dateVal.getFullYear(),
+          month: dateVal.getMonth() + 1,
+          day: dateVal.getDate()
+        };
       }
-      const clean = String(dateStr).replace(/^'/, '').trim();
+      const clean = String(dateVal).replace(/^'/, '').trim();
+      if (!clean) return null;
+
       const parts = clean.split(/[\/\-\.]/);
       if (parts.length === 3) {
-        const d = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10);
-        let y = parseInt(parts[2], 10);
-        if (y < 100) y = 2000 + y;
-        return new Date(y, m - 1, d).getTime();
+        let d, m, y;
+        if (parts[0].length === 4) {
+          y = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+          d = parseInt(parts[2], 10);
+        } else {
+          d = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+          y = parseInt(parts[2], 10);
+          if (y < 100) y = 2000 + y;
+        }
+        if (isNaN(d) || isNaN(m) || isNaN(y) || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > 2100) {
+          return null;
+        }
+        const dt = new Date(y, m - 1, d);
+        if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) {
+          return null;
+        }
+        return { year: y, month: m, day: d };
       }
+
       const parsed = Date.parse(clean);
       if (!isNaN(parsed)) {
-        const dObj = new Date(parsed);
-        return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+        const dt = new Date(parsed);
+        return {
+          year: dt.getFullYear(),
+          month: dt.getMonth() + 1,
+          day: dt.getDate()
+        };
       }
-      return 0;
+      return null;
+    }
+
+    function parseIncomeDateMs(dateStr) {
+      const comp = parseDateComponents(dateStr);
+      if (!comp) return 0;
+      return new Date(comp.year, comp.month - 1, comp.day).getTime();
+    }
+
+    function getIncomeYearFromDate(dateStr) {
+      const comp = parseDateComponents(dateStr);
+      if (comp) return comp.year;
+      return new Date().getFullYear();
+    }
+
+    function normalizeDateToDDMMYY(dateStr) {
+      const comp = parseDateComponents(dateStr);
+      if (!comp) return String(dateStr || '').trim();
+      const day = String(comp.day).padStart(2, '0');
+      const month = String(comp.month).padStart(2, '0');
+      const year = String(comp.year).slice(-2);
+      return `${day}/${month}/${year}`;
+    }
+
+    function recomputeIncomeSummaryStats() {
+      if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
+      const ledger = Array.isArray(state.income.ledger) ? state.income.ledger : [];
+      const allTime = { gross: 0, charges: 0, net: 0, count: 0 };
+      const byYear = {};
+
+      ledger.forEach(row => {
+        const p = Number(row.price) || 0;
+        const yKey = String(row.year || getIncomeYearFromDate(row.date) || '2026');
+        if (!byYear[yKey]) byYear[yKey] = { gross: 0, charges: 0, net: 0, count: 0 };
+
+        if (p > 0) {
+          allTime.gross += p;
+          byYear[yKey].gross += p;
+        } else if (p < 0) {
+          allTime.charges += Math.abs(p);
+          byYear[yKey].charges += Math.abs(p);
+        }
+        allTime.count++;
+        byYear[yKey].count++;
+      });
+
+      allTime.net = allTime.gross - allTime.charges;
+      for (const y in byYear) {
+        byYear[y].net = byYear[y].gross - byYear[y].charges;
+      }
+
+      state.income.allTime = allTime;
+      state.income.byYear = byYear;
     }
 
     function setIncomeYearFilter(year) {
@@ -7823,36 +7903,28 @@
         showToast('Please enter a valid date (dd/mm/yy)');
         return;
       }
+      const normalizedDate = normalizeDateToDDMMYY(date);
+      const yr = getIncomeYearFromDate(normalizedDate);
 
       const commentsInput = document.getElementById('in-sale-input-comments');
       const comments = (commentsInput ? commentsInput.value : '').trim();
 
-      // Determine year
-      let yr = 2026;
-      if (date) {
-        const parts = date.split(/[\/\-\.]/);
-        if (parts.length === 3) {
-          const yPart = parts[2].trim();
-          if (yPart.length === 4) yr = parseInt(yPart, 10);
-          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-        }
-      }
-
       const newEntry = {
         id: 'inc-' + Date.now(),
         title: title,
-        date: date,
+        date: normalizedDate,
         price: price,
         comments: comments,
         account: '',
-        year: yr
+        year: yr,
+        type: 'income'
       };
 
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
       // Optimistic Date-Sorted Insertion (Newest first; for same date, append at end of date group)
-      const newDateMs = parseIncomeDateMs(date);
+      const newDateMs = parseIncomeDateMs(normalizedDate);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
@@ -7865,6 +7937,7 @@
       if (!inserted) {
         state.income.ledger.push(newEntry);
       }
+      recomputeIncomeSummaryStats();
       closeRecordSaleModal();
       renderIncomeTracker();
       showToast(`Logged ${title} sale (+₹${price}) in RuPay Income!`);
@@ -7872,6 +7945,7 @@
       // Rollback function in case network or backend fails
       const rollback = () => {
         state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
+        recomputeIncomeSummaryStats();
         renderIncomeTracker();
         showToast(`Failed to persist ${title} sale. Reverted.`);
       };
@@ -7879,7 +7953,7 @@
       try {
         await apiFetch('RECORD_INCOME_ENTRY', {
           title: title,
-          date: date,
+          date: normalizedDate,
           price: price,
           comments: comments,
           account: '',
@@ -7981,33 +8055,30 @@
       const accountFormatted = acc4 ? ('••' + acc4) : '';
       const dateInput = document.getElementById('in-charge-input-date');
       const date = (dateInput ? dateInput.value : '').trim() || formatTodayDDMMYY();
-
-      let yr = 2026;
-      if (date) {
-        const parts = date.split(/[\/\-\.]/);
-        if (parts.length === 3) {
-          const yPart = parts[2].trim();
-          if (yPart.length === 4) yr = parseInt(yPart, 10);
-          else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-        }
+      if (parseIncomeDateMs(date) <= 0) {
+        showToast('Please enter a valid date (dd/mm/yy)');
+        return;
       }
+      const normalizedDate = normalizeDateToDDMMYY(date);
+      const yr = getIncomeYearFromDate(normalizedDate);
 
       const chargePrice = -Math.abs(amount);
       const newEntry = {
         id: 'inc-' + Date.now(),
         title: title,
-        date: date,
+        date: normalizedDate,
         price: chargePrice,
         comments: formattedComments,
         account: accountFormatted,
-        year: yr
+        year: yr,
+        type: 'charge'
       };
 
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
       // Optimistic Date-Sorted Insertion (Newest first; for same date, append at end of date group)
-      const newDateMs = parseIncomeDateMs(date);
+      const newDateMs = parseIncomeDateMs(normalizedDate);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
@@ -8020,6 +8091,7 @@
       if (!inserted) {
         state.income.ledger.push(newEntry);
       }
+      recomputeIncomeSummaryStats();
       closeRecordChargeModal();
       renderIncomeTracker();
       showToast(`Deducted ${title} (-₹${amount}) in RuPay Charges!`);
@@ -8027,6 +8099,7 @@
       // Rollback function in case of error
       const rollback = () => {
         state.income.ledger = state.income.ledger.filter(e => e.id !== newEntry.id);
+        recomputeIncomeSummaryStats();
         renderIncomeTracker();
         showToast(`Failed to persist charge ${title}. Reverted.`);
       };
@@ -8034,7 +8107,7 @@
       try {
         await apiFetch('RECORD_INCOME_ENTRY', {
           title: title,
-          date: date,
+          date: normalizedDate,
           price: chargePrice,
           comments: formattedComments,
           account: accountFormatted,
