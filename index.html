@@ -3698,7 +3698,11 @@
     };
 
     function getSessionToken() {
-      return localStorage.getItem('rupay_session_token') || '';
+      const token = localStorage.getItem('rupay_session_token');
+      if (!token && isDevEnvironment()) {
+        return 'dev_token';
+      }
+      return token || '';
     }
 
     function isDevEnvironment() {
@@ -4793,7 +4797,8 @@
         switchWorkspace(savedWorkspace);
         renderAll();
         flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
-        syncWithGoogleSheets(true);
+        // Instant direct fetch from Google Sheets upon reload/unlock (fast 1s response without 20s Gmail crawl)
+        await syncWithGoogleSheets(false);
       }
     }
 
@@ -13940,9 +13945,9 @@
       localStorage.removeItem('rupay_active_brand');
       setActivityFilter('added');
 
-      // 4. Restore last synced time to all headers
+      // 4. Restore last synced time to all headers only if not actively syncing
       const savedTime = localStorage.getItem('rupay_sync_time');
-      if (savedTime) {
+      if (savedTime && !isSyncing) {
         updateAllSyncIndicators('success', savedTime);
       }
 
