@@ -14,7 +14,7 @@ const UNIFIED_BRAND_HEADERS = [
 ];
 
 const UNIFIED_NEW_HEADERS = [
-  "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)", "Display in UI", "Target Brand", "Payment Link"
+  "Booking ID", "Code", "PIN", "Value", "Date of Issue", "Account", "Card", "Status", "Appended Timestamp (IST)", "Display in UI", "Target Brand", "Payment Link", "Sale Logged"
 ];
 
 const UNIFIED_REDEEMED_HEADERS = [
@@ -3026,6 +3026,7 @@ function doGet(e) {
           if (!rows[i][0] && !rows[i][1]) continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
           const targetBrand = String(rows[i][10] || '⚡ Unassigned');
+          const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
           result.staging.push({
             brand: targetBrand,
             bookingId: String(rows[i][0] || ''),
@@ -3039,7 +3040,9 @@ function doGet(e) {
             timestampIST: rows[i][8] ? String(rows[i][8]) : null,
             displayInUI: isDisp,
             targetBrand: targetBrand,
-            payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : ''
+            payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : '',
+            isSaleMarked: isSaleMarked,
+            saleMarked: isSaleMarked
           });
         }
       } else if (name === "RuPay Income") {
@@ -4800,6 +4803,11 @@ function doPost(e) {
               finalAppendedTs = String(nRows[i][8] || finalAppendedTs);
               if (!keepInStaging) {
                 nSheet.deleteRow(i + 1);
+              } else {
+                if (nSheet.getLastColumn() < 13 || String(nSheet.getRange(1, 13).getValue() || '').trim() === '') {
+                  nSheet.getRange(1, 13).setValue("Sale Logged").setFontWeight("bold");
+                }
+                nSheet.getRange(i + 1, 13).setValue(true);
               }
               voucherFound = true;
               break;
@@ -4924,6 +4932,8 @@ function doPost(e) {
         bookingId: finalBid,
         code: safeCode.replace(/^'/, ''),
         brand: targetBrand,
+        keepInStaging: keepInStaging,
+        isSaleMarked: keepInStaging,
         incomeEntry: {
           id: "inc-" + insertedRow,
           title: incomeTitle,
