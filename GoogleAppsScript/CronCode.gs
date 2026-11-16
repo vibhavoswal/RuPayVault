@@ -3009,12 +3009,7 @@ function doPost(e) {
       // 5. Send Email via GmailApp (Clean subject line with zero emojis & responsive HTML card)
       try {
         const subject = "[RuPayVault] Login Code: " + otp + " (Valid for 10 mins)";
-        const plainBody = "Hello Vibhav,\n\n" +
-          "Your RuPayVault login verification code is:\n\n" +
-          "      " + otp + "\n\n" +
-          "This code is valid for 10 minutes and can only be used once.\n" +
-          "If you did not request this code, you can safely ignore this email.\n\n" +
-          "— RuPay Vault";
+        const plainBody = "RuPay Vault verification code:\n\n      " + otp + "\n\nValid for 10 minutes.\n\n— RuPay Vault";
 
         const htmlBody = '<!DOCTYPE html>' +
           '<html lang="en">' +
@@ -3024,44 +3019,26 @@ function doPost(e) {
           '<style>' +
           ':root { color-scheme: light dark; supported-color-schemes: light dark; } ' +
           '@media (prefers-color-scheme: dark) { ' +
-          '.vault-card { background-color: #16181d !important; border-color: rgba(255, 255, 255, 0.08) !important; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4) !important; } ' +
-          '.vault-pill { background-color: rgba(12, 140, 70, 0.15) !important; border-color: rgba(12, 140, 70, 0.3) !important; color: #34d399 !important; } ' +
-          '.vault-title { color: #f3f4f6 !important; } ' +
-          '.vault-sub { color: #9ca3af !important; } ' +
-          '.vault-code-box { background-color: #1f2127 !important; border-color: rgba(12, 140, 70, 0.35) !important; color: #34d399 !important; } ' +
-          '.vault-exp { color: #9ca3af !important; } ' +
-          '.vault-divider { border-top-color: rgba(255, 255, 255, 0.08) !important; } ' +
-          '.vault-email { color: #d1d5db !important; } ' +
+          '.vault-card { background-color: #141517 !important; border-color: rgba(255, 255, 255, 0.08) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important; } ' +
+          '.vault-brand { color: #a1a1aa !important; } ' +
+          '.vault-code { color: #34d399 !important; } ' +
+          '.vault-sub { color: #71717a !important; } ' +
           '} ' +
           '</style>' +
           '</head>' +
-          '<body style="margin: 0; padding: 24px 12px; background-color: transparent; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif;">' +
+          '<body style="margin: 0; padding: 36px 12px; background-color: transparent; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;">' +
           '<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: transparent; border-collapse: collapse;">' +
           '<tr>' +
           '<td align="center" style="background-color: transparent; padding: 0;">' +
-          '<div class="vault-card" style="max-width: 400px; width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 36px 24px; box-sizing: border-box; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">' +
-          '<div style="margin-bottom: 16px;">' +
-          '<span class="vault-pill" style="display: inline-block; padding: 4px 12px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 9999px; font-size: 11px; font-weight: 600; color: #15803d; letter-spacing: 0.3px;">' +
+          '<div class="vault-card" style="max-width: 340px; width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 32px 20px; box-sizing: border-box; text-align: center; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);">' +
+          '<div class="vault-brand" style="font-size: 11px; font-weight: 700; color: #71717a; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">' +
           'RuPay Vault' +
-          '</span>' +
           '</div>' +
-          '<h1 class="vault-title" style="margin: 0 0 8px 0; font-size: 22px; font-weight: 700; color: #111827; letter-spacing: -0.4px;">' +
-          'Your verification code' +
-          '</h1>' +
-          '<p class="vault-sub" style="margin: 0 0 24px 0; font-size: 13.5px; line-height: 1.5; color: #6b7280;">' +
-          'Use this one-time code to sign in to your vault.' +
-          '</p>' +
-          '<div class="vault-code-box" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 12px; margin-bottom: 22px;">' +
-          '<div style="font-family: ui-monospace, \'SF Mono\', Menlo, Monaco, Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #0C8C46; text-indent: 8px;">' +
+          '<div class="vault-code" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 40px; font-weight: 700; letter-spacing: 8px; color: #0C8C46; text-indent: 8px; margin: 10px 0 14px 0;">' +
           otp +
           '</div>' +
-          '</div>' +
-          '<p class="vault-exp" style="margin: 0 0 24px 0; font-size: 12px; line-height: 1.5; color: #9ca3af;">' +
-          'Valid for 10 minutes &middot; Single use<br>' +
-          'If you didn&rsquo;t request this code, you can safely ignore this email.' +
-          '</p>' +
-          '<div class="vault-divider" style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 11px; color: #9ca3af;">' +
-          'Sent to <span class="vault-email" style="color: #4b5563; font-weight: 500;">vibhavoswal3@gmail.com</span>' +
+          '<div class="vault-sub" style="font-size: 12.5px; color: #71717a; margin: 0;">' +
+          'Valid for 10 minutes' +
           '</div>' +
           '</div>' +
           '</td>' +
