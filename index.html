@@ -8014,6 +8014,24 @@
                 }
               }
 
+              // Strict Invariant: Preserve earliest initial ingested timestamp across revalidations
+              const prevItem = (state.staging || []).find(x =>
+                (cleanBid && String(x.bookingId || '').trim().toUpperCase() === cleanBid) ||
+                (cleanOrigBid && String(x.bookingId || '').trim().toUpperCase() === cleanOrigBid)
+              );
+              let resolvedTimestamp = s.timestampIST || null;
+              if (prevItem && prevItem.timestampIST) {
+                if (!resolvedTimestamp) {
+                  resolvedTimestamp = prevItem.timestampIST;
+                } else {
+                  const prevMs = parseTimestamp(prevItem.timestampIST);
+                  const remoteMs = parseTimestamp(resolvedTimestamp);
+                  if (prevMs > 0 && remoteMs > 0 && prevMs < remoteMs) {
+                    resolvedTimestamp = prevItem.timestampIST;
+                  }
+                }
+              }
+
               return {
                 id: 'staging-' + (s.bookingId || idx),
                 bookingId: bId,
@@ -8026,7 +8044,7 @@
                 account: s.account || '-',
                 card: cardVal,
                 status: status,
-                timestampIST: s.timestampIST || null,
+                timestampIST: resolvedTimestamp,
                 displayInUI: s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false',
                 payUrl: payUrl
               };

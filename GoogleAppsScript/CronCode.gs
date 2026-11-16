@@ -655,6 +655,9 @@ function processRupayEmails() {
       }
 
       const messages = thread.getMessages();
+      const threadInitialDate = (messages && messages.length > 0 && typeof messages[0].getDate === 'function')
+        ? messages[0].getDate()
+        : null;
       for (const msg of messages) {
         if (Date.now() - START_MS > 240000) {
           console.warn("processRupayEmails: 4-minute time budget reached in message loop.");
@@ -675,7 +678,7 @@ function processRupayEmails() {
           // STAGE 1.5: On Hold - Validation Pending / Payment Link Email
           // ==========================================
           // Updates Code to "Pending revalidation", Status to "PENDING_REVALIDATION", and attaches Payment Link
-          // Invariant: Leaves initial acknowledgment timestamp untouched!
+          // STRICT INVARIANT: Leaves initial acknowledgment/ingested timestamp untouched!
           recordPendingRevalidation(ss, {
             bookingId: parsed.bookingId,
             brand: parsed.brand,
@@ -683,6 +686,7 @@ function processRupayEmails() {
             account: parsed.account,
             dateOfIssue: parsed.dateOfIssue,
             receivedDate: parsed.receivedDate,
+            initialDate: threadInitialDate || parsed.receivedDate,
             payUrl: parsed.payUrl
           });
         } else if (!parsed.isDelivered) {
@@ -907,17 +911,16 @@ function recordPendingRevalidation(ss, data) {
   const newRows = newSheet.getDataRange().getValues();
   for (let i = 1; i < newRows.length; i++) {
     const rowBid = String(newRows[i][0] || '').trim().toUpperCase();
-    if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid))) {
+    if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid)) || (targetBid.startsWith("RUPS-") && rowBid.includes(targetBid))) {
       const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
       const currentCode = String(newRows[i][1] || '').trim();
-      const currentPayUrl = String(newRows[i][11] || '').trim();
 
       // Guard 1: If already ACTIVE with a real delivered code, do not revert!
       if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation" && !/processing/i.test(currentCode)) {
         return;
       }
 
-      // Update Code & Status, but leave Col 9 (Timestamp) untouched!
+      // STRICT INVARIANT: Update Code, Status & Payment Link, but NEVER overwrite initial ingested timestamp (Col 9)!
       newSheet.getRange(i + 1, 2).setValue("'Pending revalidation");
       newSheet.getRange(i + 1, 8).setValue("PENDING_REVALIDATION");
       newSheet.getRange(i + 1, 10).setValue(true);
@@ -925,11 +928,18 @@ function recordPendingRevalidation(ss, data) {
       if (urlToSave) {
         newSheet.getRange(i + 1, 12).setValue(urlToSave);
       }
+      // If Col 9 was empty or null, seed with initial ingested timestamp
+      const existingTs = String(newRows[i][8] || '').trim();
+      if (!existingTs) {
+        newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(data.initialDate || data.receivedDate || new Date()));
+      }
       return;
     }
   }
 
   // 2. Fallback: If Stage 1 email was missed and validation pending arrives first, create staging row
+  // Anchors initial timestamp strictly to data.initialDate (initial thread booking time)
+  const initialTimestamp = formatISTTimestamp(data.initialDate || data.receivedDate || new Date());
   const rowData = [
     data.bookingId,                                      // Col 1: Booking ID (RUPS...)
     "'Pending revalidation",                             // Col 2: Code
@@ -939,7 +949,7 @@ function recordPendingRevalidation(ss, data) {
     data.account || "",                                  // Col 6: Account
     "Unassigned",                                        // Col 7: Card
     "PENDING_REVALIDATION",                              // Col 8: Status
-    formatISTTimestamp(data.receivedDate || new Date()), // Col 9: Initial Timestamp (only set once on creation)
+    initialTimestamp,                                    // Col 9: Initial Timestamp (strictly immutable after creation)
     true,                                                // Col 10: Display in UI
     targetBrand,                                         // Col 11: Target Brand
     data.payUrl || ""                                    // Col 12: Payment Link
@@ -974,9 +984,33 @@ function recordPendingRedemption(ss, data) {
 
   // 2. Global Idempotency: Does this Booking ID already exist in "New" tab?
   const newRows = newSheet.getDataRange().getValues();
+  const targetBid = String(data.bookingId || '').trim().toUpperCase();
   for (let i = 1; i < newRows.length; i++) {
-    if (String(newRows[i][0]).trim() === data.bookingId) {
-      // Already recorded in staging, keep initial ack timestamp intact and do not duplicate
+    const rowBid = String(newRows[i][0] || '').trim().toUpperCase();
+    if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid)) || (targetBid.startsWith("RUPS-") && rowBid.includes(targetBid))) {
+      // If row exists as PENDING_REVALIDATION (e.g. revalidation email was ingested before Stage 1 ack),
+      // heal Col 9 to the earlier Stage 1 acknowledgment timestamp!
+      const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
+      if (currentStatus === "PENDING_REVALIDATION" || currentStatus === "PENDING") {
+        const existingTs = String(newRows[i][8] || '').trim();
+        const stage1Date = (data.receivedDate && typeof data.receivedDate.getTime === 'function')
+          ? data.receivedDate
+          : (data.receivedDate ? new Date(data.receivedDate) : null);
+        if (stage1Date && !isNaN(stage1Date.getTime())) {
+          let shouldHeal = false;
+          if (!existingTs) {
+            shouldHeal = true;
+          } else {
+            const existingDate = new Date(existingTs);
+            if (!isNaN(existingDate.getTime()) && stage1Date.getTime() < existingDate.getTime()) {
+              shouldHeal = true;
+            }
+          }
+          if (shouldHeal) {
+            newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(stage1Date));
+          }
+        }
+      }
       return;
     }
   }
@@ -1542,11 +1576,13 @@ function doGet(e) {
       let codeAfterStage15 = "";
       let statusAfterStage15 = "";
       let payUrlAfterStage15 = "";
+      let tsAfterStage15 = "";
       for (let i = 1; i < rows.length; i++) {
         if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
           foundRow = i + 1;
           codeAfterStage15 = String(rows[i][1] || '').trim();
           statusAfterStage15 = String(rows[i][7] || '').trim().toUpperCase();
+          tsAfterStage15 = String(rows[i][8] || '').trim();
           payUrlAfterStage15 = String(rows[i][11] || '').trim();
           break;
         }
@@ -1591,16 +1627,19 @@ function doGet(e) {
       let codeAfterCron = "";
       let statusAfterCron = "";
       let payUrlAfterCron = "";
+      let tsAfterCron = "";
       for (let i = 1; i < rows.length; i++) {
         if (String(rows[i][0] || '').trim().toUpperCase() === testBid) {
           codeAfterCron = String(rows[i][1] || '').trim();
           statusAfterCron = String(rows[i][7] || '').trim().toUpperCase();
+          tsAfterCron = String(rows[i][8] || '').trim();
           payUrlAfterCron = String(rows[i][11] || '').trim();
           break;
         }
       }
 
       const cronProtected = (codeAfterCron === "PENDING" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
+      const timestampRemainedUnchanged = (tsAfterStage15 === nowStr && tsAfterCron === nowStr);
 
       // Phase 3: Cleanup and verify zero residual artifacts
       let cleanedUp = false;
@@ -1629,6 +1668,7 @@ function doGet(e) {
         markUpdated &&
         isRegisteredInProperties &&
         cronProtected &&
+        timestampRemainedUnchanged &&
         cleanedUp &&
         residualCount === 0 &&
         !isStillInProperties
@@ -1638,6 +1678,7 @@ function doGet(e) {
         success: true,
         action: "VERIFY_SAFEGUARD_REVAL_DUMMY",
         stage15TransitionSuccess: stage15TransitionSuccess,
+        timestampRemainedUnchanged: timestampRemainedUnchanged,
         insertedAndFound: foundRow > 0,
         markUpdated: markUpdated,
         isRegisteredInProperties: isRegisteredInProperties,

@@ -153,10 +153,11 @@ Every operation must be evaluated against these 7 core safeguards:
   - In `MARK_REVALIDATED` and batch transition `SWITCH_ALL_REVALIDATED_TO_PENDING`: updates `New` tab (Col 2: `'PENDING'`, Col 8: `'PENDING'`, Col 12: `''`).
   - Stores revalidated booking ID in `PropertiesService.getScriptProperties()` under `REVALIDATED_BOOKINGS`.
   - In `recordPendingRevalidation()`: check `isBookingRevalidated(targetBid)` before modifying rows; never clobbers a user-revalidated voucher back to `PENDING_REVALIDATION`, while cleanly transitioning fresh Stage 1 vouchers (`PENDING`/`PROCESSING`) to `PENDING_REVALIDATION` with their payment URL.
+  - **Timestamp Invariant**: When a pending revalidation email or link arrives, Col 9 (`Timestamp`) is strictly immutable and preserved as the initial ingested time. Thread initial date is anchored on ingestion, and `recordPendingRedemption` heals Col 9 to the earlier Stage 1 acknowledgment time if the revalidation email was ingested first.
   - When real coupon code arrives in `processRupayEmails`: purge booking ID from `REVALIDATED_BOOKINGS`.
   - Removed legacy hardcoded auto-heal clobber list.
 - **Safeguard 7 (Context Preservation)**: Retains active filter and selection context.
-- **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_REVAL_DUMMY` on live sheet and safely purged.
+- **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_REVAL_DUMMY` on live sheet and safely purged, asserting that timestamp remains unchanged across the entire revalidation transition and repeat crons.
 
 #### Operation: `RECORD_INCOME_ENTRY` (Recording Sales into "RuPay Income" and Charges into "RuPay Charges")
 - **Safeguard 1 (Mutation Journal)**: Record optimistic transaction entry in `state.income.ledger` with unique ID (`inc-${Date.now()}`), preventing loss during background syncs.
