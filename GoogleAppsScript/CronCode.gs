@@ -3008,8 +3008,8 @@ function doPost(e) {
 
       // 5. Send Email via GmailApp (Clean subject line with zero emojis & responsive HTML card)
       try {
-        const subject = "[RuPayVault] Login Code: " + otp + " (Valid for 10 mins)";
-        const plainBody = "RuPay Vault verification code:\n\n      " + otp + "\n\nValid for 10 minutes.\n\n— RuPay Vault";
+        const subject = "[Cards & Vouchers] Login Code: " + otp + " (Valid for 10 mins)";
+        const plainBody = "Cards & Voucher Manager verification code:\n\n      " + otp + "\n\nValid for 10 minutes.\n\n— Cards & Voucher Manager";
 
         const htmlBody = '<!DOCTYPE html>' +
           '<html lang="en">' +
@@ -3032,7 +3032,7 @@ function doPost(e) {
           '<td align="center" style="background-color: transparent; padding: 0;">' +
           '<div class="vault-card" style="max-width: 340px; width: 100%; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 32px 20px; box-sizing: border-box; text-align: center; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);">' +
           '<div class="vault-brand" style="font-size: 11px; font-weight: 700; color: #71717a; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">' +
-          'RuPay Vault' +
+          'Cards &amp; Voucher Manager' +
           '</div>' +
           '<div class="vault-code" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 40px; font-weight: 700; letter-spacing: 8px; color: #0C8C46; text-indent: 8px; margin: 10px 0 14px 0;">' +
           otp +
