@@ -2766,9 +2766,32 @@
             </div>
           </div>
           <div>
-            <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Sale Date</label>
-            <input type="text" id="ms-input-date" placeholder="dd/MM/yy" class="w-full px-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] font-semibold text-neutral-300">Sale Date</label>
+              <button type="button" onclick="openNativeDatePicker()" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-0.5 active:scale-95 transition-all" title="Open Calendar">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                <span>Calendar</span>
+              </button>
+            </div>
+            <div class="relative flex items-center">
+              <button type="button" onclick="openNativeDatePicker()" class="absolute left-2.5 text-neutral-400 hover:text-emerald-400 transition-colors" title="Pick date">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+              </button>
+              <input type="text" id="ms-input-date" placeholder="dd/MM/yy" oninput="updateSaleDatePills('custom')" class="w-full pl-8 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+              <input type="date" id="ms-native-date-picker" class="sr-only" tabindex="-1" onchange="onNativeDatePicked(this.value)">
+            </div>
           </div>
+        </div>
+
+        <!-- Quick Date Preset Pills -->
+        <div class="flex items-center gap-1.5 -mt-1">
+          <span class="text-[10px] text-neutral-400 font-medium">Quick Date:</span>
+          <button type="button" id="ms-date-pill-today" onclick="setSaleDatePreset('today')" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-emerald-500/20 text-emerald-300 border-emerald-500/50 transition-all active:scale-95">Today</button>
+          <button type="button" id="ms-date-pill-yesterday" onclick="setSaleDatePreset('yesterday')" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white transition-all active:scale-95">Yesterday</button>
+          <button type="button" id="ms-date-pill-pick" onclick="openNativeDatePicker()" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white transition-all active:scale-95 flex items-center gap-1">
+            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+            <span>Custom</span>
+          </button>
         </div>
 
         <!-- Redeemed in Account -->
@@ -5418,6 +5441,58 @@
       return acc;
     }
 
+    /* --- SALE DATE PRESET & PICKER ENGINE --- */
+    function setSaleDatePreset(preset) {
+      const d = new Date();
+      if (preset === 'yesterday') {
+        d.setDate(d.getDate() - 1);
+      }
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const yr = String(d.getFullYear()).slice(-2);
+      const formatted = `${day}/${month}/${yr}`;
+      const input = document.getElementById('ms-input-date');
+      if (input) input.value = formatted;
+      updateSaleDatePills(preset);
+    }
+
+    function openNativeDatePicker() {
+      const picker = document.getElementById('ms-native-date-picker');
+      if (picker) {
+        if (typeof picker.showPicker === 'function') {
+          try { picker.showPicker(); } catch (e) { picker.click(); }
+        } else {
+          picker.click();
+        }
+      }
+    }
+
+    function onNativeDatePicked(isoVal) {
+      if (!isoVal) return;
+      const parts = isoVal.split('-');
+      if (parts.length === 3) {
+        const y = parts[0].slice(-2);
+        const m = parts[1];
+        const d = parts[2];
+        const formatted = `${d}/${m}/${y}`;
+        const input = document.getElementById('ms-input-date');
+        if (input) input.value = formatted;
+        updateSaleDatePills('custom');
+      }
+    }
+
+    function updateSaleDatePills(activePreset) {
+      const todayBtn = document.getElementById('ms-date-pill-today');
+      const yestBtn = document.getElementById('ms-date-pill-yesterday');
+      const pickBtn = document.getElementById('ms-date-pill-pick');
+      const activeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50';
+      const inactiveClass = 'bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white';
+      
+      if (todayBtn) todayBtn.className = `px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all active:scale-95 ${activePreset === 'today' ? activeClass : inactiveClass}`;
+      if (yestBtn) yestBtn.className = `px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all active:scale-95 ${activePreset === 'yesterday' ? activeClass : inactiveClass}`;
+      if (pickBtn) pickBtn.className = `px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all active:scale-95 flex items-center gap-1 ${activePreset === 'custom' ? activeClass : inactiveClass}`;
+    }
+
     function openMarkSoldSheet(id) {
       let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
       let isStaging = !!act;
@@ -5476,9 +5551,8 @@
       if (mobField) mobField.classList.toggle('hidden', isPrime);
       if (isPrime && mobInput) mobInput.value = '';
 
-      // Date: today in dd/MM/yy
-      const dateInput = document.getElementById('ms-input-date');
-      if (dateInput) dateInput.value = getTodayDDMMYY();
+      // Date: initialize to today with preset pill
+      setSaleDatePreset('today');
 
       const backdrop = document.getElementById('mark-sold-backdrop');
       const sheet = document.getElementById('mark-sold-sheet');
@@ -5675,12 +5749,12 @@
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!state.income.ledger) state.income.ledger = [];
 
-      // Insert sorted by date
+      // Insert sorted by date (for same date, append at the end of that date group)
       const newDateMs = parseIncomeDateMs(saleDate);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
-        if (newDateMs >= itemDateMs) {
+        if (newDateMs > itemDateMs) {
           state.income.ledger.splice(i, 0, optimisticIncomeEntry);
           inserted = true;
           break;
@@ -7142,7 +7216,9 @@
 
     function parseIncomeDateMs(dateStr) {
       if (!dateStr) return 0;
-      if (dateStr instanceof Date) return dateStr.getTime();
+      if (dateStr instanceof Date) {
+        return new Date(dateStr.getFullYear(), dateStr.getMonth(), dateStr.getDate()).getTime();
+      }
       const clean = String(dateStr).replace(/^'/, '').trim();
       const parts = clean.split(/[\/\-\.]/);
       if (parts.length === 3) {
@@ -7153,7 +7229,11 @@
         return new Date(y, m - 1, d).getTime();
       }
       const parsed = Date.parse(clean);
-      return isNaN(parsed) ? 0 : parsed;
+      if (!isNaN(parsed)) {
+        const dObj = new Date(parsed);
+        return new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+      }
+      return 0;
     }
 
     function setIncomeYearFilter(year) {
@@ -7575,12 +7655,12 @@
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
-      // Optimistic Date-Sorted Insertion (Newest first for UI ledger feed)
+      // Optimistic Date-Sorted Insertion (Newest first; for same date, append at end of date group)
       const newDateMs = parseIncomeDateMs(date);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
-        if (newDateMs >= itemDateMs) {
+        if (newDateMs > itemDateMs) {
           state.income.ledger.splice(i, 0, newEntry);
           inserted = true;
           break;
@@ -7730,12 +7810,12 @@
       if (!state.income) state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       if (!Array.isArray(state.income.ledger)) state.income.ledger = [];
 
-      // Optimistic Date-Sorted Insertion (Newest first for UI ledger feed)
+      // Optimistic Date-Sorted Insertion (Newest first; for same date, append at end of date group)
       const newDateMs = parseIncomeDateMs(date);
       let inserted = false;
       for (let i = 0; i < state.income.ledger.length; i++) {
         const itemDateMs = parseIncomeDateMs(state.income.ledger[i].date);
-        if (newDateMs >= itemDateMs) {
+        if (newDateMs > itemDateMs) {
           state.income.ledger.splice(i, 0, newEntry);
           inserted = true;
           break;

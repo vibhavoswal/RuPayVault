@@ -88,7 +88,11 @@ function getOrCreateRuPayChargesSheet(ss) {
 
 function parseDateToTimestamp(dateVal) {
   if (!dateVal) return 0;
-  if (dateVal instanceof Date) return dateVal.getTime();
+  if (dateVal instanceof Date) {
+    const istStr = Utilities.formatDate(dateVal, "GMT+05:30", "yyyy-MM-dd");
+    const p = istStr.split("-");
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
+  }
   const clean = String(dateVal).replace(/^'/, '').trim();
   const parts = clean.split(/[\/\-\.]/);
   if (parts.length === 3) {
@@ -99,7 +103,13 @@ function parseDateToTimestamp(dateVal) {
     return new Date(y, m - 1, d).getTime();
   }
   const parsed = Date.parse(clean);
-  return isNaN(parsed) ? 0 : parsed;
+  if (!isNaN(parsed)) {
+    const dObj = new Date(parsed);
+    const istStr = Utilities.formatDate(dObj, "GMT+05:30", "yyyy-MM-dd");
+    const p = istStr.split("-");
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
+  }
+  return 0;
 }
 
 function recalculateSheetTotal(sheet) {
@@ -133,35 +143,38 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
       break;
     }
     const rowDateRaw = vals[r][1];
-    let rowDateMs = 0;
-    if (rowDateRaw instanceof Date) {
-      rowDateMs = rowDateRaw.getTime();
-    } else if (rowDateRaw) {
-      rowDateMs = parseDateToTimestamp(String(rowDateRaw));
-    }
+    const rowDateMs = parseDateToTimestamp(rowDateRaw);
     if (rowDateMs > newDateMs) {
-      insertRowIndex = r + 1; // Insert before this later row
+      insertRowIndex = r + 1; // Insert before this strictly later row
       break;
     }
   }
 
-  // If no later row found, insert before TOTAL row if present, else append at bottom
+  // If no strictly later row found, insert before TOTAL row if present, else append at bottom
   if (insertRowIndex === -1) {
     const lastRow = sheet.getLastRow();
-    const lastCol0 = String(sheet.getRange(lastRow, 1).getValue() || '').trim().toUpperCase();
-    if (lastCol0 === 'TOTAL') {
-      insertRowIndex = lastRow;
+    if (lastRow <= 1) {
+      insertRowIndex = 2;
     } else {
-      insertRowIndex = lastRow + 1;
+      const lastCol0 = String(sheet.getRange(lastRow, 1).getValue() || '').trim().toUpperCase();
+      if (lastCol0 === 'TOTAL') {
+        insertRowIndex = lastRow;
+      } else {
+        insertRowIndex = lastRow + 1;
+      }
     }
   }
 
   if (insertRowIndex <= sheet.getLastRow()) {
     sheet.insertRowBefore(insertRowIndex);
+    const insertedRange = sheet.getRange(insertRowIndex, 1, 1, newRowData.length);
+    insertedRange.setValues([newRowData]);
+  } else {
+    sheet.appendRow(newRowData);
+    insertRowIndex = sheet.getLastRow();
   }
-  const insertedRange = sheet.getRange(insertRowIndex, 1, 1, newRowData.length);
-  insertedRange.setValues([newRowData]);
   sheet.getRange(insertRowIndex, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
+  sheet.getRange(insertRowIndex, 3).setNumberFormat("0.00");
 
   recalculateSheetTotal(sheet);
   return insertRowIndex;
