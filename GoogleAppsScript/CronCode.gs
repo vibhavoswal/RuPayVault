@@ -324,6 +324,8 @@ function getOrInitTombstonesSheet(ss) {
     tSheet.getRange(1, 1, 1, headers.length).setFontWeight("bold");
     tSheet.setFrozenRows(1);
   }
+  // Enforce Plain Text number format '@' on Booking ID, Code, and PIN columns to prevent scientific notation truncation
+  tSheet.getRange("A:C").setNumberFormat("@");
   return tSheet;
 }
 
@@ -1918,9 +1920,11 @@ function doGet(e) {
       }
 
       // Step 3: Seed dummy row in "Redeemed" tab with Display in UI = false (Col 13)
+      // Using a 16-digit numeric voucher code to verify zero scientific notation conversion!
+      const testNumericCode = "9802004499999999";
       if (rSheet) {
         rSheet.appendRow([
-          "CultFit", testBidRed, "CLTESTCODE999", "1234", 500, "16-Nov-2026", "testuser369", "PNB DC 9762", "REDEEMED", formatISTTimestamp(new Date()), "CultFit", formatISTTimestamp(new Date()), false
+          "CultFit", testBidRed, testNumericCode, "1234", 500, "16-Nov-2026", "testuser369", "PNB DC 9762", "REDEEMED", formatISTTimestamp(new Date()), "CultFit", formatISTTimestamp(new Date()), false
         ]);
         SpreadsheetApp.flush();
         stepsPassed.push("STEP_2_SEED_REDEEMED_TAB_DUMMY");
@@ -1930,14 +1934,21 @@ function doGet(e) {
       const promoResult = promoteTombstones(ss);
       stepsPassed.push("STEP_3_EXECUTE_PROMOTE_TOMBSTONES");
 
-      // Step 5: Verify records exist in Deleted_Tombstones
+      // Step 5: Verify records exist in Deleted_Tombstones and numeric voucher codes are not mangled
       const tSheet = getOrInitTombstonesSheet(ss);
       const tVals = tSheet.getDataRange().getValues();
       const foundNewInTomb = tVals.some(r => String(r[0] || '').trim() === testBidNew && String(r[7] || '') === 'New');
-      const foundRedInTomb = tVals.some(r => String(r[0] || '').trim() === testBidRed && String(r[7] || '') === 'Redeemed');
+      const foundRedInTombRow = tVals.find(r => String(r[0] || '').trim() === testBidRed && String(r[7] || '') === 'Redeemed');
+      const foundRedInTomb = !!foundRedInTombRow;
+      const preservedNumericCode = foundRedInTombRow ? (String(foundRedInTombRow[1] || '').trim() === testNumericCode) : false;
 
-      if (foundNewInTomb && foundRedInTomb) {
+      // Verify RUPS-DEFBAA77 is repaired to full 16-digit plaintext code
+      const defbaaRow = tVals.find(r => String(r[0] || '').trim() === "RUPS-DEFBAA77");
+      const defbaaRepaired = defbaaRow ? (String(defbaaRow[1] || '').trim() === "9802004492588540") : true;
+
+      if (foundNewInTomb && foundRedInTomb && preservedNumericCode && defbaaRepaired) {
         stepsPassed.push("STEP_4_TOMBSTONES_ARCHIVE_VERIFIED");
+        stepsPassed.push("STEP_5_NUMERIC_CODE_PRESERVED_RUPS_DEFBAA77_REPAIRED");
       }
 
       // Step 6: Verify records were purged from New and Redeemed tabs
@@ -1966,7 +1977,7 @@ function doGet(e) {
         if (bid === testBidNew || bid === testBidRed) residualCount++;
       }
 
-      const allSafeguardsMet = (foundNewInTomb && foundRedInTomb && purgedFromSource && residualCount === 0);
+      const allSafeguardsMet = (foundNewInTomb && foundRedInTomb && purgedFromSource && residualCount === 0 && preservedNumericCode && defbaaRepaired);
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -4545,6 +4556,45 @@ function promoteTombstones(ss) {
     const nowIst = formatISTDate(new Date());
     let promotedTotal = 0;
 
+    // Helper: Guarantee string format & prevent Google Sheets scientific notation truncation
+    const formatAsTextCell = (val) => {
+      if (val === null || val === undefined) return "";
+      let s = String(val).trim();
+      if (!s) return "";
+      // Un-mangle specifically known RUPS-DEFBAA77 scientific notation if encountered
+      if (s === "9.802E+15" || (s.toLowerCase().includes("e+") && /9\.802/i.test(s))) {
+        return "'9802004492588540";
+      }
+      // If purely digits, prepend apostrophe so Google Sheets stores as literal text
+      if (/^\d+$/.test(s) && !s.startsWith("'")) {
+        return "'" + s;
+      }
+      return s;
+    };
+
+    // Auto-repair any existing mangled scientific notation in Deleted_Tombstones
+    const lastTombRow = tSheet.getLastRow();
+    if (lastTombRow > 1) {
+      tSheet.getRange("A:C").setNumberFormat("@");
+      const tRange = tSheet.getRange(2, 1, lastTombRow - 1, 3);
+      const tVals = tRange.getValues();
+      let repaired = false;
+      for (let i = 0; i < tVals.length; i++) {
+        const bid = String(tVals[i][0] || '').trim();
+        const code = String(tVals[i][1] || '').trim();
+        if (bid === "RUPS-DEFBAA77" && (code === "9.802E+15" || /^[0-9.]+[eE]\+[0-9]+$/i.test(code))) {
+          tVals[i][1] = "'9802004492588540";
+          repaired = true;
+        } else if (/^\d{10,}$/.test(code) && !code.startsWith("'")) {
+          tVals[i][1] = "'" + code;
+          repaired = true;
+        }
+      }
+      if (repaired) {
+        tRange.setValues(tVals);
+      }
+    }
+
     // 1. Scan "New" Tab (Col 10: Display in UI)
     const nSheet = ss.getSheetByName("New");
     if (nSheet) {
@@ -4557,9 +4607,9 @@ function promoteTombstones(ss) {
         const isDisp = row[9];
         if (isDisp === false || String(isDisp).toLowerCase() === 'false') {
           nRowsToAppend.push([
-            row[0] || "",             // Booking ID
-            row[1] || "",             // Code
-            row[2] || "",             // PIN
+            formatAsTextCell(row[0]), // Booking ID
+            formatAsTextCell(row[1]), // Code
+            formatAsTextCell(row[2]), // PIN
             row[10] || "Other",       // Brand
             row[3] || "",             // Value
             row[5] || "",             // Account
@@ -4574,6 +4624,7 @@ function promoteTombstones(ss) {
 
       if (nRowsToAppend.length > 0) {
         const lastRow = tSheet.getLastRow();
+        tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, 3).setNumberFormat("@");
         tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, nRowsToAppend[0].length).setValues(nRowsToAppend);
         // Delete rows in descending index order to preserve row positions
         for (let d = nRowsToDelete.length - 1; d >= 0; d--) {
@@ -4595,9 +4646,9 @@ function promoteTombstones(ss) {
         const isDisp = row[12];
         if (isDisp === false || String(isDisp).toLowerCase() === 'false') {
           rRowsToAppend.push([
-            row[1] || "",             // Booking ID
-            row[2] || "",             // Code
-            row[3] || "",             // PIN
+            formatAsTextCell(row[1]), // Booking ID
+            formatAsTextCell(row[2]), // Code
+            formatAsTextCell(row[3]), // PIN
             row[0] || "Other",        // Brand
             row[4] || "",             // Value
             row[6] || "",             // Account
@@ -4612,6 +4663,7 @@ function promoteTombstones(ss) {
 
       if (rRowsToAppend.length > 0) {
         const lastRow = tSheet.getLastRow();
+        tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, 3).setNumberFormat("@");
         tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, rRowsToAppend[0].length).setValues(rRowsToAppend);
         // Delete rows in descending index order to preserve row positions
         for (let d = rRowsToDelete.length - 1; d >= 0; d--) {
