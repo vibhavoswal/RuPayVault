@@ -12,6 +12,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/vibhavoswal/RuPayVault/main/.build/icon.png">
+  <script>tailwind = { config: { darkMode: 'class' } };</script>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     :root {
@@ -465,12 +466,13 @@
     html.light .mobile-view #mb-select-all-btn {
       color: #0C8C46 !important;
     }
-    [data-theme="light"] #vault-otp-input,
-    html.light #vault-otp-input {
-      background-color: #ffffff !important;
-      border-color: rgba(12, 140, 70, 0.35) !important;
-      color: #141212 !important;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    @keyframes pin-shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .pin-shake {
+      animation: pin-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }
     [data-theme="light"] .mobile-view #btn-master-trigger,
     html.light .mobile-view #btn-master-trigger {
@@ -2133,96 +2135,240 @@
       font-weight: 600 !important;
     }
 
-    
+    /* Light Mode Material Design 2026 Lock Screen Parity */
+    [data-theme="light"] #vault-lock-screen,
+    html.light #vault-lock-screen {
+      background-color: #f6f8fa !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-ambient,
+    html.light #vault-lock-screen .lock-ambient {
+      background: radial-gradient(circle at 50% 15%, rgba(12, 140, 70, 0.12), transparent 70%) !important;
+      opacity: 0.8 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-card,
+    html.light #vault-lock-screen .lock-card {
+      background-color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+      box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    }
+    [data-theme="light"] #vault-lock-screen h1,
+    html.light #vault-lock-screen h1 {
+      color: #111827 !important;
+    }
+    [data-theme="light"] #vault-lock-screen #lock-subtitle,
+    html.light #vault-lock-screen #lock-subtitle {
+      color: #6b7280 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-email,
+    html.light #vault-lock-screen .lock-email {
+      color: #374151 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-action-row,
+    html.light #vault-lock-screen .lock-action-row {
+      border-color: rgba(0, 0, 0, 0.08) !important;
+      color: #6b7280 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-action-row button,
+    html.light #vault-lock-screen .lock-action-row button {
+      color: #6b7280 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-action-row button:hover,
+    html.light #vault-lock-screen .lock-action-row button:hover {
+      color: #111827 !important;
+    }
+    [data-theme="light"] #vault-lock-screen .lock-badge,
+    html.light #vault-lock-screen .lock-badge {
+      color: #9ca3af !important;
+    }
+
+    /* Google Material 3 Expressive OTP Cells */
+    .otp-cell {
+      height: 3.5rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Mono", Roboto, monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      user-select: none;
+      transition: all 150ms ease;
+    }
+    .otp-cell.otp-cell-empty {
+      background-color: #1f2127;
+      border: 1px solid rgba(64, 64, 64, 0.8);
+      color: #737373;
+    }
+    .otp-cell.otp-cell-active {
+      background-color: #252830;
+      border: 2px solid #0C8C46;
+      box-shadow: 0 0 14px rgba(12, 140, 70, 0.35);
+      color: #ffffff;
+    }
+    .otp-cell.otp-cell-filled {
+      background-color: rgba(12, 140, 70, 0.15);
+      border: 2px solid #0C8C46;
+      box-shadow: 0 0 10px rgba(12, 140, 70, 0.2);
+      color: #34d399;
+    }
+    .otp-cell.otp-cell-verifying {
+      border: 2px solid #F47A21 !important;
+      box-shadow: 0 0 14px rgba(244, 122, 33, 0.3) !important;
+      color: #F47A21 !important;
+    }
+    .otp-cell.otp-cell-success {
+      background-color: rgba(16, 185, 129, 0.2) !important;
+      border: 2px solid #10b981 !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.35) !important;
+      color: #10b981 !important;
+    }
+    .otp-cell.otp-cell-error {
+      background-color: rgba(244, 63, 94, 0.12) !important;
+      border: 2px solid #f43f5e !important;
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.3) !important;
+      color: #f43f5e !important;
+    }
+
+    /* Light Mode Parity for Cells */
+    [data-theme="light"] .otp-cell.otp-cell-empty,
+    html.light .otp-cell.otp-cell-empty {
+      background-color: #f3f4f6 !important;
+      border: 1px solid #d1d5db !important;
+      color: #111827 !important;
+    }
+    [data-theme="light"] .otp-cell.otp-cell-active,
+    html.light .otp-cell.otp-cell-active {
+      background-color: #ffffff !important;
+      border: 2px solid #0C8C46 !important;
+      box-shadow: 0 0 14px rgba(12, 140, 70, 0.25) !important;
+      color: #111827 !important;
+    }
+    [data-theme="light"] .otp-cell.otp-cell-filled,
+    html.light .otp-cell.otp-cell-filled {
+      background-color: rgba(12, 140, 70, 0.08) !important;
+      border: 2px solid #0C8C46 !important;
+      box-shadow: 0 0 10px rgba(12, 140, 70, 0.15) !important;
+      color: #0C8C46 !important;
+    }
+
   </style>
 </head>
 <body class="flex flex-col h-full w-full select-none">
 
   <!-- ======================================================== -->
-  <!-- 0. EMAIL OTP AUTH LOCK SCREEN (24h TTL Session - vibhavoswal3@gmail.com) -->
+  <!-- 0. EMAIL OTP AUTH LOCK SCREEN (Google Material Design 2026) -->
   <!-- ======================================================== -->
-  <div id="vault-lock-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-between p-6 bg-gradient-to-b from-[#0f0f14] via-[#09090c] to-[#040406] text-white select-none">
-    
-    <!-- Top Area: Status & Shield Icon -->
-    <div class="w-full pt-8 flex flex-col items-center text-center space-y-3">
-      <div class="relative">
-        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0C8C46]/25 to-[#0C8C46]/10 border border-[#0C8C46]/35 flex items-center justify-center shadow-[0_0_35px_rgba(12,140,70,0.2)]">
-          <svg class="w-10 h-10 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="3" ry="3"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  <div id="vault-lock-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#f8f9fc] dark:bg-[#0e0f12] select-none transition-colors duration-200 overflow-y-auto">
+    <!-- Atmospheric Ambient Mesh Gradient Background -->
+    <div class="lock-ambient absolute inset-0 pointer-events-none opacity-40 dark:opacity-60 bg-[radial-gradient(circle_at_50%_15%,rgba(12,140,70,0.18),transparent_65%)]"></div>
+
+    <!-- Material 3 Surface Card Container -->
+    <div class="lock-card relative w-full max-w-[400px] my-auto bg-white dark:bg-[#16181d] rounded-[32px] border border-black/[0.06] dark:border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-[0_24px_64px_rgba(0,0,0,0.6)] p-6 sm:p-8 flex flex-col items-center text-center backdrop-blur-xl transition-all">
+      
+      <!-- Material 3 Squircle Hero Emblem -->
+      <div class="lock-emblem w-16 h-16 rounded-[22px] bg-[#0C8C46]/10 dark:bg-[#0C8C46]/15 border border-[#0C8C46]/20 dark:border-[#0C8C46]/30 flex items-center justify-center text-[#0C8C46] shadow-inner mb-4 transition-transform active:scale-95">
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+        </svg>
+      </div>
+
+      <!-- Header Typography -->
+      <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">
+        RuPay Select Vault
+      </h1>
+      <p id="lock-subtitle" class="text-xs text-neutral-500 dark:text-neutral-400 font-medium mb-3 leading-relaxed">
+        Access restricted to <span class="lock-email text-neutral-700 dark:text-neutral-300 font-semibold">vibhavoswal3@gmail.com</span>
+      </p>
+
+      <!-- Re-authentication Cancel Action (if mid-operation) -->
+      <button id="btn-cancel-reauth" onclick="cancelPendingReauth()" class="hidden text-xs text-rose-500 hover:text-rose-400 underline mb-2">
+        Cancel action &amp; return
+      </button>
+
+      <!-- Resend Code / Request OTP Tonal Pill -->
+      <div class="mb-5">
+        <button id="btn-request-otp" onclick="requestOtp()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0C8C46]/10 hover:bg-[#0C8C46]/20 active:bg-[#0C8C46]/25 text-[#0C8C46] dark:text-emerald-400 border border-[#0C8C46]/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg id="btn-request-otp-icon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
           </svg>
-        </div>
-        <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-        </div>
-      </div>
-
-      <div>
-        <h1 class="text-xl font-bold tracking-tight text-neutral-100">RuPay Select Vault</h1>
-        <p id="lock-subtitle" class="text-xs text-neutral-400 mt-1 font-medium">Access restricted to vibhavoswal3@gmail.com</p>
-      </div>
-
-      <!-- Request OTP Button / Resend countdown -->
-      <div class="pt-1">
-        <button id="btn-request-otp" onclick="requestOtp()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#0C8C46] hover:bg-[#0A753A] text-white transition-all shadow-lg active:scale-95 flex items-center gap-2">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
           <span id="btn-request-otp-text">Send Verification Code</span>
         </button>
       </div>
 
-      <button id="btn-cancel-reauth" onclick="cancelPendingReauth()" class="hidden text-xs text-rose-400 hover:text-rose-300 underline pt-1">Cancel action &amp; revert</button>
+      <!-- Google Material 6-Digit Pin Cells -->
+      <div id="otp-input-container" class="w-full relative mb-4">
+        <!-- Hidden Transparent Native AutoFill Input positioned seamlessly over cells -->
+        <input 
+          id="vault-otp-input"
+          type="text" 
+          inputmode="numeric" 
+          pattern="[0-9]*" 
+          maxlength="6" 
+          autocomplete="one-time-code" 
+          oninput="handleOtpInput(this)"
+          onkeydown="handleOtpKeydown(event, this)"
+          onpaste="handleOtpPaste(event)"
+          onfocus="updateOtpCellsDisplay()"
+          onblur="updateOtpCellsDisplay()"
+          class="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
+          autofocus
+          aria-label="6-digit verification code"
+        />
 
-      <!-- Native 6-Digit AutoFill OTP Input Card -->
-      <div id="otp-input-container" class="w-full max-w-[300px] pt-4 pb-2 space-y-3">
-        <div class="relative flex items-center justify-center">
-          <input 
-            id="vault-otp-input"
-            type="text" 
-            inputmode="numeric" 
-            pattern="[0-9]*" 
-            maxlength="6" 
-            autocomplete="one-time-code" 
-            placeholder="······"
-            oninput="handleOtpInput(this)"
-            onkeydown="handleOtpKeydown(event, this)"
-            onpaste="handleOtpPaste(event)"
-            class="w-full py-3.5 px-4 rounded-2xl bg-black/90 border-2 border-neutral-800 focus:border-[#0C8C46] focus:ring-4 focus:ring-[#0C8C46]/20 text-center font-mono-apple text-3xl font-black tracking-[10px] text-white placeholder-neutral-700 outline-none transition-all shadow-[0_4px_25px_rgba(0,0,0,0.8)]"
-            autofocus
-          />
+        <!-- 6 Discrete Material 3 Digit Visual Cells -->
+        <div class="grid grid-cols-6 gap-2 sm:gap-2.5 w-full pointer-events-none" id="otp-cells-grid">
+          <div id="otp-cell-0" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
+          <div id="otp-cell-1" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
+          <div id="otp-cell-2" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
+          <div id="otp-cell-3" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
+          <div id="otp-cell-4" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
+          <div id="otp-cell-5" class="otp-cell h-13 sm:h-14 rounded-2xl bg-neutral-100/80 dark:bg-[#1f2127] border border-neutral-300 dark:border-neutral-700/80 flex items-center justify-center font-mono-apple text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white transition-all duration-150"></div>
         </div>
+      </div>
 
-        <!-- Primary Action / Login Button -->
-        <button 
-          id="btn-verify-otp"
-          type="button" 
-          onclick="verifyEnteredPin()"
-          class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#0C8C46] to-[#0A753A] hover:brightness-110 active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-lg shadow-[#0C8C46]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span id="btn-verify-otp-text">Log In to Vault</span>
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      <!-- Feedback / Status Line -->
+      <div class="h-6 flex items-center justify-center w-full mb-3">
+        <p id="pin-feedback" class="text-xs font-medium text-[#F47A21] dark:text-[#F47A21] transition-all text-center leading-tight"></p>
+      </div>
+
+      <!-- Material 3 Primary Action Pill -->
+      <button 
+        id="btn-verify-otp"
+        type="button" 
+        onclick="verifyEnteredPin()"
+        class="w-full h-12 rounded-full bg-[#0C8C46] hover:bg-[#0A753A] active:scale-[0.98] text-white font-semibold text-sm tracking-wide shadow-md shadow-[#0C8C46]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mb-4 select-none"
+      >
+        <span id="btn-verify-otp-text">Log In to Vault</span>
+        <svg id="btn-verify-otp-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </button>
+
+      <!-- Minimal Quick Action Helper Chips -->
+      <div class="lock-action-row flex items-center justify-between w-full text-xs text-neutral-500 dark:text-neutral-400 px-1 pt-1 border-t border-neutral-200/60 dark:border-neutral-800/60">
+        <button type="button" onclick="pasteClipboardOtp()" class="hover:text-[#0C8C46] dark:hover:text-emerald-400 active:scale-95 transition-all flex items-center gap-1.5 font-medium py-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/>
+          </svg>
+          <span>Paste Code</span>
         </button>
-
-        <!-- Status & Auto-Submit Indicator -->
-        <p id="pin-feedback" class="text-[11px] text-[#F47A21] font-mono-apple text-center min-h-[16px] leading-tight"></p>
-        
-        <!-- Quick Action Helper Bar: Paste & Clear -->
-        <div class="flex items-center justify-between text-xs px-1 text-neutral-400">
-          <button type="button" onclick="pasteClipboardOtp()" class="hover:text-emerald-400 active:scale-95 transition-all flex items-center gap-1.5 font-medium">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>
-            <span>Paste Code</span>
-          </button>
-          <button type="button" onclick="clearOtpInput()" class="hover:text-rose-400 active:scale-95 transition-all text-neutral-500 font-medium">
-            Clear
-          </button>
-        </div>
+        <button type="button" onclick="clearOtpInput()" class="hover:text-rose-500 dark:hover:text-rose-400 active:scale-95 transition-all font-medium py-1 flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/>
+          </svg>
+          <span>Clear</span>
+        </button>
       </div>
 
-      <div class="pt-2 text-center max-w-[280px]">
-        <p class="text-[10px] text-neutral-500 leading-relaxed flex items-center justify-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
-          <span>AutoFill supported from email &middot; 24-Hour Authenticated Session</span>
-        </p>
+      <!-- Security Micro-Badge -->
+      <div class="lock-badge mt-4 flex items-center justify-center gap-1.5 text-[11px] text-neutral-400 dark:text-neutral-500">
+        <svg class="w-3 h-3 text-[#0C8C46] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+        </svg>
+        <span>24h Verified Session &middot; Zero Stored Passwords</span>
       </div>
+
     </div>
   </div>
 
@@ -3847,13 +3993,58 @@
       }, 1000);
     }
 
-    /* --- NATIVE AUTOFILL OTP INPUT & VERIFICATION (APPROACH 1) --- */
+    /* --- LOCK SCREEN DISPLAY CONTROLLER --- */
+    function showLockScreen() {
+      const lockEl = document.getElementById('vault-lock-screen');
+      if (lockEl) {
+        lockEl.classList.remove('hidden');
+        lockEl.style.display = 'flex';
+      }
+      setTimeout(() => {
+        const input = document.getElementById('vault-otp-input');
+        if (input) input.focus();
+        updateOtpCellsDisplay();
+      }, 50);
+    }
+
+    function hideLockScreen() {
+      const lockEl = document.getElementById('vault-lock-screen');
+      if (lockEl) {
+        lockEl.classList.add('hidden');
+        lockEl.style.display = 'none';
+      }
+    }
+
+    /* --- MATERIAL 3 6-DIGIT OTP PIN CELLS CONTROLLER --- */
+    function updateOtpCellsDisplay() {
+      const input = document.getElementById('vault-otp-input');
+      if (!input) return;
+      const digits = (input.value || '').replace(/\D/g, '').slice(0, 6);
+      const isFocused = document.activeElement === input;
+
+      for (let i = 0; i < 6; i++) {
+        const cell = document.getElementById(`otp-cell-${i}`);
+        if (!cell) continue;
+
+        if (i < digits.length) {
+          cell.className = 'otp-cell otp-cell-filled';
+          cell.textContent = digits[i];
+        } else if (i === digits.length && isFocused) {
+          cell.className = 'otp-cell otp-cell-active';
+          cell.innerHTML = '<span class="inline-block w-0.5 h-6 bg-[#0C8C46] dark:bg-emerald-400 animate-pulse rounded-full"></span>';
+        } else {
+          cell.className = 'otp-cell otp-cell-empty';
+          cell.textContent = '';
+        }
+      }
+    }
+
     function handleOtpPaste(e) {
       const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
       const digits = text.replace(/\D/g, '').slice(0, 6);
       if (digits) {
         e.preventDefault();
-        const input = e.target || document.getElementById('vault-otp-input');
+        const input = document.getElementById('vault-otp-input');
         if (input) {
           input.value = digits;
           handleOtpInput(input);
@@ -3864,12 +4055,12 @@
     // Global paste listener when lock screen is displayed
     document.addEventListener('paste', (e) => {
       const lockScreen = document.getElementById('vault-lock-screen');
-      if (lockScreen && !lockScreen.classList.contains('hidden')) {
+      if (lockScreen && !lockScreen.classList.contains('hidden') && lockScreen.style.display !== 'none') {
         const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
         const digits = text.replace(/\D/g, '').slice(0, 6);
         if (digits && digits.length === 6) {
           const input = document.getElementById('vault-otp-input');
-          if (input && document.activeElement !== input) {
+          if (input) {
             e.preventDefault();
             input.value = digits;
             handleOtpInput(input);
@@ -3880,9 +4071,9 @@
 
     function handleOtpInput(input) {
       if (!input) return;
-      // Strip any non-numeric characters and cap at 6 digits
       input.value = input.value.replace(/\D/g, '').slice(0, 6);
       securityState.enteredPin = input.value;
+      updateOtpCellsDisplay();
 
       const feedback = document.getElementById('pin-feedback');
       if (feedback && !feedback.dataset.loading) feedback.textContent = '';
@@ -3892,7 +4083,6 @@
         verifyBtnText.textContent = input.value.length === 6 ? 'Unlock Vault' : 'Log In to Vault';
       }
 
-      // Auto-submit immediately when all 6 digits are populated (via iOS/Android AutoFill, paste, or typing)
       if (input.value.length === 6) {
         verifyEnteredPin();
       }
@@ -3910,16 +4100,16 @@
       if (input) {
         input.value = '';
         input.disabled = false;
-        input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20', 'border-rose-500', 'ring-rose-500/20', 'border-[#0C8C46]', 'ring-[#0C8C46]/30');
-        input.classList.add('border-neutral-800');
         input.focus();
       }
+      securityState.enteredPin = '';
+      updateOtpCellsDisplay();
+
       const verifyBtn = document.getElementById('btn-verify-otp');
       const verifyBtnText = document.getElementById('btn-verify-otp-text');
       if (verifyBtn) verifyBtn.disabled = false;
       if (verifyBtnText) verifyBtnText.textContent = 'Log In to Vault';
 
-      securityState.enteredPin = '';
       const feedback = document.getElementById('pin-feedback');
       if (feedback && !feedback.dataset.loading) feedback.textContent = '';
     }
@@ -3933,14 +4123,13 @@
       try {
         const text = await navigator.clipboard.readText();
         const digits = (text || '').replace(/\D/g, '').slice(0, 6);
+        const input = document.getElementById('vault-otp-input');
         if (digits.length === 6) {
-          const input = document.getElementById('vault-otp-input');
           if (input) {
             input.value = digits;
             handleOtpInput(input);
           }
         } else if (digits.length > 0) {
-          const input = document.getElementById('vault-otp-input');
           if (input) {
             input.value = digits;
             handleOtpInput(input);
@@ -3977,10 +4166,14 @@
       if (verifyBtn) verifyBtn.disabled = true;
       if (verifyBtnText) verifyBtnText.textContent = 'Verifying...';
 
-      if (input) {
-        input.disabled = true;
-        input.classList.remove('border-neutral-800', 'border-rose-500', 'border-[#0C8C46]');
-        input.classList.add('border-[#F47A21]', 'ring-4', 'ring-[#F47A21]/20');
+      if (input) input.disabled = true;
+
+      // Pulse cells with verifying state
+      for (let i = 0; i < 6; i++) {
+        const cell = document.getElementById(`otp-cell-${i}`);
+        if (cell) {
+          cell.className = 'otp-cell otp-cell-verifying';
+        }
       }
 
       const { signal, cleanup } = createTimeoutSignal(25000);
@@ -4000,10 +4193,14 @@
           localStorage.setItem('rupay_session_token', String(data.token));
           localStorage.setItem('rupay_session_expiry', String(data.expiry));
 
-          if (input) {
-            input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20');
-            input.classList.add('border-[#0C8C46]', 'ring-4', 'ring-[#0C8C46]/30');
+          // Success cells state (emerald glow)
+          for (let i = 0; i < 6; i++) {
+            const cell = document.getElementById(`otp-cell-${i}`);
+            if (cell) {
+              cell.className = 'otp-cell otp-cell-success';
+            }
           }
+
           if (verifyBtnText) verifyBtnText.textContent = 'Verified! Unlocking...';
           if (feedback) {
             delete feedback.dataset.loading;
@@ -4041,12 +4238,10 @@
               }
             } catch (unlockErr) {
               console.error('Critical unlock error:', unlockErr);
-              // Guaranteed fallback: hide lock screen and render
-              const lockEl = document.getElementById('vault-lock-screen');
-              if (lockEl) lockEl.classList.add('hidden');
+              hideLockScreen();
               renderAll();
             }
-          }, 150);
+          }, 200);
         } else {
           handlePinFailure(data?.error || 'Invalid or expired verification code.');
         }
@@ -4063,14 +4258,18 @@
       const verifyBtn = document.getElementById('btn-verify-otp');
       const verifyBtnText = document.getElementById('btn-verify-otp-text');
 
-      if (container) container.classList.add('pin-shake');
-      if (input) {
-        input.disabled = false;
-        input.classList.remove('border-[#F47A21]', 'ring-[#F47A21]/20', 'border-[#0C8C46]');
-        input.classList.add('border-rose-500', 'ring-4', 'ring-rose-500/20');
+      if (container) {
+        container.classList.add('pin-shake');
+        setTimeout(() => container.classList.remove('pin-shake'), 400);
       }
-      if (verifyBtn) verifyBtn.disabled = false;
-      if (verifyBtnText) verifyBtnText.textContent = 'Log In to Vault';
+
+      // Highlight all cells in rose red
+      for (let i = 0; i < 6; i++) {
+        const cell = document.getElementById(`otp-cell-${i}`);
+        if (cell) {
+          cell.className = 'otp-cell otp-cell-error';
+        }
+      }
 
       const feedback = document.getElementById('pin-feedback');
       if (feedback) {
@@ -4079,14 +4278,15 @@
       }
 
       setTimeout(() => {
-        if (container) container.classList.remove('pin-shake');
         if (input) {
+          input.disabled = false;
           input.value = '';
-          input.classList.remove('border-rose-500', 'ring-4', 'ring-rose-500/20');
-          input.classList.add('border-neutral-800');
+          securityState.enteredPin = '';
           input.focus();
+          updateOtpCellsDisplay();
         }
-        securityState.enteredPin = '';
+        if (verifyBtn) verifyBtn.disabled = false;
+        if (verifyBtnText) verifyBtnText.textContent = 'Log In to Vault';
       }, 700);
     }
 
@@ -4094,8 +4294,7 @@
     function promptReauth(action, payload, options, resolve, reject) {
       securityState.pendingMutation = { action, payload, options, resolve, reject };
 
-      const lockEl = document.getElementById('vault-lock-screen');
-      if (lockEl) lockEl.classList.remove('hidden');
+      showLockScreen();
 
       const subtitle = document.getElementById('lock-subtitle');
       if (subtitle) subtitle.textContent = 'Session expired. Enter OTP to complete action.';
@@ -4542,8 +4741,7 @@
       clearOtpInput();
 
       // Immediately hide lock screen so UI transitions without delay
-      const lockEl = document.getElementById('vault-lock-screen');
-      if (lockEl) lockEl.classList.add('hidden');
+      hideLockScreen();
 
       document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
       const subtitle = document.getElementById('lock-subtitle');
@@ -4640,11 +4838,7 @@
       state.selectedIds.clear();
       securityState.cryptoKey = null;
 
-      const lockEl = document.getElementById('vault-lock-screen');
-      if (lockEl) {
-        lockEl.classList.remove('hidden');
-        lockEl.style.display = 'flex';
-      }
+      showLockScreen();
 
       renderAll();
     }
@@ -13666,8 +13860,7 @@
 
       if (isSessionValid() || isDevUnlock) {
         if (isDevUnlock) {
-          const lockEl = document.getElementById('vault-lock-screen');
-          if (lockEl) { lockEl.classList.add('hidden'); lockEl.style.display = 'none'; }
+          hideLockScreen();
         }
         await unlockVaultDirect(getSessionToken() || 'dev_token');
       } else {

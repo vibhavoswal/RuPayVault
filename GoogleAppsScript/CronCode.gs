@@ -2789,33 +2789,43 @@ function doPost(e) {
 
     // 0A. Request Email OTP (strictly to vibhavoswal3@gmail.com)
     if (data.action === "REQUEST_OTP") {
-      const cache = CacheService.getScriptCache();
+      const props = PropertiesService.getScriptProperties();
+      const now = Date.now();
       
       // 1. Rate Limit Cooldown: 60s
-      if (cache.get("OTP_COOLDOWN")) {
+      const lastSent = Number(props.getProperty("VAULT_OTP_LAST_SENT") || 0);
+      if (lastSent && (now - lastSent < 60000)) {
+        const waitSec = Math.ceil((60000 - (now - lastSent)) / 1000);
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Rate limit: Please wait 60 seconds before requesting another code."
+          error: "Rate limit: Please wait " + waitSec + " seconds before requesting another code."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // 2. Rate Limit Hourly: max 5 per hour
-      const hourlyCountStr = cache.get("OTP_HOURLY_COUNT");
-      const hourlyCount = hourlyCountStr ? parseInt(hourlyCountStr, 10) : 0;
-      if (hourlyCount >= 5) {
+      // 2. Rate Limit Hourly: max 10 per hour
+      const hourlyWindow = Number(props.getProperty("VAULT_OTP_HOURLY_WINDOW") || 0);
+      let hourlyCount = Number(props.getProperty("VAULT_OTP_HOURLY_COUNT") || 0);
+      if (!hourlyWindow || now - hourlyWindow > 3600000) {
+        hourlyCount = 0;
+        props.setProperty("VAULT_OTP_HOURLY_WINDOW", String(now));
+      }
+      if (hourlyCount >= 10) {
         return ContentService.createTextOutput(JSON.stringify({
-          error: "Rate limit: Maximum 5 verification codes per hour reached. Please try again later."
+          error: "Rate limit: Maximum 10 verification codes per hour reached. Please try again later."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
       // 3. Generate 6-digit OTP
       const otp = String(Math.floor(100000 + Math.random() * 900000));
       
-      // 4. Store in CacheService: 10 min TTL (600 seconds)
-      cache.put("VAULT_ACTIVE_OTP", otp, 600);
-      cache.put("OTP_COOLDOWN", "true", 60); // 60s lock
-      cache.put("OTP_HOURLY_COUNT", String(hourlyCount + 1), 3600); // 1 hr window
+      // 4. Store in PropertiesService: 10 min TTL (guaranteed across all Google worker nodes)
+      props.setProperties({
+        "VAULT_ACTIVE_OTP": otp,
+        "VAULT_OTP_EXPIRES_AT": String(now + 10 * 60 * 1000), // 10 minutes
+        "VAULT_OTP_LAST_SENT": String(now),
+        "VAULT_OTP_HOURLY_COUNT": String(hourlyCount + 1)
+      });
 
-      // 5. Send Email via GmailApp (Clean subject line with zero corrupted emojis & responsive HTML card)
+      // 5. Send Email via GmailApp (Clean subject line with zero emojis & responsive HTML card)
       try {
         const subject = "[RuPayVault] Login Code: " + otp + " (Valid for 10 mins)";
         const plainBody = "Hello Vibhav,\n\n" +
@@ -2841,7 +2851,7 @@ function doPost(e) {
           '</div>' +
           '<div style="background: rgba(244, 122, 33, 0.08); border: 1px solid rgba(244, 122, 33, 0.25); border-radius: 12px; padding: 12px 14px; text-align: left; margin-bottom: 24px;">' +
           '<div style="color: #F47A21; font-size: 11px; font-weight: 700; margin-bottom: 2px;">' +
-          '⏱ Valid for 10 minutes &middot; Single use' +
+          'Valid for 10 minutes &middot; Single use' +
           '</div>' +
           '<div style="color: #9CA3AF; font-size: 11px; line-height: 1.4;">' +
           'If you did not initiate this login request, please verify your account credentials immediately.' +
@@ -2879,18 +2889,21 @@ function doPost(e) {
 
     // 0B. Verify OTP and issue 24-hour Session Token
     if (data.action === "VERIFY_OTP") {
-      const cache = CacheService.getScriptCache();
-      const storedOtp = cache.get("VAULT_ACTIVE_OTP");
+      const props = PropertiesService.getScriptProperties();
+      const storedOtp = props.getProperty("VAULT_ACTIVE_OTP");
+      const expiresAt = Number(props.getProperty("VAULT_OTP_EXPIRES_AT") || 0);
+      const now = Date.now();
       const enteredOtp = String(data.otp || "").trim();
 
-      if (!storedOtp || !enteredOtp || storedOtp !== enteredOtp) {
+      if (!storedOtp || !expiresAt || now > expiresAt || storedOtp !== enteredOtp) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Invalid or expired verification code."
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
       // Burn OTP on successful use
-      cache.remove("VAULT_ACTIVE_OTP");
+      props.deleteProperty("VAULT_ACTIVE_OTP");
+      props.deleteProperty("VAULT_OTP_EXPIRES_AT");
 
       // Generate 24-hour session token
       const session = generateSessionToken(AUTHORIZED_USER);
