@@ -5283,7 +5283,6 @@
       const isPending = isVoucherPending(act);
       const hasArrived = isVoucherArrived(act);
       const timeStr = act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
-      const relTime = formatRelativeTime(timeStr);
 
       const catEl = document.getElementById('vdetail-category');
       if (catEl) {
@@ -5594,68 +5593,6 @@
       return segments.join(' | ');
     }
 
-    function parseIncomeSale(comments) {
-      if (!comments) return null;
-      const s = String(comments).trim();
-      const parts = s.split(/\s*\|\s*/);
-      
-      let soldTo = '';
-      let mobile = '';
-      let account = '';
-      let gpay = '';
-      let card = '';
-
-      parts.forEach(part => {
-        part = part.trim();
-        if (!part) return;
-
-        const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
-        if (gpayMatch) {
-          gpay = gpayMatch[1].trim();
-          return;
-        }
-
-        const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
-        if (accMatch) {
-          account = accMatch[1].trim();
-          return;
-        }
-
-        const mobMatch = part.match(/^Mobile:\s*(\d{10})$/i);
-        if (mobMatch) {
-          mobile = mobMatch[1].trim();
-          return;
-        }
-
-        const comboMatch = part.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)$/i);
-        if (comboMatch) {
-          soldTo = comboMatch[1].trim().replace(/^[gG]\//, '');
-          if (comboMatch[2]) mobile = comboMatch[2].trim();
-          account = comboMatch[3].trim();
-          return;
-        }
-
-        const buyerMobMatch = part.match(/^([^(:|]+?)\s*\((\d{10})\)$/i);
-        if (buyerMobMatch) {
-          soldTo = buyerMobMatch[1].trim().replace(/^[gG]\//, '');
-          mobile = buyerMobMatch[2].trim();
-          return;
-        }
-
-        const isCard = /(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay|\b\d{4}\b)/i.test(part);
-        if (isCard) {
-          card = part;
-          return;
-        }
-
-        if (!soldTo) {
-          soldTo = part.replace(/^[gG]\//, '').trim();
-        }
-      });
-
-      return { soldTo, mobile, account, gpay, card };
-    }
-
     function getPrefillAccountForVoucher(act) {
       if (!act) return '';
       let acc = (act.account && act.account !== '-' && act.account !== 'Unassigned') ? String(act.account).replace(/^@/, '').trim() : '';
@@ -5847,14 +5784,6 @@
       }
     }
 
-    function getTodayDDMMYY() {
-      const d = new Date();
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = String(d.getFullYear()).slice(-2);
-      return `${day}/${month}/${year}`;
-    }
-
     async function executeMarkAsSold() {
       if (!activeMarkSoldVoucher) {
         showToast('No active voucher selected');
@@ -5912,18 +5841,6 @@
 
       // Unified single comment separated by | for any combination of fields
       const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
-
-      // Persist latest sale preferences for this brand and card for instant future pre-filling
-      try {
-        const salePref = {
-          soldTo,
-          mobile: isPrime ? '' : mobile,
-          redeemedAccount,
-          price: rawPrice,
-          gpayName,
-          isSameGpay: isSameGpayActive
-        };
-      } catch (e) {}
 
       // Close sheet immediately
       closeMarkSoldSheet();
@@ -7355,8 +7272,6 @@
         renderDeckSelector();
         renderVault();
       }
-
-      updateDrawerSwitcherUI();
     }
 
     /* --- EXECUTIVE DROPDOWN & WORKSPACE SWITCHER ENGINE --- */
@@ -8227,21 +8142,6 @@
       }
     }
 
-    function filterExecutiveDropdownBrands(query) {
-      const q = String(query || '').toLowerCase();
-      const list = document.getElementById('executive-brands-list');
-      if (!list) return;
-      list.querySelectorAll('div[onclick]').forEach(el => {
-        const text = el.textContent.toLowerCase();
-        el.style.display = text.includes(q) ? 'flex' : 'none';
-      });
-    }
-
-    function updateCardCapsuleTitle(title) {
-      const el = document.getElementById('cm-capsule-brand-title');
-      if (el) el.textContent = title;
-    }
-
     function updateHubStats() {
       const cardCountBadge = document.getElementById('hub-cards-badge');
       const voucherCountBadge = document.getElementById('hub-vouchers-badge');
@@ -8251,32 +8151,6 @@
       }
       if (voucherCountBadge && state.vouchers) {
         voucherCountBadge.textContent = String(state.vouchers.length);
-      }
-    }
-
-    function updateDrawerSwitcherUI() {
-      const switchSvg = document.getElementById('drawer-switch-svg');
-      const switchIconBox = document.getElementById('drawer-switch-icon-box');
-      const switchTitle = document.getElementById('drawer-switch-title');
-      if (!switchTitle) return;
-
-      if (state.activeWorkspace === 'cards') {
-        if (switchIconBox) switchIconBox.className = "w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center";
-        if (switchSvg) switchSvg.innerHTML = `<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line>`;
-        switchTitle.textContent = 'Switch to Voucher Manager';
-      } else {
-        if (switchIconBox) switchIconBox.className = "w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center";
-        if (switchSvg) switchSvg.innerHTML = `<rect x="2" y="5" width="20" height="14" rx="2.5"></rect><line x1="2" y1="10" x2="22" y2="10"></line>`;
-        switchTitle.textContent = 'Switch to Card Manager';
-      }
-    }
-
-    function toggleWorkspaceFromDrawer() {
-      closeNavDrawer();
-      if (state.activeWorkspace === 'cards') {
-        switchWorkspace('vouchers');
-      } else {
-        switchWorkspace('cards');
       }
     }
 
@@ -8335,10 +8209,6 @@
       try {
         localStorage.setItem('rupay_theme', state.isDark ? 'dark' : 'light');
       } catch(e) {}
-    }
-
-    function toggleTheme() {
-      setThemeMode(!state.isDark);
     }
 
     /* --- FRONTEND DESIGN SYSTEM SWITCHER --- */
@@ -8425,7 +8295,6 @@
         const total = (state.vouchers ? state.vouchers.length : 0);
         sheetCount.textContent = `${total} vouchers synced`;
       }
-      updateDrawerSwitcherUI();
       updateDrawerCardCount();
       updateDesignModeDrawerUI();
 
@@ -8501,7 +8370,6 @@
     let syncStartTime = 0;
     let queuedManualSync = false;
     let activeSyncController = null;
-    let lastManualEmailSyncMs = 0;
 
     /* --- FAST-PATH INGESTED LIVE REFRESH (~400MS) --- */
     async function syncIngestedFast() {
@@ -10165,14 +10033,6 @@
       }).join('');
     }
 
-    /* --- SYNC SEARCH AND BRAND FILTER --- */
-    function syncSearchAndRender(val) {
-      state.searchQuery = val;
-      const dtInput = document.getElementById('dt-search-input');
-      if (dtInput && dtInput.value !== val) dtInput.value = val;
-      renderVault();
-    }
-
     function filterVaultBrand(brand, options = {}) {
       if (state.isSelectMode) {
         state.selectedIds.clear();
@@ -10468,27 +10328,6 @@
       renderBenefitRulesModal();
     }
 
-    function renderBadge(val) {
-      if (!val) return `<span style="color: var(--label-tertiary);">—</span>`;
-      return `<span class="px-2 py-0.5 rounded text-[10px] font-semibold text-emerald-400" style="background: var(--fill-quaternary);">${val}</span>`;
-    }
-
-    function renderMobileMatrixCard(cardKey) {
-      const mbMatrix = document.getElementById('mb-matrix-card-content');
-      if (mbMatrix) {
-        mbMatrix.innerHTML = MATRIX_RULES.map(r => {
-          const v = r[cardKey];
-          if (!v) return '';
-          return `
-            <div class="rounded-xl p-3 flex items-center justify-between text-xs" style="background: var(--bg-grouped-secondary); border: 0.5px solid var(--separator);">
-              <span>${r.name}</span>
-              ${renderBadge(v)}
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
     /* --- CARD PORTFOLIO MANAGER & REPLACEMENT STUDIO (STYLE A: OBSIDIAN GLASS) --- */
     const BIN_MAP = {
       "652859": { bank: "PNB", type: "Credit", name: "PNB RSCC", theme: "pnb-glass" },
@@ -10508,14 +10347,6 @@
     const cardPeekStates = new Set();
     const cardInfoStates = new Set();
     let isCardManagerOpen = false;
-
-    function openCardManagerModal() {
-      switchWorkspace('cards');
-    }
-
-    function closeCardManagerModal() {
-      switchWorkspace('vouchers');
-    }
 
     function setCardCategoryFilter(category) {
       currentCardCategoryFilter = category;
@@ -13265,22 +13096,6 @@
         const isCustEditing = (bankInlineEditing.cardId === acc.id && bankInlineEditing.field === 'custId');
         const isUpiEditing = (bankInlineEditing.cardId === acc.id && bankInlineEditing.field === 'upi');
         const displayNumber = isCurrentlyUnmasked ? acc.accNumber : acc.maskedNumber;
-        const holderClass = acc.memberId === 'sanjay' ? 'holder-sanjay' :
-                            acc.memberId === 'aruna' ? 'holder-aruna' :
-                            acc.memberId === 'smiti' ? 'holder-smiti' :
-                            acc.memberId === 'shakuntala' ? 'holder-shakuntala' : 'holder-vibhav';
-
-        const hasExtraInfo = Boolean(
-          acc.branch || 
-          acc.alias || 
-          acc.signOnPass || 
-          acc.password || 
-          acc.txnPass || 
-          acc.txnPin || 
-          acc.loginPin || 
-          acc.tpin || 
-          acc.crn
-        );
 
         html += `
           <div class="bank-card ${acc.gradient}">
@@ -13497,38 +13312,6 @@
       });
 
       container.innerHTML = html;
-    }
-
-    // Google Sheets Bank Accounts Sync
-    function syncBankAccountsWithGoogleSheets() {
-      const spinner = document.getElementById('ba-sync-spinner');
-      if (spinner) spinner.classList.add('animate-spin');
-
-      fetch(`${API_ENDPOINT}?action=GET_BANK_ACCOUNTS&token=${getSessionToken()}`)
-        .then(res => res.json())
-        .then(async data => {
-          if (data && data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
-            state.bankAccounts = data.accounts;
-            await saveEncryptedBankAccounts(data.accounts);
-          }
-          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const baSync = document.getElementById('ba-sync-time');
-          if (baSync) baSync.textContent = now;
-          localStorage.setItem('rupay_sync_time', now);
-          renderBankManager();
-          showToast('Bank accounts synced with Google Sheets');
-        })
-        .catch(err => {
-          console.warn('Bank accounts live sync fallback to local master:', err);
-          const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const baSync = document.getElementById('ba-sync-time');
-          if (baSync) baSync.textContent = now;
-          renderBankManager();
-          showToast('Bank accounts loaded from secure cache');
-        })
-        .finally(() => {
-          if (spinner) spinner.classList.remove('animate-spin');
-        });
     }
 
     // Helper to get all unique bank codes available for the selected member (Layer 2 filter chips)
@@ -13760,29 +13543,6 @@
       }
     }
 
-    function toggleActionMenu() {
-      isMenuExpanded = !isMenuExpanded;
-      const menuEl = document.getElementById('menu-expanded');
-      const triggerBtn = document.getElementById('btn-master-trigger');
-      const backdrop = document.getElementById('capsule-backdrop');
-      if (menuEl) {
-        if (isMenuExpanded) {
-          menuEl.classList.remove('hidden');
-          menuEl.classList.add('flex');
-          if (triggerBtn) triggerBtn.classList.add('hidden');
-        } else {
-          menuEl.classList.add('hidden');
-          menuEl.classList.remove('flex');
-          if (triggerBtn) triggerBtn.classList.remove('hidden');
-        }
-      }
-      if (backdrop) {
-        if (isMenuExpanded) backdrop.classList.remove('hidden');
-        else backdrop.classList.add('hidden');
-      }
-      updateMasterTriggerIcon();
-    }
-
     function collapseActionMenu() {
       isMenuExpanded = false;
       const menuEl = document.getElementById('menu-expanded');
@@ -13795,23 +13555,6 @@
       if (triggerBtn) triggerBtn.classList.remove('hidden');
       if (backdrop) backdrop.classList.add('hidden');
       updateMasterTriggerIcon();
-    }
-
-    function handleMasterFabClick() {
-      if (isMenuExpanded) {
-        collapseActionMenu();
-        return;
-      }
-      if (state.selectedIds.size > 0) {
-        toggleActionMenu();
-      } else {
-        if (!state.isSelectMode) {
-          toggleSelectMode();
-          showToast('Select mode active: tap cards or use "Select All"');
-        } else {
-          showToast('Tap any card or "Select All" at top left');
-        }
-      }
     }
 
     function triggerWhatsAppShare() {
@@ -14821,20 +14564,6 @@
       updateFloatingDock();
     }
 
-    function toggleSelectAllRows(checked) {
-      checked ? state.selectedIds = new Set(state.vouchers.map(v => v.id)) : state.selectedIds.clear();
-      renderVault();
-    }
-
-    function selectAllVouchers() {
-      state.selectedIds = new Set(state.vouchers.map(v => v.id));
-      renderVault();
-    }
-
-    function getSelected() {
-      return state.vouchers.filter(v => state.selectedIds.has(v.id));
-    }
-
     function getBrandDisplayName(brand) {
       const map = {
         'activitylog': 'Activity Log',
@@ -14912,24 +14641,6 @@
       return lines.join('\n').trim();
     }
 
-    function fmtPlain(vs) {
-      return fmtWhatsApp(vs);
-    }
-
-    function openWhatsAppModal() {
-      const sel = getSelected();
-      if (!sel.length) {
-        showToast("Please select at least 1 voucher");
-        return;
-      }
-      if (sel.some(v => isVoucherPending(v) || isVoucherProcessing(v) || isVoucherRevalidation(v))) {
-        showToast("Cannot share pending vouchers awaiting code delivery");
-        return;
-      }
-      document.getElementById('share-preview-text').value = fmtWhatsApp(sel);
-      document.getElementById('modal-share').classList.remove('hidden');
-    }
-
     function closeShareModal() {
       document.getElementById('modal-share').classList.add('hidden');
       state.pendingShareVoucher = null;
@@ -14996,15 +14707,6 @@
         document.getElementById('share-preview-text').value = text;
         document.getElementById('modal-share').classList.remove('hidden');
       }
-    }
-
-    function copyBatchPlaintext() {
-      const sel = getSelected();
-      if (!sel.length) {
-        showToast("Please select at least 1 voucher");
-        return;
-      }
-      copyToClipboard(fmtPlain(sel));
     }
 
     async function batchMarkAsRedeemed() {
