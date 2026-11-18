@@ -519,7 +519,7 @@ function parseRupayVoucherEmail(msg) {
   }
 
   // 3. Extract Amount, Date, Account
-  const amount = extractAmount(body);
+  const amount = extractAmount(body, brand);
   let rawDateOfIssue = extractField(body, "Date of Issue") || formatISTDate(new Date());
   const dateOfIssue = String(rawDateOfIssue)
     .replace(/\s*\)\s*\+\s*Add to calendar.*/i, '')
@@ -969,7 +969,12 @@ function extractBrand(subject, body) {
   return "Other";
 }
 
-function extractAmount(body) {
+function extractAmount(body, brand) {
+  if (brand) {
+    const b = String(brand).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (b.includes("swiggy")) return 1;
+    if (b.includes("thyrocare")) return 125;
+  }
   if (!body) return 500;
   const m = body.match(/(?:INR|Rs\.?|₹)\s*([0-9,]+)/i) ||
             body.match(/(?:Value|Amount|Worth)\s*[:#-]?\s*(?:INR|Rs\.?|₹)?\s*([0-9,]+)/i);
@@ -1044,12 +1049,17 @@ function getStagingFromNewSheet(ss) {
       doi = (rows[i][4] instanceof Date) ? Utilities.formatDate(rows[i][4], "GMT+05:30", "dd-MMM-yyyy") : String(rows[i][4]);
     }
 
+    let rowAmount = Number(rows[i][3]) || 0;
+    const targetBrandUpper = String(targetBrand || '').toUpperCase();
+    if (targetBrandUpper.includes("SWIGGY")) rowAmount = 1;
+    else if (targetBrandUpper.includes("THYROCARE")) rowAmount = 125;
+
     staging.push({
       brand: targetBrand,
       bookingId: String(rows[i][0] || '').replace(/^'/, ''),
       code: String(rows[i][1] || '').replace(/^'/, ''),
       pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).replace(/^'/, '').trim() : null,
-      amount: Number(rows[i][3]) || 0,
+      amount: rowAmount,
       dateOfIssue: doi,
       account: rows[i][5] ? String(rows[i][5]).trim() : '',
       card: rows[i][6] ? String(rows[i][6]).trim() : '',
@@ -3592,12 +3602,17 @@ function doGet(e) {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
+          const brandNameUpper = String(name || '').toUpperCase();
+          let voucherAmount = Number(rows[i][3]) || 0;
+          if (brandNameUpper.includes("SWIGGY")) voucherAmount = 1;
+          else if (brandNameUpper.includes("THYROCARE")) voucherAmount = 125;
+
           result.vouchers.push({
             brand: name,
             bookingId: String(rows[i][0] || ''),
             code: String(rows[i][1] || ''),
             pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
-            amount: Number(rows[i][3]) || 0,
+            amount: voucherAmount,
             dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
             account: rows[i][5] ? String(rows[i][5]) : '',
             card: rows[i][6] ? String(rows[i][6]) : '',
@@ -3890,11 +3905,16 @@ function doPost(e) {
               brandSheet.getRange(existingBrandRowIndex, 10).setValue(true);
             } else {
               // Not yet in brand tab: Append clean row
+              const targetBrandUpper = String(targetBrand || '').toUpperCase();
+              let approvedAmount = row[3] || 500;
+              if (targetBrandUpper.includes("SWIGGY")) approvedAmount = 1;
+              else if (targetBrandUpper.includes("THYROCARE")) approvedAmount = 125;
+
               const brandRow = [
                 row[0], // Booking ID
                 `'${row[1]}`, // Code
                 row[2] ? `'${row[2]}` : "", // PIN
-                row[3] || 500, // Value
+                approvedAmount, // Value
                 row[4] || "", // Date of Issue
                 row[5] || "", // Account
                 row[6] || "Unassigned", // Card

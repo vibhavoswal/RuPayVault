@@ -5103,9 +5103,9 @@
       { key: 'TimesPrime', name: 'Times Prime', denom: 0, hasPin: false, tag: 'Ace Membership' },
       { key: 'TattvaSpa', name: 'Tattva Spa', denom: 1500, hasPin: true, tag: 'Wellness' },
       { key: 'TaxSpanner', name: 'TaxSpanner', denom: 2950, hasPin: false, tag: 'Tax Filing' },
-      { key: 'Thyrocare', name: 'Thyrocare', denom: 0, hasPin: false, tag: 'Health Check' },
+      { key: 'Thyrocare', name: 'Thyrocare', denom: 125, hasPin: false, tag: 'Health Check' },
       { key: 'Uber', name: 'Uber Rides', denom: 100, hasPin: false, tag: 'Travel' },
-      { key: 'SwiggyOne', name: 'Swiggy One', denom: 0, hasPin: false, tag: 'Food & Dining' },
+      { key: 'SwiggyOne', name: 'Swiggy One', denom: 1, hasPin: false, tag: 'Food & Dining' },
       { key: 'Misc', name: 'Misc', denom: 500, hasPin: true, tag: 'Custom Brands', isMisc: true },
       { key: 'Redeemed', name: 'Redeemed', denom: 0, hasPin: false, tag: 'Archive', isSpecial: true }
     ];
@@ -8565,7 +8565,12 @@
                 targetBrand: s.targetBrand || s.brand || 'Voucher',
                 code: code,
                 pin: s.pin || null,
-                amount: Number(s.amount) || 500,
+                amount: (() => {
+                  const nb = normalizeBrandKey(s.targetBrand || s.brand);
+                  if (nb === 'SwiggyOne') return 1;
+                  if (nb === 'Thyrocare') return 125;
+                  return Number(s.amount) || 500;
+                })(),
                 dateOfIssue: s.dateOfIssue || '',
                 account: s.account || '',
                 card: cardVal,
@@ -8904,7 +8909,9 @@
             const rawBrand = v.brand || 'Other';
             const normKey = normalizeBrandKey(rawBrand);
             const bConfig = BRAND_CONFIG.find(x => x.key === normKey);
-            const amount = Number(v.amount) || (bConfig ? bConfig.denom : 0);
+            let amount = Number(v.amount) || (bConfig ? bConfig.denom : 0);
+            if (normKey === 'SwiggyOne') amount = 1;
+            else if (normKey === 'Thyrocare') amount = 125;
             
             let redeemedOn = null;
             if (v.dateOfIssue && String(v.dateOfIssue).trim() && String(v.dateOfIssue).trim() !== '31 Dec 2026') {
@@ -9197,7 +9204,12 @@
                 targetBrand: s.targetBrand || s.brand || 'Unassigned',
                 code: code,
                 pin: s.pin || null,
-                amount: Number(s.amount) || 500,
+                amount: (() => {
+                  const nb = normalizeBrandKey(s.targetBrand || s.brand);
+                  if (nb === 'SwiggyOne') return 1;
+                  if (nb === 'Thyrocare') return 125;
+                  return Number(s.amount) || 500;
+                })(),
                 dateOfIssue: s.dateOfIssue || '',
                 account: s.account || '-',
                 card: cardVal,
