@@ -5017,7 +5017,7 @@
               const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code) && !/processing/i.test(s.code);
               if (!isRealCode) {
                 s.status = 'PENDING';
-                s.code = 'PENDING';
+                s.code = 'Pending';
                 s.payUrl = '';
                 s.isRevalidation = false;
               }
@@ -6262,7 +6262,7 @@
       // 1. Optimistic Local State Update:
       // Change status & code to PENDING, remove revalidation flags and payment URL
       item.status = 'PENDING';
-      item.code = 'PENDING';
+      item.code = 'Pending';
       item.payUrl = '';
       item.isRevalidation = false;
 
@@ -8529,7 +8529,7 @@
             .map((s, idx) => {
               const bId = s.bookingId || ('#S' + (idx + 1));
               let status = (s.status || 'PENDING').toUpperCase();
-              let code = s.code || 'PENDING';
+              let code = (s.code && s.code.toUpperCase() === 'PENDING') ? 'Pending' : (s.code || 'Pending');
               let payUrl = s.payUrl || '';
 
               const cleanBid = String(bId || '').trim().toUpperCase();
@@ -8542,7 +8542,7 @@
                   if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
                 } else {
                   status = 'PENDING';
-                  code = 'PENDING';
+                  code = 'Pending';
                   payUrl = '';
                 }
               }
@@ -8918,7 +8918,9 @@
               redeemedOn = String(v.dateOfIssue).trim();
             }
 
-            const vCode = (v.code || '').trim();
+            let vCode = (v.code || '').trim();
+            if (vCode.toUpperCase() === 'PENDING') vCode = 'Pending';
+            v.code = vCode;
             const vBid = (v.bookingId || '').trim();
             const isPendingRedeem = !!(
               (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted && undoState.pendingRedeem.codes?.includes(vCode)) ||
@@ -9139,7 +9141,7 @@
             .map((s, idx) => {
               const bId = s.bookingId || ('#S' + (idx + 1));
               let status = (s.status || 'PENDING').toUpperCase();
-              let code = s.code || 'PENDING';
+              let code = (s.code && s.code.toUpperCase() === 'PENDING') ? 'Pending' : (s.code || 'Pending');
               let payUrl = s.payUrl || '';
 
               const cleanBid = String(bId || '').trim().toUpperCase();
@@ -9153,7 +9155,7 @@
                   if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
                 } else {
                   status = 'PENDING';
-                  code = 'PENDING';
+                  code = 'Pending';
                   payUrl = '';
                 }
               }
@@ -9337,7 +9339,7 @@
             type: 'INGESTED',
             id: s.id,
             bookingId: s.bookingId || '',
-            code: s.code,
+            code: (s.code && String(s.code).toUpperCase() === 'PENDING') ? 'Pending' : (s.code || 'Pending'),
             brand: s.brand,
             targetBrand: s.targetBrand || s.brand,
             amount: s.amount,
@@ -9968,7 +9970,7 @@
               </span>
             ` : `
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
-                ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PENDING</span>' : v.status}
+                ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Pending</span>' : (v.status === 'PENDING' ? 'Pending' : v.status)}
               </span>
             `}
           </td>

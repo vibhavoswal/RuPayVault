@@ -1054,10 +1054,13 @@ function getStagingFromNewSheet(ss) {
     if (targetBrandUpper.includes("SWIGGY")) rowAmount = 1;
     else if (targetBrandUpper.includes("THYROCARE")) rowAmount = 125;
 
+    let cleanCode = String(rows[i][1] || '').replace(/^'/, '').trim();
+    if (cleanCode.toUpperCase() === 'PENDING') cleanCode = 'Pending';
+
     staging.push({
       brand: targetBrand,
       bookingId: String(rows[i][0] || '').replace(/^'/, ''),
-      code: String(rows[i][1] || '').replace(/^'/, ''),
+      code: cleanCode,
       pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).replace(/^'/, '').trim() : null,
       amount: rowAmount,
       dateOfIssue: doi,
@@ -1237,7 +1240,7 @@ function recordPendingRedemption(ss, data) {
 
   const rowData = [
     data.bookingId,                                      // Col 1: Booking ID (RUPS...)
-    data.code || "PENDING",                              // Col 2: Code
+    (data.code && String(data.code).trim().toUpperCase() !== 'PENDING') ? data.code : "Pending", // Col 2: Code
     "",                                                  // Col 3: PIN
     data.amount || 500,                                  // Col 4: Value
     data.dateOfIssue || "",                              // Col 5: Date of Issue
@@ -1353,6 +1356,9 @@ function reconcilePendingVouchers(ss) {
 
     if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || status === 'PROCESSING' || code === 'PENDING' || code === 'Pending revalidation' || /processing/i.test(code) || /processing/i.test(status)) && /^RUPS/i.test(bid)) {
       // In-memory data sanitization for pending rows (Gmail search is handled centrally in processRupayEmails batch)
+      if (code === 'PENDING') {
+        newSheet.getRange(i + 1, 2).setValue("'Pending");
+      }
       if (currentPin && !/^\d{3,8}$/.test(currentPin)) {
         newSheet.getRange(i + 1, 3).setValue("");
       }
@@ -1515,6 +1521,58 @@ function doGet(e) {
             if (Number(rVals[r][4]) !== 125) {
               rSheet.getRange(r + 1, 5).setValue(125);
               report.redeemedThyrocareUpdated++;
+            }
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        report: report
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  // Administrative Remediation: Normalize all "PENDING" voucher codes in sheets to title-case "Pending"
+  if (e && e.parameter && e.parameter.action === "NORMALIZE_PENDING_CODES") {
+    try {
+      const ss = getSpreadsheet();
+      const report = {
+        newSheetPendingUpdated: 0,
+        brandSheetsPendingUpdated: 0,
+        updatedRows: []
+      };
+
+      // 1. Scan and update "New" sheet
+      const newSheet = ss.getSheetByName("New");
+      if (newSheet && newSheet.getLastRow() > 1) {
+        const nVals = newSheet.getDataRange().getValues();
+        for (let r = 1; r < nVals.length; r++) {
+          const rawCode = String(nVals[r][1] || '').trim();
+          if (rawCode === "PENDING" || rawCode === "'PENDING") {
+            newSheet.getRange(r + 1, 2).setValue("'Pending");
+            report.newSheetPendingUpdated++;
+            report.updatedRows.push({ sheet: "New", row: r + 1, bookingId: nVals[r][0] });
+          }
+        }
+      }
+
+      // 2. Scan and update all brand / other sheets
+      const allSheets = ss.getSheets();
+      for (const sheet of allSheets) {
+        const sName = sheet.getName();
+        if (sName === "New" || sName === "Redeemed" || sName === "Cards" || sName === "Active Cards" || sName === "Blocked Cards" || sName === "⏱ Cooldowns") continue;
+        if (sheet.getLastRow() > 1) {
+          const vals = sheet.getDataRange().getValues();
+          for (let r = 1; r < vals.length; r++) {
+            const rawCode = String(vals[r][1] || '').trim();
+            if (rawCode === "PENDING" || rawCode === "'PENDING") {
+              sheet.getRange(r + 1, 2).setValue("'Pending");
+              report.brandSheetsPendingUpdated++;
+              report.updatedRows.push({ sheet: sName, row: r + 1, bookingId: vals[r][0] });
             }
           }
         }
@@ -1841,10 +1899,10 @@ function doGet(e) {
       SpreadsheetApp.flush();
 
       // Phase 1: Test Fresh Stage 1 Ingestion -> Revalidation Email Transition
-      // Step 1: Insert dummy row in Stage 1 state (PENDING, no payment URL)
+      // Step 1: Insert dummy row in Stage 1 state (Pending, no payment URL)
       nSheet.appendRow([
         testBid,
-        "PENDING",
+        "Pending",
         "",
         500,
         todayStr,
@@ -1899,7 +1957,7 @@ function doGet(e) {
       // Step 4: Simulate MARK_REVALIDATED operation
       let markUpdated = false;
       if (foundRow > 0) {
-        nSheet.getRange(foundRow, 2).setValue('PENDING');
+        nSheet.getRange(foundRow, 2).setValue('Pending');
         nSheet.getRange(foundRow, 8).setValue('PENDING');
         if (rows[0].length >= 12) {
           nSheet.getRange(foundRow, 12).setValue('');
@@ -1938,7 +1996,7 @@ function doGet(e) {
         }
       }
 
-      const cronProtected = (codeAfterCron === "PENDING" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
+      const cronProtected = (codeAfterCron === "Pending" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
       const timestampRemainedUnchanged = (tsAfterStage15 === nowStr && tsAfterCron === nowStr);
 
       // Phase 3: Cleanup and verify zero residual artifacts
@@ -2007,14 +2065,17 @@ function doGet(e) {
         const rowCode = String(rows[i][1] || '').trim();
         const rowStatus = String(rows[i][7] || '').trim().toUpperCase();
         if (rowStatus === "PENDING_REVALIDATION" || rowCode.toLowerCase().includes("revalidat")) {
-          nSheet.getRange(i + 1, 2).setValue('PENDING');
+          nSheet.getRange(i + 1, 2).setValue("'Pending");
           nSheet.getRange(i + 1, 8).setValue('PENDING');
           if (rows[0].length >= 12) {
             nSheet.getRange(i + 1, 12).setValue('');
           }
           addRevalidatedBookingToProperties(rowBid);
           updatedBids.push(rowBid);
-        } else if (rowStatus === "PENDING" && (rowCode === "PENDING" || rowCode === "")) {
+        } else if (rowStatus === "PENDING" && (rowCode.toUpperCase() === "PENDING" || rowCode === "")) {
+          if (rowCode === "PENDING") {
+            nSheet.getRange(i + 1, 2).setValue("'Pending");
+          }
           // Ensure already pending rows are also preserved in persistent properties
           addRevalidatedBookingToProperties(rowBid);
         }
@@ -3444,10 +3505,12 @@ function doGet(e) {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][0] && !rows[i][1]) continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
+          let uCode = String(rows[i][1] || '').replace(/^'/, '').trim();
+          if (uCode.toUpperCase() === 'PENDING') uCode = 'Pending';
           const uEntry = {
             brand: "⚡ Unassigned",
-            bookingId: String(rows[i][0] || ''),
-            code: String(rows[i][1] || ''),
+            bookingId: String(rows[i][0] || '').replace(/^'/, ''),
+            code: uCode,
             pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
             amount: Number(rows[i][3]) || 0,
             dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
@@ -3695,10 +3758,13 @@ function doGet(e) {
           if (brandNameUpper.includes("SWIGGY")) voucherAmount = 1;
           else if (brandNameUpper.includes("THYROCARE")) voucherAmount = 125;
 
+          let vCode = String(rows[i][1] || '').replace(/^'/, '').trim();
+          if (vCode.toUpperCase() === 'PENDING') vCode = 'Pending';
+
           result.vouchers.push({
             brand: name,
-            bookingId: String(rows[i][0] || ''),
-            code: String(rows[i][1] || ''),
+            bookingId: String(rows[i][0] || '').replace(/^'/, ''),
+            code: vCode,
             pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
             amount: voucherAmount,
             dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
@@ -4049,7 +4115,7 @@ function doPost(e) {
         for (let r = 1; r < dataRows.length; r++) {
           const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
           if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
-            newSheet.getRange(r + 1, 2).setValue('PENDING');
+            newSheet.getRange(r + 1, 2).setValue("'Pending");
             newSheet.getRange(r + 1, 8).setValue('PENDING');
             if (dataRows[0].length >= 12) {
               newSheet.getRange(r + 1, 12).setValue('');
