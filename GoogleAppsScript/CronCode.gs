@@ -1034,17 +1034,27 @@ function getStagingFromNewSheet(ss) {
     const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
     const targetBrand = String(rows[i][10] || '⚡ Unassigned');
     const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
+    
+    let tsIST = null;
+    if (rows[i][8]) {
+      tsIST = (rows[i][8] instanceof Date) ? formatISTTimestamp(rows[i][8]) : String(rows[i][8]);
+    }
+    let doi = '';
+    if (rows[i][4]) {
+      doi = (rows[i][4] instanceof Date) ? Utilities.formatDate(rows[i][4], "GMT+05:30", "dd-MMM-yyyy") : String(rows[i][4]);
+    }
+
     staging.push({
       brand: targetBrand,
-      bookingId: String(rows[i][0] || ''),
-      code: String(rows[i][1] || ''),
-      pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
+      bookingId: String(rows[i][0] || '').replace(/^'/, ''),
+      code: String(rows[i][1] || '').replace(/^'/, ''),
+      pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).replace(/^'/, '').trim() : null,
       amount: Number(rows[i][3]) || 0,
-      dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
-      account: rows[i][5] ? String(rows[i][5]) : '',
-      card: rows[i][6] ? String(rows[i][6]) : '',
-      status: rows[i][7] ? String(rows[i][7]) : 'PENDING',
-      timestampIST: rows[i][8] ? String(rows[i][8]) : null,
+      dateOfIssue: doi,
+      account: rows[i][5] ? String(rows[i][5]).trim() : '',
+      card: rows[i][6] ? String(rows[i][6]).trim() : '',
+      status: rows[i][7] ? String(rows[i][7]).trim() : 'PENDING',
+      timestampIST: tsIST,
       displayInUI: isDisp,
       targetBrand: targetBrand,
       payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : '',
@@ -3506,29 +3516,7 @@ function doGet(e) {
         }
       } else if (name === "New") {
         // Staging Feed from "New" Tab
-        for (let i = 1; i < rows.length; i++) {
-          if (!rows[i][0] && !rows[i][1]) continue;
-          const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
-          const targetBrand = String(rows[i][10] || '⚡ Unassigned');
-          const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
-          result.staging.push({
-            brand: targetBrand,
-            bookingId: String(rows[i][0] || ''),
-            code: String(rows[i][1] || ''),
-            pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
-            amount: Number(rows[i][3]) || 0,
-            dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
-            account: rows[i][5] ? String(rows[i][5]) : '',
-            card: rows[i][6] ? String(rows[i][6]) : '',
-            status: rows[i][7] ? String(rows[i][7]) : 'PENDING',
-            timestampIST: rows[i][8] ? String(rows[i][8]) : null,
-            displayInUI: isDisp,
-            targetBrand: targetBrand,
-            payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : '',
-            isSaleMarked: isSaleMarked,
-            saleMarked: isSaleMarked
-          });
-        }
+        result.staging = getStagingFromNewSheet(ss);
       } else if (name === "RuPay Income") {
         for (let i = 1; i < rows.length; i++) {
           const title = String(rows[i][0] || '').trim();
@@ -3835,6 +3823,33 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // On-Demand Gmail Ingestion Trigger (Manages own LockService lock inside processRupayEmails)
+    if (data.action === "TRIGGER_GMAIL_INGEST") {
+      const startTime = Date.now();
+      let countBefore = 0;
+      let countAfter = 0;
+      const newSheet = ss.getSheetByName("New");
+      if (newSheet) countBefore = Math.max(0, newSheet.getLastRow() - 1);
+
+      try {
+        processRupayEmails();
+      } catch (errIngest) {
+        console.warn("TRIGGER_GMAIL_INGEST error:", errIngest.message);
+      }
+
+      if (newSheet) countAfter = Math.max(0, newSheet.getLastRow() - 1);
+      const newVouchersCount = Math.max(0, countAfter - countBefore);
+      const durationMs = Date.now() - startTime;
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "TRIGGER_GMAIL_INGEST",
+        newVouchersCount: newVouchersCount,
+        durationMs: durationMs,
+        totalStaged: countAfter
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // Acquire script lock for mutating actions to avoid concurrent write collisions
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(30000)) {
@@ -4134,11 +4149,14 @@ function doPost(e) {
                                         (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING' && existingRedeemedCodes.has(cValUpper));
 
               if (!alreadyInRedeemed) {
+                const rawCleanBid = String(vals[i][0] || '').trim().replace(/^'/, '');
+                const rawCleanCd = String(vals[i][1] || '').trim().replace(/^'/, '');
+                const rawCleanPin = String(vals[i][2] || '').trim().replace(/^'/, '');
                 const redeemedRow = [
                   sName,                                   // A: Brand
-                  vals[i][0],                              // B: Booking ID
-                  `'${vals[i][1]}`,                        // C: Code
-                  vals[i][2] ? `'${vals[i][2]}` : "",      // D: PIN
+                  rawCleanBid ? `'${rawCleanBid}` : "",    // B: Booking ID
+                  rawCleanCd ? `'${rawCleanCd}` : "",      // C: Code
+                  rawCleanPin ? `'${rawCleanPin}` : "",    // D: PIN
                   vals[i][3],                              // E: Value
                   vals[i][4],                              // F: Date of Issue
                   vals[i][5],                              // G: Account
@@ -4212,11 +4230,14 @@ function doPost(e) {
                                           (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING' && existingRedeemedCodes.has(cValUpper));
 
                 if (!alreadyInRedeemed) {
+                  const rawCleanBid = String(vals[i][0] || '').trim().replace(/^'/, '');
+                  const rawCleanCd = String(vals[i][1] || '').trim().replace(/^'/, '');
+                  const rawCleanPin = String(vals[i][2] || '').trim().replace(/^'/, '');
                   const redeemedRow = [
                     sName,                                   // A: Brand
-                    vals[i][0],                              // B: Booking ID
-                    `'${vals[i][1]}`,                        // C: Code
-                    vals[i][2] ? `'${vals[i][2]}` : "",      // D: PIN
+                    rawCleanBid ? `'${rawCleanBid}` : "",    // B: Booking ID
+                    rawCleanCd ? `'${rawCleanCd}` : "",      // C: Code
+                    rawCleanPin ? `'${rawCleanPin}` : "",    // D: PIN
                     vals[i][3],                              // E: Value
                     vals[i][4],                              // F: Date of Issue
                     vals[i][5],                              // G: Account
@@ -5559,33 +5580,6 @@ function doPost(e) {
     if (data.action === "PROMOTE_TOMBSTONES") {
       const result = promoteTombstones(ss);
       return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
-    }
-
-    // 18. On-Demand Gmail Ingestion Trigger
-    if (data.action === "TRIGGER_GMAIL_INGEST") {
-      const startTime = Date.now();
-      let countBefore = 0;
-      let countAfter = 0;
-      const newSheet = ss.getSheetByName("New");
-      if (newSheet) countBefore = Math.max(0, newSheet.getLastRow() - 1);
-
-      try {
-        processRupayEmails();
-      } catch (errIngest) {
-        console.warn("TRIGGER_GMAIL_INGEST error:", errIngest.message);
-      }
-
-      if (newSheet) countAfter = Math.max(0, newSheet.getLastRow() - 1);
-      const newVouchersCount = Math.max(0, countAfter - countBefore);
-      const durationMs = Date.now() - startTime;
-
-      return ContentService.createTextOutput(JSON.stringify({
-        success: true,
-        action: "TRIGGER_GMAIL_INGEST",
-        newVouchersCount: newVouchersCount,
-        durationMs: durationMs,
-        totalStaged: countAfter
-      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
