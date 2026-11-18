@@ -1442,6 +1442,94 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
+  // Administrative Remediation: Correct values in Google Sheets for Swiggy One (Rs. 1) and Thyrocare (Rs. 125)
+  if (e && e.parameter && e.parameter.action === "CORRECT_SWIGGY_THYROCARE_SHEET_VALUES") {
+    try {
+      const ss = getSpreadsheet();
+      const report = {
+        swiggyBrandUpdated: 0,
+        thyrocareBrandUpdated: 0,
+        newSheetSwiggyUpdated: 0,
+        newSheetThyrocareUpdated: 0,
+        redeemedSwiggyUpdated: 0,
+        redeemedThyrocareUpdated: 0
+      };
+
+      // 1. Scan and update all brand tabs matching Swiggy or Thyrocare
+      const allSheets = ss.getSheets();
+      for (const sheet of allSheets) {
+        const sName = sheet.getName();
+        const sNameLower = sName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        if (sNameLower.includes("swiggy")) {
+          const vals = sheet.getDataRange().getValues();
+          for (let r = 1; r < vals.length; r++) {
+            if (Number(vals[r][3]) !== 1) {
+              sheet.getRange(r + 1, 4).setValue(1);
+              report.swiggyBrandUpdated++;
+            }
+          }
+        } else if (sNameLower.includes("thyrocare")) {
+          const vals = sheet.getDataRange().getValues();
+          for (let r = 1; r < vals.length; r++) {
+            if (Number(vals[r][3]) !== 125) {
+              sheet.getRange(r + 1, 4).setValue(125);
+              report.thyrocareBrandUpdated++;
+            }
+          }
+        }
+      }
+
+      // 2. Scan and update the "New" (Ingested / Staging) sheet
+      const newSheet = ss.getSheetByName("New");
+      if (newSheet && newSheet.getLastRow() > 1) {
+        const nVals = newSheet.getDataRange().getValues();
+        for (let r = 1; r < nVals.length; r++) {
+          const targetBrand = String(nVals[r][10] || nVals[r][0] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (targetBrand.includes("swiggy")) {
+            if (Number(nVals[r][3]) !== 1) {
+              newSheet.getRange(r + 1, 4).setValue(1);
+              report.newSheetSwiggyUpdated++;
+            }
+          } else if (targetBrand.includes("thyrocare")) {
+            if (Number(nVals[r][3]) !== 125) {
+              newSheet.getRange(r + 1, 4).setValue(125);
+              report.newSheetThyrocareUpdated++;
+            }
+          }
+        }
+      }
+
+      // 3. Scan and update "Redeemed" sheet if applicable
+      const rSheet = ss.getSheetByName("Redeemed");
+      if (rSheet && rSheet.getLastRow() > 1) {
+        const rVals = rSheet.getDataRange().getValues();
+        for (let r = 1; r < rVals.length; r++) {
+          const rBrand = String(rVals[r][0] || rVals[r][10] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (rBrand.includes("swiggy")) {
+            if (Number(rVals[r][4]) !== 1) {
+              rSheet.getRange(r + 1, 5).setValue(1);
+              report.redeemedSwiggyUpdated++;
+            }
+          } else if (rBrand.includes("thyrocare")) {
+            if (Number(rVals[r][4]) !== 125) {
+              rSheet.getRange(r + 1, 5).setValue(125);
+              report.redeemedThyrocareUpdated++;
+            }
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        report: report
+      })).setMimeType(ContentService.MimeType.JSON);
+    } catch(err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Remediation handler for PNB 8499 cards
   if (e && e.parameter && e.parameter.action === "REMEDIATE_PNB_8499_CARDS") {
     try {
