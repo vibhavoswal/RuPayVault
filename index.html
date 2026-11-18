@@ -5028,7 +5028,9 @@
       } catch (err) {
         console.warn('Hydration warning during unlock:', err);
       } finally {
-        UniversalMutationJournal.unquarantine("6524000000003955");
+        (state.cards || []).forEach(c => {
+          if (c.cardNumber && c.status === 'ACTIVE') UniversalMutationJournal.unquarantine(c.cardNumber);
+        });
         const urlWs = (new URLSearchParams(window.location.search)).get('ws');
         const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         switchWorkspace(savedWorkspace);
@@ -12603,8 +12605,8 @@
         alias: "MT3D09485",
         upi: null,
         branch: "Khopoli Branch",
-        signOnPass: "[REDACTED]",
-        txnPass: "[REDACTED]",
+        signOnPass: null,
+        txnPass: null,
         txnPin: null,
         loginPin: null,
         password: null,
@@ -12659,7 +12661,7 @@
         txnPass: null,
         txnPin: null,
         loginPin: null,
-        password: "[REDACTED]",
+        password: null,
         gradient: "bg-axis-burgundy",
         accent: "text-rose-300",
         label: "Burgundy Sanjay"
@@ -12705,8 +12707,8 @@
         alias: "MT3D01692",
         upi: null,
         branch: "Khopoli Branch",
-        signOnPass: "[REDACTED]",
-        txnPass: "[REDACTED]",
+        signOnPass: null,
+        txnPass: null,
         txnPin: null,
         loginPin: null,
         password: null,
@@ -12761,7 +12763,7 @@
         txnPass: null,
         txnPin: null,
         loginPin: null,
-        password: "[REDACTED]",
+        password: null,
         gradient: "bg-axis-burgundy",
         accent: "text-rose-300",
         label: "Burgundy Aruna"
@@ -12807,8 +12809,8 @@
         alias: "MT3D03173",
         upi: null,
         branch: "Khopoli Branch",
-        signOnPass: "[REDACTED]",
-        txnPass: "[REDACTED]",
+        signOnPass: null,
+        txnPass: null,
         txnPin: null,
         loginPin: null,
         password: null,
@@ -12863,7 +12865,7 @@
         txnPass: null,
         txnPin: null,
         loginPin: null,
-        password: "[REDACTED]",
+        password: null,
         gradient: "bg-axis-burgundy",
         accent: "text-rose-300",
         label: "Burgundy Smiti"
@@ -12909,8 +12911,8 @@
         alias: "MT3063389",
         upi: null,
         branch: "Khopoli Branch",
-        signOnPass: "[REDACTED]",
-        txnPass: "[REDACTED]",
+        signOnPass: null,
+        txnPass: null,
         txnPin: null,
         loginPin: null,
         password: null,
@@ -12936,8 +12938,8 @@
         alias: "MT3D01699",
         upi: null,
         branch: "Khopoli Branch",
-        signOnPass: "[REDACTED]",
-        txnPass: "[REDACTED]",
+        signOnPass: null,
+        txnPass: null,
         txnPin: null,
         loginPin: null,
         password: null,

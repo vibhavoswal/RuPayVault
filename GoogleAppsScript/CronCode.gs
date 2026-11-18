@@ -1432,13 +1432,16 @@ function getOrInitSharedActivitySheet(ss) {
  * 6. REST API (GET / POST)
  */
 function doGet(e) {
-// Remediation handler for PNB 8499 cards: restores 6524000000003955 to Active Cards and removes from Blocked Cards
+  // Remediation handler for PNB 8499 cards
   if (e && e.parameter && e.parameter.action === "REMEDIATE_PNB_8499_CARDS") {
     try {
       const ss = getSpreadsheet();
       const aSheet = ss.getSheetByName("Active Cards");
       const bSheet = ss.getSheetByName("Blocked Cards");
-      const targetNum = "6524000000003955";
+      const targetNum = String(e.parameter.cardNum || "").replace(/['\s]/g, '').trim();
+      if (!targetNum) {
+        return ContentService.createTextOutput(JSON.stringify({ error: "cardNum parameter is required" })).setMimeType(ContentService.MimeType.JSON);
+      }
       const report = { removedFromBlocked: false, updatedInActive: false, addedToActive: false };
 
       // 1. Remove 3955 from Blocked Cards if present
@@ -1577,8 +1580,8 @@ function doGet(e) {
       if (!aSheet) aSheet = ss.insertSheet("Active Cards");
       if (!bSheet) bSheet = ss.insertSheet("Blocked Cards");
 
-      const testOldCard = "6524999900008499";
-      const testNewCard = "6524999900003955";
+      const testOldCard = "6521000000008499";
+      const testNewCard = "6521000000003955";
       const testAcc = "8499";
       const nowStr = formatISTTimestamp(new Date());
       const stepsPassed = [];
@@ -3143,52 +3146,12 @@ function doGet(e) {
 
       const nowStr = formatISTTimestamp(new Date());
 
-      // Benefit Presets based on Benefit Matrix Rules
-      // 1. PNB Credit Cards
-      const bPnbCc = ["Redeemed", "Redeemed", "Not Applicable", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
-      // 2. Canara Credit Card
-      const bCanaraCc = ["Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
-      // 3. PNB Imperial Debit Cards
-      const bPnbDc = ["Redeemed", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed"];
-      // 4. Other Debit Cards (Jana, BoB, Canara Crest, Union Metal)
-      const bOtherDc = ["Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Redeemed", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable", "Not Applicable"];
-
-      const rows = [
-        // RuPay Credit Cards (4) - Linked Account: "NA"
-        ["PNB", "Credit", "PNB RuPay Select (Primary)", "NA", "'6528000000000074", "'10/31", "'324", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
-        ["PNB", "Credit", "PNB Sanjay Add On", "NA", "'6528000000000165", "'10/31", "'300", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
-        ["PNB", "Credit", "PNB Aruna Add On", "NA", "'6528000000000173", "'10/31", "'639", "ACTIVE", "cult pending", ...bPnbCc, nowStr],
-        ["Canara", "Credit", "Canara RuPay Select", "NA", "'6530000000003042", "'10/30", "'870", "ACTIVE", "All done", ...bCanaraCc, nowStr],
-
-        // RuPay Debit Cards (16) - PNB name changed to "PNB Imperial", Linked Account contains last 4 of account
-        ["PNB", "Debit", "PNB Imperial", "'6650", "'6524000000005409", "'10/33", "'300", "ACTIVE", "", ...bPnbDc, nowStr],
-        ["PNB", "Debit", "PNB Imperial", "'6650", "'6524000000003793", "'10/33", "'718", "ACTIVE", "", ...bPnbDc, nowStr],
-        ["PNB", "Debit", "PNB Imperial", "'7482", "'6524000000005151", "'10/33", "'628", "ACTIVE", "", ...bPnbDc, nowStr],
-        ["PNB", "Debit", "PNB Imperial", "'7482", "'6524000000001870", "'10/33", "'158", "ACTIVE", "", ...bPnbDc, nowStr],
-        ["PNB", "Debit", "PNB Imperial", "'8499", "'6524000000003826", "'10/33", "'426", "ACTIVE", "", ...bPnbDc, nowStr],
-
-        // Jana SFB
-        ["Jana SFB", "Debit", "Jana SFB DC", "NA", "'6525000000007267", "'09/32", "'122", "ACTIVE", "", ...bOtherDc, nowStr],
-
-        // Bank of Baroda
-        ["Bank of Baroda", "Debit", "BoB Vibhav DC", "'5465", "'6525000000005465", "'09/30", "'576", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Bank of Baroda", "Debit", "BoB Sanjay DC", "'8674", "'6525000000008674", "'10/30", "'745", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Bank of Baroda", "Debit", "BoB Aruna DC", "'8064", "'6525000000008064", "'09/30", "'780", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Bank of Baroda", "Debit", "BoB Smiti DC", "'8080", "'6525000000008080", "'09/30", "'530", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Bank of Baroda", "Debit", "BoB Shakuntala DC", "'8072", "'6525000000008072", "'09/30", "'342", "ACTIVE", "", ...bOtherDc, nowStr],
-
-        // Canara Bank
-        ["Canara", "Debit", "Canara RS DC", "'5297", "'6525000000005297", "'03/31", "'919", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Canara", "Debit", "Canara RS DC Crest", "'7180", "'6525000000007180", "'11/30", "'912", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Canara", "Debit", "Canara RS DC Crest", "'4407", "'6525000000004407", "'03/31", "'540", "ACTIVE", "", ...bOtherDc, nowStr],
-        ["Canara", "Debit", "Canara RS DC Crest", "'7078", "'6525000000007078", "'10/33", "'974", "ACTIVE", "", ...bOtherDc, nowStr],
-
-        // Union Bank
-        ["Union Bank", "Debit", "Union Emperio Metal RSDC", "'9904", "'6524000000009904", "'09/33", "'690", "ACTIVE", "", ...bOtherDc, nowStr]
-      ];
-
-      for (let r = 0; r < rows.length; r++) {
-        sheet.appendRow(rows[r]);
+      // If sheet already has data, do not overwrite; otherwise insert dummy schema template
+      if (sheet.getLastRow() <= 1) {
+        const dummyBenefits = Array(13).fill("Available");
+        sheet.appendRow([
+          "Sample Bank", "Credit", "Sample RuPay Select", "NA", "'6521000000000001", "'12/30", "'000", "ACTIVE", "Template card", ...dummyBenefits, nowStr
+        ]);
       }
 
       // Update "Blocked Cards" archive tab with matching column ordering
@@ -5818,55 +5781,20 @@ function setupBankAccountsTab(ss) {
 
   const nowStr = formatISTTimestamp(new Date());
 
-  const accounts = [
-    // --- VIBHAV OSWAL (17 ACCOUNTS) ---
-    ["acc_indusind_vibhav_1", "Vibhav Oswal", "IndusInd Bank", "indusind", "Pioneer Private #1", "Pioneer Private", "HNI & Private", "'159247538499", "INDB0002169", "", "'41544412", "vibhavoswal", "", "", "", "", "", "ACTIVE", "Primary Pioneer Account", nowStr],
-    ["acc_axis_vibhav_1", "Vibhav Oswal", "Axis Bank", "axis", "Burgundy #1", "Burgundy", "HNI & Private", "'921010018051356", "UTIB0002366", "vibhavoswal@axisbank", "'908507230", "", "", "", "", "", "", "ACTIVE", "Primary Burgundy", nowStr],
-    ["acc_axis_vibhav_2", "Vibhav Oswal", "Axis Bank", "axis", "Burgundy #2", "Burgundy", "HNI & Private", "'924010040061771", "UTIB0000194", "vibhavoswal3@axisbank", "'908507230", "", "", "", "", "", "", "ACTIVE", "Secondary Burgundy", nowStr],
-    ["acc_hdfc_vibhav_1", "Vibhav Oswal", "HDFC Bank", "hdfc", "HDFC Savings", "Imperia / Preferred", "Wealth & Priority", "'50100272080801", "HDFC0000827", "vibhavoswal@hdfcbank", "'128271043", "", "", "", "", "", "", "ACTIVE", "Primary HDFC Account", nowStr],
-    ["acc_kotak_vibhav_1", "Vibhav Oswal", "Kotak Mahindra Bank", "kotak", "Privy League", "Privy League", "Wealth & Priority", "'9113615811", "KKBK0002020", "9983692067@kotak", "'391549346", "", "", "", "", "", "", "ACTIVE", "Privy Priority Account", nowStr],
-    ["acc_idfc_vibhav_1", "Vibhav Oswal", "IDFC FIRST Bank", "idfc", "FIRST Wealth", "FIRST Wealth", "Wealth & Priority", "'10064054118", "IDFB0040101", "9983692067@idfcfirst", "'5587071737", "", "", "", "", "", "", "ACTIVE", "FIRST Wealth Account", nowStr],
-    ["acc_equitas_vibhav_1", "Vibhav Oswal", "Equitas SFB", "equitas", "Equitas Wings", "Small Finance", "Digital & SFB", "'100021374863", "ESFB0009021", "vibhavoswal@equitasbank", "", "", "", "", "", "", "", "ACTIVE", "Wings Account", nowStr],
-    ["acc_federal_fi_vibhav", "Vibhav Oswal", "Federal Bank (Fi)", "federal", "Fi Digital", "Fi Neo", "Digital & SFB", "'55550107473710", "FDRL0005555", "vibhav@fbl", "", "", "", "", "", "", "", "ACTIVE", "Fi Neo Salary Account", nowStr],
-    ["acc_federal_jupiter_vibhav", "Vibhav Oswal", "Federal Bank (Jupiter)", "federal", "Jupiter 1% UPI", "Jupiter Pro", "Digital & SFB", "'77770106660497", "FDRL0007777", "9983692067@jupiteraxis", "'9823812", "", "", "", "", "", "", "ACTIVE", "Jupiter Pro Account", nowStr],
-    ["acc_jana_vibhav_1", "Vibhav Oswal", "Jana SFB", "jana", "Jana SFB", "Small Finance", "Digital & SFB", "'4800010052985502", "JSFB0004800", "", "", "", "", "", "", "", "BANASHANKARI BRANCH", "ACTIVE", "CRN: 2420042415002382", nowStr],
-    ["acc_pnb_vibhav_1", "Vibhav Oswal", "Punjab National Bank", "pnb", "PNB Elite (Acc 1)", "Elite Executive", "HNI & Private", "'1057100100006650", "PUNB0105710", "", "'R67653832", "", "", "", "''", "", "Defence Colony Indiranagar Branch", "ACTIVE", "Linked to PNB Imperial RSDC", nowStr],
-    ["acc_pnb_vibhav_2", "Vibhav Oswal", "Punjab National Bank", "pnb", "PNB Elite (Acc 2)", "Elite Executive", "HNI & Private", "'1057100100007482", "PUNB0105710", "", "'R67653832", "", "", "", "''", "", "Defence Colony Indiranagar Branch", "ACTIVE", "Elite Executive Account 2", nowStr],
-    ["acc_union_vibhav_1", "Vibhav Oswal", "Union Bank of India", "union", "HNI Prime", "HNI Prime", "HNI & Private", "'028912250000002", "UBIN0802891", "", "'652214823", "", "", "", "", "", "Indiranagar-CMH Road Bangalore", "ACTIVE", "Union HNI Prime Account", nowStr],
-    ["acc_canara_basic_vibhav", "Vibhav Oswal", "Canara Bank", "canara", "Basic Savings", "Basic Savings", "Digital & SFB", "'110181739491", "CNRB0010754", "", "'325184532", "", "", "", "", "", "", "ACTIVE", "Basic Savings Account", nowStr],
-    ["acc_canara_crest_vibhav", "Vibhav Oswal", "Canara Bank", "canara", "Canara Crest", "Canara Crest", "Digital & SFB", "'110267332562", "CNRB0000492", "", "'325184532", "", "", "", "", "", "", "ACTIVE", "Canara Crest Account", nowStr],
-    ["acc_hsbc_vibhav_1", "Vibhav Oswal", "HSBC India", "hsbc", "HSBC Premier", "Premier", "HNI & Private", "'074532227006", "HSBC0560002", "", "'254315831", "", "", "", "", "", "", "ACTIVE", "HSBC Premier Account", nowStr],
-    ["acc_bob_vibhav_1", "Vibhav Oswal", "Bank of Baroda", "bob", "BoB Advantage", "Advantage Savings", "Wealth & Priority", "'99870100008545", "BARB0DBKHOP", "", "'MT3D09485", "MT3D09485", "[REDACTED]", "[REDACTED]", "''", "''", "Khopoli Branch", "ACTIVE", "BoB NetBanking", nowStr],
-
-    // --- SANJAY OSWAL (5 ACCOUNTS) ---
-    ["acc_indusind_sanjay_2", "Sanjay Oswal", "IndusInd Bank", "indusind", "Pioneer Private #2", "Pioneer Private", "HNI & Private", "'159823470448", "INDB0001103", "", "'55855930", "", "", "", "", "", "", "ACTIVE", "Pioneer Private Account #2", nowStr],
-    ["acc_axis_sanjay_1", "Sanjay Oswal", "Axis Bank", "axis", "Burgundy Sanjay", "Burgundy", "HNI & Private", "'926010016663332", "UTIB0000114", "", "'982451359", "", "[REDACTED]", "", "", "", "", "ACTIVE", "Burgundy Sanjay Account", nowStr],
-    ["acc_hdfc_sanjay_1", "Sanjay Oswal", "HDFC Bank", "hdfc", "HDFC Sanjay", "Imperia / Preferred", "Wealth & Priority", "'50100456446803", "HDFC0000827", "sanjayoswal@hdfcbank", "'177426223", "sanjayoswal", "", "", "", "", "", "ACTIVE", "HDFC Sanjay Account", nowStr],
-    ["acc_bob_sanjay_1", "Sanjay Oswal", "Bank of Baroda", "bob", "BoB Sanjay", "Advantage Savings", "Wealth & Priority", "'99870100004059", "BARB0DBKHOP", "", "'MT3D01692", "MT3D01692", "[REDACTED]", "[REDACTED]", "''", "''", "Khopoli Branch", "ACTIVE", "BoB NetBanking Sanjay", nowStr],
-    ["acc_federal_sanjay_1", "Sanjay Oswal", "Federal Bank", "federal", "Federal Sanjay", "Savings", "Digital & SFB", "'55550111917124", "FDRL0005555", "sanjayoswal@fbl", "", "", "", "", "", "", "", "ACTIVE", "Federal Account (Sanjay Himatmal Oswal)", nowStr],
-
-    // --- ARUNA OSWAL (4 ACCOUNTS) ---
-    ["acc_axis_aruna_1", "Aruna Oswal", "Axis Bank", "axis", "Burgundy Aruna", "Burgundy", "HNI & Private", "'926010016657793", "UTIB0000114", "", "'982450167", "", "[REDACTED]", "", "", "", "", "ACTIVE", "Burgundy Aruna Account", nowStr],
-    ["acc_hdfc_aruna_1", "Aruna Oswal", "HDFC Bank", "hdfc", "HDFC Aruna", "Imperia / Preferred", "Wealth & Priority", "'50100456446816", "HDFC0000827", "arunaoswal@hdfcbank", "'177426224", "arunaoswal", "", "", "", "", "", "ACTIVE", "HDFC Aruna Account", nowStr],
-    ["acc_bob_aruna_1", "Aruna Oswal", "Bank of Baroda", "bob", "BoB Aruna", "Advantage Savings", "Wealth & Priority", "'99870100005014", "BARB0DBKHOP", "", "'MT3D03173", "MT3D03173", "[REDACTED]", "[REDACTED]", "''", "''", "Khopoli Branch", "ACTIVE", "BoB NetBanking Aruna", nowStr],
-    ["acc_federal_aruna_1", "Aruna Oswal", "Federal Bank", "federal", "Federal Aruna", "Savings", "Digital & SFB", "'55550112011364", "FDRL0005555", "arunaoswal@fbl", "", "", "", "", "", "", "", "ACTIVE", "Federal Account (Aruna Sanjay Oswal)", nowStr],
-
-    // --- SMITI OSWAL (3 ACCOUNTS) ---
-    ["acc_axis_smiti_1", "Smiti Oswal", "Axis Bank", "axis", "Burgundy Smiti", "Burgundy", "HNI & Private", "'923010014752754", "UTIB0002366", "vibhavoswal@axisbank", "'949545156", "", "[REDACTED]", "", "", "", "", "ACTIVE", "Burgundy Smiti Account", nowStr],
-    ["acc_hdfc_smiti_1", "Smiti Oswal", "HDFC Bank", "hdfc", "HDFC Smiti", "Imperia / Preferred", "Wealth & Priority", "'50100591004352", "HDFC0000827", "vibhavoswal@hdfcbank", "'222800319", "smitioswal", "", "", "", "", "", "ACTIVE", "HDFC Smiti Account", nowStr],
-    ["acc_bob_smiti_1", "Smiti Oswal", "Bank of Baroda", "bob", "BoB Smiti", "Advantage Savings", "Wealth & Priority", "'99870100013818", "BARB0DBKHOP", "", "'MT3063389", "MT3063389", "[REDACTED]", "[REDACTED]", "", "", "Khopoli Branch", "ACTIVE", "BoB NetBanking Smiti", nowStr],
-
-    // --- SHAKUNTALA OSWAL (1 ACCOUNT) ---
-    ["acc_bob_shakuntala_1", "Shakuntala Oswal", "Bank of Baroda", "bob", "BoB Shakuntala", "Advantage Savings", "Wealth & Priority", "'99870100009094", "BARB0DBKHOP", "", "'MT3D01699", "MT3D01699", "[REDACTED]", "[REDACTED]", "", "", "Khopoli Branch", "ACTIVE", "BoB NetBanking Shakuntala", nowStr]
-  ];
-
-  accounts.forEach(acc => sheet.appendRow(acc));
+  // If sheet already has data, do not overwrite; otherwise insert dummy schema template
+  if (sheet.getLastRow() <= 1) {
+    sheet.appendRow([
+      "acc_template_1", "Sample Holder", "Sample Bank", "sample", "Sample Account",
+      "Savings", "General", "'100000000001", "SMPL0001234", "sample@upi",
+      "'12345678", "samplealias", "", "", "", "", "Sample Branch", "ACTIVE", "Template Account", nowStr
+    ]);
+  }
 
   return {
     success: true,
     sheetName: "Bank Accounts",
     created: created,
-    accountsCount: accounts.length
+    accountsCount: Math.max(0, sheet.getLastRow() - 1)
   };
 }
 
