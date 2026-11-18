@@ -45,7 +45,8 @@ const SYSTEM_SHEET_NAMES = new Set([
   "Redeemed",
   "RuPay Income",
   "RuPay Charges",
-  "Deleted_Tombstones"
+  "Deleted_Tombstones",
+  "RuPayIncomeBackup"
 ]);
 
 const SPREADSHEET_ID = "13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA";
@@ -305,8 +306,11 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
     sheet.appendRow(newRowData);
     insertRowIndex = sheet.getLastRow();
   }
+  const newRowRange = sheet.getRange(insertRowIndex, 1, 1, newRowData.length);
+  newRowRange.setFontFamily("Arial").setFontSize(10).setVerticalAlignment("bottom");
+  newRowRange.setBorder(false, false, false, false, false, false);
   sheet.getRange(insertRowIndex, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
-  sheet.getRange(insertRowIndex, 3).setNumberFormat("0.00");
+  sheet.getRange(insertRowIndex, 3).setNumberFormat("0.00").setHorizontalAlignment("right");
 
   recalculateSheetTotal(sheet);
   return insertRowIndex;
@@ -2656,6 +2660,223 @@ function doGet(e) {
     }
   }
 
+  // Action: Take backup of "RuPay Income" as "RuPayIncomeBackup", format "RuPay Income" like other tabs, and tally
+  if (e && e.parameter && e.parameter.action === "FORMAT_AND_BACKUP_RUPAY_INCOME") {
+    try {
+      const lock = LockService.getScriptLock();
+      lock.tryLock(30000);
+      const ss = getSpreadsheet();
+      const incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) {
+        return ContentService.createTextOutput(JSON.stringify({ error: '"RuPay Income" sheet not found' })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // Step 1: Create Backup Tab "RuPayIncomeBackup" first
+      let backupSheet = ss.getSheetByName("RuPayIncomeBackup");
+      if (backupSheet) {
+        ss.deleteSheet(backupSheet);
+      }
+      backupSheet = incomeSheet.copyTo(ss);
+      backupSheet.setName("RuPayIncomeBackup");
+      try {
+        ss.setActiveSheet(backupSheet);
+        ss.moveActiveSheet(incomeSheet.getIndex() + 1);
+      } catch (eMove) {}
+      SpreadsheetApp.flush();
+
+      // Step 2: Format "RuPay Income" tab exactly like other canonical tabs (RuPay Charges / CultFit)
+      const lastRow = incomeSheet.getLastRow();
+      const lastCol = Math.max(incomeSheet.getLastColumn(), 4);
+
+      // Remove borders across the sheet
+      incomeSheet.getRange(1, 1, Math.max(lastRow, 100), lastCol).setBorder(false, false, false, false, false, false);
+
+      // Copy column widths from RuPay Charges if available, else standard widths
+      const chargesSheet = ss.getSheetByName("RuPay Charges");
+      const col1Width = chargesSheet ? chargesSheet.getColumnWidth(1) : 180;
+      const col2Width = chargesSheet ? chargesSheet.getColumnWidth(2) : 100;
+      const col3Width = chargesSheet ? chargesSheet.getColumnWidth(3) : 100;
+      const col4Width = chargesSheet ? chargesSheet.getColumnWidth(4) : 400;
+
+      incomeSheet.setColumnWidth(1, col1Width);
+      incomeSheet.setColumnWidth(2, col2Width);
+      incomeSheet.setColumnWidth(3, col3Width);
+      incomeSheet.setColumnWidth(4, col4Width);
+
+      // Header Row (Row 1): Arial 10, bold, #F3F4F6 background, black text, bottom aligned, left aligned, frozen row
+      const headerRange = incomeSheet.getRange(1, 1, 1, 4);
+      headerRange.setFontFamily("Arial");
+      headerRange.setFontSize(10);
+      headerRange.setFontWeight("bold");
+      headerRange.setFontColor("#000000");
+      headerRange.setBackground("#F3F4F6");
+      headerRange.setVerticalAlignment("bottom");
+      headerRange.setHorizontalAlignment("left");
+      incomeSheet.setFrozenRows(1);
+
+      // Find TOTAL row
+      const vals = incomeSheet.getRange(1, 1, lastRow, 4).getValues();
+      let totalRowIdx = -1;
+      for (let r = 1; r < vals.length; r++) {
+        const col0 = String(vals[r][0] || '').trim().toUpperCase();
+        if (col0 === 'TOTAL') {
+          totalRowIdx = r + 1;
+          break;
+        }
+      }
+
+      const dataEndRow = totalRowIdx > 0 ? (totalRowIdx - 1) : lastRow;
+      const dataRowCount = dataEndRow - 1;
+
+      if (dataRowCount > 0) {
+        const dataRange = incomeSheet.getRange(2, 1, dataRowCount, 4);
+        dataRange.setFontFamily("Arial");
+        dataRange.setFontSize(10);
+        dataRange.setFontWeight("normal");
+        dataRange.setFontColor("#000000");
+        dataRange.setVerticalAlignment("bottom");
+        dataRange.setBackground(null);
+        dataRange.setBorder(false, false, false, false, false, false);
+
+        // Column 1 (Title/Brand): Left aligned, normal weight
+        incomeSheet.getRange(2, 1, dataRowCount, 1).setHorizontalAlignment("left").setFontWeight("normal");
+
+        // Column 2 (Date): Center aligned, dd/MM/yy format
+        incomeSheet.getRange(2, 2, dataRowCount, 1).setHorizontalAlignment("center").setNumberFormat("dd/MM/yy");
+
+        // Column 3 (Price): Right aligned, 0.00 number format
+        incomeSheet.getRange(2, 3, dataRowCount, 1).setHorizontalAlignment("right").setNumberFormat("0.00");
+
+        // Column 4 (Comments): Left aligned, overflow wrap strategy
+        incomeSheet.getRange(2, 4, dataRowCount, 1).setHorizontalAlignment("left").setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
+      }
+
+      // TOTAL Row formatting
+      if (totalRowIdx > 0) {
+        const totalRange = incomeSheet.getRange(totalRowIdx, 1, 1, 4);
+        totalRange.setFontFamily("Arial");
+        totalRange.setFontSize(10);
+        totalRange.setFontWeight("bold");
+        totalRange.setFontColor("#000000");
+        totalRange.setVerticalAlignment("bottom");
+        totalRange.setBackground(null);
+        totalRange.setBorder(false, false, false, false, false, false);
+
+        incomeSheet.getRange(totalRowIdx, 1).setValue("TOTAL").setHorizontalAlignment("left");
+        incomeSheet.getRange(totalRowIdx, 2).setValue("").setHorizontalAlignment("general");
+
+        let sum = 0;
+        for (let r = 1; r < totalRowIdx - 1; r++) {
+          const num = Number(vals[r][2]);
+          if (!isNaN(num)) sum += num;
+        }
+        incomeSheet.getRange(totalRowIdx, 3).setValue(Number(sum.toFixed(2))).setHorizontalAlignment("right").setNumberFormat("0.00");
+        incomeSheet.getRange(totalRowIdx, 4).setValue("").setHorizontalAlignment("general");
+      }
+
+      SpreadsheetApp.flush();
+
+      // Step 3: Tally "RuPay Income" against "RuPayIncomeBackup"
+      const currentVals = incomeSheet.getDataRange().getValues();
+      const backupVals = backupSheet.getDataRange().getValues();
+
+      let tallyMatches = true;
+      const discrepancies = [];
+
+      if (currentVals.length !== backupVals.length) {
+        tallyMatches = false;
+        discrepancies.push(`Row count mismatch: RuPay Income has ${currentVals.length} rows, Backup has ${backupVals.length} rows`);
+      }
+
+      const compareRows = Math.min(currentVals.length, backupVals.length);
+      let incomeSum = 0;
+      let backupSum = 0;
+
+      for (let r = 0; r < compareRows; r++) {
+        const cRow = currentVals[r];
+        const bRow = backupVals[r];
+
+        if (r === 0) {
+          for (let c = 0; c < 4; c++) {
+            if (String(cRow[c] || '').trim() !== String(bRow[c] || '').trim()) {
+              tallyMatches = false;
+              discrepancies.push(`Header col ${c + 1} mismatch: "${cRow[c]}" vs "${bRow[c]}"`);
+            }
+          }
+          continue;
+        }
+
+        const cTitle = String(cRow[0] || '').trim();
+        const bTitle = String(bRow[0] || '').trim();
+
+        if (cTitle.toUpperCase() === 'TOTAL' || bTitle.toUpperCase() === 'TOTAL') {
+          const cTot = Number(cRow[2]);
+          const bTot = Number(bRow[2]);
+          if (Math.abs(cTot - bTot) > 0.01) {
+            tallyMatches = false;
+            discrepancies.push(`TOTAL amount mismatch: Income=${cTot}, Backup=${bTot}`);
+          }
+          continue;
+        }
+
+        if (cTitle !== bTitle) {
+          tallyMatches = false;
+          discrepancies.push(`Row ${r + 1} Title mismatch: "${cTitle}" vs "${bTitle}"`);
+        }
+
+        // Compare date value
+        const cDateMs = (cRow[1] instanceof Date) ? cRow[1].getTime() : parseDateToTimestamp(String(cRow[1] || ''));
+        const bDateMs = (bRow[1] instanceof Date) ? bRow[1].getTime() : parseDateToTimestamp(String(bRow[1] || ''));
+        if (cDateMs !== bDateMs) {
+          tallyMatches = false;
+          discrepancies.push(`Row ${r + 1} Date mismatch: "${cRow[1]}" vs "${bRow[1]}"`);
+        }
+
+        const cPrice = Number(cRow[2]) || 0;
+        const bPrice = Number(bRow[2]) || 0;
+        if (Math.abs(cPrice - bPrice) > 0.001) {
+          tallyMatches = false;
+          discrepancies.push(`Row ${r + 1} Price mismatch: ${cPrice} vs ${bPrice}`);
+        }
+        incomeSum += cPrice;
+        backupSum += bPrice;
+
+        const cComm = String(cRow[3] || '').trim();
+        const bComm = String(bRow[3] || '').trim();
+        if (cComm !== bComm) {
+          tallyMatches = false;
+          discrepancies.push(`Row ${r + 1} Comments mismatch: "${cComm}" vs "${bComm}"`);
+        }
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "FORMAT_AND_BACKUP_RUPAY_INCOME",
+        backupTabName: "RuPayIncomeBackup",
+        backupSheetId: backupSheet.getSheetId(),
+        incomeSheetId: incomeSheet.getSheetId(),
+        totalRows: currentVals.length,
+        dataRowCount: dataRowCount,
+        incomeSum: Number(incomeSum.toFixed(2)),
+        backupSum: Number(backupSum.toFixed(2)),
+        isIdentical: tallyMatches,
+        discrepanciesCount: discrepancies.length,
+        discrepancies: discrepancies,
+        formattingApplied: {
+          headerBackground: "#F3F4F6",
+          fontFamily: "Arial",
+          fontSize: 10,
+          columnWidths: [col1Width, col2Width, col3Width, col4Width],
+          bordersRemoved: true,
+          datePattern: "dd/MM/yy",
+          pricePattern: "0.00"
+        }
+      }, null, 2)).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.message, stack: err.stack })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   // Action: Remove RuPay Income row & unmark sale in "New" tab
   if (e && e.parameter && e.parameter.action === "REMOVE_RUPAY_INCOME_AND_UNMARK_SALE") {
     try {
@@ -3075,7 +3296,8 @@ function doGet(e) {
       "Deleted_Tombstones",
       "Blocked Cards",
       "Bank Accounts",
-      "Cards"
+      "Cards",
+      "RuPayIncomeBackup"
     ]);
 
     for (const sheet of sheets) {
