@@ -3688,6 +3688,13 @@
               </span>
               <span class="text-[10px] font-mono-apple">›</span>
             </button>
+            <button id="drawer-gmail-scan-btn" onclick="triggerManualGmailScan()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
+              <span class="flex items-center gap-2">
+                <svg id="drawer-gmail-icon" class="w-3.5 h-3.5 text-amber-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <span id="drawer-gmail-label">Scan RuPay Emails</span>
+              </span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded-full font-mono-apple font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Force</span>
+            </button>
             <button id="drawer-sync-btn" onclick="triggerDrawerSync()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
               <span class="flex items-center gap-2">
                 <svg id="drawer-sync-spinner" class="w-3.5 h-3.5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
@@ -5018,7 +5025,9 @@
         switchWorkspace(savedWorkspace);
         renderAll();
         flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
-        // Instant non-blocking background fetch from Google Sheets upon reload/unlock (zero UI freeze)
+        // Instant non-blocking fast-path Ingested fetch upon reload/unlock (~400ms)
+        syncIngestedFast().catch(e => console.warn('Fast Ingested sync warning:', e));
+        // Deferred deep sync for all tabs in background
         syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
       }
     }
@@ -8468,6 +8477,127 @@
     let activeSyncController = null;
     let lastManualEmailSyncMs = 0;
 
+    /* --- FAST-PATH INGESTED LIVE REFRESH (~400MS) --- */
+    async function syncIngestedFast() {
+      try {
+        const token = getSessionToken();
+        const res = await fetch(`${API_ENDPOINT}?action=GET_INGESTED_ONLY&token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.staging)) {
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
+          const inFlightTags = MutationJournal.getTags();
+          const inFlightApprovalKeys = new Set();
+          MutationJournal.getApprovals().forEach(v => {
+            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).trim().toUpperCase());
+            if (v.code) inFlightApprovalKeys.add(String(v.code).trim().toUpperCase());
+          });
+
+          state.staging = data.staging
+            .filter(s => {
+              const bId = String(s.bookingId || '').trim().toUpperCase();
+              const c = String(s.code || '').trim().toUpperCase();
+              if (bId && (isIdentifierQuarantined(bId) || inFlightApprovalKeys.has(bId))) return false;
+              if (c && (isIdentifierQuarantined(c) || inFlightApprovalKeys.has(c))) return false;
+              return true;
+            })
+            .map((s, idx) => {
+              const bId = s.bookingId || ('#S' + (idx + 1));
+              let status = (s.status || 'PENDING').toUpperCase();
+              let code = s.code || 'PENDING';
+              let payUrl = s.payUrl || '';
+
+              const cleanBid = String(bId || '').trim().toUpperCase();
+              const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
+
+              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid))) {
+                const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code) && !/processing/i.test(code);
+                if (isRealCode) {
+                  removeRevalidatedBid(cleanBid);
+                  if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
+                } else {
+                  status = 'PENDING';
+                  code = 'PENDING';
+                  payUrl = '';
+                }
+              }
+
+              let cardVal = (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned';
+              const tagMatch = inFlightTags[code.toUpperCase()] || (bId ? inFlightTags[bId.toUpperCase()] : null);
+              if (cardVal === 'Unassigned') {
+                if (tagMatch) cardVal = tagMatch.cardTag;
+              } else {
+                if (tagMatch) {
+                  if (code) MutationJournal.removeTag(code);
+                  if (bId) MutationJournal.removeTag(bId);
+                }
+              }
+
+              return {
+                id: s.id || ('staging-' + (s.bookingId || idx)),
+                bookingId: bId,
+                brand: s.brand || 'Voucher',
+                targetBrand: s.targetBrand || s.brand || 'Voucher',
+                code: code,
+                pin: s.pin || null,
+                amount: Number(s.amount) || 500,
+                dateOfIssue: s.dateOfIssue || '',
+                account: s.account || '',
+                card: cardVal,
+                status: status,
+                timestampIST: s.timestampIST || nowIST(),
+                displayInUI: s.displayInUI !== false,
+                payUrl: payUrl,
+                isSaleMarked: s.isSaleMarked === true || s.saleMarked === true,
+                saleMarked: s.isSaleMarked === true || s.saleMarked === true,
+                saleDetails: s.saleDetails || null
+              };
+            });
+
+          await saveEncryptedStaging(state.staging);
+          renderVault();
+          renderDeckSelector();
+          updateClearTrashBadges();
+        }
+      } catch (err) {
+        console.warn('Fast Ingested sync notice:', err);
+      }
+    }
+
+    /* --- ON-DEMAND GMAIL INGESTION TRIGGER --- */
+    async function triggerManualGmailScan() {
+      const icon = document.getElementById('drawer-gmail-icon');
+      const label = document.getElementById('drawer-gmail-label');
+      if (icon) icon.classList.add('animate-spin');
+      if (label) label.textContent = 'Scanning Gmail...';
+      closeNavDrawer();
+
+      showToast('Scanning Gmail inbox for new RuPay vouchers...');
+      updateSyncPulseIndicator(true);
+
+      try {
+        const res = await apiFetch('TRIGGER_GMAIL_INGEST', {}, { retries: 1, timeout: 60000 });
+        if (res && res.success) {
+          const count = res.newVouchersCount || 0;
+          if (count > 0) {
+            showToast(`Gmail scan complete: ${count} new voucher${count > 1 ? 's' : ''} ingested!`);
+          } else {
+            showToast('Inbox checked: All vouchers are up to date.');
+          }
+          await syncIngestedFast();
+        } else {
+          showToast(res?.error ? `Gmail scan: ${res.error}` : 'Gmail scan completed.');
+          await syncIngestedFast();
+        }
+      } catch (err) {
+        console.warn('Manual Gmail scan error:', err);
+        showToast('Gmail scan took too long or encountered an error.');
+      } finally {
+        updateSyncPulseIndicator(false);
+        if (icon) icon.classList.remove('animate-spin');
+        if (label) label.textContent = 'Scan RuPay Emails';
+      }
+    }
+
     function triggerDrawerSync() {
       const spinner = document.getElementById('drawer-sync-spinner');
       const label = document.getElementById('drawer-sync-label');
@@ -9793,9 +9923,16 @@
             ${v.redeemedOn ? `<span class="text-[#F47A21] font-medium">Redeemed: ${v.redeemedOn}</span>` : (v.expiry || 'Active')}
           </td>
           <td class="p-3">
-            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
-              ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PENDING</span>' : v.status}
-            </span>
+            ${v.isCommitPending ? `
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono-apple">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span>Saving to Sheet...</span>
+              </span>
+            ` : `
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
+                ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> PENDING</span>' : v.status}
+              </span>
+            `}
           </td>
           <td class="p-3 text-right">
             ${isMisc ? `
@@ -9824,10 +9961,21 @@
           ? (isChecked ? 'cobalt-accent-dark border-neutral-800 ring-2 ring-[#0C8C46]/50' : 'cobalt-accent-dark border-neutral-800')
           : (isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700 bg-gradient-to-br from-neutral-900 to-neutral-950');
 
-        // Bottom Line: ONLY for recent vouchers (< 7 days)
-        // Left: [● Ingested on 19th Oct] | Right: Card tag
-        // Older vouchers: OMITTED COMPLETELY (no card tag, no untagged label, no recency badge)
-        const bottomLineHtml = isRecentArrival ? `
+        // Bottom Line: ONLY for recent vouchers (< 7 days) or vouchers pending commitment
+        // Left: [Saving to Sheet... / ● Ingested on 19th Oct] | Right: Card tag
+        const isCommitPending = v.isCommitPending === true;
+        const bottomLineHtml = isCommitPending ? `
+          <div class="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/40">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono-apple">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <span>Saving to Sheet...</span>
+            </span>
+            <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
+              <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              <span>${v.card || 'RuPay Select'}</span>
+            </div>
+          </div>
+        ` : (isRecentArrival ? `
           <div class="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/40">
             <span class="text-[10px] font-bold text-[#007AFF] flex items-center gap-1.5 font-mono-apple">
               <span class="w-1.5 h-1.5 rounded-full bg-[#007AFF]"></span>
@@ -9838,7 +9986,7 @@
               <span>${v.card || 'RuPay Select'}</span>
             </div>
           </div>
-        ` : '';
+        ` : '');
 
         const isMisc = (normActiveBrand === 'Misc');
         const specificBrandName = v.bookingId || v.account || 'Misc';
@@ -13802,7 +13950,8 @@
           timestampIST: s.timestampIST || nowIST(),
           displayInUI: true,
           status: 'ACTIVE',
-          isRecent: true // 72-Hour Royal Blue Flag
+          isRecent: true, // 72-Hour Royal Blue Flag
+          isCommitPending: true // Visual commitment transparency
         };
         state.vouchers.unshift(voucherObj);
         approvedItemsToJournal.push(voucherObj);
@@ -13868,7 +14017,13 @@
           throw new Error(res?.error || 'Server approval failed');
         }
 
-        // Commit encrypted caches on confirmed success
+        // 5. Commitment Confirmed: Clear pending commitment flag & commit encrypted caches
+        approvedItemsToJournal.forEach(v => {
+          v.isCommitPending = false;
+          const found = state.vouchers.find(x => x.id === v.id || (v.code && x.code === v.code) || (v.bookingId && x.bookingId === v.bookingId));
+          if (found) found.isCommitPending = false;
+        });
+        renderVault();
         await saveEncryptedStaging(state.staging);
         await saveEncryptedVouchers(state.vouchers);
       } catch (err) {

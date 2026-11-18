@@ -1022,6 +1022,40 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
 }
 
 /**
+ * Helper to parse "New" sheet into canonical staging voucher objects
+ */
+function getStagingFromNewSheet(ss) {
+  const newSheet = ss.getSheetByName("New");
+  if (!newSheet || newSheet.getLastRow() <= 1) return [];
+  const rows = newSheet.getDataRange().getValues();
+  const staging = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][0] && !rows[i][1]) continue;
+    const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
+    const targetBrand = String(rows[i][10] || '⚡ Unassigned');
+    const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
+    staging.push({
+      brand: targetBrand,
+      bookingId: String(rows[i][0] || ''),
+      code: String(rows[i][1] || ''),
+      pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
+      amount: Number(rows[i][3]) || 0,
+      dateOfIssue: rows[i][4] ? String(rows[i][4]) : '',
+      account: rows[i][5] ? String(rows[i][5]) : '',
+      card: rows[i][6] ? String(rows[i][6]) : '',
+      status: rows[i][7] ? String(rows[i][7]) : 'PENDING',
+      timestampIST: rows[i][8] ? String(rows[i][8]) : null,
+      displayInUI: isDisp,
+      targetBrand: targetBrand,
+      payUrl: rows[i].length > 11 && rows[i][11] ? String(rows[i][11]).trim() : '',
+      isSaleMarked: isSaleMarked,
+      saleMarked: isSaleMarked
+    });
+  }
+  return staging;
+}
+
+/**
  * 1.5 STAGE 1.5: RECORD PENDING REVALIDATION
  * Triggered when "On Hold – Validation Pending" email arrives.
  * Updates Code to "Pending revalidation" and Status to "PENDING_REVALIDATION".
@@ -3245,6 +3279,35 @@ function doGet(e) {
 
   try {
     const ss = getSpreadsheet();
+
+    // Fast-Path: Fetch only Ingested Vouchers from "New" sheet (~400ms)
+    if (e && e.parameter && (e.parameter.action === "GET_INGESTED_ONLY" || e.parameter.fast === "staging")) {
+      const staging = getStagingFromNewSheet(ss);
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "GET_INGESTED_ONLY",
+        staging: staging,
+        lastUpdated: formatISTTimestamp(new Date())
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // Fast-Path: Spreadsheet modification check (~150ms)
+    if (e && e.parameter && e.parameter.action === "CHECK_MODIFIED") {
+      let lastUpdatedMs = 0;
+      try {
+        lastUpdatedMs = DriveApp.getFileById(ss.getId()).getLastUpdated().getTime();
+      } catch (_) {
+        lastUpdatedMs = Date.now();
+      }
+      const clientTimestamp = Number(e.parameter.since || 0);
+      const notModified = clientTimestamp > 0 && Math.abs(lastUpdatedMs - clientTimestamp) < 1000;
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "CHECK_MODIFIED",
+        notModified: notModified,
+        lastUpdated: lastUpdatedMs
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // Trigger on-demand reconciliation of pending vouchers
     if (e && e.parameter && e.parameter.reconcile === "true") {
@@ -5496,6 +5559,33 @@ function doPost(e) {
     if (data.action === "PROMOTE_TOMBSTONES") {
       const result = promoteTombstones(ss);
       return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 18. On-Demand Gmail Ingestion Trigger
+    if (data.action === "TRIGGER_GMAIL_INGEST") {
+      const startTime = Date.now();
+      let countBefore = 0;
+      let countAfter = 0;
+      const newSheet = ss.getSheetByName("New");
+      if (newSheet) countBefore = Math.max(0, newSheet.getLastRow() - 1);
+
+      try {
+        processRupayEmails();
+      } catch (errIngest) {
+        console.warn("TRIGGER_GMAIL_INGEST error:", errIngest.message);
+      }
+
+      if (newSheet) countAfter = Math.max(0, newSheet.getLastRow() - 1);
+      const newVouchersCount = Math.max(0, countAfter - countBefore);
+      const durationMs = Date.now() - startTime;
+
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "TRIGGER_GMAIL_INGEST",
+        newVouchersCount: newVouchersCount,
+        durationMs: durationMs,
+        totalStaged: countAfter
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
