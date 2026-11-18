@@ -260,7 +260,13 @@ function recalculateSheetTotal(sheet) {
     if (!isNaN(num)) sum += num;
   }
   if (totalRowIndex > 0) {
-    sheet.getRange(totalRowIndex, 3).setValue(Number(sum.toFixed(2)));
+    const totalCell = sheet.getRange(totalRowIndex, 3);
+    if (totalRowIndex > 2) {
+      totalCell.setFormula(`=SUM(C2:C${totalRowIndex - 1})`);
+    } else {
+      totalCell.setValue(0);
+    }
+    totalCell.setNumberFormat("#,##0.00").setFontWeight("bold");
   }
 }
 
@@ -2971,13 +2977,9 @@ function doGet(e) {
             if (parsed) account = parsed.card || parsed.account || '';
           }
           let yr = 2026;
-          if (dateStr) {
-            const parts = dateStr.split(/[\/\-\.]/);
-            if (parts.length === 3) {
-              const yPart = parts[2].trim();
-              if (yPart.length === 4) yr = parseInt(yPart, 10);
-              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-            }
+          const comp = parseDateComponents(rows[i][1]);
+          if (comp && comp.year) {
+            yr = comp.year;
           }
           const entry = {
             id: 'inc-' + i,
@@ -3021,13 +3023,9 @@ function doGet(e) {
             if (parsed) account = parsed.card || parsed.account || '';
           }
           let yr = 2026;
-          if (dateStr) {
-            const parts = dateStr.split(/[\/\-\.]/);
-            if (parts.length === 3) {
-              const yPart = parts[2].trim();
-              if (yPart.length === 4) yr = parseInt(yPart, 10);
-              else if (yPart.length === 2) yr = 2000 + parseInt(yPart, 10);
-            }
+          const comp = parseDateComponents(rows[i][1]);
+          if (comp && comp.year) {
+            yr = comp.year;
           }
           const chargeVal = -Math.abs(priceVal);
           const entry = {
@@ -4747,7 +4745,10 @@ function doPost(e) {
     // 7B. Tag Payment Card on Ingested Vouchers
     if (data.action === "TAG_CARD") {
       const cardTag = String(data.cardTag || data.card || "").trim();
-      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const rawCodes = (data.codes || [])
+        .concat(data.bookingIds || [])
+        .concat(data.code ? [data.code] : [])
+        .concat(data.bookingId ? [data.bookingId] : []);
       const PLACEHOLDER_BACKEND = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', '-']);
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
@@ -5435,10 +5436,13 @@ function doPost(e) {
             if (matchBid || matchCode) {
               const brandSheet = getTargetBrandSheet(ss, brand || String(rVals[i][0] || ''));
               if (brandSheet) {
+                const rawBid = String(rVals[i][1] || '').trim();
+                const rawCd = String(rVals[i][2] || '').trim();
+                const rawPin = String(rVals[i][3] || '').trim();
                 brandSheet.appendRow([
-                  rVals[i][1], // Booking ID
-                  rVals[i][2], // Code
-                  rVals[i][3], // PIN
+                  rawBid ? (rawBid.startsWith("'") ? rawBid : ("'" + rawBid)) : "", // Booking ID
+                  rawCd ? (rawCd.startsWith("'") ? rawCd : ("'" + rawCd)) : "",     // Code
+                  rawPin ? (rawPin.startsWith("'") ? rawPin : ("'" + rawPin)) : "", // PIN
                   rVals[i][4], // Value
                   rVals[i][5], // Date of Issue
                   rVals[i][6], // Account

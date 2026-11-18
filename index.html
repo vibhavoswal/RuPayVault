@@ -4087,6 +4087,37 @@
       }
     }
 
+    // Save bank accounts to AES-GCM encrypted cache in localStorage
+    async function saveEncryptedBankAccounts(accounts) {
+      try {
+        if (!securityState.cryptoKey) return;
+        const serialized = JSON.stringify(accounts || []);
+        const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
+        localStorage.setItem('rupay_bank_accounts_encrypted_cache', JSON.stringify(encrypted));
+        localStorage.removeItem('rupay_bank_accounts_data'); // Clear legacy plaintext cache
+      } catch (err) {
+        console.warn("Failed to save encrypted bank accounts cache:", err);
+      }
+    }
+
+    // Load and decrypt bank accounts data from cache
+    async function loadEncryptedBankAccounts() {
+      try {
+        const cached = localStorage.getItem('rupay_bank_accounts_encrypted_cache');
+        if (!cached || !securityState.cryptoKey) return null;
+        const parsed = JSON.parse(cached);
+        const decryptedJson = await decryptWithKey(securityState.cryptoKey, parsed);
+        const accounts = JSON.parse(decryptedJson);
+        if (accounts && Array.isArray(accounts)) {
+          return accounts;
+        }
+        return null;
+      } catch (err) {
+        console.warn("Encrypted bank accounts cache decryption failed:", err);
+        return null;
+      }
+    }
+
     /* --- RESILIENT TIMEOUT SIGNAL (AbortSignal.timeout with AbortController fallback) --- */
     function createTimeoutSignal(timeoutMs = 35000) {
       if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
@@ -4938,12 +4969,13 @@
           securityState.cryptoKey = null;
         }
 
-        const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging, decryptedIncome] = await Promise.all([
+        const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging, decryptedIncome, decryptedBankAccounts] = await Promise.all([
           loadEncryptedVouchers(),
           loadEncryptedCards(),
           loadEncryptedAccounts(),
           loadEncryptedStaging(),
-          loadEncryptedIncome()
+          loadEncryptedIncome(),
+          loadEncryptedBankAccounts()
         ]);
 
         if (decryptedVouchers && decryptedVouchers.length) {
@@ -4957,6 +4989,9 @@
         }
         if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) {
           state.income = decryptedIncome;
+        }
+        if (decryptedBankAccounts && Array.isArray(decryptedBankAccounts) && decryptedBankAccounts.length) {
+          state.bankAccounts = decryptedBankAccounts;
         }
         if (decryptedStaging && decryptedStaging.length) {
           const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
@@ -5002,7 +5037,8 @@
           state.cards && state.cards.length ? saveEncryptedCards(state.cards) : Promise.resolve(),
           state.accounts && state.accounts.length ? saveEncryptedAccounts(state.accounts) : Promise.resolve(),
           state.staging && state.staging.length ? saveEncryptedStaging(state.staging) : Promise.resolve(),
-          state.income && state.income.ledger && state.income.ledger.length ? saveEncryptedIncome(state.income) : Promise.resolve()
+          state.income && state.income.ledger && state.income.ledger.length ? saveEncryptedIncome(state.income) : Promise.resolve(),
+          state.bankAccounts && state.bankAccounts.length ? saveEncryptedBankAccounts(state.bankAccounts) : Promise.resolve()
         ]);
       } catch (e) {
         console.warn('Error saving encrypted cache on lock:', e);
@@ -5012,6 +5048,8 @@
       state.cards = [];
       state.accounts = [];
       state.staging = [];
+      state.bankAccounts = [];
+      localStorage.removeItem('rupay_bank_accounts_data');
       state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       state.selectedIds.clear();
       securityState.cryptoKey = null;
@@ -7200,6 +7238,7 @@
       cards: [],
       vouchers: [],
       staging: [],
+      bankAccounts: [],
       income: {
         allTime: { gross: 0, charges: 0, net: 0, count: 0 },
         byYear: {},
@@ -8577,9 +8616,10 @@
       const token = getSessionToken();
       fetch(`${API_ENDPOINT}?action=GET_BANK_ACCOUNTS&token=${encodeURIComponent(token)}`)
         .then(res => res.json())
-        .then(data => {
+        .then(async data => {
           if (data && data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
-            localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(data.accounts));
+            state.bankAccounts = data.accounts;
+            await saveEncryptedBankAccounts(data.accounts);
             if (state.activeWorkspace === 'banks') {
               renderBankManager();
             }
@@ -8920,8 +8960,19 @@
         if (data.staging && Array.isArray(data.staging)) {
           const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
           const inFlightTags = MutationJournal.getTags();
+          const inFlightApprovalKeys = new Set();
+          MutationJournal.getApprovals().forEach(v => {
+            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).trim().toUpperCase());
+            if (v.code) inFlightApprovalKeys.add(String(v.code).trim().toUpperCase());
+          });
           state.staging = data.staging
-            .filter(s => !isIdentifierQuarantined(s.bookingId) && !isIdentifierQuarantined(s.code))
+            .filter(s => {
+              const bId = String(s.bookingId || '').trim().toUpperCase();
+              const c = String(s.code || '').trim().toUpperCase();
+              if (bId && (isIdentifierQuarantined(bId) || inFlightApprovalKeys.has(bId))) return false;
+              if (c && (isIdentifierQuarantined(c) || inFlightApprovalKeys.has(c))) return false;
+              return true;
+            })
             .map((s, idx) => {
               const bId = s.bookingId || ('#S' + (idx + 1));
               let status = (s.status || 'PENDING').toUpperCase();
@@ -11626,7 +11677,7 @@
 
       // Reveal the celebration overlay
       if (overlay) overlay.classList.remove('hidden');
-      if (status) status.innerHTML = '<span class="text-emerald-300 font-semibold tracking-wide">✓ Card Identified &amp; Luhn Check Passed</span>';
+      if (status) status.innerHTML = '<span class="text-emerald-300 font-semibold tracking-wide flex items-center justify-center gap-1.5"><svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Card Identified &amp; Luhn Check Passed</span>';
 
       // Allow user to see the recognized numbers animate on screen (800ms)
       await new Promise(r => setTimeout(r, 800));
@@ -12734,14 +12785,37 @@
     const BA_COPY_SVG = `<svg class="w-3.5 h-3.5 text-white/50 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     const BA_MICRO_COPY_SVG = `<svg class="w-2.5 h-2.5 text-white/40 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
+    function normalizeBankAccounts(remoteAccounts) {
+      if (!Array.isArray(remoteAccounts) || remoteAccounts.length === 0) {
+        return BANK_ACCOUNTS_MASTER;
+      }
+      return BANK_ACCOUNTS_MASTER.map(m => {
+        const mNum = String(m.accNumber || '').replace(/['\s]/g, '');
+        const r = remoteAccounts.find(x => {
+          const rNum = String(x.Account_Number || x.accNumber || '').replace(/['\s]/g, '');
+          return rNum && mNum && rNum === mNum;
+        });
+        if (!r) return { ...m };
+        return {
+          ...m,
+          custId: r.Customer_ID !== undefined ? (String(r.Customer_ID || '').replace(/^'/, '').trim() || null) : (r.custId !== undefined ? r.custId : m.custId),
+          upi: r.UPI_VPA !== undefined ? (String(r.UPI_VPA || '').trim() || null) : (r.upi !== undefined ? r.upi : m.upi),
+          alias: r.Customer_ID_Alias !== undefined ? (String(r.Customer_ID_Alias || '').trim() || null) : (r.alias !== undefined ? r.alias : m.alias),
+          branch: r.Branch_Name !== undefined ? (String(r.Branch_Name || '').trim() || null) : (r.branch !== undefined ? r.branch : m.branch),
+          signOnPass: r.Sign_On_Password !== undefined ? (String(r.Sign_On_Password || '').trim() || null) : (r.signOnPass !== undefined ? r.signOnPass : m.signOnPass),
+          txnPass: r.Transaction_Password !== undefined ? (String(r.Transaction_Password || '').trim() || null) : (r.txnPass !== undefined ? r.txnPass : m.txnPass),
+          txnPin: r.Transaction_PIN !== undefined ? (String(r.Transaction_PIN || '').replace(/^'/, '').trim() || null) : (r.txnPin !== undefined ? r.txnPin : m.txnPin),
+          loginPin: r.Login_PIN !== undefined ? (String(r.Login_PIN || '').replace(/^'/, '').trim() || null) : (r.loginPin !== undefined ? r.loginPin : m.loginPin),
+          notes: r.Notes !== undefined ? (String(r.Notes || '').trim() || null) : (r.notes !== undefined ? r.notes : m.notes),
+          status: r.Status !== undefined ? (String(r.Status || 'ACTIVE').trim()) : (r.status || m.status || 'ACTIVE')
+        };
+      });
+    }
+
     function getBankAccountsList() {
-      try {
-        const cached = localStorage.getItem('rupay_bank_accounts_data');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
+      if (state.bankAccounts && Array.isArray(state.bankAccounts) && state.bankAccounts.length > 0) {
+        return normalizeBankAccounts(state.bankAccounts);
+      }
       return BANK_ACCOUNTS_MASTER;
     }
 
@@ -12932,18 +13006,15 @@
       const rawVal = input.value.trim();
       const val = rawVal.length > 0 ? rawVal : null;
 
-      // Update current accounts list and persist to localStorage
+      // Update current accounts list and persist to encrypted cache
       let accounts = getBankAccountsList();
       accounts = JSON.parse(JSON.stringify(accounts));
 
       const targetAcc = accounts.find(a => a.id === cardId);
       if (targetAcc) {
         targetAcc[field] = val;
-        try {
-          localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(accounts));
-        } catch (e) {
-          console.error('Failed to save bank accounts data:', e);
-        }
+        state.bankAccounts = accounts;
+        saveEncryptedBankAccounts(accounts);
         const masterAcc = BANK_ACCOUNTS_MASTER.find(a => a.id === cardId);
         if (masterAcc) {
           masterAcc[field] = val;
@@ -13081,8 +13152,8 @@
                 ${isCustEditing ? `
                   <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
                     <input id="bank-input-cust-${acc.id}" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
-                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">✓</button>
-                    <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
+                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
+                    <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                   </div>
                 ` : acc.custId ? `
                   <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
@@ -13117,7 +13188,7 @@
                 <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
                   <input id="bank-input-upi-${acc.id}" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
                   <button onclick="saveBankInlineField('${acc.id}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
-                  <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95">✕</button>
+                  <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 </div>
               ` : acc.upi ? `
                 <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
@@ -13247,9 +13318,10 @@
 
       fetch(`${API_ENDPOINT}?action=GET_BANK_ACCOUNTS&token=${getSessionToken()}`)
         .then(res => res.json())
-        .then(data => {
+        .then(async data => {
           if (data && data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
-            localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(data.accounts));
+            state.bankAccounts = data.accounts;
+            await saveEncryptedBankAccounts(data.accounts);
           }
           const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           const baSync = document.getElementById('ba-sync-time');
@@ -13736,8 +13808,9 @@
         approvedItemsToJournal.push(voucherObj);
       });
 
-      // Record in Unified Mutation Journal (persists across syncs, tabs & reloads!)
+      // Record in Unified Mutation Journal & Quarantine from Staging immediately
       MutationJournal.recordApprovals(approvedItemsToJournal);
+      quarantineIdentifiers([...bookingIds, ...codes]);
 
       // 2. Remove from state.staging (Inbox Zero)
       const bookingIdSet = new Set(bookingIds);
@@ -13765,7 +13838,16 @@
 
       // Transactional rollback callback if backend rejects or network fails
       const rollback = () => {
-        approvedItemsToJournal.forEach(v => MutationJournal.removeApproval(v.code || v.bookingId));
+        approvedItemsToJournal.forEach(v => {
+          if (v.code) {
+            MutationJournal.removeApproval(v.code);
+            UniversalMutationJournal.unquarantine(v.code);
+          }
+          if (v.bookingId) {
+            MutationJournal.removeApproval(v.bookingId);
+            UniversalMutationJournal.unquarantine(v.bookingId);
+          }
+        });
         state.staging = prevStaging;
         state.vouchers = prevVouchers;
         renderVault();
@@ -14969,9 +15051,8 @@
         const targetAcc = accounts.find(a => a.id === setCard);
         if (targetAcc) {
           targetAcc[setField] = setVal;
-          try {
-            localStorage.setItem('rupay_bank_accounts_data', JSON.stringify(accounts));
-          } catch(e) {}
+          state.bankAccounts = accounts;
+          saveEncryptedBankAccounts(accounts);
           const masterAcc = BANK_ACCOUNTS_MASTER.find(a => a.id === setCard);
           if (masterAcc) masterAcc[setField] = setVal;
         }

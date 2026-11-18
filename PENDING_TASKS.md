@@ -4,11 +4,19 @@ This document tracks planned architectural enhancements, pending bug fixes, and 
 
 ---
 
-## 📌 PENDING: Concurrency Guard & Sync-Mutation Interlock ("Shield & Queue")
+## ✅ RESOLVED: Concurrency Guard & Sync-Mutation Interlock ("Shield & Queue")
 
-- **Status**: Pending Planning / Implementation
+- **Status**: Completed & Verified
 - **Area**: Frontend Sync (`index.html`) & Backend Consistency (`CronCode.gs`)
-- **Reported Issue**: When vouchers are approved to brand tabs (e.g. vouchers tagged with `PNB DC 5151`), clicking "Sync" manually a few seconds later causes them to reappear in the "Ingested" tab temporarily before stabilizing on a second approval.
+- **Resolved On**: November 19, 2026
+- **Summary of Implemented Fix**:
+  1. Synchronous quarantine delegation in `executeApproveSelectedStaging` via `quarantineIdentifiers([...bookingIds, ...codes])`.
+  2. Transactional unquarantine rollback in case of network or server rejection.
+  3. Staging filter guard in `syncWithGoogleSheets` incorporating active in-flight approvals from `UniversalMutationJournal.getApprovals()`.
+  4. Backend resolution in `TAG_CARD` to include `bookingIds` alongside `codes` for pending/unfulfilled vouchers.
+  5. Decoupled bank accounts storage with zero-knowledge AES-GCM encrypted persistence (`rupay_bank_accounts_encrypted_cache`) and live normalization against master definitions.
+  6. Formula preservation in `recalculateSheetTotal` using live `=SUM(C2:C<N>)` instead of static numerical overrides.
+  7. Strict `'` prefixing on numeric codes, booking IDs, and PINs in `UNMARK_INGESTED_SALE` restoration.
 
 ### 1. Objective
 Eliminate read-after-write replication race conditions between client-side optimistic UI updates, background mutating `apiFetch` calls (such as `APPROVE_STAGING`, `MOVE_TO_REDEEMED`, `TAG_CARD`), and manual or automated `syncWithGoogleSheets()` (`doGet`) fetches from Google Sheets.
