@@ -6142,10 +6142,23 @@
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     let activityFilter = 'added';
-    let sharedActivity = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
+    let sharedActivity = [];
+    try {
+      const rawShared = JSON.parse(localStorage.getItem('rupay_shared_activity') || '[]');
+      sharedActivity = Array.isArray(rawShared) ? rawShared : [];
+    } catch (_) {
+      sharedActivity = [];
+    }
     saveSharedActivity();
-    let redeemedList = (JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]'))
-      .filter(r => r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && !/processing/i.test(r.code) && String(r.code).trim() !== '-');
+
+    let redeemedList = [];
+    try {
+      const rawRedeemed = JSON.parse(localStorage.getItem('rupay_redeemed_list') || '[]');
+      redeemedList = (Array.isArray(rawRedeemed) ? rawRedeemed : [])
+        .filter(r => r && r.code && String(r.code).trim().toUpperCase() !== 'PENDING' && !/processing/i.test(r.code) && String(r.code).trim() !== '-');
+    } catch (_) {
+      redeemedList = [];
+    }
     saveRedeemedList();
 
     function isVoucherRedeemed(v) {
@@ -6504,6 +6517,8 @@
 
         if (restoredObj) {
           MutationJournal.recordUndo(restoredObj);
+          UniversalMutationJournal.unquarantine(c);
+          if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(restoredObj.bookingId);
         }
         redeemedList = redeemedList.filter(x => x.code !== c);
       });

@@ -5407,7 +5407,7 @@ function doPost(e) {
           finalDateOfIssue,      // Col 6: Date of Issue
           finalAccount,          // Col 7: Account
           finalCard,             // Col 8: Card
-          "USED",                // Col 9: Status
+          "REDEEMED",            // Col 9: Status
           redeemedTs,            // Col 10: Redeemed Timestamp (IST)
           targetBrand,           // Col 11: Original Tab
           finalAppendedTs,       // Col 12: Appended Timestamp (IST)
