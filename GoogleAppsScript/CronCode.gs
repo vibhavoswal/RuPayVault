@@ -3141,8 +3141,8 @@ function doGet(e) {
       if (newSheet) {
         const nVals = newSheet.getDataRange().getValues();
         for (let r = 1; r < nVals.length; r++) {
-          const bId = String(nVals[r][0] || '').trim();
-          if (bId.toUpperCase() === targetBid.toUpperCase()) {
+          const bId = String(nVals[r][0] || '').replace(/^'/, '').trim().toUpperCase();
+          if (bId === targetBid.replace(/^'/, '').trim().toUpperCase()) {
             unmarkedNewRow = r + 1;
             if (newSheet.getLastColumn() >= 13) {
               newSheet.getRange(r + 1, 13).setValue("");
@@ -5681,6 +5681,8 @@ function doPost(e) {
     if (data.action === "UNMARK_INGESTED_SALE" || data.action === "UNMARK_VOUCHER_SALE") {
       const targetBid = String(data.bookingId || '').trim();
       const targetCode = String(data.code || '').trim();
+      const cleanTargetBid = targetBid.replace(/^'/, '').trim().toUpperCase();
+      const cleanTargetCode = targetCode.replace(/^'/, '').trim().toUpperCase();
       const targetComments = String(data.comments || '').trim();
       const brand = String(data.brand || '').trim();
       const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '⚡ Unassigned');
@@ -5690,13 +5692,13 @@ function doPost(e) {
 
       if (isStaging) {
         const newSheet = ss.getSheetByName("New");
-        if (newSheet && (targetBid || targetCode)) {
+        if (newSheet && (cleanTargetBid || cleanTargetCode)) {
           const nVals = newSheet.getDataRange().getValues();
           for (let i = 1; i < nVals.length; i++) {
-            const bId = String(nVals[i][0] || '').replace(/^'/, '').trim();
-            const cd = String(nVals[i][1] || '').replace(/^'/, '').trim();
-            const matchBid = targetBid && bId.toUpperCase() === targetBid.replace(/^'/, '').trim().toUpperCase();
-            const matchCode = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && cd.toUpperCase() === targetCode.toUpperCase();
+            const bId = String(nVals[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+            const cd = String(nVals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+            const matchBid = cleanTargetBid && bId === cleanTargetBid;
+            const matchCode = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && cd === cleanTargetCode;
             if (matchBid || matchCode) {
               unmarkedNewRow = i + 1;
               if (newSheet.getLastColumn() >= 13) {
@@ -5709,13 +5711,13 @@ function doPost(e) {
       } else {
         // Move back from Redeemed sheet to Brand tab
         const rSheet = ss.getSheetByName("Redeemed");
-        if (rSheet && (targetBid || targetCode)) {
+        if (rSheet && (cleanTargetBid || cleanTargetCode)) {
           const rVals = rSheet.getDataRange().getValues();
           for (let i = rVals.length - 1; i >= 1; i--) {
-            const bId = String(rVals[i][1] || '').trim().replace(/^'/, '');
-            const cd = String(rVals[i][2] || '').trim().replace(/^'/, '');
-            const matchBid = targetBid && bId.toUpperCase() === targetBid.toUpperCase();
-            const matchCode = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && cd.toUpperCase() === targetCode.toUpperCase();
+            const bId = String(rVals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+            const cd = String(rVals[i][2] || '').replace(/^'/, '').trim().toUpperCase();
+            const matchBid = cleanTargetBid && bId === cleanTargetBid;
+            const matchCode = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && cd === cleanTargetCode;
             if (matchBid || matchCode) {
               const brandSheet = getTargetBrandSheet(ss, brand || String(rVals[i][0] || ''));
               if (brandSheet) {

@@ -2668,7 +2668,9 @@
     <div class="rounded-2xl max-w-md w-full p-5 space-y-3 shadow-2xl" style="background: var(--bg-secondary); border: 0.5px solid var(--separator);">
       <div class="flex items-center justify-between pb-2 border-b border-neutral-800/40">
         <h3 class="text-sm font-bold text-emerald-500">WhatsApp Message Preview</h3>
-        <button onclick="closeShareModal()" class="text-lg opacity-70 hover:opacity-100">&times;</button>
+        <button onclick="closeShareModal()" class="w-7 h-7 rounded-lg hover:bg-[var(--theme-card-subtle)] flex items-center justify-center text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-colors" title="Close" aria-label="Close">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
       </div>
       <textarea id="share-preview-text" rows="9" readonly class="w-full rounded-xl p-3 font-mono-apple text-xs focus:outline-none resize-none leading-relaxed" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);"></textarea>
       <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-neutral-800/40">
@@ -3678,7 +3680,7 @@
                   <div id="drawer-sheet-count" class="text-[10px] text-[var(--theme-text-sub)]">Loading live data...</div>
                 </div>
               </div>
-              <span class="text-xs text-[#0C8C46] font-bold group-hover:translate-x-0.5 transition-transform">↗</span>
+              <svg class="w-4 h-4 text-[#0C8C46] group-hover:translate-x-0.5 transition-transform shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
             </a>
           </div>
         </div>
@@ -9493,8 +9495,9 @@
                 ` : (isRevalidation ? `
                   <div class="inline-flex items-center gap-2">
                     ${act.payUrl ? `
-                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1 transition-all">
-                        <span>Revalidate ↗</span>
+                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1.5 transition-all">
+                        <span>Revalidate</span>
+                        <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                       </a>
                     ` : `
                       <span class="text-xs text-cyan-400/90 font-medium">Awaiting link</span>
@@ -9610,24 +9613,6 @@
                     </button>
                   </div>
                 </div>
-
-                <!-- Bottom Action Strip for Revalidation -->
-                ${isRevalidation ? `
-                  <div class="px-3 py-2 bg-cyan-950/70 border-t border-cyan-500/25 flex items-center justify-start gap-2">
-                    ${act.payUrl ? `
-                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-3 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold shadow-sm flex items-center gap-1 active:scale-95 transition-all shrink-0">
-                        <span>Revalidate ↗</span>
-                      </a>
-                    ` : `
-                      <span class="text-[10.5px] text-cyan-400/80 font-mono-apple shrink-0 px-2 py-0.5 rounded bg-cyan-900/30 border border-cyan-500/20">Awaiting link</span>
-                    `}
-                    <button onclick="event.stopPropagation(); markRevalidated('${act.id}', '${act.bookingId}')"
-                            class="btn-mark-reval px-3 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center gap-1 active:scale-95 transition-all shrink-0"
-                            title="Mark as revalidated once payment is complete">
-                      <span>Mark Revalidated</span>
-                    </button>
-                  </div>
-                ` : ''}
 
               </div>
             `;
