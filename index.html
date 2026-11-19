@@ -378,6 +378,15 @@
       background-color: #FDF0F0 !important;
       border-color: rgba(244, 63, 94, 0.3) !important;
     }
+    [data-theme="light"] #mark-sold-sheet .text-emerald-300,
+    html.light #mark-sold-sheet .text-emerald-300 {
+      color: #047857 !important;
+    }
+    [data-theme="light"] #mark-sold-sheet .bg-emerald-500\/20,
+    html.light #mark-sold-sheet .bg-emerald-500\/20 {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+    }
     [data-theme="light"] #voucher-detail-sheet .text-white,
     html.light #voucher-detail-sheet .text-white,
     [data-theme="light"] #mark-sold-sheet .text-white,
@@ -1516,6 +1525,20 @@
       background-color: #e2e8f0 !important;
       color: #1e293b !important;
     }
+    [data-theme="light"] #benefit-rules-sheet .bg-neutral-950\/40,
+    html.light #benefit-rules-sheet .bg-neutral-950\/40 {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .text-emerald-400,
+    html.light #benefit-rules-sheet .text-emerald-400 {
+      color: #047857 !important;
+    }
+    [data-theme="light"] #benefit-rules-sheet .bg-emerald-500\/15,
+    html.light #benefit-rules-sheet .bg-emerald-500\/15 {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+    }
 
     /* ======================================================== */
     /* APPROACH 4A: EXECUTIVE UPPER BAR & DROPDOWN STYLING       */
@@ -2617,7 +2640,7 @@
         <!-- Tag Card -->
         <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
           <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
-          <span id="tag-badge-count" class="tag-count-bubble">0</span>
+          <span id="tag-badge-count" class="tag-count-bubble hidden">0</span>
         </button>
 
         <!-- Google Material Design Share SVG -->
@@ -13661,6 +13684,7 @@
       const tagBadge = document.getElementById('tag-badge-count');
       if (tagBadge) {
         tagBadge.textContent = count;
+        tagBadge.classList.toggle('hidden', count <= 0);
       }
 
       // SYNC TOP HEADER TOOLBAR STATE (Only Select All in top right)
