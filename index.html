@@ -6409,42 +6409,42 @@
         closeVoucherDetailSheet();
       }
 
-      // Safeguard 3: Interactive 5-second Undo Banner
-      let isUndone = false;
-      showCardUndoBanner(`Dismissed ${brandName} voucher`, () => {
-        isUndone = true;
-        state.staging = previousStaging;
-        UniversalMutationJournal.unquarantine(activeBid);
-        if (item.id) UniversalMutationJournal.unquarantine(item.id);
-        saveEncryptedStaging(state.staging);
-        renderDeckSelector();
-        renderVault();
-        updateClearTrashBadges();
-        showToast('Dismissal undone.');
-      });
-
-      // Safeguard 4 & 5: Wait 5s for grace period, then dispatch to backend with rollback handler
-      setTimeout(async () => {
-        if (isUndone) return;
-        try {
-          await apiFetch('DISMISS_STAGING', {
-            bookingId: activeBid
-          }, {
-            rollback: async () => {
-              state.staging = previousStaging;
-              UniversalMutationJournal.unquarantine(activeBid);
-              if (item.id) UniversalMutationJournal.unquarantine(item.id);
-              await saveEncryptedStaging(state.staging);
-              renderDeckSelector();
-              renderVault();
-              updateClearTrashBadges();
-              showToast('Dismissal failed on server. Voucher restored.');
-            }
-          });
-        } catch (err) {
-          console.warn('Backend DISMISS_STAGING error:', err);
+      // Safeguard 3: Interactive 5-second Undo Banner with Deferred Commit (SG3, SG4, SG5, SG6)
+      showCardUndoBanner(
+        `Dismissed ${brandName} voucher`,
+        () => {
+          // UNDO CALLBACK
+          state.staging = previousStaging;
+          UniversalMutationJournal.unquarantine(activeBid);
+          if (item.id) UniversalMutationJournal.unquarantine(item.id);
+          saveEncryptedStaging(state.staging);
+          renderDeckSelector();
+          renderVault();
+          updateClearTrashBadges();
+          showToast('Dismissal undone.');
+        },
+        async () => {
+          // COMMIT CALLBACK (Dispatched strictly after 5s or on page unload)
+          try {
+            await apiFetch('DISMISS_STAGING', {
+              bookingId: activeBid
+            }, {
+              rollback: async () => {
+                state.staging = previousStaging;
+                UniversalMutationJournal.unquarantine(activeBid);
+                if (item.id) UniversalMutationJournal.unquarantine(item.id);
+                await saveEncryptedStaging(state.staging);
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Dismissal failed on server. Voucher restored.');
+              }
+            });
+          } catch (err) {
+            console.warn('Backend DISMISS_STAGING error:', err);
+          }
         }
-      }, 5100);
+      );
     }
 
     function dismissSharedActivity(code) {
@@ -6749,15 +6749,32 @@
       }
     }
 
-    function showUndoToast(code, brand, pendingRedeem = null) {
-      if (undoState.timer) {
-        if (undoState.actionType === 'clear' && undoState.clearedItems) {
-          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
-        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
-          commitRedeemToBackend(undoState.pendingRedeem);
-        }
-        clearInterval(undoState.timer);
+    function flushPendingUndoCommit(options = {}) {
+      if (!undoState.timer) return;
+      clearInterval(undoState.timer);
+      undoState.timer = null;
+      const action = undoState.actionType;
+      const cleared = undoState.clearedItems;
+      const pending = undoState.pendingRedeem;
+      const onCommit = undoState.onCardCommit;
+
+      undoState.actionType = null;
+      undoState.clearedItems = null;
+      undoState.pendingRedeem = null;
+      undoState.onCardUndo = null;
+      undoState.onCardCommit = null;
+
+      if (action === 'clear' && cleared) {
+        commitClearToBackend(cleared.context, cleared.targets, options);
+      } else if (action === 'redeem' && pending) {
+        commitRedeemToBackend(pending, options);
+      } else if (action === 'card' && typeof onCommit === 'function') {
+        try { onCommit(); } catch(e) { console.error('Card commit error:', e); }
       }
+    }
+
+    function showUndoToast(code, brand, pendingRedeem = null) {
+      flushPendingUndoCommit();
       undoState.actionType = 'redeem';
       undoState.clearedItems = null;
       undoState.pendingRedeem = pendingRedeem;
@@ -6802,15 +6819,7 @@
     }
 
     function showClearUndoToast(context, targets) {
-      if (undoState.timer) {
-        if (undoState.actionType === 'clear' && undoState.clearedItems) {
-          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets);
-        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
-          commitRedeemToBackend(undoState.pendingRedeem);
-        }
-        clearInterval(undoState.timer);
-      }
-
+      flushPendingUndoCommit();
       undoState.actionType = 'clear';
       undoState.pendingRedeem = null;
       undoState.clearedItems = { context, targets };
@@ -6926,6 +6935,8 @@
       undoState.actionType = null;
       undoState.onCardUndo = null;
       undoState.onCardCommit = null;
+      undoState.clearedItems = null;
+      undoState.pendingRedeem = null;
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
       if (dtBanner) dtBanner.classList.add('hidden');
@@ -6933,10 +6944,7 @@
     }
 
     function showCardUndoBanner(msg, onUndo, onCommit) {
-      if (undoState.timer) clearInterval(undoState.timer);
-      if (undoState.actionType === 'card' && typeof undoState.onCardCommit === 'function') {
-        try { undoState.onCardCommit(); } catch(e) { console.error('Card commit error:', e); }
-      }
+      flushPendingUndoCommit();
       undoState.actionType = 'card';
       undoState.onCardUndo = onUndo;
       undoState.onCardCommit = onCommit;
@@ -7034,15 +7042,7 @@
 
     // Flush any pending deferred commits on page unload
     window.addEventListener('beforeunload', () => {
-      if (undoState.timer) {
-        if (undoState.actionType === 'clear' && undoState.clearedItems) {
-          commitClearToBackend(undoState.clearedItems.context, undoState.clearedItems.targets, { keepalive: true });
-        } else if (undoState.actionType === 'redeem' && undoState.pendingRedeem) {
-          commitRedeemToBackend(undoState.pendingRedeem, { keepalive: true });
-        } else if (undoState.actionType === 'card' && typeof undoState.onCardCommit === 'function') {
-          try { undoState.onCardCommit(); } catch(e) {}
-        }
-      }
+      flushPendingUndoCommit({ keepalive: true });
     });
 
     function isCardTagged(cardStr) {
@@ -14135,40 +14135,39 @@
       state.vouchers.unshift(optimisticVoucher);
       renderVault();
 
-      // Safeguard 3: Interactive Undo Banner
-      let isUndone = false;
-      showCardUndoBanner(`Added ${brandName} voucher`, () => {
-        isUndone = true;
-        UniversalMutationJournal.remove(journalKey);
-        state.vouchers = prevVouchers;
-        renderVault();
-        showToast('Voucher addition cancelled.');
-      });
-
-      // Wait 5s for grace period before dispatching to backend
-      setTimeout(async () => {
-        if (isUndone) return;
-        try {
-          // Safeguard 4 & 5: apiFetch with rollback handler
-          await apiFetch('ADD_MISC_VOUCHER', {
-            brandName,
-            voucherCode: rawCode,
-            pin,
-            amount
-          }, {
-            rollback: () => {
-              state.vouchers = prevVouchers;
-              renderVault();
-              UniversalMutationJournal.remove(journalKey);
-              showToast('Network error: failed to save voucher to sheet.');
-            }
-          });
+      // Safeguard 3: Interactive Undo Banner with Deferred Commit (SG3, SG4, SG5, SG6)
+      showCardUndoBanner(
+        `Added ${brandName} voucher`,
+        () => {
+          // UNDO ACTION: Revert local state and journal entry
           UniversalMutationJournal.remove(journalKey);
-          showToast(`${brandName} voucher saved to sheet.`);
-        } catch (err) {
-          console.error('ADD_MISC_VOUCHER error:', err);
+          state.vouchers = prevVouchers;
+          renderVault();
+          showToast('Voucher addition cancelled.');
+        },
+        async () => {
+          // COMMIT ACTION: Dispatched strictly after 5s or on page unload
+          try {
+            await apiFetch('ADD_MISC_VOUCHER', {
+              brandName,
+              voucherCode: rawCode,
+              pin,
+              amount
+            }, {
+              rollback: () => {
+                state.vouchers = prevVouchers;
+                renderVault();
+                UniversalMutationJournal.remove(journalKey);
+                showToast('Network error: failed to save voucher to sheet.');
+              }
+            });
+            UniversalMutationJournal.remove(journalKey);
+            showToast(`${brandName} voucher saved to sheet.`);
+          } catch (err) {
+            console.error('ADD_MISC_VOUCHER error:', err);
+          }
         }
-      }, 5100);
+      );
     }
 
     function updateModalPreview() {
