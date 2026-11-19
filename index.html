@@ -5316,6 +5316,17 @@
       return `${get('day')}-${get('month')}-${get('year')} ${get('hour')}:${get('minute')}:${get('second')} ${dp} IST`;
     }
 
+    // HTML Sanitization & Attribute Escaping Helper
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
     // Relative human-friendly time helper (e.g. "14h ago", "1d ago")
     function formatRelativeTime(ts) {
       if (!ts) return 'Recent';
@@ -7139,6 +7150,7 @@
 
     function setActivityFilter(filter) {
       if (state.isSelectMode) {
+        state.isSelectMode = false;
         state.selectedIds.clear();
         collapseActionMenu();
       }
@@ -7461,6 +7473,11 @@
 
     /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS, BANKS, INCOME) --- */
     function switchWorkspace(target) {
+      if (state.isSelectMode) {
+        state.isSelectMode = false;
+        state.selectedIds.clear();
+        collapseActionMenu();
+      }
       state.activeWorkspace = (target === 'hub' ? 'vouchers' : target) || 'vouchers';
       try {
         sessionStorage.setItem('rupay_active_workspace', state.activeWorkspace);
@@ -9676,7 +9693,7 @@
         }).join('') : `
           <tr>
             <td colspan="5" class="p-12 text-center text-sm text-neutral-400">
-              ${isSyncing ? `
+              ${(isSyncing && (!state.staging || state.staging.length === 0) && (!state.vouchers || state.vouchers.length === 0)) ? `
                 <div class="flex flex-col items-center justify-center gap-2 py-4">
                   <div class="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
                   <span class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from database...</span>
@@ -9828,7 +9845,7 @@
 
             </div>
           `;
-        }).join('') : (isSyncing ? `
+        }).join('') : ((isSyncing && (!state.staging || state.staging.length === 0) && (!state.vouchers || state.vouchers.length === 0)) ? `
           <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
             <div class="w-7 h-7 mx-auto border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
             <p class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from Google Sheets...</p>
@@ -10194,7 +10211,7 @@
             ${bottomLineHtml}
           </div>
         `;
-      }).join('') : (isSyncing ? `
+      }).join('') : ((isSyncing && (!state.vouchers || state.vouchers.length === 0)) ? `
         <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
           <div class="w-7 h-7 mx-auto border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
           <p class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from Google Sheets...</p>
@@ -10279,6 +10296,7 @@
 
     function filterVaultBrand(brand, options = {}) {
       if (state.isSelectMode) {
+        state.isSelectMode = false;
         state.selectedIds.clear();
         collapseActionMenu();
       }
