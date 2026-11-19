@@ -6460,6 +6460,16 @@
           try {
             await apiFetch('RESTORE_DISMISSED_STAGING', {
               bookingId: activeBid
+            }, {
+              rollback: async () => {
+                state.staging = state.staging.filter(s => (s.bookingId || s.id) !== activeBid);
+                UniversalMutationJournal.recordTombstone(activeBid, 'staging');
+                saveEncryptedStaging(state.staging);
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Failed to restore dismissed item on server');
+              }
             });
           } catch (err) {
             console.warn('RESTORE_DISMISSED_STAGING error:', err);
@@ -6514,6 +6524,16 @@
           try {
             await apiFetch('RESTORE_DISMISSED_SHARED', {
               code: code
+            }, {
+              rollback: async () => {
+                sharedActivity = sharedActivity.filter(s => s.code !== code);
+                UniversalMutationJournal.recordTombstone(code, 'shared');
+                saveSharedActivity();
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Failed to restore shared activity on server');
+              }
             });
           } catch (err) {
             console.warn('RESTORE_DISMISSED_SHARED error:', err);
@@ -7325,10 +7345,37 @@
             await apiFetch('RESTORE_CLEARED_ACTIVITY', {
               type: context.toUpperCase(),
               codes: codes
+            }, {
+              rollback: async () => {
+                targets.forEach(t => {
+                  t.displayInUI = false;
+                  if (t.code) UniversalMutationJournal.recordTombstone(t.code, context);
+                  if (t.bookingId) UniversalMutationJournal.recordTombstone(t.bookingId, context);
+                });
+                if (context === 'ingested') saveEncryptedStaging(state.staging);
+                else if (context === 'shared') saveSharedActivity();
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Failed to restore cleared items on server');
+              }
             });
           } else if (context === 'redeemed') {
             await apiFetch('RESTORE_CLEARED_REDEEMED', {
               codes: codes
+            }, {
+              rollback: async () => {
+                targets.forEach(t => {
+                  t.displayInUI = false;
+                  if (t.code) UniversalMutationJournal.recordTombstone(t.code, 'redeemed');
+                  if (t.bookingId) UniversalMutationJournal.recordTombstone(t.bookingId, 'redeemed');
+                });
+                saveRedeemedList();
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Failed to restore cleared items on server');
+              }
             });
           }
         } catch(e) {
@@ -13803,28 +13850,7 @@
     let isMenuExpanded = false;
 
     function updateMasterTriggerIcon() {
-      const slot = document.getElementById('master-icon-slot');
-      const triggerBtn = document.getElementById('btn-master-trigger');
-      const badgeMaster = document.getElementById('badge-master-count');
-      if (!slot || !triggerBtn) return;
-      if (isMenuExpanded) {
-        slot.innerHTML = CLOSE_ICON;
-        triggerBtn.classList.remove('border-emerald-500/60', 'border-[#0C8C46]/80');
-        triggerBtn.classList.add('border-neutral-500', 'bg-neutral-800');
-        if (badgeMaster) badgeMaster.classList.add('hidden');
-      } else {
-        slot.innerHTML = INTERLOCK_COMBO_ICON;
-        triggerBtn.classList.add('border-[#0C8C46]/80');
-        triggerBtn.classList.remove('border-neutral-500', 'bg-neutral-800');
-        if (badgeMaster) {
-          if (state.selectedIds.size > 0) {
-            badgeMaster.textContent = state.selectedIds.size;
-            badgeMaster.classList.remove('hidden');
-          } else {
-            badgeMaster.classList.add('hidden');
-          }
-        }
-      }
+      updateFloatingDock();
     }
 
     function collapseActionMenu() {
@@ -13838,7 +13864,7 @@
       }
       if (triggerBtn) triggerBtn.classList.remove('hidden');
       if (backdrop) backdrop.classList.add('hidden');
-      updateMasterTriggerIcon();
+      updateFloatingDock();
     }
 
     function triggerWhatsAppShare() {
@@ -14128,11 +14154,15 @@
       if (backdrop) backdrop.classList.remove('hidden');
       if (modal) modal.classList.remove('hidden');
 
-      // Temporarily disable master button so it cannot be clicked while popup is active
-      const masterBtn = document.getElementById('btn-master-trigger');
-      if (masterBtn) {
-        masterBtn.disabled = true;
-        masterBtn.style.pointerEvents = 'none';
+      // Temporarily disable floating dock buttons so they cannot be clicked while modal is active
+      const dockBtn = document.getElementById('dock-select-toggle-btn');
+      if (dockBtn) {
+        dockBtn.disabled = true;
+        dockBtn.style.pointerEvents = 'none';
+      }
+      const actionPill = document.getElementById('floating-action-pill');
+      if (actionPill) {
+        actionPill.style.pointerEvents = 'none';
       }
 
       setTimeout(() => input?.focus(), 120);
@@ -14144,10 +14174,14 @@
       if (backdrop) backdrop.classList.add('hidden');
       if (modal) modal.classList.add('hidden');
 
-      const masterBtn = document.getElementById('btn-master-trigger');
-      if (masterBtn) {
-        masterBtn.disabled = false;
-        masterBtn.style.pointerEvents = 'auto';
+      const dockBtn = document.getElementById('dock-select-toggle-btn');
+      if (dockBtn) {
+        dockBtn.disabled = false;
+        dockBtn.style.pointerEvents = 'auto';
+      }
+      const actionPill = document.getElementById('floating-action-pill');
+      if (actionPill) {
+        actionPill.style.pointerEvents = 'auto';
       }
     }
 
@@ -14262,6 +14296,13 @@
           try {
             await apiFetch('DELETE_MISC_VOUCHER', {
               code: rawCode
+            }, {
+              rollback: async () => {
+                state.vouchers = [optimisticVoucher, ...state.vouchers];
+                UniversalMutationJournal.record('MISC_VOUCHER_ADD', journalKey, { voucher: optimisticVoucher });
+                renderVault();
+                showToast('Failed to remove voucher from server');
+              }
             });
           } catch(e) {
             console.warn('DELETE_MISC_VOUCHER error:', e);
