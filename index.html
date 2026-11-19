@@ -3738,28 +3738,28 @@
                 <svg class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 <span>RuPay Income Tracker</span>
               </span>
-              <span class="text-[10px] font-mono-apple">›</span>
+              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="switchWorkspace('banks'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
                 <span>Bank Accounts Manager</span>
               </span>
-              <span class="text-[10px] font-mono-apple">›</span>
+              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span>Redeemed Archive</span>
               </span>
-              <span class="text-[10px] font-mono-apple">›</span>
+              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="openBenefitRulesModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
                 <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 <span>Benefit Rules &amp; Matrix</span>
               </span>
-              <span class="text-[10px] font-mono-apple">›</span>
+              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button id="drawer-gmail-scan-btn" onclick="triggerManualGmailScan()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
               <span class="flex items-center gap-2">
@@ -3773,7 +3773,7 @@
                 <svg id="drawer-sync-spinner" class="w-3.5 h-3.5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                 <span id="drawer-sync-label">Sync Cloud Database</span>
               </span>
-              <span class="text-[10px] font-mono-apple">›</span>
+              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
           </div>
         </div>
@@ -9676,13 +9676,8 @@
                 </div>
               </div>
 
-              <!-- Right Cell: Dismiss + Material SVG (i) Button -->
+              <!-- Right Cell: Modern Google Material Design SVG (i) Button -->
               <div class="shrink-0 flex items-center gap-1.5 pointer-events-auto">
-                <button onclick="event.stopPropagation(); dismissSharedActivity('${act.code}')"
-                        class="p-1 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 active:scale-90 transition-all text-xs flex items-center justify-center"
-                        title="Dismiss" aria-label="Dismiss">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
                 <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
                         class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
                         title="Inspect Voucher Code, PIN & Audit">
@@ -9978,7 +9973,7 @@
           : (isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700 bg-gradient-to-br from-neutral-900 to-neutral-950');
 
         // Bottom Line: ONLY for recent vouchers (< 7 days) or vouchers pending commitment
-        // Left: [Saving to Sheet... / ● Ingested on 19th Oct] | Right: Card tag
+        // Left: [Saving to Sheet... / Ingested on 19th Oct] | Right: Card tag
         const isCommitPending = v.isCommitPending === true;
         const bottomLineHtml = isCommitPending ? `
           <div class="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/40">
