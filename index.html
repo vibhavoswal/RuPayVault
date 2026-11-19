@@ -2695,7 +2695,7 @@
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
-      <textarea id="share-preview-text" rows="9" readonly class="w-full rounded-xl p-3 font-mono-apple text-xs focus:outline-none resize-none leading-relaxed" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);"></textarea>
+      <textarea id="share-preview-text" rows="9" readonly aria-label="WhatsApp Message Preview" class="w-full rounded-xl p-3 font-mono-apple text-xs focus:outline-none resize-none leading-relaxed" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);"></textarea>
       <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-neutral-800/40">
         <button onclick="copyShareText()" class="px-3.5 py-1.5 rounded-lg text-xs font-medium" style="background: var(--fill-quaternary);">
           Copy Text
@@ -2740,8 +2740,8 @@
       <!-- Form Inputs: Strictly Variant Dropdown & Last 4 Digits -->
       <div class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold uppercase text-neutral-400 mb-1.5 tracking-wider">Card Variant</label>
-          <select id="modal-variant-select" onchange="updateModalPreview()" class="w-full rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#0C8C46] transition-all" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          <label for="modal-variant-select" class="block text-xs font-semibold uppercase text-neutral-400 mb-1.5 tracking-wider">Card Variant</label>
+          <select id="modal-variant-select" aria-label="Card Variant" onchange="updateModalPreview()" class="w-full rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#0C8C46] transition-all" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
             <option value="PNB CC">PNB CC</option>
             <option value="PNB DC" selected>PNB DC</option>
             <option value="Canara CC">Canara CC</option>
@@ -2753,11 +2753,11 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold uppercase text-neutral-400 mb-1.5 tracking-wider flex items-center justify-between">
+          <label for="modal-last4-input" class="block text-xs font-semibold uppercase text-neutral-400 mb-1.5 tracking-wider flex items-center justify-between">
             <span>Last 4 Digits</span>
             <span class="text-[11px] font-mono-apple" id="modal-digits-counter">0/4 digits</span>
           </label>
-          <input type="tel" id="modal-last4-input" maxlength="4" placeholder="••••" oninput="handleStrictLast4Input()" class="w-full rounded-xl p-3 text-xl font-mono-apple font-bold tracking-widest text-center focus:outline-none focus:border-[#0C8C46] transition-all" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
+          <input type="tel" id="modal-last4-input" maxlength="4" placeholder="••••" aria-label="Card Last 4 Digits" oninput="handleStrictLast4Input()" class="w-full rounded-xl p-3 text-xl font-mono-apple font-bold tracking-widest text-center focus:outline-none focus:border-[#0C8C46] transition-all" style="background: var(--fill-quaternary); border: 0.5px solid var(--separator); color: var(--label-primary);">
           <p class="text-[11px] text-neutral-500 mt-1">Strictly 4 numeric digits (e.g. 3242, 9102).</p>
         </div>
 
@@ -2857,15 +2857,15 @@
         <!-- Selling Price & Date Row -->
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Selling Price (₹)</label>
+            <label for="ms-input-price" class="block text-[11px] font-semibold text-neutral-300 mb-1">Selling Price (₹)</label>
             <div class="relative">
               <span class="absolute left-3 top-2.5 text-neutral-400 font-bold font-mono-apple text-xs">₹</span>
-              <input type="number" id="ms-input-price" step="50" min="1" placeholder="1200" class="w-full pl-7 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple font-bold text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+              <input type="number" id="ms-input-price" step="50" min="1" placeholder="1200" aria-label="Selling Price in Rupees" class="w-full pl-7 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple font-bold text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
             </div>
           </div>
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-[11px] font-semibold text-neutral-300">Sale Date</label>
+              <label for="ms-input-date" class="text-[11px] font-semibold text-neutral-300">Sale Date</label>
               <button type="button" onclick="openNativeDatePicker()" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-0.5 active:scale-95 transition-all" title="Open Calendar">
                 <svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
                 <span>Calendar</span>
@@ -2875,8 +2875,8 @@
               <button type="button" onclick="openNativeDatePicker()" class="absolute left-2.5 text-neutral-400 hover:text-emerald-400 transition-colors" title="Pick date">
                 <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
               </button>
-              <input type="text" id="ms-input-date" placeholder="dd/MM/yy" oninput="updateSaleDatePills('custom')" class="w-full pl-8 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
-              <input type="date" id="ms-native-date-picker" class="sr-only" tabindex="-1" onchange="onNativeDatePicked(this.value)">
+              <input type="text" id="ms-input-date" placeholder="dd/MM/yy" aria-label="Sale Date" oninput="updateSaleDatePills('custom')" class="w-full pl-8 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+              <input type="date" id="ms-native-date-picker" aria-label="Pick sale date" class="sr-only" tabindex="-1" onchange="onNativeDatePicked(this.value)">
             </div>
           </div>
         </div>
@@ -2894,43 +2894,43 @@
 
         <!-- Redeemed in Account -->
         <div>
-          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Redeemed in Account</label>
+          <label for="ms-input-account" class="block text-[11px] font-semibold text-neutral-300 mb-1">Redeemed in Account</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
             </span>
-            <input type="text" id="ms-input-account" placeholder="e.g. ayaanshekhawat or vibhavoswal9" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-account" placeholder="e.g. ayaanshekhawat or vibhavoswal9" aria-label="Redeemed in Account" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
         <!-- Mobile Number (Visible for Cult, hidden for Amazon Prime) -->
         <div id="ms-field-mobile">
-          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Mobile Number</label>
+          <label for="ms-input-mobile" class="block text-[11px] font-semibold text-neutral-300 mb-1">Mobile Number</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </span>
-            <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" aria-label="Mobile Number" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
         <!-- Sold To -->
         <div>
-          <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Sold to</label>
+          <label for="ms-input-sold-to" class="block text-[11px] font-semibold text-neutral-300 mb-1">Sold to</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </span>
-            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. Abhijeet Kulkarni" aria-label="Sold to buyer name" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
         <!-- Gpay received from (with 'Same as sold to' clickable checkbox) -->
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="text-[11px] font-semibold text-neutral-300">Gpay received from</label>
+            <label for="ms-input-gpay" class="text-[11px] font-semibold text-neutral-300">Gpay received from</label>
             <label class="inline-flex items-center gap-1.5 cursor-pointer select-none py-0.5 px-1 rounded hover:bg-neutral-800/40 dark:hover:bg-neutral-800/40 transition-colors">
-              <input type="checkbox" id="ms-chk-same-gpay" onchange="toggleSameGpay(this.checked)" checked class="w-3.5 h-3.5 rounded border border-neutral-500 bg-neutral-900 accent-neutral-600 dark:accent-neutral-500 cursor-pointer" style="accent-color: #525252;">
+              <input type="checkbox" id="ms-chk-same-gpay" aria-label="Same as sold to" onchange="toggleSameGpay(this.checked)" checked class="w-3.5 h-3.5 rounded border border-neutral-500 bg-neutral-900 accent-neutral-600 dark:accent-neutral-500 cursor-pointer" style="accent-color: #525252;">
               <span class="text-[11px] font-medium text-neutral-300">Same as sold to</span>
             </label>
           </div>
@@ -2938,7 +2938,7 @@
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             </span>
-            <input type="text" id="ms-input-gpay" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-gpay" placeholder="e.g. Abhijeet Kulkarni" aria-label="Gpay received from" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
       </div>
@@ -3284,7 +3284,7 @@
       </div>
 
       <div class="relative max-w-[130px] w-full">
-        <input type="text" id="in-ledger-search" oninput="renderIncomeLedger()" placeholder="Search..." class="w-full text-xs px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
+        <input type="text" id="in-ledger-search" aria-label="Search income and charges ledger" oninput="renderIncomeLedger()" placeholder="Search..." class="w-full text-xs px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-main)] placeholder-[var(--theme-text-sub)] focus:outline-none focus:border-emerald-500">
       </div>
     </div>
 
@@ -3603,8 +3603,8 @@
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Bank</label>
-            <select id="add-card-bank" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <label for="add-card-bank" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Bank</label>
+            <select id="add-card-bank" aria-label="Bank" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               <option value="PNB">Punjab National Bank</option>
               <option value="Bank of Baroda">Bank of Baroda</option>
               <option value="Canara">Canara Bank</option>
@@ -3613,8 +3613,8 @@
             </select>
           </div>
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Type</label>
-            <select id="add-card-type" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <label for="add-card-type" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Type</label>
+            <select id="add-card-type" aria-label="Card Type" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
               <option value="Debit">Debit Card</option>
               <option value="Credit">Credit Card</option>
             </select>
@@ -3623,12 +3623,12 @@
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Name</label>
-            <input id="add-card-name" type="text" placeholder="e.g. PNB Imperial" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+            <label for="add-card-name" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Card Name</label>
+            <input id="add-card-name" aria-label="Card Name" type="text" placeholder="e.g. PNB Imperial" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Linked Account (Last 4)</label>
-            <input id="add-card-acc" type="text" maxlength="4" placeholder="e.g. 7482 or NA" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+            <label for="add-card-acc" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Linked Account (Last 4)</label>
+            <input id="add-card-acc" aria-label="Linked Account Last 4" type="text" maxlength="4" placeholder="e.g. 7482 or NA" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
           </div>
         </div>
 
@@ -3644,8 +3644,8 @@
         </div>
 
         <div>
-          <label class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
-          <input id="add-card-notes" type="text" placeholder="e.g. Q4 renewed" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
+          <label for="add-card-notes" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
+          <input id="add-card-notes" aria-label="Card Notes" type="text" placeholder="e.g. Q4 renewed" class="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-emerald-500">
         </div>
 
         <div class="flex gap-2 pt-2">
@@ -3937,7 +3937,7 @@
   </div>
 
   <!-- Hidden Card OCR File Input for Camera / Photo Scan -->
-  <input type="file" id="card-ocr-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleCardOcrFileSelect(event)">
+  <input type="file" id="card-ocr-file-input" aria-label="Upload or capture card image for OCR" accept="image/*" capture="environment" class="hidden" onchange="handleCardOcrFileSelect(event)">
 
   <!-- ======================================================== -->
   <!-- JAVASCRIPT STATE ENGINE & GOOGLE SHEETS LIVE SYNC        -->
@@ -4957,8 +4957,8 @@
       if (payload.cardNumber && action !== 'ADD_CARD') targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
 
-      // Non-destructive actions (additions or in-place status updates) must NEVER be quarantined
-      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY']);
+      // Non-destructive and restorative actions (additions, updates, or undos) must NEVER be quarantined
+      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE']);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       }
@@ -6109,7 +6109,26 @@
         renderVault();
         if (state.activeWorkspace === 'income') renderIncomeTracker();
         
-        // Dispatch backend unmark to Google Sheets
+        // Dispatch backend unmark to Google Sheets with rollback handler (SG4)
+        const rollbackUnmark = async () => {
+          if (cleanBid) markIngestedVoucherSold(cleanBid, rawPrice, soldDateStr);
+          if (cleanCode) markIngestedVoucherSold(cleanCode, rawPrice, soldDateStr);
+          state.staging = state.staging.filter(x => x.id !== v.id);
+          state.vouchers = state.vouchers.filter(x => x.id !== v.id);
+          if (redeemedObj && !redeemedList.some(r => r.id === redeemedObj.id)) redeemedList.unshift(redeemedObj);
+          if (optimisticIncomeEntry && !state.income.ledger.some(l => l.id === optimisticIncomeEntry.id)) state.income.ledger.unshift(optimisticIncomeEntry);
+          recomputeIncomeSummaryStats();
+          saveRedeemedList();
+          await Promise.all([
+            saveEncryptedStaging(state.staging),
+            saveEncryptedVouchers(state.vouchers)
+          ]);
+          renderDeckSelector();
+          renderVault();
+          if (state.activeWorkspace === 'income') renderIncomeTracker();
+          showToast('Failed to undo sale on backend. Restored.');
+        };
+
         try {
           await apiFetch('UNMARK_INGESTED_SALE', {
             bookingId: cleanBid,
@@ -6118,7 +6137,7 @@
             brand: brandKey,
             isStaging: isStaging,
             amount: v.amount || rawPrice
-          });
+          }, { rollback: rollbackUnmark });
         } catch (e) {
           console.error('Failed to unmark sale on backend', e);
         }
@@ -6273,14 +6292,23 @@
       renderDeckSelector();
       renderVault();
 
-      // Cloud Persistence: Shared_Activity tab in Google Sheets
+      // Cloud Persistence: Shared_Activity tab in Google Sheets with rollback handler (SG4)
+      const prevSharedSnapshot = [...sharedActivity];
       apiFetch('LOG_SHARED', {
         code: code,
         brand: entry.brand,
         amount: entry.amount,
         pin: entry.pin,
         platform: platform
-      }, { silent: true }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
+      }, {
+        silent: true,
+        rollback: () => {
+          sharedActivity = prevSharedSnapshot;
+          saveSharedActivity();
+          renderDeckSelector();
+          renderVault();
+        }
+      }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
     }
 
     /* --- MARK REVALIDATED ACTION (TRANSITIONS PENDING_REVALIDATION TO PENDING) --- */
@@ -6695,11 +6723,18 @@
             continue;
           }
           try {
-            // Option B: Single Consolidated Batch Payload (zero lock collisions)
+            // Option B: Single Consolidated Batch Payload (zero lock collisions) with rollback handler (SG4)
+            const rollbackBatchRedeem = () => {
+              if (item.codes) {
+                (Array.isArray(item.codes) ? item.codes : [item.codes]).forEach(c => {
+                  UniversalMutationJournal.unquarantine(c);
+                });
+              }
+            };
             const res = await apiFetch('MOVE_TO_REDEEMED', {
               items: items,
               codes: item.codes || []
-            }, { silent: true });
+            }, { silent: true, rollback: rollbackBatchRedeem });
             if (res && res.error) {
               console.warn('[Uncommitted Redeems] Backend error:', res.error);
               continue;
@@ -6971,10 +7006,18 @@
           code: it.code || ''
         }));
 
+        const rollbackRedeem = () => {
+          if (pending.codes) {
+            (Array.isArray(pending.codes) ? pending.codes : [pending.codes]).forEach(c => {
+              UniversalMutationJournal.unquarantine(c);
+            });
+          }
+        };
+
         const res = await apiFetch('MOVE_TO_REDEEMED', {
           items: items,
           codes: pending.codes || []
-        }, { silent: true, keepalive: !!options.keepalive });
+        }, { silent: true, keepalive: !!options.keepalive, rollback: rollbackRedeem });
 
         if (res && res.error) {
           console.error('[Redeem] Backend rejected move to redeemed:', res.error);
@@ -9513,7 +9556,7 @@
           return `
             <tr id="dt-row-${act.id}" class="hover:bg-neutral-800/30 border-b border-neutral-800/40 transition-all duration-200 cursor-pointer" onclick="handleCardClick('${act.id}')">
               <td class="p-3 text-center">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" onclick="event.stopPropagation()" class="rounded accent-[#0C8C46] cursor-pointer">
+                <input type="checkbox" aria-label="Select voucher ${escapeHtml(act.bookingId || act.code || '')}" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('${act.id}')" onclick="event.stopPropagation()" class="rounded accent-[#0C8C46] cursor-pointer">
               </td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
@@ -9622,7 +9665,7 @@
                   <div class="flex-1 flex items-start gap-2.5 min-w-0">
                     ${state.isSelectMode ? `
                       <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${act.id}">
-                        <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                        <input type="checkbox" aria-label="Select voucher ${escapeHtml(act.bookingId || act.code || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                       </div>
                     ` : ''}
                     
@@ -9690,7 +9733,7 @@
               <div class="flex-1 flex items-start gap-2.5 min-w-0">
                 ${state.isSelectMode ? `
                   <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${act.id}">
-                    <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                    <input type="checkbox" aria-label="Select voucher ${escapeHtml(act.code || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                   </div>
                 ` : ''}
                 
@@ -9789,7 +9832,7 @@
           return `
             <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 opacity-75">
               <td class="p-3 text-center">
-                ${state.isSelectMode ? `<input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('redeemed-${r.code}')" class="rounded accent-[#0C8C46]">` : `<span class="text-xs font-mono-apple text-neutral-400">#${i + 1}</span>`}
+                ${state.isSelectMode ? `<input type="checkbox" aria-label="Select voucher ${escapeHtml(r.code || '')}" ${isChecked ? 'checked' : ''} onchange="toggleSelectVoucher('redeemed-${r.code}')" class="rounded accent-[#0C8C46]">` : `<span class="text-xs font-mono-apple text-neutral-400">#${i + 1}</span>`}
               </td>
               <td class="p-3">
                 <div class="font-bold text-sm text-neutral-300">${vBrandName}</div>
@@ -9832,7 +9875,7 @@
                 <div class="flex items-center gap-2">
                   ${state.isSelectMode ? `
                     <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="redeemed-${r.code}">
-                      <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                      <input type="checkbox" aria-label="Select voucher ${escapeHtml(r.code || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                     </div>
                   ` : ''}
                   <div>
@@ -9959,7 +10002,7 @@
         return `
         <tr class="hover:bg-neutral-800/30 border-b border-neutral-800/40 ${v.status === 'USED' ? 'opacity-40' : ''}">
           <td class="p-3 text-center">
-            ${isMisc ? `<span class="font-mono-apple text-xs text-neutral-500">#${i + 1}</span>` : `<input type="checkbox" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-[#0C8C46]">`}
+            ${isMisc ? `<span class="font-mono-apple text-xs text-neutral-500">#${i + 1}</span>` : `<input type="checkbox" aria-label="Select voucher ${escapeHtml(v.code || '')}" ${state.selectedIds.has(v.id) ? 'checked' : ''} onchange="toggleSelectVoucher('${v.id}')" class="rounded accent-[#0C8C46]">`}
           </td>
           <td class="p-3">
             <div class="font-bold text-sm">${vBrandName}</div>
@@ -10048,7 +10091,7 @@
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
                   <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
-                    <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                    <input type="checkbox" aria-label="Select voucher ${escapeHtml(specificBrandName || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                   </div>
                 ` : ''}
                 <span class="font-bold text-white text-sm tracking-tight">${specificBrandName}</span>
@@ -10060,7 +10103,7 @@
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
                   <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
-                    <input type="checkbox" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
+                    <input type="checkbox" aria-label="Select voucher Pass ${i + 1}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                   </div>
                 ` : ''}
                 <span class="font-mono-apple font-bold text-[#F47A21] text-[11px] tracking-wider">PASS #${i + 1}</span>
@@ -13305,7 +13348,7 @@
                 <!-- Customer ID Tile: Interactive Add / Edit / Copy -->
                 ${isCustEditing ? `
                   <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
-                    <input id="bank-input-cust-${acc.id}" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                    <input id="bank-input-cust-${acc.id}" aria-label="Customer ID" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
                     <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
                     <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                   </div>
@@ -13340,7 +13383,7 @@
             <div class="mt-2">
               ${isUpiEditing ? `
                 <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
-                  <input id="bank-input-upi-${acc.id}" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                  <input id="bank-input-upi-${acc.id}" aria-label="UPI ID" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
                   <button onclick="saveBankInlineField('${acc.id}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
                   <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 </div>
