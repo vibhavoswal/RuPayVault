@@ -4820,13 +4820,27 @@
         this.record('CARD_REPLACE', 'card', cleanNew, newCard, [cleanOld]);
       },
 
-      unquarantine(identifier) {
-        if (!identifier) return;
-        const clean = String(identifier).replace(/['\s]/g, '').trim().toUpperCase();
+      unquarantine(identifiers) {
+        if (!identifiers) return;
+        const rawList = Array.isArray(identifiers) ? identifiers : [identifiers];
+        const idSet = new Set();
+        rawList.forEach(id => {
+          if (!id) return;
+          const clean = String(id).replace(/['\s]/g, '').trim().toUpperCase();
+          if (clean) {
+            idSet.add(clean);
+            idSet.add('SHARED-' + clean);
+            if (clean.startsWith('SHARED-')) {
+              idSet.add(clean.replace(/^SHARED-/, ''));
+            }
+          }
+        });
+        if (idSet.size === 0) return;
         try {
           const current = this.getAll().filter(e => {
-            if (e.action === 'TOMBSTONE_HIDE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean)))) {
-              return false;
+            if (e.action === 'TOMBSTONE_HIDE') {
+              if (idSet.has(e.primaryKey)) return false;
+              if (e.secondaryKeys && e.secondaryKeys.some(sk => idSet.has(sk))) return false;
             }
             return true;
           });
@@ -4957,8 +4971,12 @@
       if (payload.cardNumber && action !== 'ADD_CARD') targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
 
-      // Non-destructive and restorative actions (additions, updates, or undos) must NEVER be quarantined
-      const nonQuarantineActions = new Set(['TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE']);
+      // Non-destructive, promotion, and restorative actions (additions, approvals, updates, or undos) must NEVER be quarantined
+      const nonQuarantineActions = new Set([
+        'TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED',
+        'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE',
+        'APPROVE_STAGING'
+      ]);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       }
@@ -5119,6 +5137,12 @@
       } finally {
         (state.cards || []).forEach(c => {
           if (c.cardNumber && c.status === 'ACTIVE') UniversalMutationJournal.unquarantine(c.cardNumber);
+        });
+        (state.vouchers || []).forEach(v => {
+          if (v.status === 'ACTIVE') {
+            if (v.code && v.code !== '-' && v.code.toUpperCase() !== 'PENDING') UniversalMutationJournal.unquarantine(v.code);
+            if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) UniversalMutationJournal.unquarantine(v.bookingId);
+          }
         });
         const urlWs = (new URLSearchParams(window.location.search)).get('ws');
         const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
@@ -6448,27 +6472,52 @@
     }
 
     function dismissSharedActivity(code) {
+      if (!code) return;
       const prevShared = [...sharedActivity];
+      const targetItem = sharedActivity.find(s => s.code === code);
+      const brandName = targetItem ? getBrandDisplayName(targetItem.brand) : 'Shared';
+
       sharedActivity = sharedActivity.filter(s => s.code !== code);
       UniversalMutationJournal.recordTombstone(code, 'shared');
       saveSharedActivity();
-      showToast('Removed from Activity Log');
       renderDeckSelector();
       renderVault();
+      updateClearTrashBadges();
 
-      // Cloud Persistence: Shared_Activity tab in Google Sheets with Safeguard 4 Rollback Handler
-      apiFetch('DISMISS_SHARED', {
-        code: code
-      }, {
-        rollback: () => {
+      // Safeguard 3: Interactive 5-second Undo Banner with Deferred Commit (SG2, SG3, SG4, SG5, SG6)
+      showCardUndoBanner(
+        `Dismissed ${brandName} activity`,
+        () => {
+          // UNDO CALLBACK: Anti-Quarantine Shield lifts tombstone immediately
           sharedActivity = prevShared;
           UniversalMutationJournal.unquarantine(code);
           saveSharedActivity();
           renderDeckSelector();
           renderVault();
-          showToast('Failed to dismiss activity from server');
+          updateClearTrashBadges();
+          showToast('Dismissal undone.');
+        },
+        async () => {
+          // COMMIT CALLBACK (Dispatched strictly after 5s or on page unload)
+          try {
+            await apiFetch('DISMISS_SHARED', {
+              code: code
+            }, {
+              rollback: async () => {
+                sharedActivity = prevShared;
+                UniversalMutationJournal.unquarantine(code);
+                saveSharedActivity();
+                renderDeckSelector();
+                renderVault();
+                updateClearTrashBadges();
+                showToast('Failed to dismiss activity from server');
+              }
+            });
+          } catch (err) {
+            console.warn('Background sync error (DISMISS_SHARED):', err);
+          }
         }
-      }).catch(err => console.warn('Background sync error (DISMISS_SHARED):', err));
+      );
     }
 
     async function markVoucherAsRedeemed(code, brand) {
@@ -6861,7 +6910,12 @@
     function restoreClearedItems() {
       if (!undoState.clearedItems) return;
       const { context, targets } = undoState.clearedItems;
-      targets.forEach(t => { t.displayInUI = true; });
+      targets.forEach(t => {
+        t.displayInUI = true;
+        if (t.code) UniversalMutationJournal.unquarantine(t.code);
+        if (t.bookingId) UniversalMutationJournal.unquarantine(t.bookingId);
+        if (t.id) UniversalMutationJournal.unquarantine(t.id);
+      });
       if (context === 'ingested') {
         saveEncryptedStaging(state.staging);
       } else if (context === 'shared') {
@@ -14001,6 +14055,10 @@
           const found = state.vouchers.find(x => x.id === v.id || (v.code && x.code === v.code) || (v.bookingId && x.bookingId === v.bookingId));
           if (found) found.isCommitPending = false;
         });
+
+        // Anti-Quarantine Shield: Lift temporary staging quarantine once officially persisted
+        UniversalMutationJournal.unquarantine([...bookingIds, ...codes]);
+
         renderVault();
         await saveEncryptedStaging(state.staging);
         await saveEncryptedVouchers(state.vouchers);
