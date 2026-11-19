@@ -6125,10 +6125,8 @@
           saveEncryptedStaging(state.staging),
           saveEncryptedVouchers(state.vouchers)
         ]);
-        if (!isStagingNotArrived) {
-          if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-          if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
-        }
+        if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+        if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
         renderDeckSelector();
         renderVault();
         if (state.activeWorkspace === 'income') renderIncomeTracker();

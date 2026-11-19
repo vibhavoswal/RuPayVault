@@ -2396,9 +2396,9 @@ function doGet(e) {
         todayStr,
         "vibhavoswal9",
         "PNB DC 9762",
-        "USED",
+        "REDEEMED",
         nowStr,
-        "Cult Fit",
+        "New", // Original Tab = New (from Staging)
         nowStr,
         true
       ]);
@@ -2415,7 +2415,7 @@ function doGet(e) {
       recalculateSheetTotal(incomeSheet);
       SpreadsheetApp.flush();
 
-      // Step 3: Verify assertions
+      // Step 3: Verify assertions for MARK_VOUCHER_AS_SOLD
       let stillInNew = false;
       nRows = nSheet.getDataRange().getValues();
       for (let i = 1; i < nRows.length; i++) {
@@ -2440,18 +2440,79 @@ function doGet(e) {
         }
       }
 
-      // Step 4: Cleanup
-      for (let i = rRows.length - 1; i >= 1; i--) {
-        if (String(rRows[i][1] || '').trim().toUpperCase() === testBid) {
+      // Step 4: Execute UNMARK_INGESTED_SALE logic (Restores voucher from Redeemed to New tab)
+      let unmarkRestoredToNew = false;
+      let unmarkDeletedFromRedeemed = false;
+      let unmarkDeletedFromIncome = false;
+
+      const rValsPost = rSheet.getDataRange().getValues();
+      for (let i = rValsPost.length - 1; i >= 1; i--) {
+        const bId = String(rValsPost[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+        if (bId === testBid) {
+          nSheet.appendRow([
+            `'${testBid}`,
+            `'${testCode}`,
+            "",
+            500,
+            todayStr,
+            "vibhavoswal9",
+            "PNB DC 9762",
+            "ACTIVE",
+            nowStr,
+            true,
+            "Cult Fit",
+            "",
+            ""
+          ]);
           rSheet.deleteRow(i + 1);
+          unmarkRestoredToNew = true;
+          break;
         }
       }
-      for (let i = iRows.length - 1; i >= 1; i--) {
-        if (String(iRows[i][3] || '').includes(testBid)) {
-          incomeSheet.deleteRow(i + 1);
+
+      // Delete matching sale row from RuPay Income
+      const iValsPost = incomeSheet.getDataRange().getValues();
+      for (let r = iValsPost.length - 1; r >= 1; r--) {
+        const comm = String(iValsPost[r][3] || '').trim();
+        if (comm.includes(testBid)) {
+          incomeSheet.deleteRow(r + 1);
+          break;
         }
       }
       recalculateSheetTotal(incomeSheet);
+      SpreadsheetApp.flush();
+
+      // Step 5: Verify assertions for UNMARK_INGESTED_SALE
+      let verifiedInNew = false;
+      const postNVals = nSheet.getDataRange().getValues();
+      for (let i = 1; i < postNVals.length; i++) {
+        if (String(postNVals[i][0] || '').trim().toUpperCase() === testBid && String(postNVals[i][7] || '').toUpperCase() === 'ACTIVE') {
+          verifiedInNew = true;
+          break;
+        }
+      }
+
+      let stillInRedeemed = false;
+      const postRVals = rSheet.getDataRange().getValues();
+      for (let i = 1; i < postRVals.length; i++) {
+        if (String(postRVals[i][1] || '').trim().toUpperCase() === testBid) stillInRedeemed = true;
+      }
+      unmarkDeletedFromRedeemed = !stillInRedeemed;
+
+      let stillInIncome = false;
+      const postIVals = incomeSheet.getDataRange().getValues();
+      for (let i = 1; i < postIVals.length; i++) {
+        if (String(postIVals[i][3] || '').includes(testBid)) stillInIncome = true;
+      }
+      unmarkDeletedFromIncome = !stillInIncome;
+
+      // Step 6: Final Cleanup of test row from New
+      const finalNVals = nSheet.getDataRange().getValues();
+      for (let i = finalNVals.length - 1; i >= 1; i--) {
+        if (String(finalNVals[i][0] || '').trim().toUpperCase() === testBid) {
+          nSheet.deleteRow(i + 1);
+        }
+      }
       SpreadsheetApp.flush();
 
       let residualCount = 0;
@@ -2466,7 +2527,9 @@ function doGet(e) {
         if (String(finalIRows[i][3] || '').includes(testBid)) residualCount++;
       }
 
-      const allSafeguardsMet = (foundInNew && !stillInNew && foundInRedeemed && foundInIncome && residualCount === 0);
+      const allSafeguardsMet = (foundInNew && !stillInNew && foundInRedeemed && foundInIncome &&
+                                unmarkRestoredToNew && verifiedInNew && unmarkDeletedFromRedeemed &&
+                                unmarkDeletedFromIncome && residualCount === 0);
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -2475,6 +2538,9 @@ function doGet(e) {
         deletedFromNew: !stillInNew,
         foundInRedeemed: foundInRedeemed,
         foundInIncome: foundInIncome,
+        unmarkRestoredToNew: verifiedInNew,
+        unmarkDeletedFromRedeemed: unmarkDeletedFromRedeemed,
+        unmarkDeletedFromIncome: unmarkDeletedFromIncome,
         cleanedUp: residualCount === 0,
         residualArtifacts: residualCount,
         allSafeguardsMet: allSafeguardsMet
@@ -4501,7 +4567,60 @@ function doPost(e) {
         const rowBookingUpper = rowBooking.toUpperCase();
 
         if ((rowCodeUpper && codes.has(rowCodeUpper)) || (rowBookingUpper && codes.has(rowBookingUpper))) {
-          const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || 'Unassigned');
+          const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || 'Unassigned').trim();
+          const cleanBid = String(rRows[i][1] || '').trim().replace(/^'/, '');
+          const cleanCd = String(rRows[i][2] || '').trim().replace(/^'/, '');
+          const cleanPin = String(rRows[i][3] || '').trim().replace(/^'/, '');
+          const originalTimestamp = (rRows[i].length > 11 && rRows[i][11]) ? String(rRows[i][11]) : "";
+
+          // Staging Invariant: If voucher originally came from "New" (staging), restore to "New" tab
+          if (rawOrigBrand === "New") {
+            let nSheet = ss.getSheetByName("New");
+            if (!nSheet) {
+              nSheet = ss.insertSheet("New");
+              nSheet.appendRow(UNIFIED_NEW_HEADERS);
+              nSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+              nSheet.setFrozenRows(1);
+            }
+            const origBrand = String(rRows[i][0] || 'Unassigned');
+            const nVals = nSheet.getDataRange().getValues();
+            let existingNewRow = -1;
+            for (let n = 1; n < nVals.length; n++) {
+              const nb = String(nVals[n][0] || '').trim().replace(/^'/, '').toUpperCase();
+              const nc = String(nVals[n][1] || '').trim().replace(/^'/, '').toUpperCase();
+              const hasRupsBooking = rowBooking && rowBooking.toUpperCase().startsWith('RUPS-');
+              const bidMatch = hasRupsBooking && nb === rowBooking.toUpperCase();
+              const codeMatch = (!hasRupsBooking || !nb.startsWith('RUPS-')) && rowCode && rowCode !== '-' && rowCode !== 'PENDING' && nc === rowCode.toUpperCase();
+              if (bidMatch || codeMatch) {
+                existingNewRow = n + 1;
+                break;
+              }
+            }
+            if (existingNewRow > 0) {
+              nSheet.getRange(existingNewRow, 8).setValue("ACTIVE");
+              nSheet.getRange(existingNewRow, 10).setValue(true);
+            } else {
+              nSheet.appendRow([
+                cleanBid ? `'${cleanBid}` : '',         // A: Booking ID
+                cleanCd ? `'${cleanCd}` : '',           // B: Code
+                cleanPin ? `'${cleanPin}` : '',         // C: PIN
+                rRows[i][4],                            // D: Value
+                rRows[i][5],                            // E: Date of Issue
+                rRows[i][6],                            // F: Account
+                rRows[i][7],                            // G: Card
+                "ACTIVE",                               // H: Status
+                originalTimestamp,                      // I: Appended Timestamp (IST)
+                true,                                   // J: Display in UI
+                origBrand,                              // K: Target Brand
+                "",                                     // L: Payment Link
+                ""                                      // M: Sale Logged
+              ]);
+            }
+            rowsToDeleteFromRedeemed.push(i + 1);
+            restored.push({ bookingId: rowBooking, code: rowCode, brand: "New" });
+            continue;
+          }
+
           const canonicalBrand = extractBrand(rawOrigBrand, "");
           const targetBrand = (canonicalBrand && canonicalBrand !== "Other") ? canonicalBrand : rawOrigBrand;
           const bSheet = getTargetBrandSheet(ss, targetBrand);
@@ -4525,10 +4644,6 @@ function doPost(e) {
             bSheet.getRange(existingBrandRowIndex, 8).setValue("ACTIVE");
             bSheet.getRange(existingBrandRowIndex, 10).setValue(true);
           } else {
-            const originalTimestamp = (rRows[i].length > 11 && rRows[i][11]) ? String(rRows[i][11]) : "";
-            const cleanBid = String(rRows[i][1] || '').trim().replace(/^'/, '');
-            const cleanCd = String(rRows[i][2] || '').trim().replace(/^'/, '');
-            const cleanPin = String(rRows[i][3] || '').trim().replace(/^'/, '');
             const restoredRow = [
               cleanBid ? `'${cleanBid}` : '',         // A: Booking ID
               cleanCd ? `'${cleanCd}` : '',           // B: Code
@@ -4549,13 +4664,26 @@ function doPost(e) {
         }
       }
 
-      // Self-healing: If not found in Redeemed, check if already restored in brand tab!
+      // Self-healing: If not found in Redeemed, check if already restored in brand tab or New tab!
       codes.forEach(codeOrBid => {
         const cleanTarget = String(codeOrBid).replace(/^'/, '').trim().toUpperCase();
         if (!restored.some(r => (r.code && String(r.code).replace(/^'/, '').trim().toUpperCase() === cleanTarget) || (r.bookingId && String(r.bookingId).replace(/^'/, '').trim().toUpperCase() === cleanTarget))) {
           const foundInBrand = findRowInBrandTabs(ss, cleanTarget, null, cleanTarget);
           if (foundInBrand) {
             restored.push({ bookingId: cleanTarget, brand: foundInBrand.sheet.getName(), alreadyRestored: true });
+          } else {
+            const nSheet = ss.getSheetByName("New");
+            if (nSheet) {
+              const nVals = nSheet.getDataRange().getValues();
+              for (let n = 1; n < nVals.length; n++) {
+                const nb = String(nVals[n][0] || '').trim().replace(/^'/, '').toUpperCase();
+                const nc = String(nVals[n][1] || '').trim().replace(/^'/, '').toUpperCase();
+                if ((cleanTarget && nb === cleanTarget) || (cleanTarget && cleanTarget !== '-' && cleanTarget !== 'PENDING' && nc === cleanTarget)) {
+                  restored.push({ bookingId: cleanTarget, brand: "New", alreadyRestored: true });
+                  break;
+                }
+              }
+            }
           }
         }
       });
@@ -5593,7 +5721,7 @@ function doPost(e) {
           finalCard,             // Col 8: Card
           "REDEEMED",            // Col 9: Status
           redeemedTs,            // Col 10: Redeemed Timestamp (IST)
-          targetBrand,           // Col 11: Original Tab
+          isStaging ? "New" : targetBrand, // Col 11: Original Tab
           finalAppendedTs,       // Col 12: Appended Timestamp (IST)
           true                   // Col 13: Display in UI
         ]);
@@ -5684,7 +5812,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 16C. Unmark Voucher Sale (Clears Col 13 in "New" tab or restores to Brand tab from "Redeemed", and deletes matching row in "RuPay Income")
+    // 16C. Unmark Voucher Sale (Clears Col 13 in "New" tab or restores to New/Brand tab from "Redeemed", and deletes matching row in "RuPay Income")
     if (data.action === "UNMARK_INGESTED_SALE" || data.action === "UNMARK_VOUCHER_SALE") {
       const targetBid = String(data.bookingId || '').trim();
       const targetCode = String(data.code || '').trim();
@@ -5697,6 +5825,7 @@ function doPost(e) {
       let unmarkedNewRow = -1;
       let restoredBrandRow = -1;
 
+      // Step 1: If isStaging, check "New" sheet first (handles vouchers where keepInStaging was true)
       if (isStaging) {
         const newSheet = ss.getSheetByName("New");
         if (newSheet && (cleanTargetBid || cleanTargetCode)) {
@@ -5704,7 +5833,7 @@ function doPost(e) {
           for (let i = 1; i < nVals.length; i++) {
             const bId = String(nVals[i][0] || '').replace(/^'/, '').trim().toUpperCase();
             const cd = String(nVals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
-            const matchBid = cleanTargetBid && bId === cleanTargetBid;
+            const matchBid = cleanTargetBid && (bId === cleanTargetBid || (bId.startsWith("RUPS-") && cleanTargetBid.includes(bId)) || (cleanTargetBid.startsWith("RUPS-") && bId.includes(cleanTargetBid)));
             const matchCode = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && cd === cleanTargetCode;
             if (matchBid || matchCode) {
               unmarkedNewRow = i + 1;
@@ -5715,35 +5844,71 @@ function doPost(e) {
             }
           }
         }
-      } else {
-        // Move back from Redeemed sheet to Brand tab
+      }
+
+      // Step 2: If not found in "New" sheet (e.g. voucher was moved to "Redeemed" tab upon sale) OR if isStaging was false:
+      if (unmarkedNewRow === -1) {
         const rSheet = ss.getSheetByName("Redeemed");
         if (rSheet && (cleanTargetBid || cleanTargetCode)) {
           const rVals = rSheet.getDataRange().getValues();
           for (let i = rVals.length - 1; i >= 1; i--) {
             const bId = String(rVals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
             const cd = String(rVals[i][2] || '').replace(/^'/, '').trim().toUpperCase();
-            const matchBid = cleanTargetBid && bId === cleanTargetBid;
+            const matchBid = cleanTargetBid && (bId === cleanTargetBid || (bId.startsWith("RUPS-") && cleanTargetBid.includes(bId)) || (cleanTargetBid.startsWith("RUPS-") && bId.includes(cleanTargetBid)));
             const matchCode = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && cd === cleanTargetCode;
             if (matchBid || matchCode) {
-              const brandSheet = getTargetBrandSheet(ss, brand || String(rVals[i][0] || ''));
-              if (brandSheet) {
-                const rawBid = String(rVals[i][1] || '').trim();
-                const rawCd = String(rVals[i][2] || '').trim();
-                const rawPin = String(rVals[i][3] || '').trim();
-                brandSheet.appendRow([
-                  rawBid ? (rawBid.startsWith("'") ? rawBid : ("'" + rawBid)) : "", // Booking ID
-                  rawCd ? (rawCd.startsWith("'") ? rawCd : ("'" + rawCd)) : "",     // Code
-                  rawPin ? (rawPin.startsWith("'") ? rawPin : ("'" + rawPin)) : "", // PIN
-                  rVals[i][4], // Value
-                  rVals[i][5], // Date of Issue
-                  rVals[i][6], // Account
-                  rVals[i][7], // Card
-                  "ACTIVE",    // Status
-                  rVals[i][11] || formatISTTimestamp(new Date()), // Appended Timestamp
-                  true         // Display in UI
+              const origTab = String(rVals[i][10] || '').trim();
+              const shouldRestoreToNew = isStaging || origTab === "New";
+              const rawBid = String(rVals[i][1] || '').trim();
+              const rawCd = String(rVals[i][2] || '').trim();
+              const rawPin = String(rVals[i][3] || '').trim();
+              const safeBid = rawBid ? (rawBid.startsWith("'") ? rawBid : ("'" + rawBid)) : "";
+              const safeCd = rawCd ? (rawCd.startsWith("'") ? rawCd : ("'" + rawCd)) : "";
+              const safePin = rawPin ? (rawPin.startsWith("'") ? rawPin : ("'" + rawPin)) : "";
+              const appTs = rVals[i][11] || formatISTTimestamp(new Date());
+
+              if (shouldRestoreToNew) {
+                let newSheet = ss.getSheetByName("New");
+                if (!newSheet) {
+                  newSheet = ss.insertSheet("New");
+                  newSheet.appendRow(UNIFIED_NEW_HEADERS);
+                  newSheet.getRange(1, 1, 1, UNIFIED_NEW_HEADERS.length).setFontWeight("bold").setBackground("#EEF2FF");
+                  newSheet.setFrozenRows(1);
+                }
+                const targetBrandName = brand || String(rVals[i][0] || '');
+                newSheet.appendRow([
+                  safeBid,               // Col 1: Booking ID
+                  safeCd,                // Col 2: Code
+                  safePin,               // Col 3: PIN
+                  rVals[i][4],           // Col 4: Value
+                  rVals[i][5],           // Col 5: Date of Issue
+                  rVals[i][6],           // Col 6: Account
+                  rVals[i][7],           // Col 7: Card
+                  "ACTIVE",              // Col 8: Status
+                  appTs,                 // Col 9: Appended Timestamp (IST)
+                  true,                  // Col 10: Display in UI
+                  targetBrandName,       // Col 11: Target Brand
+                  "",                    // Col 12: Payment Link
+                  ""                     // Col 13: Sale Logged (cleared)
                 ]);
-                restoredBrandRow = brandSheet.getLastRow();
+                unmarkedNewRow = newSheet.getLastRow();
+              } else {
+                const brandSheet = getTargetBrandSheet(ss, brand || String(rVals[i][0] || ''));
+                if (brandSheet) {
+                  brandSheet.appendRow([
+                    safeBid,             // Col 1: Booking ID
+                    safeCd,              // Col 2: Code
+                    safePin,             // Col 3: PIN
+                    rVals[i][4],         // Col 4: Value
+                    rVals[i][5],         // Col 5: Date of Issue
+                    rVals[i][6],         // Col 6: Account
+                    rVals[i][7],         // Col 7: Card
+                    "ACTIVE",            // Col 8: Status
+                    appTs,               // Col 9: Appended Timestamp (IST)
+                    true                 // Col 10: Display in UI
+                  ]);
+                  restoredBrandRow = brandSheet.getLastRow();
+                }
               }
               rSheet.deleteRow(i + 1);
               break;
@@ -5752,17 +5917,18 @@ function doPost(e) {
         }
       }
 
+      // Step 3: Delete matching sale entry from "RuPay Income" tab (search backwards to match most recent)
       const incomeSheet = ss.getSheetByName("RuPay Income");
       let deletedIncomeRow = -1;
-      if (incomeSheet && (targetComments || targetBid || targetCode)) {
+      if (incomeSheet && (targetComments || cleanTargetBid || cleanTargetCode)) {
         const iVals = incomeSheet.getDataRange().getValues();
-        for (let r = 1; r < iVals.length; r++) {
+        for (let r = iVals.length - 1; r >= 1; r--) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
           const matchComment = targetComments && comm === targetComments;
-          const matchBidInComm = targetBid && comm.includes(targetBid);
-          const matchCodeInComm = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && comm.includes(targetCode);
+          const matchBidInComm = cleanTargetBid && (comm.toUpperCase().includes(cleanTargetBid) || (targetBid && comm.includes(targetBid)));
+          const matchCodeInComm = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && (comm.toUpperCase().includes(cleanTargetCode) || (targetCode && comm.includes(targetCode)));
           if (matchComment || matchBidInComm || matchCodeInComm) {
             deletedIncomeRow = r + 1;
             incomeSheet.deleteRow(r + 1);
