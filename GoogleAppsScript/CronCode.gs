@@ -993,10 +993,10 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
   const checkSheet = (sheet) => {
     const vals = sheet.getDataRange().getValues();
     for (let i = 1; i < vals.length; i++) {
-      const rowBid = String(vals[i][0] || '').trim().toUpperCase();
-      const rowCode = String(vals[i][1] || '').trim().toUpperCase();
+      const rowBid = String(vals[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+      const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
       const hasRups = bUpper && bUpper.startsWith('RUPS-');
-      const bidMatch = hasRups && rowBid === bUpper;
+      const bidMatch = hasRups && (rowBid === bUpper || (rowBid.startsWith("RUPS-") && bUpper.includes(rowBid)) || (bUpper.startsWith("RUPS-") && rowBid.includes(bUpper)));
       const codeMatch = cUpper && rowCode === cUpper;
       if (bidMatch || codeMatch) {
         return { sheet: sheet, rowIndex: i + 1, rowData: vals[i] };
@@ -1097,8 +1097,10 @@ function recordPendingRevalidation(ss, data) {
   const rSheet = ss.getSheetByName("Redeemed");
   if (rSheet) {
     const rRows = rSheet.getDataRange().getValues();
+    const cleanBid = String(data.bookingId || '').replace(/^'/, '').trim().toUpperCase();
     for (let i = 1; i < rRows.length; i++) {
-      if (String(rRows[i][1]).trim() === data.bookingId) return;
+      const rBid = String(rRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+      if (rBid && cleanBid && (rBid === cleanBid || (rBid.startsWith("RUPS-") && cleanBid.includes(rBid)) || (cleanBid.startsWith("RUPS-") && rBid.includes(cleanBid)))) return;
     }
   }
 
@@ -1184,10 +1186,12 @@ function recordPendingRedemption(ss, data) {
 
   // 1. Check if Booking ID already exists in Redeemed tab (Col 2: Booking ID)
   const rSheet = ss.getSheetByName("Redeemed");
+  const targetBid = String(data.bookingId || '').replace(/^'/, '').trim().toUpperCase();
   if (rSheet) {
     const rRows = rSheet.getDataRange().getValues();
     for (let i = 1; i < rRows.length; i++) {
-      if (String(rRows[i][1]).trim() === data.bookingId) {
+      const rBid = String(rRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+      if (rBid && targetBid && (rBid === targetBid || (rBid.startsWith("RUPS-") && targetBid.includes(rBid)) || (targetBid.startsWith("RUPS-") && rBid.includes(targetBid)))) {
         // Already redeemed, don't recreate!
         return;
       }
@@ -1196,9 +1200,8 @@ function recordPendingRedemption(ss, data) {
 
   // 2. Global Idempotency: Does this Booking ID already exist in "New" tab?
   const newRows = newSheet.getDataRange().getValues();
-  const targetBid = String(data.bookingId || '').trim().toUpperCase();
   for (let i = 1; i < newRows.length; i++) {
-    const rowBid = String(newRows[i][0] || '').trim().toUpperCase();
+    const rowBid = String(newRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
     if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid)) || (targetBid.startsWith("RUPS-") && rowBid.includes(targetBid))) {
       // If row exists as PENDING_REVALIDATION (e.g. revalidation email was ingested before Stage 1 ack),
       // heal Col 9 to the earlier Stage 1 acknowledgment timestamp!
@@ -1269,8 +1272,10 @@ function fulfillVoucherCode(ss, data) {
 
   // Search "New" tab by Booking ID (RUPS...)
   const rows = newSheet.getDataRange().getValues();
+  const targetBid = String(data.bookingId || '').replace(/^'/, '').trim().toUpperCase();
   for (let i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]).trim() === data.bookingId) {
+    const rowBid = String(rows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+    if (rowBid && targetBid && (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid)) || (targetBid.startsWith("RUPS-") && rowBid.includes(targetBid)))) {
       const currentCode = String(rows[i][1] || '').trim();
       const currentStatus = String(rows[i][7] || '').trim().toUpperCase();
 
@@ -1302,7 +1307,8 @@ function fulfillVoucherCode(ss, data) {
   if (rSheet) {
     const rRows = rSheet.getDataRange().getValues();
     for (let i = 1; i < rRows.length; i++) {
-      if (String(rRows[i][1]).trim() === data.bookingId) {
+      const rBid = String(rRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+      if (rBid && targetBid && (rBid === targetBid || (rBid.startsWith("RUPS-") && targetBid.includes(rBid)) || (targetBid.startsWith("RUPS-") && rBid.includes(targetBid)))) {
         return;
       }
     }
@@ -1397,8 +1403,10 @@ function getOrInitCooldownsSheet(ss) {
 function updateCooldownTab(ss, account) {
   const sheet = getOrInitCooldownsSheet(ss);
   const data = sheet.getDataRange().getValues();
+  const targetAcc = String(account || '').trim().toLowerCase();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === account) {
+    const rowAcc = String(data[i][0] || '').trim().toLowerCase();
+    if (rowAcc === targetAcc) {
       sheet.getRange(i + 1, 2).setValue(formatISTTimestamp(new Date()));
       sheet.getRange(i + 1, 3).setValue("RUNNING");
       sheet.getRange(i + 1, 4).setValue(formatISTTimestamp(new Date()));
@@ -4198,8 +4206,8 @@ function doPost(e) {
       const existingRedeemedBookings = new Set();
       const existingRedeemedCodes = new Set();
       for (let r = 1; r < rVals.length; r++) {
-        const b = String(rVals[r][1] || '').trim().toUpperCase(); // Col 2: Booking ID
-        const c = String(rVals[r][2] || '').trim().toUpperCase(); // Col 3: Code
+        const b = String(rVals[r][1] || '').trim().replace(/^'/, '').toUpperCase(); // Col 2: Booking ID
+        const c = String(rVals[r][2] || '').trim().replace(/^'/, '').toUpperCase(); // Col 3: Code
         if (b && b !== '-' && !b.startsWith('#')) existingRedeemedBookings.add(b);
         if (c && c !== '-' && c !== 'PENDING') existingRedeemedCodes.add(c);
       }
@@ -5396,7 +5404,7 @@ function doPost(e) {
     // 16. Dismiss Ingested / Staged Voucher (Sets Display in UI = FALSE in "New" tab)
     if (data.action === "DISMISS_STAGING") {
       const rawBids = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
-      const targetBids = new Set((Array.isArray(rawBids) ? rawBids : [rawBids]).map(b => String(b).trim().toUpperCase()).filter(Boolean));
+      const targetBids = new Set((Array.isArray(rawBids) ? rawBids : [rawBids]).map(b => String(b).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
       if (targetBids.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Cannot dismiss: No booking ID specified."
@@ -5408,7 +5416,7 @@ function doPost(e) {
       if (nSheet) {
         const vals = nSheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
-          const rowBid = String(vals[i][0] || "").trim().toUpperCase();
+          const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
           if (targetBids.has(rowBid)) {
             nSheet.getRange(i + 1, 10).setValue(false); // Col 10: Display in UI = FALSE
             dismissed.push(rowBid);
@@ -5680,9 +5688,9 @@ function doPost(e) {
         if (newSheet && (targetBid || targetCode)) {
           const nVals = newSheet.getDataRange().getValues();
           for (let i = 1; i < nVals.length; i++) {
-            const bId = String(nVals[i][0] || '').trim();
-            const cd = String(nVals[i][1] || '').trim();
-            const matchBid = targetBid && bId.toUpperCase() === targetBid.toUpperCase();
+            const bId = String(nVals[i][0] || '').replace(/^'/, '').trim();
+            const cd = String(nVals[i][1] || '').replace(/^'/, '').trim();
+            const matchBid = targetBid && bId.toUpperCase() === targetBid.replace(/^'/, '').trim().toUpperCase();
             const matchCode = targetCode && targetCode !== 'PENDING' && targetCode !== '-' && cd.toUpperCase() === targetCode.toUpperCase();
             if (matchBid || matchCode) {
               unmarkedNewRow = i + 1;

@@ -5139,7 +5139,7 @@
       if (!ts) return 0;
       if (ts instanceof Date) return isNaN(ts.getTime()) ? 0 : ts.getTime();
       if (typeof ts === 'number') return isNaN(ts) ? 0 : ts;
-      const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
+      const clean = String(ts).replace(/^'/, '').replace(/'IST'/i, '').replace(/IST/i, '').trim();
       if (!clean) return 0;
 
       // Handle pure epoch numeric strings (10 digits for seconds, 13 digits for ms)
@@ -5277,7 +5277,11 @@
       let isShared = false;
 
       if (!act) {
-        act = state.vouchers.find(v => v.id === id || v.code === id);
+        act = (state.vouchers || []).find(v => v.id === id || v.code === id || (v.bookingId && v.bookingId === id));
+      }
+
+      if (!act) {
+        act = (redeemedList || []).find(r => r.id === id || r.code === id || ('redeemed-' + r.code) === id || (r.bookingId && r.bookingId === id));
       }
 
       if (!act) {
@@ -6110,8 +6114,8 @@
 
     function isVoucherRedeemed(v) {
       if (!v) return false;
-      const vCode = (typeof v === 'string' ? v : (v.code || '')).trim().toUpperCase();
-      const vBid = (typeof v === 'object' && v.bookingId ? String(v.bookingId).trim().toUpperCase() : '');
+      const vCode = (typeof v === 'string' ? v : (v.code || '')).replace(/^'/, '').trim().toUpperCase();
+      const vBid = (typeof v === 'object' && v.bookingId ? String(v.bookingId).replace(/^'/, '').trim().toUpperCase() : '');
 
       const hasValidCode = vCode && vCode !== 'PENDING' && !/processing/i.test(vCode) && vCode !== '-';
       const hasValidBid = vBid && vBid !== '-' && !vBid.startsWith('#');
@@ -6119,8 +6123,8 @@
       if (!hasValidCode && !hasValidBid) return false;
 
       return redeemedList.some(r => {
-        const rc = (r.code || '').trim().toUpperCase();
-        const rb = (r.bookingId || '').trim().toUpperCase();
+        const rc = (r.code || '').replace(/^'/, '').trim().toUpperCase();
+        const rb = (r.bookingId || '').replace(/^'/, '').trim().toUpperCase();
         const codeMatch = hasValidCode && rc && rc !== 'PENDING' && !/processing/i.test(rc) && rc !== '-' && rc === vCode;
         const bidMatch = hasValidBid && rb && rb !== '-' && !rb.startsWith('#') && rb === vBid;
         return codeMatch || bidMatch;
@@ -9317,6 +9321,7 @@
           allActivities = allActivities.filter(a =>
             (a.brand && a.brand.toLowerCase().includes(q)) ||
             (a.code && a.code.toLowerCase().includes(q)) ||
+            (a.bookingId && a.bookingId.toLowerCase().includes(q)) ||
             (a.account && a.account.toLowerCase().includes(q)) ||
             (a.card && a.card.toLowerCase().includes(q)) ||
             (a.pin && String(a.pin).toLowerCase().includes(q))
@@ -9666,6 +9671,9 @@
           rList = rList.filter(r =>
             (r.brand && r.brand.toLowerCase().includes(q)) ||
             (r.code && r.code.toLowerCase().includes(q)) ||
+            (r.bookingId && r.bookingId.toLowerCase().includes(q)) ||
+            (r.account && r.account.toLowerCase().includes(q)) ||
+            (r.card && r.card.toLowerCase().includes(q)) ||
             (r.pin && String(r.pin).toLowerCase().includes(q))
           );
         }
@@ -9810,6 +9818,9 @@
         vs = vs.filter(v => 
           (v.brand && v.brand.toLowerCase().includes(q)) ||
           (v.code && v.code.toLowerCase().includes(q)) ||
+          (v.bookingId && v.bookingId.toLowerCase().includes(q)) ||
+          (v.account && v.account.toLowerCase().includes(q)) ||
+          (v.card && v.card.toLowerCase().includes(q)) ||
           (v.pin && String(v.pin).toLowerCase().includes(q))
         );
       }
@@ -11124,9 +11135,9 @@
     }
 
     function onExpiryInput(inputEl) {
-      let v = inputEl.value.replace(/\D/g, '');
-      if (v.length >= 2) {
-        inputEl.value = v.slice(0, 2) + '/' + v.slice(2, 4);
+      let v = inputEl.value.replace(/\D/g, '').slice(0, 4);
+      if (v.length > 2) {
+        inputEl.value = v.slice(0, 2) + '/' + v.slice(2);
       } else {
         inputEl.value = v;
       }
