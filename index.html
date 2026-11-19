@@ -6117,126 +6117,95 @@
       renderVault();
       if (state.activeWorkspace === 'income') renderIncomeTracker();
 
-      // Show Undo Banner (SG3)
+      // Prepare backend payload
+      const payload = {
+        bookingId: cleanBid,
+        code: cleanCode,
+        pin: v.pin || '',
+        brand: brandKey,
+        isStaging: isStaging,
+        keepInStaging: isStagingNotArrived,
+        onlyLogIncome: isStagingNotArrived,
+        amount: v.amount || rawPrice,
+        dateOfIssue: v.dateOfIssue || '',
+        account: redeemedAccount || v.account || '',
+        card: cardAccount,
+        timestampIST: v.timestampIST || '',
+        comments: commentStr,
+        saleDetails: {
+          price: rawPrice,
+          soldTo: soldTo,
+          mobile: mobile,
+          redeemedAccount: redeemedAccount,
+          gpayName: gpayName,
+          card: cardAccount,
+          comments: commentStr,
+          date: normalizedSaleDate
+        }
+      };
+
+      // Show Undo Banner with Deferred Backend Commit (SG3, SG4, SG5, SG6)
       const buyerPart = soldTo ? ` to ${soldTo}` : '';
       const bannerMsg = isStagingNotArrived
         ? `Added sale details for ${brandDisplay}${buyerPart} (+₹${rawPrice.toLocaleString()})`
         : `Marked ${brandDisplay} sold${buyerPart} (+₹${rawPrice.toLocaleString()})`;
-      showCardUndoBanner(bannerMsg, async () => {
-        // Rollback
-        if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
-        if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
-        state.staging = prevStaging;
-        state.vouchers = prevVouchers;
-        redeemedList = prevRedeemed;
-        if (state.income) state.income.ledger = prevIncomeLedger;
-        recomputeIncomeSummaryStats();
-        saveRedeemedList();
-        await Promise.all([
-          saveEncryptedStaging(state.staging),
-          saveEncryptedVouchers(state.vouchers)
-        ]);
-        if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-        if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
-        renderDeckSelector();
-        renderVault();
-        if (state.activeWorkspace === 'income') renderIncomeTracker();
-        
-        // Dispatch backend unmark to Google Sheets with rollback handler (SG4)
-        const rollbackUnmark = async () => {
-          if (cleanBid) markIngestedVoucherSold(cleanBid, rawPrice, soldDateStr);
-          if (cleanCode) markIngestedVoucherSold(cleanCode, rawPrice, soldDateStr);
-          state.staging = state.staging.filter(x => x.id !== v.id);
-          state.vouchers = state.vouchers.filter(x => x.id !== v.id);
-          if (redeemedObj && !redeemedList.some(r => r.id === redeemedObj.id)) redeemedList.unshift(redeemedObj);
-          if (optimisticIncomeEntry && !state.income.ledger.some(l => l.id === optimisticIncomeEntry.id)) state.income.ledger.unshift(optimisticIncomeEntry);
+
+      showCardUndoBanner(
+        bannerMsg,
+        () => {
+          // UNDO CALLBACK: Revert local state and unquarantine
+          if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
+          if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
+          state.staging = prevStaging;
+          state.vouchers = prevVouchers;
+          redeemedList = prevRedeemed;
+          if (state.income) state.income.ledger = prevIncomeLedger;
           recomputeIncomeSummaryStats();
           saveRedeemedList();
-          await Promise.all([
-            saveEncryptedStaging(state.staging),
-            saveEncryptedVouchers(state.vouchers)
-          ]);
+          saveEncryptedStaging(state.staging);
+          saveEncryptedVouchers(state.vouchers);
+          if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+          if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
           renderDeckSelector();
           renderVault();
           if (state.activeWorkspace === 'income') renderIncomeTracker();
-          showToast('Failed to undo sale on backend. Restored.');
-        };
+          showToast('Sale marked as undone');
+        },
+        async () => {
+          // COMMIT CALLBACK: Dispatched strictly after 5-Second Grace Period or on page unload
+          try {
+            const res = await apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
+              rollback: async () => {
+                if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
+                if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
+                state.staging = prevStaging;
+                state.vouchers = prevVouchers;
+                redeemedList = prevRedeemed;
+                if (state.income) state.income.ledger = prevIncomeLedger;
+                recomputeIncomeSummaryStats();
+                saveRedeemedList();
+                await Promise.all([
+                  saveEncryptedStaging(state.staging),
+                  saveEncryptedVouchers(state.vouchers)
+                ]);
+                if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+                if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+                renderDeckSelector();
+                renderVault();
+                if (state.activeWorkspace === 'income') renderIncomeTracker();
+                showToast('Failed to record sale on server. Reverted.');
+              }
+            });
 
-        try {
-          await apiFetch('UNMARK_INGESTED_SALE', {
-            bookingId: cleanBid,
-            code: cleanCode,
-            comments: commentStr,
-            brand: brandKey,
-            isStaging: isStaging,
-            amount: v.amount || rawPrice
-          }, { rollback: rollbackUnmark });
-        } catch (e) {
-          console.error('Failed to unmark sale on backend', e);
-        }
-        showToast('Sale marked as undone');
-      });
-
-      // Background Dispatch via apiFetch (SG4, SG5, SG6)
-      try {
-        const payload = {
-          bookingId: cleanBid,
-          code: cleanCode,
-          pin: v.pin || '',
-          brand: brandKey,
-          isStaging: isStaging,
-          keepInStaging: isStagingNotArrived,
-          onlyLogIncome: isStagingNotArrived,
-          amount: v.amount || rawPrice,
-          dateOfIssue: v.dateOfIssue || '',
-          account: redeemedAccount || v.account || '',
-          card: cardAccount,
-          timestampIST: v.timestampIST || '',
-          comments: commentStr,
-          saleDetails: {
-            price: rawPrice,
-            soldTo: soldTo,
-            mobile: mobile,
-            redeemedAccount: redeemedAccount,
-            gpayName: gpayName,
-            card: cardAccount,
-            comments: commentStr,
-            date: normalizedSaleDate
-          }
-        };
-
-        const res = await apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
-          rollback: async () => {
-            if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
-            if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
-            state.staging = prevStaging;
-            state.vouchers = prevVouchers;
-            redeemedList = prevRedeemed;
-            if (state.income) state.income.ledger = prevIncomeLedger;
-            recomputeIncomeSummaryStats();
-            saveRedeemedList();
-            await Promise.all([
-              saveEncryptedStaging(state.staging),
-              saveEncryptedVouchers(state.vouchers)
-            ]);
-            if (!isStagingNotArrived) {
-              if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-              if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+            if (res && res.incomeEntry && res.incomeEntry.id) {
+              const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
+              if (item) item.id = res.incomeEntry.id;
             }
-            renderDeckSelector();
-            renderVault();
-            if (state.activeWorkspace === 'income') renderIncomeTracker();
-            showToast('Failed to record sale on server. Reverted.');
+          } catch (err) {
+            console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
           }
-        });
-
-        if (res && res.incomeEntry && res.incomeEntry.id) {
-          const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
-          if (item) item.id = res.incomeEntry.id;
         }
-      } catch (err) {
-        console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
-      }
+      );
     }
 
     /* --- ACTIVITY LOG & REDEMPTION REVERSE-CHRONOLOGICAL STATE --- */
@@ -6620,10 +6589,17 @@
 
       hideUndoToast();
 
+      const bookingIds = [];
+
       targetCodes.forEach(c => {
         const matches = state.vouchers.filter(x => x.code === c || (x.bookingId && x.bookingId === c));
         const r = redeemedList.find(x => x.code === c || (x.bookingId && x.bookingId === c));
         const targetBrandName = normalizeBrandKey(brand || (r ? (r.originalTab || r.brand) : 'Voucher'));
+
+        const bId = (r ? r.bookingId : null) || (matches[0] ? matches[0].bookingId : null);
+        if (bId && !bookingIds.includes(bId)) {
+          bookingIds.push(bId);
+        }
 
         let restoredObj = null;
         if (matches.length > 0) {
@@ -6695,11 +6671,6 @@
         renderVault();
         showToast('Undo reverted');
       };
-
-      const bookingIds = targetCodes.map(c => {
-        const r = (redeemedList || []).find(x => x.code === c || (x.bookingId && x.bookingId === c));
-        return r ? r.bookingId : null;
-      }).filter(Boolean);
 
       try {
         await apiFetch('UNDO_REDEEM', {
