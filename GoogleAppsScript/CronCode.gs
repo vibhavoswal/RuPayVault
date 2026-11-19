@@ -2095,8 +2095,8 @@ function doGet(e) {
 
   // Data Migration: Split "RuPay Income" by moving negative card charges to "RuPay Charges"
   if (e && e.parameter && e.parameter.action === "MIGRATE_RUPAY_CHARGES_TAB") {
+    const lock = LockService.getScriptLock();
     try {
-      const lock = LockService.getScriptLock();
       lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
@@ -2176,13 +2176,15 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    } finally {
+      try { lock.releaseLock(); } catch(e) {}
     }
   }
 
   // Safeguards Audit Verification Endpoint for RECORD_INCOME_ENTRY & Date-Sorted Insertion
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_INCOME_DUMMY") {
+    const lock = LockService.getScriptLock();
     try {
-      const lock = LockService.getScriptLock();
       lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
@@ -2290,13 +2292,15 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(vErr) {
       return ContentService.createTextOutput(JSON.stringify({ error: vErr.message })).setMimeType(ContentService.MimeType.JSON);
+    } finally {
+      try { lock.releaseLock(); } catch(e) {}
     }
   }
 
   // Safeguards Audit Verification Endpoint for MARK_VOUCHER_AS_SOLD (Atomic Ingested/Brand -> Redeemed + RuPay Income)
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_SOLD_DUMMY") {
+    const lock = LockService.getScriptLock();
     try {
-      const lock = LockService.getScriptLock();
       lock.tryLock(30000);
       const ss = getSpreadsheet();
       let nSheet = ss.getSheetByName("New");
@@ -2462,6 +2466,8 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    } finally {
+      try { lock.releaseLock(); } catch(e) {}
     }
   }
 
@@ -2874,8 +2880,8 @@ function doGet(e) {
 
   // Action: Take backup of "RuPay Income" as "RuPayIncomeBackup", format "RuPay Income" like other tabs, and tally
   if (e && e.parameter && e.parameter.action === "FORMAT_AND_BACKUP_RUPAY_INCOME") {
+    const lock = LockService.getScriptLock();
     try {
-      const lock = LockService.getScriptLock();
       lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
@@ -3086,13 +3092,15 @@ function doGet(e) {
       }, null, 2)).setMimeType(ContentService.MimeType.JSON);
     } catch (err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message, stack: err.stack })).setMimeType(ContentService.MimeType.JSON);
+    } finally {
+      try { lock.releaseLock(); } catch(e) {}
     }
   }
 
   // Action: Remove RuPay Income row & unmark sale in "New" tab
   if (e && e.parameter && e.parameter.action === "REMOVE_RUPAY_INCOME_AND_UNMARK_SALE") {
+    const lock = LockService.getScriptLock();
     try {
-      const lock = LockService.getScriptLock();
       lock.tryLock(30000);
       const ss = getSpreadsheet();
       
@@ -3137,7 +3145,6 @@ function doGet(e) {
       }
 
       SpreadsheetApp.flush();
-      try { lock.releaseLock(); } catch(_) {}
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -3147,6 +3154,8 @@ function doGet(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.message })).setMimeType(ContentService.MimeType.JSON);
+    } finally {
+      try { lock.releaseLock(); } catch(_) {}
     }
   }
 
@@ -4425,6 +4434,7 @@ function doPost(e) {
       }
 
       if (moved.length > 0) {
+        SpreadsheetApp.flush();
         return ContentService.createTextOutput(JSON.stringify({
           success: true,
           action: "MOVE_TO_REDEEMED",
@@ -4613,6 +4623,7 @@ function doPost(e) {
         }
       }
 
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "SAVE_CARD",
@@ -5111,6 +5122,7 @@ function doPost(e) {
         logged.push(cStr);
       });
 
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "LOG_SHARED",
@@ -5141,6 +5153,7 @@ function doPost(e) {
         }
       }
 
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "DISMISS_SHARED",
@@ -5158,6 +5171,7 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
       updateCooldownTab(ss, account);
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "RESET_COOLDOWN",
@@ -5243,6 +5257,7 @@ function doPost(e) {
         }
       }
 
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "CLEAR_ACTIVITY",
@@ -5282,6 +5297,7 @@ function doPost(e) {
         }
       }
 
+      SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "CLEAR_REDEEMED",
@@ -5565,11 +5581,33 @@ function doPost(e) {
       const redeemedAccount = String(sale.redeemedAccount || finalAccount || '').trim();
       const gpayName = String(sale.gpayName || '').trim();
 
-      // Canonical RuPay Income title: "Cult Fit" or "Amazon Prime"
+      // Canonical RuPay Income title mapping
       let incomeTitle = "Cult Fit";
       const bLow = targetBrand.toLowerCase();
       if (bLow.includes("prime") || bLow.includes("amazon")) {
         incomeTitle = "Amazon Prime";
+      } else if (bLow.includes("cult")) {
+        incomeTitle = "Cult Fit";
+      } else if (bLow.includes("swiggy")) {
+        incomeTitle = "SwiggyOne";
+      } else if (bLow.includes("thyrocare")) {
+        incomeTitle = "Thyrocare";
+      } else if (bLow.includes("uber")) {
+        incomeTitle = "Uber";
+      } else if (bLow.includes("kalyan")) {
+        incomeTitle = "Kalyan";
+      } else if (bLow.includes("apollo")) {
+        incomeTitle = "Apollo";
+      } else if (bLow.includes("lakme")) {
+        incomeTitle = "Lakme";
+      } else if (bLow.includes("reliance")) {
+        incomeTitle = "Reliance";
+      } else if (bLow.includes("four") || bLow.includes("fountain")) {
+        incomeTitle = "FourFountains";
+      } else if (bLow.includes("big") || bLow.includes("basket")) {
+        incomeTitle = "BigBasket";
+      } else {
+        incomeTitle = targetBrand;
       }
 
       // Build unified comments matching user format: Buyer (mobile): Account | GPay: Name | Card
@@ -5715,7 +5753,7 @@ function doPost(e) {
 
     // 17. Promote Tombstones (Moves Display in UI = FALSE rows from "New" and "Redeemed" to "Deleted_Tombstones")
     if (data.action === "PROMOTE_TOMBSTONES") {
-      const result = promoteTombstones(ss);
+      const result = promoteTombstones(ss, true);
       return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -5737,12 +5775,15 @@ function doPost(e) {
  * into "Deleted_Tombstones" sheet and permanently deletes their rows from the active tabs.
  * Runs on a 72-hour trigger or on-demand via action PROMOTE_TOMBSTONES.
  */
-function promoteTombstones(ss) {
+function promoteTombstones(ss, hasLock) {
   if (!ss) ss = getSpreadsheet();
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(30000)) {
-    console.warn("promoteTombstones: Script is locked by another execution, skipping.");
-    return { success: false, error: "Locked by another execution" };
+  let lock = null;
+  if (!hasLock) {
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      console.warn("promoteTombstones: Script is locked by another execution, skipping.");
+      return { success: false, error: "Locked by another execution" };
+    }
   }
 
   try {
@@ -5874,7 +5915,9 @@ function promoteTombstones(ss) {
     console.error("Error in promoteTombstones:", err);
     return { success: false, error: err.message };
   } finally {
-    try { lock.releaseLock(); } catch(_) {}
+    if (lock) {
+      try { lock.releaseLock(); } catch(_) {}
+    }
   }
 }
 

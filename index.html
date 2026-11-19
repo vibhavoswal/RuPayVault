@@ -5137,7 +5137,16 @@
 
     function parseTimestamp(ts) {
       if (!ts) return 0;
+      if (ts instanceof Date) return isNaN(ts.getTime()) ? 0 : ts.getTime();
+      if (typeof ts === 'number') return isNaN(ts) ? 0 : ts;
       const clean = String(ts).replace(/'IST'/i, '').replace(/IST/i, '').trim();
+      if (!clean) return 0;
+
+      // Handle pure epoch numeric strings (10 digits for seconds, 13 digits for ms)
+      if (/^\d{10,14}$/.test(clean)) {
+        const n = Number(clean);
+        return clean.length <= 10 ? n * 1000 : n;
+      }
 
       // Handle "dd-MMM-yyyy hh:mm:ss a" or "dd-MMM-yyyy, hh:mm a" strictly in IST (UTC+5:30)
       const m = clean.match(/(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
@@ -5154,6 +5163,25 @@
         if (meridiem === 'PM' && hour < 12) hour += 12;
         if (meridiem === 'AM' && hour === 12) hour = 0;
         return Date.UTC(year, month, day, hour - 5, min - 30, sec);
+      }
+
+      // Handle "dd-MMM-yyyy" with no time (in IST)
+      const mDateOnly = clean.match(/^(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})$/i);
+      if (mDateOnly) {
+        const day = parseInt(mDateOnly[1], 10);
+        const monthStr = mDateOnly[2].toLowerCase();
+        const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+        const month = months[monthStr.slice(0, 3)] ?? 0;
+        const year = parseInt(mDateOnly[3], 10);
+        return Date.UTC(year, month, day, 0 - 5, 0 - 30, 0);
+      }
+
+      // Handle dd/mm/yyyy or dd-mm-yyyy or yyyy-mm-dd
+      if (typeof parseDateComponents === 'function') {
+        const comp = parseDateComponents(clean);
+        if (comp) {
+          return new Date(comp.year, comp.month - 1, comp.day).getTime();
+        }
       }
 
       const parsed = Date.parse(clean);
@@ -7526,7 +7554,7 @@
         if (t === type) {
           btn.className = 'px-2.5 py-1 rounded-lg bg-[var(--theme-card-subtle)] text-[var(--theme-text-main)] font-bold border border-[var(--theme-border)]';
         } else {
-          btn.className = 'px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-white font-medium';
+          btn.className = 'px-2.5 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] font-medium';
         }
       });
       renderIncomeLedger();
@@ -9277,11 +9305,11 @@
         if (state.searchQuery) {
           const q = state.searchQuery.toLowerCase();
           allActivities = allActivities.filter(a =>
-            a.brand.toLowerCase().includes(q) ||
-            a.code.toLowerCase().includes(q) ||
+            (a.brand && a.brand.toLowerCase().includes(q)) ||
+            (a.code && a.code.toLowerCase().includes(q)) ||
             (a.account && a.account.toLowerCase().includes(q)) ||
             (a.card && a.card.toLowerCase().includes(q)) ||
-            (a.pin && a.pin.toLowerCase().includes(q))
+            (a.pin && String(a.pin).toLowerCase().includes(q))
           );
         }
 
@@ -9770,9 +9798,9 @@
       if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         vs = vs.filter(v => 
-          v.brand.toLowerCase().includes(q) ||
-          v.code.toLowerCase().includes(q) ||
-          (v.pin && v.pin.toLowerCase().includes(q))
+          (v.brand && v.brand.toLowerCase().includes(q)) ||
+          (v.code && v.code.toLowerCase().includes(q)) ||
+          (v.pin && String(v.pin).toLowerCase().includes(q))
         );
       }
 
