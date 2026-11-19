@@ -4474,12 +4474,12 @@ function doPost(e) {
       }
 
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
       if (data.bookingId) {
-        codes.add(String(data.bookingId).trim().toUpperCase());
+        codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
       }
       if (data.bookingIds && Array.isArray(data.bookingIds)) {
-        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
+        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
       }
 
       const restored = [];
@@ -4488,8 +4488,8 @@ function doPost(e) {
 
       // Search backwards so deleting rows does not alter row index of earlier rows
       for (let i = rRows.length - 1; i >= 1; i--) {
-        const rowCode = String(rRows[i][2] || '').trim();
-        const rowBooking = String(rRows[i][1] || '').trim();
+        const rowCode = String(rRows[i][2] || '').replace(/^'/, '').trim();
+        const rowBooking = String(rRows[i][1] || '').replace(/^'/, '').trim();
         const rowCodeUpper = rowCode.toUpperCase();
         const rowBookingUpper = rowBooking.toUpperCase();
 
@@ -4503,8 +4503,8 @@ function doPost(e) {
           const bVals = bSheet.getDataRange().getValues();
           let existingBrandRowIndex = -1;
           for (let b = 1; b < bVals.length; b++) {
-            const bIdVal = String(bVals[b][0] || '').trim().toUpperCase();
-            const bCodeVal = String(bVals[b][1] || '').trim().toUpperCase();
+            const bIdVal = String(bVals[b][0] || '').replace(/^'/, '').trim().toUpperCase();
+            const bCodeVal = String(bVals[b][1] || '').replace(/^'/, '').trim().toUpperCase();
             const hasRupsBooking = rowBooking && rowBooking.toUpperCase().startsWith('RUPS-');
             const bidMatch = hasRupsBooking && bIdVal === rowBooking.toUpperCase();
             const codeMatch = (!hasRupsBooking || !bIdVal.startsWith('RUPS-')) && rowCode && rowCode !== '-' && rowCode !== 'PENDING' && bCodeVal === rowCode.toUpperCase();
@@ -4544,10 +4544,11 @@ function doPost(e) {
 
       // Self-healing: If not found in Redeemed, check if already restored in brand tab!
       codes.forEach(codeOrBid => {
-        if (!restored.some(r => r.code === codeOrBid || r.bookingId === codeOrBid)) {
-          const foundInBrand = findRowInBrandTabs(ss, codeOrBid, null, codeOrBid);
+        const cleanTarget = String(codeOrBid).replace(/^'/, '').trim().toUpperCase();
+        if (!restored.some(r => (r.code && String(r.code).replace(/^'/, '').trim().toUpperCase() === cleanTarget) || (r.bookingId && String(r.bookingId).replace(/^'/, '').trim().toUpperCase() === cleanTarget))) {
+          const foundInBrand = findRowInBrandTabs(ss, cleanTarget, null, cleanTarget);
           if (foundInBrand) {
-            restored.push({ bookingId: codeOrBid, brand: foundInBrand.sheet.getName(), alreadyRestored: true });
+            restored.push({ bookingId: cleanTarget, brand: foundInBrand.sheet.getName(), alreadyRestored: true });
           }
         }
       });
@@ -4591,6 +4592,9 @@ function doPost(e) {
             if (card.status) aSheet.getRange(i + 1, 8).setValue(card.status.toUpperCase());
             if (card.notes !== undefined) aSheet.getRange(i + 1, 9).setValue(card.notes);
             if (card.cardName || card.nick) aSheet.getRange(i + 1, 3).setValue(card.cardName || card.nick);
+            if (card.linkedAccount !== undefined) aSheet.getRange(i + 1, 4).setValue(card.linkedAccount ? `'${card.linkedAccount}` : 'NA');
+            if (card.expiry) aSheet.getRange(i + 1, 6).setValue(card.expiry.startsWith("'") ? card.expiry : `'${card.expiry}`);
+            if (card.cvv) aSheet.getRange(i + 1, 7).setValue(card.cvv.startsWith("'") ? card.cvv : `'${card.cvv}`);
             aSheet.getRange(i + 1, 23).setValue(formatISTTimestamp(new Date()));
             updated = true;
             break;
@@ -4971,13 +4975,14 @@ function doPost(e) {
     // 6E. Delete / Purge Miscellaneous Voucher (Used for Undo & Safeguard Verification)
     if (data.action === "DELETE_MISC_VOUCHER") {
       const sheet = ss.getSheetByName("Misc");
-      const voucherCode = String(data.voucherCode || data.code || '').replace(/^'/, '').trim().toUpperCase();
+      const voucherCode = String(data.voucherCode || data.code || data.bookingId || '').replace(/^'/, '').trim().toUpperCase();
       let deleted = false;
       if (sheet && voucherCode) {
         const vals = sheet.getDataRange().getValues();
         for (let i = vals.length - 1; i >= 1; i--) {
+          const rowBid = String(vals[i][0] || '').replace(/^'/, '').trim().toUpperCase();
           const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
-          if (rowCode === voucherCode) {
+          if (rowCode === voucherCode || (voucherCode && rowBid === voucherCode)) {
             sheet.deleteRow(i + 1);
             deleted = true;
             break;
@@ -5003,7 +5008,7 @@ function doPost(e) {
       const PLACEHOLDER_BACKEND = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', '-']);
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
-          .map(c => String(c).trim().toUpperCase())
+          .map(c => String(c).replace(/^'/, '').trim().toUpperCase())
           .filter(c => c && !PLACEHOLDER_BACKEND.has(c) && !/^processing$/i.test(c))
       );
       if (!cardTag || codes.size === 0) {
@@ -5020,8 +5025,8 @@ function doPost(e) {
         if (sName !== "New" && (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards")) continue;
         const vals = sheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
-          const rowBid = String(vals[i][0] || "").trim();
-          const rowCode = String(vals[i][1] || "").trim();
+          const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim();
+          const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim();
           if (codes.has(rowCode.toUpperCase()) || codes.has(rowBid.toUpperCase())) {
             sheet.getRange(i + 1, 7).setValue(cardTag); // Col 7: Card
             updated.push({ brand: sName, bookingId: rowBid, code: rowCode, card: cardTag });
@@ -5110,11 +5115,11 @@ function doPost(e) {
 
       items.forEach(item => {
         if (!item.code) return;
-        const cStr = String(item.code).trim();
+        const cStr = String(item.code).replace(/^'/, '').trim();
         const cStrUpper = cStr.toUpperCase();
         let foundIndex = -1;
         for (let i = 1; i < sRows.length; i++) {
-          if (String(sRows[i][0] || '').trim().toUpperCase() === cStrUpper) {
+          if (String(sRows[i][0] || '').replace(/^'/, '').trim().toUpperCase() === cStrUpper) {
             foundIndex = i + 1;
             break;
           }
@@ -5154,16 +5159,16 @@ function doPost(e) {
     if (data.action === "DISMISS_SHARED") {
       const sSheet = getOrInitSharedActivitySheet(ss);
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
-      if (data.bookingId) codes.add(String(data.bookingId).trim().toUpperCase());
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
       if (data.bookingIds && Array.isArray(data.bookingIds)) {
-        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
+        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
       }
       const sRows = sSheet.getDataRange().getValues();
       const dismissed = [];
 
       for (let i = 1; i < sRows.length; i++) {
-        const rowCode = String(sRows[i][0] || '').trim();
+        const rowCode = String(sRows[i][0] || '').replace(/^'/, '').trim();
         const rowCodeUpper = rowCode.toUpperCase();
         if (rowCodeUpper && codes.has(rowCodeUpper)) {
           sSheet.getRange(i + 1, 6).setValue("DISMISSED");
@@ -5205,16 +5210,16 @@ function doPost(e) {
       const rawCodes = data.codes || (data.code ? [data.code] : []);
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
-          .map(c => String(c).trim().toUpperCase())
+          .map(c => String(c).replace(/^'/, '').trim().toUpperCase())
           .filter(c => c && c !== 'PENDING' && !/processing/i.test(c) && c !== '-' && !c.startsWith('#'))
       );
       if (data.bookingId) {
-        const b = String(data.bookingId).trim().toUpperCase();
+        const b = String(data.bookingId).replace(/^'/, '').trim().toUpperCase();
         if (b && b !== '-' && !b.startsWith('#')) codes.add(b);
       }
       if (data.bookingIds && Array.isArray(data.bookingIds)) {
         data.bookingIds.forEach(b => {
-          const bStr = String(b).trim().toUpperCase();
+          const bStr = String(b).replace(/^'/, '').trim().toUpperCase();
           if (bStr && bStr !== '-' && !bStr.startsWith('#')) codes.add(bStr);
         });
       }
@@ -5230,7 +5235,7 @@ function doPost(e) {
         if (sh) {
           const vals = sh.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
-            const rowCode = String(vals[i][0] || "").trim();
+            const rowCode = String(vals[i][0] || "").replace(/^'/, '').trim();
             const rowCodeUpper = rowCode.toUpperCase();
             if (rowCodeUpper && rowCodeUpper !== '-' && codes.has(rowCodeUpper)) {
               sh.getRange(i + 1, 8).setValue(false); // Col 8: Display in UI
@@ -5245,8 +5250,8 @@ function doPost(e) {
         if (newSheet) {
           const vals = newSheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
-            const rowBid = String(vals[i][0] || "").trim();
-            const rowCode = String(vals[i][1] || "").trim();
+            const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim();
+            const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim();
             const rowBidUpper = rowBid.toUpperCase();
             const rowCodeUpper = rowCode.toUpperCase();
             const bidMatch = rowBidUpper && rowBidUpper !== '-' && !rowBidUpper.startsWith('#') && codes.has(rowBidUpper);
@@ -5262,8 +5267,8 @@ function doPost(e) {
           if (SYSTEM_SHEET_NAMES.has(sheet.getName()) || sheet.getName() === "Cards") continue;
           const vals = sheet.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
-            const rowBid = String(vals[i][0] || "").trim();
-            const rowCode = String(vals[i][1] || "").trim();
+            const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim();
+            const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim();
             const rowBidUpper = rowBid.toUpperCase();
             const rowCodeUpper = rowCode.toUpperCase();
             const bidMatch = rowBidUpper && rowBidUpper !== '-' && !rowBidUpper.startsWith('#') && codes.has(rowBidUpper);
@@ -5289,10 +5294,10 @@ function doPost(e) {
     // 15. Clear Redeemed Items (sets Display in UI = FALSE in Redeemed tab)
     if (data.action === "CLEAR_REDEEMED") {
       const rawCodes = data.codes || (data.code ? [data.code] : []);
-      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).trim().toUpperCase()).filter(Boolean));
-      if (data.bookingId) codes.add(String(data.bookingId).trim().toUpperCase());
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
       if (data.bookingIds && Array.isArray(data.bookingIds)) {
-        data.bookingIds.forEach(b => codes.add(String(b).trim().toUpperCase()));
+        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
       }
       if (codes.size === 0) {
         return ContentService.createTextOutput(JSON.stringify({
@@ -5305,8 +5310,8 @@ function doPost(e) {
       if (rSheet) {
         const vals = rSheet.getDataRange().getValues();
         for (let i = 1; i < vals.length; i++) {
-          const rowBid = String(vals[i][1] || "").trim();
-          const rowCode = String(vals[i][2] || "").trim();
+          const rowBid = String(vals[i][1] || "").replace(/^'/, '').trim();
+          const rowCode = String(vals[i][2] || "").replace(/^'/, '').trim();
           const rowBidUpper = rowBid.toUpperCase();
           const rowCodeUpper = rowCode.toUpperCase();
           if ((rowCodeUpper && codes.has(rowCodeUpper)) || (rowBidUpper && codes.has(rowBidUpper))) {

@@ -6428,8 +6428,8 @@
       hideUndoToast();
 
       targetCodes.forEach(c => {
-        const matches = state.vouchers.filter(x => x.code === c);
-        const r = redeemedList.find(x => x.code === c);
+        const matches = state.vouchers.filter(x => x.code === c || (x.bookingId && x.bookingId === c));
+        const r = redeemedList.find(x => x.code === c || (x.bookingId && x.bookingId === c));
         const targetBrandName = normalizeBrandKey(brand || (r ? (r.originalTab || r.brand) : 'Voucher'));
 
         let restoredObj = null;
@@ -6471,7 +6471,7 @@
           UniversalMutationJournal.unquarantine(c);
           if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(restoredObj.bookingId);
         }
-        redeemedList = redeemedList.filter(x => x.code !== c);
+        redeemedList = redeemedList.filter(x => x.code !== c && (!r?.bookingId || x.bookingId !== r.bookingId));
       });
       saveRedeemedList();
       saveEncryptedVouchers(state.vouchers);
@@ -6503,10 +6503,17 @@
         showToast('Undo reverted');
       };
 
+      const bookingIds = targetCodes.map(c => {
+        const r = (redeemedList || []).find(x => x.code === c || (x.bookingId && x.bookingId === c));
+        return r ? r.bookingId : null;
+      }).filter(Boolean);
+
       try {
         await apiFetch('UNDO_REDEEM', {
           code: targetCodes[0],
           codes: targetCodes,
+          bookingId: bookingIds[0] || undefined,
+          bookingIds: bookingIds.length ? bookingIds : undefined,
           brand: normalizeBrandKey(brand || '')
         }, { rollback: rollbackUndo });
       } catch(e) {
@@ -14632,6 +14639,8 @@
         'cultfit': 'Cult.fit Elite',
         'amazonprime': 'Amazon Prime',
         'tattvaspa': 'Tattva Spa',
+        'swiggyone': 'Swiggy One',
+        'swiggy': 'Swiggy One',
         'misc': 'Misc',
         'redeemed': 'Redeemed'
       };
