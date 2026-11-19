@@ -4024,7 +4024,7 @@ function doPost(e) {
         const rawCodes = data.codes || (data.code ? [data.code] : []);
         const combinedIds = (Array.isArray(rawBookingIds) ? rawBookingIds : [rawBookingIds])
           .concat(Array.isArray(rawCodes) ? rawCodes : [rawCodes])
-          .map(b => String(b || '').trim().toUpperCase())
+          .map(b => String(b || '').replace(/^'/, '').trim().toUpperCase())
           .filter(Boolean);
         const targetIds = new Set(combinedIds);
 
@@ -4038,8 +4038,8 @@ function doPost(e) {
 
         for (let r = 1; r < dataRows.length; r++) {
           const row = dataRows[r];
-          const bId = String(row[0] || '').trim();
-          const currentCode = String(row[1] || '').trim();
+          const bId = String(row[0] || '').replace(/^'/, '').trim();
+          const currentCode = String(row[1] || '').replace(/^'/, '').trim();
           const bIdUpper = bId.toUpperCase();
           const codeUpper = currentCode.toUpperCase();
 
@@ -4217,8 +4217,8 @@ function doPost(e) {
 
       // Check for self-healing: if already present in Redeemed, mark success immediately
       items.forEach(it => {
-        const bUpper = (it.bookingId || '').trim().toUpperCase();
-        const cUpper = (it.code || '').trim().toUpperCase();
+        const bUpper = String(it.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+        const cUpper = String(it.code || '').replace(/^'/, '').trim().toUpperCase();
         const hasRupsBid = bUpper.startsWith('RUPS-');
         const isAlreadyRedeemedByBid = hasRupsBid && existingRedeemedBookings.has(bUpper);
         const isAlreadyRedeemedByCode = cUpper && cUpper !== '-' && cUpper !== 'PENDING' && existingRedeemedCodes.has(cUpper);
@@ -4287,12 +4287,12 @@ function doPost(e) {
           if (vals.length <= 1) continue;
 
           const rowsToDelete = [];
-          const targetBidSet = new Set(sheetItems.map(it => (it.bookingId || '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
-          const targetCodeSet = new Set(sheetItems.map(it => (it.code || '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+          const targetBidSet = new Set(sheetItems.map(it => String(it.bookingId || '').replace(/^'/, '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
+          const targetCodeSet = new Set(sheetItems.map(it => String(it.code || '').replace(/^'/, '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
 
           for (let i = 1; i < vals.length; i++) {
-            const rowBid = String(vals[i][0] || '').trim().toUpperCase();
-            const rowCode = String(vals[i][1] || '').trim().toUpperCase();
+            const rowBid = String(vals[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+            const rowCode = String(vals[i][1] || '').replace(/^'/, '').trim().toUpperCase();
 
             // Hierarchical matching: Primary RUPS Booking ID, Fallback Voucher Code
             const hasRupsBid = rowBid.startsWith('RUPS-');
@@ -5510,11 +5510,11 @@ function doPost(e) {
         const nSheet = ss.getSheetByName("New");
         if (nSheet) {
           const nRows = nSheet.getDataRange().getValues();
-          const targetBidUpper = rawBid.toUpperCase();
-          const targetCodeUpper = rawCode.toUpperCase();
+          const targetBidUpper = rawBid.replace(/^'/, '').trim().toUpperCase();
+          const targetCodeUpper = rawCode.replace(/^'/, '').trim().toUpperCase();
           for (let i = nRows.length - 1; i >= 1; i--) {
-            const rowBid = String(nRows[i][0] || '').trim().toUpperCase();
-            const rowCode = String(nRows[i][1] || '').trim().toUpperCase();
+            const rowBid = String(nRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+            const rowCode = String(nRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
             const matchBid = targetBidUpper && (rowBid === targetBidUpper || (rowBid.startsWith("RUPS-") && targetBidUpper.includes(rowBid)) || (targetBidUpper.startsWith("RUPS-") && rowBid.includes(targetBidUpper)));
             const matchCode = targetCodeUpper && targetCodeUpper !== 'PENDING' && targetCodeUpper !== '-' && rowCode === targetCodeUpper;
             if (matchBid || matchCode) {
@@ -5544,11 +5544,11 @@ function doPost(e) {
         const brandSheet = ss.getSheetByName(targetBrand) || ss.getSheetByName(rawBrand);
         if (brandSheet) {
           const bRows = brandSheet.getDataRange().getValues();
-          const targetBidUpper = rawBid.toUpperCase();
-          const targetCodeUpper = rawCode.toUpperCase();
+          const targetBidUpper = rawBid.replace(/^'/, '').trim().toUpperCase();
+          const targetCodeUpper = rawCode.replace(/^'/, '').trim().toUpperCase();
           for (let i = bRows.length - 1; i >= 1; i--) {
-            const rowBid = String(bRows[i][0] || '').trim().toUpperCase();
-            const rowCode = String(bRows[i][1] || '').trim().toUpperCase();
+            const rowBid = String(bRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+            const rowCode = String(bRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
             const matchBid = targetBidUpper && (rowBid === targetBidUpper || (rowBid.startsWith("RUPS-") && targetBidUpper.includes(rowBid)) || (targetBidUpper.startsWith("RUPS-") && rowBid.includes(targetBidUpper)));
             const matchCode = targetCodeUpper && targetCodeUpper !== 'PENDING' && targetCodeUpper !== '-' && rowCode === targetCodeUpper;
             if (matchBid || matchCode) {
