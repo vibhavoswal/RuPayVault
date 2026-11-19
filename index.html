@@ -6144,16 +6144,47 @@
         }
       };
 
-      // Show Undo Banner with Deferred Backend Commit (SG3, SG4, SG5, SG6)
+      // Zero Delay Architecture: Dispatch backend mutation immediately!
       const buyerPart = soldTo ? ` to ${soldTo}` : '';
       const bannerMsg = isStagingNotArrived
         ? `Added sale details for ${brandDisplay}${buyerPart} (+₹${rawPrice.toLocaleString()})`
         : `Marked ${brandDisplay} sold${buyerPart} (+₹${rawPrice.toLocaleString()})`;
 
+      apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
+        rollback: async () => {
+          if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
+          if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
+          state.staging = prevStaging;
+          state.vouchers = prevVouchers;
+          redeemedList = prevRedeemed;
+          if (state.income) state.income.ledger = prevIncomeLedger;
+          recomputeIncomeSummaryStats();
+          saveRedeemedList();
+          await Promise.all([
+            saveEncryptedStaging(state.staging),
+            saveEncryptedVouchers(state.vouchers)
+          ]);
+          if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
+          if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
+          renderDeckSelector();
+          renderVault();
+          if (state.activeWorkspace === 'income') renderIncomeTracker();
+          showToast('Failed to record sale on server. Reverted.');
+        }
+      }).then(res => {
+        if (res && res.incomeEntry && res.incomeEntry.id) {
+          const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
+          if (item) item.id = res.incomeEntry.id;
+        }
+      }).catch(err => {
+        console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
+      });
+
+      // Show 3s Undo Banner with Explicit Compensating Reverse Call
       showCardUndoBanner(
         bannerMsg,
-        () => {
-          // UNDO CALLBACK: Revert local state and unquarantine
+        async () => {
+          // UNDO ACTION: Revert local state and unquarantine
           if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
           if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
           state.staging = prevStaging;
@@ -6170,39 +6201,22 @@
           renderVault();
           if (state.activeWorkspace === 'income') renderIncomeTracker();
           showToast('Sale marked as undone');
-        },
-        async () => {
-          // COMMIT CALLBACK: Dispatched strictly after 5-Second Grace Period or on page unload
+
+          // Dispatch explicit reverse API mutation to backend
           try {
-            const res = await apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
-              rollback: async () => {
-                if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
-                if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
-                state.staging = prevStaging;
-                state.vouchers = prevVouchers;
-                redeemedList = prevRedeemed;
-                if (state.income) state.income.ledger = prevIncomeLedger;
-                recomputeIncomeSummaryStats();
-                saveRedeemedList();
-                await Promise.all([
-                  saveEncryptedStaging(state.staging),
-                  saveEncryptedVouchers(state.vouchers)
-                ]);
-                if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
-                if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
-                renderDeckSelector();
-                renderVault();
-                if (state.activeWorkspace === 'income') renderIncomeTracker();
-                showToast('Failed to record sale on server. Reverted.');
+            await apiFetch('UNMARK_VOUCHER_SALE', {
+              bookingId: cleanBid,
+              code: cleanCode,
+              brand: brandKey,
+              isStaging: isStaging,
+              comments: commentStr
+            }, {
+              rollback: () => {
+                showToast('Failed to reverse sale on server');
               }
             });
-
-            if (res && res.incomeEntry && res.incomeEntry.id) {
-              const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
-              if (item) item.id = res.incomeEntry.id;
-            }
           } catch (err) {
-            console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
+            console.warn('Backend UNMARK_VOUCHER_SALE error:', err);
           }
         }
       );
@@ -6411,11 +6425,29 @@
         closeVoucherDetailSheet();
       }
 
-      // Safeguard 3: Interactive 5-second Undo Banner with Deferred Commit (SG3, SG4, SG5, SG6)
+      // Zero Delay: Dispatch DISMISS_STAGING immediately
+      apiFetch('DISMISS_STAGING', {
+        bookingId: activeBid
+      }, {
+        rollback: async () => {
+          state.staging = previousStaging;
+          UniversalMutationJournal.unquarantine(activeBid);
+          if (item.id) UniversalMutationJournal.unquarantine(item.id);
+          await saveEncryptedStaging(state.staging);
+          renderDeckSelector();
+          renderVault();
+          updateClearTrashBadges();
+          showToast('Dismissal failed on server. Voucher restored.');
+        }
+      }).catch(err => {
+        console.warn('Backend DISMISS_STAGING error:', err);
+      });
+
+      // Show 3-second Undo Banner with Explicit Compensating Reverse Call
       showCardUndoBanner(
         `Dismissed ${brandName} voucher`,
-        () => {
-          // UNDO CALLBACK
+        async () => {
+          // UNDO ACTION: Revert local memory state and unquarantine
           state.staging = previousStaging;
           UniversalMutationJournal.unquarantine(activeBid);
           if (item.id) UniversalMutationJournal.unquarantine(item.id);
@@ -6424,26 +6456,13 @@
           renderVault();
           updateClearTrashBadges();
           showToast('Dismissal undone.');
-        },
-        async () => {
-          // COMMIT CALLBACK (Dispatched strictly after 5s or on page unload)
+
           try {
-            await apiFetch('DISMISS_STAGING', {
+            await apiFetch('RESTORE_DISMISSED_STAGING', {
               bookingId: activeBid
-            }, {
-              rollback: async () => {
-                state.staging = previousStaging;
-                UniversalMutationJournal.unquarantine(activeBid);
-                if (item.id) UniversalMutationJournal.unquarantine(item.id);
-                await saveEncryptedStaging(state.staging);
-                renderDeckSelector();
-                renderVault();
-                updateClearTrashBadges();
-                showToast('Dismissal failed on server. Voucher restored.');
-              }
             });
           } catch (err) {
-            console.warn('Backend DISMISS_STAGING error:', err);
+            console.warn('RESTORE_DISMISSED_STAGING error:', err);
           }
         }
       );
@@ -6462,11 +6481,28 @@
       renderVault();
       updateClearTrashBadges();
 
-      // Safeguard 3: Interactive 5-second Undo Banner with Deferred Commit (SG2, SG3, SG4, SG5, SG6)
+      // Zero Delay: Dispatch DISMISS_SHARED immediately
+      apiFetch('DISMISS_SHARED', {
+        code: code
+      }, {
+        rollback: async () => {
+          sharedActivity = prevShared;
+          UniversalMutationJournal.unquarantine(code);
+          saveSharedActivity();
+          renderDeckSelector();
+          renderVault();
+          updateClearTrashBadges();
+          showToast('Failed to dismiss activity from server');
+        }
+      }).catch(err => {
+        console.warn('Background sync error (DISMISS_SHARED):', err);
+      });
+
+      // Show 3-second Undo Banner with Explicit Compensating Reverse Call
       showCardUndoBanner(
         `Dismissed ${brandName} activity`,
-        () => {
-          // UNDO CALLBACK: Anti-Quarantine Shield lifts tombstone immediately
+        async () => {
+          // UNDO ACTION: Revert local memory state and unquarantine
           sharedActivity = prevShared;
           UniversalMutationJournal.unquarantine(code);
           saveSharedActivity();
@@ -6474,25 +6510,13 @@
           renderVault();
           updateClearTrashBadges();
           showToast('Dismissal undone.');
-        },
-        async () => {
-          // COMMIT CALLBACK (Dispatched strictly after 5s or on page unload)
+
           try {
-            await apiFetch('DISMISS_SHARED', {
+            await apiFetch('RESTORE_DISMISSED_SHARED', {
               code: code
-            }, {
-              rollback: async () => {
-                sharedActivity = prevShared;
-                UniversalMutationJournal.unquarantine(code);
-                saveSharedActivity();
-                renderDeckSelector();
-                renderVault();
-                updateClearTrashBadges();
-                showToast('Failed to dismiss activity from server');
-              }
             });
           } catch (err) {
-            console.warn('Background sync error (DISMISS_SHARED):', err);
+            console.warn('RESTORE_DISMISSED_SHARED error:', err);
           }
         }
       );
@@ -6567,6 +6591,8 @@
         isCommitted: false
       };
 
+      // Zero Delay: Dispatch backend redemption immediately!
+      commitRedeemToBackend(pendingRedeem);
       showUndoToast(code, summaryLabel, pendingRedeem);
       renderDeckSelector();
       renderVault();
@@ -6576,17 +6602,7 @@
       const targetCodes = (code || '').split(',').map(c => c.trim()).filter(Boolean);
       if (!targetCodes.length) return;
 
-      // Check if this undo corresponds to an uncommitted deferred redemption
-      let isUncommitted = false;
-      if (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted) {
-        const pendingSet = new Set(undoState.pendingRedeem.codes || []);
-        if (targetCodes.some(c => pendingSet.has(c))) {
-          isUncommitted = true;
-          undoState.pendingRedeem = null;
-        }
-      }
       removeUncommittedRedeem(targetCodes);
-
       hideUndoToast();
 
       const bookingIds = [];
@@ -6655,10 +6671,7 @@
         if (cardEl) cardEl.classList.add('anim-rollback-700');
       });
 
-      // If the redemption was deferred and never sent to backend, stop here! Zero network requests.
-      if (isUncommitted) {
-        return;
-      }
+      // Zero Delay: Always dispatch compensating reverse API call UNDO_REDEEM to backend
 
       const rollbackUndo = () => {
         targetCodes.forEach(c => {
@@ -6779,37 +6792,17 @@
     }
 
     function flushPendingUndoCommit(options = {}) {
-      if (!undoState.timer) return;
-      clearInterval(undoState.timer);
-      undoState.timer = null;
-      const action = undoState.actionType;
-      const cleared = undoState.clearedItems;
-      const pending = undoState.pendingRedeem;
-      const onCommit = undoState.onCardCommit;
-
-      undoState.actionType = null;
-      undoState.clearedItems = null;
-      undoState.pendingRedeem = null;
-      undoState.onCardUndo = null;
-      undoState.onCardCommit = null;
-
-      if (action === 'clear' && cleared) {
-        commitClearToBackend(cleared.context, cleared.targets, options);
-      } else if (action === 'redeem' && pending) {
-        commitRedeemToBackend(pending, options);
-      } else if (action === 'card' && typeof onCommit === 'function') {
-        try { onCommit(); } catch(e) { console.error('Card commit error:', e); }
-      }
+      // In Zero Delay architecture, forward commits fire immediately upon action.
+      // There are no pending deferred commits held in memory.
+      hideUndoToast();
     }
 
     function showUndoToast(code, brand, pendingRedeem = null) {
-      flushPendingUndoCommit();
+      if (undoState.timer) clearInterval(undoState.timer);
       undoState.actionType = 'redeem';
       undoState.clearedItems = null;
       undoState.pendingRedeem = pendingRedeem;
-      if (pendingRedeem) {
-        saveUncommittedRedeem(pendingRedeem);
-      }
+      undoState.onCardUndo = null;
       undoState.code = code;
       undoState.brand = brand;
       undoState.secondsLeft = 3;
@@ -6830,15 +6823,7 @@
       undoState.timer = setInterval(() => {
         undoState.secondsLeft--;
         if (undoState.secondsLeft <= 0) {
-          clearInterval(undoState.timer);
-          undoState.timer = null;
-          if (dtBanner) dtBanner.classList.add('hidden');
-          if (mbBanner) mbBanner.classList.add('hidden');
-          if (undoState.pendingRedeem) {
-            commitRedeemToBackend(undoState.pendingRedeem);
-            undoState.pendingRedeem = null;
-          }
-          undoState.actionType = null;
+          hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
           if (dtBtn) dtBtn.innerHTML = t;
@@ -6847,11 +6832,12 @@
       }, 1000);
     }
 
-    function showClearUndoToast(context, targets) {
-      flushPendingUndoCommit();
+    function showClearUndoToast(context, targets, onUndo = null) {
+      if (undoState.timer) clearInterval(undoState.timer);
       undoState.actionType = 'clear';
       undoState.pendingRedeem = null;
       undoState.clearedItems = { context, targets };
+      undoState.onCardUndo = onUndo;
       undoState.secondsLeft = 3;
 
       const dtBanner = document.getElementById('dt-undo-banner');
@@ -6872,13 +6858,7 @@
       undoState.timer = setInterval(() => {
         undoState.secondsLeft--;
         if (undoState.secondsLeft <= 0) {
-          clearInterval(undoState.timer);
-          undoState.timer = null;
-          if (dtBanner) dtBanner.classList.add('hidden');
-          if (mbBanner) mbBanner.classList.add('hidden');
-          commitClearToBackend(context, targets);
-          undoState.clearedItems = null;
-          undoState.actionType = null;
+          hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
           if (dtBtn) dtBtn.innerHTML = t;
@@ -6968,7 +6948,6 @@
       undoState.timer = null;
       undoState.actionType = null;
       undoState.onCardUndo = null;
-      undoState.onCardCommit = null;
       undoState.clearedItems = null;
       undoState.pendingRedeem = null;
       const dtBanner = document.getElementById('dt-undo-banner');
@@ -6977,12 +6956,11 @@
       if (mbBanner) mbBanner.classList.add('hidden');
     }
 
-    function showCardUndoBanner(msg, onUndo, onCommit) {
-      flushPendingUndoCommit();
+    function showCardUndoBanner(msg, onUndo) {
+      if (undoState.timer) clearInterval(undoState.timer);
       undoState.actionType = 'card';
       undoState.onCardUndo = onUndo;
-      undoState.onCardCommit = onCommit;
-      undoState.secondsLeft = 5;
+      undoState.secondsLeft = 3;
 
       const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
@@ -7000,17 +6978,7 @@
       undoState.timer = setInterval(() => {
         undoState.secondsLeft--;
         if (undoState.secondsLeft <= 0) {
-          clearInterval(undoState.timer);
-          undoState.timer = null;
-          if (dtBanner) dtBanner.classList.add('hidden');
-          if (mbBanner) mbBanner.classList.add('hidden');
-          const commitFn = undoState.onCardCommit;
-          undoState.actionType = null;
-          undoState.onCardUndo = null;
-          undoState.onCardCommit = null;
-          if (typeof commitFn === 'function') {
-            try { commitFn(); } catch(err) { console.error('Card commit error:', err); }
-          }
+          hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
           if (dtBtn) dtBtn.innerHTML = t;
@@ -7022,13 +6990,21 @@
     function triggerUndoLast() {
       if (undoState.actionType === 'card' && typeof undoState.onCardUndo === 'function') {
         const cb = undoState.onCardUndo;
-        undoState.onCardCommit = null; // Abort backend commit!
         hideUndoToast();
         cb();
       } else if (undoState.actionType === 'clear') {
-        restoreClearedItems();
+        if (typeof undoState.onCardUndo === 'function') {
+          const cb = undoState.onCardUndo;
+          hideUndoToast();
+          cb();
+        } else {
+          restoreClearedItems();
+        }
       } else if (undoState.code && undoState.brand) {
-        undoRedemption(undoState.code, undoState.brand);
+        const c = undoState.code;
+        const b = undoState.brand;
+        hideUndoToast();
+        undoRedemption(c, b);
       }
     }
 
@@ -7314,8 +7290,51 @@
       updateClearTrashBadges();
       updateFloatingDock();
 
-      // 4. Show 3-second undo toast
-      showClearUndoToast(context, targets);
+      // Zero Delay: Dispatch clear mutation to backend immediately!
+      commitClearToBackend(context, targets);
+
+      const rawCodes = (targets || []).flatMap(t => [t.bookingId, t.code]).filter(c => {
+        if (!c) return false;
+        const s = String(c).trim().toUpperCase();
+        return s !== '' && s !== 'PENDING' && !/processing/i.test(s) && s !== '-' && !s.startsWith('#');
+      });
+      const codes = Array.from(new Set(rawCodes));
+
+      // 4. Show 3-second undo toast with explicit reverse API call
+      showClearUndoToast(context, targets, async () => {
+        targets.forEach(t => {
+          t.displayInUI = true;
+          if (t.code) UniversalMutationJournal.unquarantine(t.code);
+          if (t.bookingId) UniversalMutationJournal.unquarantine(t.bookingId);
+          if (t.id) UniversalMutationJournal.unquarantine(t.id);
+        });
+        if (context === 'ingested') {
+          saveEncryptedStaging(state.staging);
+        } else if (context === 'shared') {
+          saveSharedActivity();
+        } else if (context === 'redeemed') {
+          saveRedeemedList();
+        }
+        showToast('Clear undone');
+        renderDeckSelector();
+        renderVault();
+        updateClearTrashBadges();
+
+        try {
+          if (context === 'ingested' || context === 'shared') {
+            await apiFetch('RESTORE_CLEARED_ACTIVITY', {
+              type: context.toUpperCase(),
+              codes: codes
+            });
+          } else if (context === 'redeemed') {
+            await apiFetch('RESTORE_CLEARED_REDEEMED', {
+              codes: codes
+            });
+          }
+        } catch(e) {
+          console.warn('Reverse clear error:', e);
+        }
+      });
     }
 
     function getCumulativeHeader(brandKey) {
@@ -11248,7 +11267,7 @@
       }
     }
 
-    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block with 5s Undo Grace Period & Rollback
+    // 3-Phase Signature RuPayVault Swipe & Vanish Gesture on Block with Zero Delay & 3s Undo
     function swipeBlockCard(cardNum, cardName) {
       const cardEl = document.getElementById(`card-box-${cardNum}`);
       if (!cardEl) return;
@@ -11263,10 +11282,27 @@
       // Phase 2 (100ms): Horizontal slide through
       setTimeout(() => {
         cardEl.classList.add('anim-swipe-horizontal-700');
+
+        // Zero Delay: Dispatch BLOCK_CARD immediately
+        apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
+          rollback: () => {
+            state.cards = previousCards;
+            currentCardAccountFilter = previousAccountFilter;
+            UniversalMutationJournal.unquarantine(cardNum);
+            saveEncryptedCards(state.cards);
+            updateDrawerCardCount();
+            renderCardManagerList(currentCardCategoryFilter);
+            showToast(`Could not block ${cardName}. Changes restored.`);
+          }
+        }).catch(err => {
+          console.warn('Block card network warning:', err);
+        });
+
+        // Show 3-second Undo Banner with Explicit Compensating Reverse Call UNBLOCK_CARD
         showCardUndoBanner(
           `Blocked ${cardName} (••${cardNum.slice(-4)})`,
-          () => {
-            // UNDO CALLBACK: Revert local state, restore filter, unquarantine
+          async () => {
+            // UNDO ACTION: Revert local state, restore filter, unquarantine
             state.cards = previousCards;
             currentCardAccountFilter = previousAccountFilter;
             UniversalMutationJournal.unquarantine(cardNum);
@@ -11275,22 +11311,16 @@
             updateDrawerCardCount();
             renderCardManagerList(currentCardCategoryFilter);
             showToast(`Block cancelled for ${cardName}`);
-          },
-          () => {
-            // COMMIT CALLBACK: Dispatched strictly after 5-Second Grace Period
-            apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
-              rollback: () => {
-                state.cards = previousCards;
-                currentCardAccountFilter = previousAccountFilter;
-                UniversalMutationJournal.unquarantine(cardNum);
-                saveEncryptedCards(state.cards);
-                updateDrawerCardCount();
-                renderCardManagerList(currentCardCategoryFilter);
-                showToast(`Could not block ${cardName}. Changes restored.`);
-              }
-            }).catch(err => {
-              console.warn('Block card network warning:', err);
-            });
+
+            try {
+              await apiFetch('UNBLOCK_CARD', { cardNumber: cardNum }, {
+                rollback: () => {
+                  showToast(`Could not unblock ${cardName} on server`);
+                }
+              });
+            } catch(e) {
+              console.warn('UNBLOCK_CARD error:', e);
+            }
           }
         );
       }, 100);
@@ -12122,10 +12152,26 @@
       saveEncryptedCards(state.cards);
       renderCardManagerList(currentCardCategoryFilter);
 
-      // 5-Second Undo Grace Period Banner with Deferred Backend Commit
+      // Zero Delay: Dispatch BLOCK_AND_REPLACE_CARD immediately
+      apiFetch('BLOCK_AND_REPLACE_CARD', {
+        oldCardNumber: oldCardNum,
+        newCard: newCard
+      }, {
+        rollback: () => {
+          state.cards = previousCards;
+          currentCardAccountFilter = previousAccountFilter;
+          UniversalMutationJournal.unquarantine(oldCardNum);
+          UniversalMutationJournal.removeCard(newNum);
+          saveEncryptedCards(state.cards);
+          renderCardManagerList(currentCardCategoryFilter);
+          showToast('Server sync failed. Replacement reverted.');
+        }
+      }).catch(err => console.warn('Replacement backend sync warning:', err));
+
+      // Show 3-Second Undo Banner with Explicit Compensating Reverse Call
       showCardUndoBanner(
         `Replaced with ••${newNum.slice(-4)}!`,
-        () => {
+        async () => {
           // UNDO ACTION: Restore old card, revert filter, remove replacement card
           state.cards = previousCards;
           currentCardAccountFilter = previousAccountFilter;
@@ -12134,23 +12180,19 @@
           saveEncryptedCards(state.cards);
           renderCardManagerList(currentCardCategoryFilter);
           showToast('Card replacement undone.');
-        },
-        () => {
-          // COMMIT ACTION: Dispatched only after 5-Second Grace Period expires without Undo
-          apiFetch('BLOCK_AND_REPLACE_CARD', {
-            oldCardNumber: oldCardNum,
-            newCard: newCard
-          }, {
-            rollback: () => {
-              state.cards = previousCards;
-              currentCardAccountFilter = previousAccountFilter;
-              UniversalMutationJournal.unquarantine(oldCardNum);
-              UniversalMutationJournal.removeCard(newNum);
-              saveEncryptedCards(state.cards);
-              renderCardManagerList(currentCardCategoryFilter);
-              showToast('Server sync failed. Replacement reverted.');
-            }
-          }).catch(err => console.warn('Replacement backend sync warning:', err));
+
+          try {
+            await apiFetch('UNDO_BLOCK_AND_REPLACE_CARD', {
+              oldCardNumber: oldCardNum,
+              newCardNumber: newNum
+            }, {
+              rollback: () => {
+                showToast('Failed to revert replacement on server');
+              }
+            });
+          } catch(e) {
+            console.warn('UNDO_BLOCK_AND_REPLACE_CARD error:', e);
+          }
         }
       );
     }
@@ -14187,36 +14229,42 @@
       state.vouchers.unshift(optimisticVoucher);
       renderVault();
 
-      // Safeguard 3: Interactive Undo Banner with Deferred Commit (SG3, SG4, SG5, SG6)
+      // Zero Delay: Dispatch ADD_MISC_VOUCHER immediately
+      apiFetch('ADD_MISC_VOUCHER', {
+        brandName,
+        voucherCode: rawCode,
+        pin,
+        amount
+      }, {
+        rollback: () => {
+          state.vouchers = prevVouchers;
+          renderVault();
+          UniversalMutationJournal.remove(journalKey);
+          showToast('Network error: failed to save voucher to sheet.');
+        }
+      }).then(() => {
+        UniversalMutationJournal.remove(journalKey);
+        showToast(`${brandName} voucher saved to sheet.`);
+      }).catch(err => {
+        console.error('ADD_MISC_VOUCHER error:', err);
+      });
+
+      // Show 3-Second Undo Banner with Explicit Compensating Reverse Call DELETE_MISC_VOUCHER
       showCardUndoBanner(
         `Added ${brandName} voucher`,
-        () => {
+        async () => {
           // UNDO ACTION: Revert local state and journal entry
           UniversalMutationJournal.remove(journalKey);
           state.vouchers = prevVouchers;
           renderVault();
           showToast('Voucher addition cancelled.');
-        },
-        async () => {
-          // COMMIT ACTION: Dispatched strictly after 5s or on page unload
+
           try {
-            await apiFetch('ADD_MISC_VOUCHER', {
-              brandName,
-              voucherCode: rawCode,
-              pin,
-              amount
-            }, {
-              rollback: () => {
-                state.vouchers = prevVouchers;
-                renderVault();
-                UniversalMutationJournal.remove(journalKey);
-                showToast('Network error: failed to save voucher to sheet.');
-              }
+            await apiFetch('DELETE_MISC_VOUCHER', {
+              code: rawCode
             });
-            UniversalMutationJournal.remove(journalKey);
-            showToast(`${brandName} voucher saved to sheet.`);
-          } catch (err) {
-            console.error('ADD_MISC_VOUCHER error:', err);
+          } catch(e) {
+            console.warn('DELETE_MISC_VOUCHER error:', e);
           }
         }
       );
@@ -15065,6 +15113,8 @@
           isCommitted: false
         };
 
+        // Zero Delay: Dispatch batch redemption immediately!
+        commitRedeemToBackend(pendingRedeem);
         showUndoToast(movedCodes.join(', '), summaryLabel, pendingRedeem);
       }, 760);
     }

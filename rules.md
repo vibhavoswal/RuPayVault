@@ -47,9 +47,10 @@ Every operation must be evaluated against these 7 core safeguards:
    - For destructive/archival actions (block, delete, dismiss), quarantine the identifier to prevent ghost re-appearance during background polling.
    - For constructive/replacement/activation actions (add, replace, undo, reactivate), explicitly call `UniversalMutationJournal.unquarantine(id)` so valid entities are never suppressed by previous tombstones.
 
-3. **Optimistic Grace Period & Interactive Undo Banner**:
-   - Destructive or high-impact user actions (Redeem, Clear, Block, Block & Replace) must display a 3–5 second countdown floating Undo banner (`showCardUndoBanner` / `showUndoBanner`).
-   - Clicking Undo must immediately cancel the scheduled backend dispatch, restore memory state, unquarantine identifiers, and update the UI.
+3. **Zero-Delay Network Execution & 3-Second Interactive Undo Banner**:
+   - Destructive or high-impact user actions (Redeem, Clear, Block, Block & Replace, Mark as Sold, Dismiss, Add Misc) dispatch their backend mutation immediately with zero delay.
+   - Concurrently, a 3-second interactive floating Undo banner (`showCardUndoBanner` / `showUndoToast` / `showClearUndoToast`) is presented to the user.
+   - Clicking Undo immediately rolls back local memory state, unquarantines identifiers, updates the UI, and dispatches an explicit compensating reverse mutation (`UNDO_REDEEM`, `UNBLOCK_CARD`, `UNDO_BLOCK_AND_REPLACE_CARD`, `UNMARK_VOUCHER_SALE`, `RESTORE_CLEARED_ACTIVITY`, `DELETE_MISC_VOUCHER`) to Google Sheets.
 
 4. **Network & Server Failure Rollback Handler**:
    - Every `apiFetch(action, payload, { rollback: () => { ... } })` invocation must supply an explicit `rollback` callback.
@@ -76,7 +77,7 @@ Every operation must be evaluated against these 7 core safeguards:
 #### Operation: `ADD_MISC_VOUCHER` (Adding Custom Voucher to Misc Tab)
 - **Safeguard 1 (Mutation Journal)**: Record optimistic entry `MISC_VOUCHER_ADD` with unique key `misc_${voucherCode}` and 60s TTL so the newly added voucher survives background syncs until backend flushes.
 - **Safeguard 2 (Quarantine Shield)**: Call `UniversalMutationJournal.unquarantine(voucherCode)` to guarantee the new voucher code is never suppressed by prior stale tombstones.
-- **Safeguard 3 (Optimistic Feedback & Undo)**: Optimistically prepend the voucher card to the active Misc view immediately. Display a 5-second interactive Undo banner (`"Added [Brand] voucher. Tap to Undo"`) allowing the user to abort before backend commit.
+- **Safeguard 3 (Optimistic Feedback & Undo)**: Optimistically prepend the voucher card to the active Misc view and dispatch `ADD_MISC_VOUCHER` immediately (Zero Delay). Display a 3-second interactive Undo banner (`"Added [Brand] voucher. Tap to Undo"`); tapping Undo immediately rolls back local state and sends `DELETE_MISC_VOUCHER` to remove the voucher from the sheet.
 - **Safeguard 4 (Rollback Handler)**: Supply an explicit rollback handler to `apiFetch` that restores the pre-mutation voucher state, clears the journal entry, and displays an alert if the network drops or backend fails.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background syncs.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
@@ -89,7 +90,7 @@ Every operation must be evaluated against these 7 core safeguards:
 #### Operation: `BLOCK_CARD` (Card Archival)
 - **Safeguard 1 (Mutation Journal)**: Record optimistic entry `CARD_BLOCK` with primary key `cardNum` and card details in `UniversalMutationJournal`.
 - **Safeguard 2 (Quarantine Shield)**: Tombstone `cardNum` in ephemeral quarantine (`isCardQuarantined`) so background sync does not resurface the blocked card before backend commit.
-- **Safeguard 3 (Optimistic Grace Period & Interactive Undo Banner)**: Display a 5-second floating Undo banner. Hold backend dispatch in a deferred commit closure (`onCommit`). If the user taps Undo, cancel the backend commit, unquarantine the card, restore memory state, and alert the user.
+- **Safeguard 3 (Zero-Delay Execution & 3s Interactive Undo Banner)**: Optimistically archive card in memory and dispatch `BLOCK_CARD` immediately to Google Sheets. Present a 3-second floating Undo banner (`"Blocked [Card] (••[Last4]). Tap to Undo"`). Tapping Undo restores memory state, unquarantines the card, and dispatches explicit reverse call `UNBLOCK_CARD` to move the card back to Active Cards.
 - **Safeguard 4 (Rollback Handler)**: Explicit `rollback` closure supplied to `apiFetch` that restores `previousCards`, resets filters, unquarantines `cardNum`, and saves local encrypted storage upon network or server error.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting syncs.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
@@ -102,7 +103,7 @@ Every operation must be evaluated against these 7 core safeguards:
 #### Operation: `BLOCK_AND_REPLACE_CARD` (Compound Atomic Swap)
 - **Safeguard 1 (Mutation Journal)**: Record `CARD_REPLACE` with primary key `newCardNum` and secondary key `oldCardNum` in `UniversalMutationJournal`.
 - **Safeguard 2 (Quarantine Shield)**: Tombstone `oldCardNum`; explicitly call `UniversalMutationJournal.unquarantine(newCardNum)` to prevent replacement card collision with any prior tombstones.
-- **Safeguard 3 (Optimistic Grace Period & Interactive Undo Banner)**: Optimistically swap the card in memory, re-render the list immediately, and present a 5-second interactive Undo banner (`"Replaced with ••[Last4]! Tap to Undo"`). Defer backend commit (`onCommit`) until the 5s timer expires. Tapping Undo completely aborts backend dispatch.
+- **Safeguard 3 (Zero-Delay Execution & 3s Interactive Undo Banner)**: Optimistically swap the card in memory, re-render the list immediately, and dispatch `BLOCK_AND_REPLACE_CARD` to backend immediately. Present a 3-second interactive Undo banner (`"Replaced with ••[Last4]! Tap to Undo"`). Tapping Undo rolls back local memory and dispatches `UNDO_BLOCK_AND_REPLACE_CARD` to Google Sheets.
 - **Safeguard 4 (Rollback Handler)**: Explicit `rollback` closure in `apiFetch` that restores `previousCards`, restores `currentCardAccountFilter`, unquarantines `oldCardNum`, removes `newCardNum` from the journal, and refreshes the view.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, blocking concurrent read collisions.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
@@ -177,7 +178,7 @@ Every operation must be evaluated against these 7 core safeguards:
 #### Operation: `MARK_VOUCHER_AS_SOLD` (Direct Ingested/Brand -> Redeemed Tab + RuPay Income Entry for Cult & Amazon Prime)
 - **Safeguard 1 (Mutation Journal)**: Optimistic entries recorded in `UniversalMutationJournal` for voucher redemption and income ledger creation, protecting state against background polling.
 - **Safeguard 2 (Quarantine Shield)**: Booking ID and code are quarantined to prevent ghost re-emergence in Ingested or Brand feeds during syncs.
-- **Safeguard 3 (Optimistic UI & Feedback)**: Voucher immediately leaves staging/brand views and unshifts into `redeemedList`; sale unshifts into `state.income.ledger` with dynamic KPI recalculations; displays 5-second interactive Undo banner (`"Marked [Brand] sold to [Buyer] (+₹[Price]) · Tap to Undo"`).
+- **Safeguard 3 (Optimistic UI & Feedback)**: Voucher immediately leaves staging/brand views and unshifts into `redeemedList`; sale unshifts into `state.income.ledger` with dynamic KPI recalculations; dispatches `MARK_VOUCHER_AS_SOLD` to backend immediately with zero delay; displays 3-second interactive Undo banner (`"Marked [Brand] sold to [Buyer] (+₹[Price]) · Tap to Undo"`). Tapping Undo reverts local state and sends `UNMARK_VOUCHER_SALE` to backend.
 - **Safeguard 4 (Rollback Handler)**: Explicit `rollback` callback supplied to `apiFetch('MARK_VOUCHER_AS_SOLD', ...)` restoring `state.staging` or `state.vouchers`, un-redeeming from `redeemedList`, removing the ledger sale, and alerting user upon network failure.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring background syncs until atomic write completes.
 - **Safeguard 6 (Backend Transactional Integrity & Single-Lock Atomicity)**:

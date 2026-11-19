@@ -4973,6 +4973,115 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 6D. Unblock Card (Reverses BLOCK_CARD: Moves row from "Blocked Cards" back to "Active Cards")
+    if (data.action === "UNBLOCK_CARD") {
+      let aSheet = ss.getSheetByName("Active Cards");
+      if (!aSheet) aSheet = ss.insertSheet("Active Cards");
+      const bSheet = ss.getSheetByName("Blocked Cards");
+      const targetCardNum = String(data.cardNumber || data.id || '').replace(/['\s]/g, '').trim();
+      let restored = false;
+
+      if (bSheet && targetCardNum) {
+        const bRows = bSheet.getDataRange().getValues();
+        for (let b = bRows.length - 1; b >= 1; b--) {
+          const bNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
+          if (bNum === targetCardNum || (targetCardNum.length === 4 && bNum.endsWith(targetCardNum))) {
+            const rowData = bRows[b];
+            const activeRow = [
+              rowData[0], // Bank
+              rowData[1], // Card_Type
+              rowData[2], // Card_Name
+              "'" + String(rowData[3] || 'NA').replace(/^'/, ''), // Linked_Account
+              "'" + bNum, // Card_Number
+              "'" + String(rowData[5] || '').replace(/^'/, ''), // Expiry
+              "'" + String(rowData[6] || '').replace(/^'/, ''), // CVV
+              "ACTIVE",
+              "", // Notes cleared
+              // 13 benefits
+              rowData[11], rowData[12], rowData[13], rowData[14], rowData[15],
+              rowData[16], rowData[17], rowData[18], rowData[19], rowData[20],
+              rowData[21], rowData[22], rowData[23],
+              formatISTTimestamp(new Date())
+            ];
+            aSheet.appendRow(activeRow);
+            bSheet.deleteRow(b + 1);
+            restored = true;
+            break;
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: restored,
+        action: "UNBLOCK_CARD",
+        cardNumber: targetCardNum
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 6E. Undo Block & Replace Card (Reverses BLOCK_AND_REPLACE_CARD: Restores old card to Active, deletes replacement card)
+    if (data.action === "UNDO_BLOCK_AND_REPLACE_CARD") {
+      const aSheet = ss.getSheetByName("Active Cards");
+      const bSheet = ss.getSheetByName("Blocked Cards");
+      const oldCardNum = String(data.oldCardNumber || '').replace(/['\s]/g, '').trim();
+      const newCardNum = String(data.newCardNumber || '').replace(/['\s]/g, '').trim();
+      let oldRestored = false;
+      let newDeleted = false;
+
+      // 1. Delete the new replacement card from Active Cards
+      if (aSheet && newCardNum) {
+        const aRows = aSheet.getDataRange().getValues();
+        for (let i = aRows.length - 1; i >= 1; i--) {
+          const aNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
+          if (aNum === newCardNum) {
+            aSheet.deleteRow(i + 1);
+            newDeleted = true;
+            break;
+          }
+        }
+      }
+
+      // 2. Restore the old card from Blocked Cards back to Active Cards
+      if (bSheet && aSheet && oldCardNum) {
+        const bRows = bSheet.getDataRange().getValues();
+        for (let b = bRows.length - 1; b >= 1; b--) {
+          const bNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
+          if (bNum === oldCardNum || (oldCardNum.length === 4 && bNum.endsWith(oldCardNum))) {
+            const rowData = bRows[b];
+            const activeRow = [
+              rowData[0], // Bank
+              rowData[1], // Card_Type
+              rowData[2], // Card_Name
+              "'" + String(rowData[3] || 'NA').replace(/^'/, ''),
+              "'" + bNum,
+              "'" + String(rowData[5] || '').replace(/^'/, ''),
+              "'" + String(rowData[6] || '').replace(/^'/, ''),
+              "ACTIVE",
+              "", // Notes cleared
+              rowData[11], rowData[12], rowData[13], rowData[14], rowData[15],
+              rowData[16], rowData[17], rowData[18], rowData[19], rowData[20],
+              rowData[21], rowData[22], rowData[23],
+              formatISTTimestamp(new Date())
+            ];
+            aSheet.appendRow(activeRow);
+            bSheet.deleteRow(b + 1);
+            oldRestored = true;
+            break;
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: oldRestored || newDeleted,
+        action: "UNDO_BLOCK_AND_REPLACE_CARD",
+        oldCardNumber: oldCardNum,
+        newCardNumber: newCardNum,
+        oldRestored: oldRestored,
+        newDeleted: newDeleted
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // 6C. Add Brand New Card (With Idempotency & Deduplication Shield)
     if (data.action === "ADD_CARD") {
       let aSheet = ss.getSheetByName("Active Cards");
@@ -5465,6 +5574,104 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 11B. Restore Cleared Activity Log Items (sets Display in UI = TRUE in brand tabs, New tab, or Shared_Activity)
+    if (data.action === "RESTORE_CLEARED_ACTIVITY") {
+      const type = String(data.type || "INGESTED").toUpperCase();
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set(
+        (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
+          .map(c => String(c).replace(/^'/, '').trim().toUpperCase())
+          .filter(Boolean)
+      );
+      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
+      }
+      const restored = [];
+
+      if (type === "SHARED") {
+        const sh = ss.getSheetByName("Shared_Activity");
+        if (sh) {
+          const vals = sh.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowCode = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
+            if (rowCode && codes.has(rowCode)) {
+              sh.getRange(i + 1, 8).setValue(true); // Col 8: Display in UI = TRUE
+              sh.getRange(i + 1, 6).setValue("DELIVERED");
+              restored.push(rowCode);
+            }
+          }
+        }
+      } else {
+        // INGESTED: "New" tab and Brand tabs
+        const newSheet = ss.getSheetByName("New");
+        if (newSheet) {
+          const vals = newSheet.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
+            const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim().toUpperCase();
+            if ((rowBid && codes.has(rowBid)) || (rowCode && codes.has(rowCode))) {
+              newSheet.getRange(i + 1, 10).setValue(true); // Col 10: Display in UI = TRUE
+              restored.push(rowBid || rowCode);
+            }
+          }
+        }
+        const sheets = ss.getSheets();
+        for (const sheet of sheets) {
+          if (SYSTEM_SHEET_NAMES.has(sheet.getName()) || sheet.getName() === "Cards") continue;
+          const vals = sheet.getDataRange().getValues();
+          for (let i = 1; i < vals.length; i++) {
+            const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
+            const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim().toUpperCase();
+            if ((rowBid && codes.has(rowBid)) || (rowCode && codes.has(rowCode))) {
+              sheet.getRange(i + 1, 10).setValue(true); // Col 10: Display in UI = TRUE
+              restored.push(rowBid || rowCode);
+            }
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RESTORE_CLEARED_ACTIVITY",
+        restoredCount: restored.length,
+        restoredCodes: restored
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 15B. Restore Cleared Redeemed Items (sets Display in UI = TRUE in Redeemed tab)
+    if (data.action === "RESTORE_CLEARED_REDEEMED") {
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
+      if (data.bookingIds && Array.isArray(data.bookingIds)) {
+        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
+      }
+      const restored = [];
+
+      const rSheet = ss.getSheetByName("Redeemed");
+      if (rSheet) {
+        const vals = rSheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const rowBid = String(vals[i][1] || "").replace(/^'/, '').trim().toUpperCase();
+          const rowCode = String(vals[i][2] || "").replace(/^'/, '').trim().toUpperCase();
+          if ((rowCode && codes.has(rowCode)) || (rowBid && codes.has(rowBid))) {
+            rSheet.getRange(i + 1, 13).setValue(true); // Col 13: Display in UI = TRUE
+            restored.push(rowCode || rowBid);
+          }
+        }
+      }
+
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RESTORE_CLEARED_REDEEMED",
+        restoredCount: restored.length,
+        restoredCodes: restored
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     // 13. Record RuPay Income Entry (Voucher Sale into "RuPay Income" or Card Fee into "RuPay Charges")
     if (data.action === "RECORD_INCOME_ENTRY") {
       const title = String(data.title || '').trim();
@@ -5571,6 +5778,57 @@ function doPost(e) {
         action: "DISMISS_STAGING",
         dismissedCount: dismissed.length,
         dismissedBids: dismissed
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 16B. Restore Dismissed Staging Voucher (sets Display in UI = TRUE in "New" tab)
+    if (data.action === "RESTORE_DISMISSED_STAGING") {
+      const rawBids = data.bookingIds || (data.bookingId ? [data.bookingId] : []);
+      const targetBids = new Set((Array.isArray(rawBids) ? rawBids : [rawBids]).map(b => String(b).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      const restored = [];
+      const nSheet = ss.getSheetByName("New");
+      if (nSheet && targetBids.size > 0) {
+        const vals = nSheet.getDataRange().getValues();
+        for (let i = 1; i < vals.length; i++) {
+          const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
+          if (targetBids.has(rowBid)) {
+            nSheet.getRange(i + 1, 10).setValue(true); // Col 10: Display in UI = TRUE
+            restored.push(rowBid);
+          }
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RESTORE_DISMISSED_STAGING",
+        restoredCount: restored.length,
+        restoredBids: restored
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // 9B. Restore Dismissed Shared Activity (sets Display in UI = TRUE in Shared_Activity tab)
+    if (data.action === "RESTORE_DISMISSED_SHARED") {
+      const sSheet = getOrInitSharedActivitySheet(ss);
+      const rawCodes = data.codes || (data.code ? [data.code] : []);
+      const codes = new Set((Array.isArray(rawCodes) ? rawCodes : [rawCodes]).map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
+      const restored = [];
+      if (sSheet && codes.size > 0) {
+        const sRows = sSheet.getDataRange().getValues();
+        for (let i = 1; i < sRows.length; i++) {
+          const rowCode = String(sRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+          if (rowCode && codes.has(rowCode)) {
+            sSheet.getRange(i + 1, 6).setValue("DELIVERED");
+            sSheet.getRange(i + 1, 8).setValue(true); // Col 8: Display in UI = TRUE
+            restored.push(rowCode);
+          }
+        }
+      }
+      SpreadsheetApp.flush();
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        action: "RESTORE_DISMISSED_SHARED",
+        restored: restored
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
