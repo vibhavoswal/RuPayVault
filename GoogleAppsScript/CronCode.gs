@@ -261,6 +261,11 @@ function recalculateSheetTotal(sheet) {
     const num = Number(vals[r][2]);
     if (!isNaN(num)) sum += num;
   }
+  if (totalRowIndex === -1 && vals.length > 1) {
+    sheet.appendRow(["TOTAL", "", 0, ""]);
+    totalRowIndex = sheet.getLastRow();
+    sheet.getRange(totalRowIndex, 1).setFontWeight("bold");
+  }
   if (totalRowIndex > 0) {
     const totalCell = sheet.getRange(totalRowIndex, 3);
     if (totalRowIndex > 2) {

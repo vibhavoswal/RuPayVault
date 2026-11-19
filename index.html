@@ -5644,7 +5644,11 @@
       const clean = String(bidOrCode).trim().toUpperCase();
       if (!list.includes(clean)) {
         list.push(clean);
-        localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(list));
+        try {
+          localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(list));
+        } catch (e) {
+          console.warn('Failed to save to localStorage:', e);
+        }
       }
     }
 
@@ -5653,7 +5657,11 @@
       const list = getIngestedSoldBids();
       const clean = String(bidOrCode).trim().toUpperCase();
       const updated = list.filter(x => x !== clean);
-      localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(updated));
+      try {
+        localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save to localStorage:', e);
+      }
       const found = (state.staging || []).find(s =>
         (s.bookingId && String(s.bookingId).trim().toUpperCase() === clean) ||
         (s.code && String(s.code).trim().toUpperCase() === clean)
@@ -9274,11 +9282,15 @@
         if (sheetLink) sheetLink.href = sheetUrl;
         const dtSheetLink = document.getElementById('dt-sheet-link-btn');
         if (dtSheetLink) dtSheetLink.href = sheetUrl;
-        localStorage.setItem('rupay_sheet_url', sheetUrl);
+        try {
+          localStorage.setItem('rupay_sheet_url', sheetUrl);
+        } catch(e) {}
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        localStorage.setItem('rupay_sync_time', timeStr);
+        try {
+          localStorage.setItem('rupay_sync_time', timeStr);
+        } catch(e) {}
         updateAllSyncIndicators('success', timeStr);
 
         const drawerSheetCount = document.getElementById('drawer-sheet-count');
@@ -10176,7 +10188,9 @@
         collapseActionMenu();
       }
       state.activeFilterBrand = brand;
-      localStorage.setItem('rupay_active_brand', brand);
+      try {
+        localStorage.setItem('rupay_active_brand', brand);
+      } catch(e) {}
       const dtSel = document.getElementById('dt-brand-filter');
       if (dtSel) dtSel.value = brand;
 
