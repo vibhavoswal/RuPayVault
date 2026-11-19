@@ -37,7 +37,9 @@ const UNIFIED_COOLDOWN_HEADERS = [
 const SYSTEM_SHEET_NAMES = new Set([
   "New",
   "⚡ Unassigned",
+  "Unassigned",
   "⏱ Cooldowns",
+  "Cooldowns",
   "Active Cards",
   "Blocked Cards",
   "Bank Accounts",
@@ -324,7 +326,7 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
 
 function getTargetBrandSheet(ss, brand) {
   const canonicalBrand = extractBrand(brand, "");
-  const targetName = canonicalBrand !== "Other" ? canonicalBrand : (brand || "⚡ Unassigned");
+  const targetName = canonicalBrand !== "Other" ? canonicalBrand : (brand || "Unassigned");
 
   if (CANONICAL_BRAND_TABS.has(targetName)) {
     let sheet = ss.getSheetByName(targetName);
@@ -337,10 +339,10 @@ function getTargetBrandSheet(ss, brand) {
     return sheet;
   }
 
-  // Strict Whitelist: If brand is not a recognized canonical tab, route to ⚡ Unassigned (Never create new tabs)
-  let unassigned = ss.getSheetByName("⚡ Unassigned");
+  // Strict Whitelist: If brand is not a recognized canonical tab, route to Unassigned (Never create new tabs)
+  let unassigned = ss.getSheetByName("Unassigned") || ss.getSheetByName("⚡ Unassigned");
   if (!unassigned) {
-    unassigned = ss.insertSheet("⚡ Unassigned");
+    unassigned = ss.insertSheet("Unassigned");
     unassigned.appendRow(UNIFIED_BRAND_HEADERS);
     unassigned.getRange(1, 1, 1, UNIFIED_BRAND_HEADERS.length).setFontWeight("bold").setBackground("#FEF3C7");
     unassigned.setFrozenRows(1);
@@ -1037,7 +1039,7 @@ function getStagingFromNewSheet(ss) {
   for (let i = 1; i < rows.length; i++) {
     if (!rows[i][0] && !rows[i][1]) continue;
     const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
-    const targetBrand = String(rows[i][10] || '⚡ Unassigned');
+    const targetBrand = String(rows[i][10] || 'Unassigned');
     const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
     
     let tsIST = null;
@@ -1106,7 +1108,7 @@ function recordPendingRevalidation(ss, data) {
 
   // Determine canonical target brand (Col 11)
   const canonicalBrand = extractBrand(data.brand, "");
-  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "Unassigned");
   const targetBid = String(data.bookingId || '').trim().toUpperCase();
 
   // Guard 0: If user has explicitly marked this booking as revalidated, NEVER revert to PENDING_REVALIDATION!
@@ -1232,7 +1234,7 @@ function recordPendingRedemption(ss, data) {
 
   // 3. Determine canonical target brand (Col 11)
   const canonicalBrand = extractBrand(data.brand, "");
-  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "Unassigned");
 
   // 4. Hardening against duplicate re-staging: Check if Booking ID already exists in Brand tabs!
   const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
@@ -1300,7 +1302,7 @@ function fulfillVoucherCode(ss, data) {
   // Fallback: If Stage 1 email was missed and delivery email arrived directly,
   // FIRST check if it is already in Redeemed or in any canonical Brand tab!
   const canonicalBrand = extractBrand(data.brand, "");
-  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "⚡ Unassigned");
+  const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "Unassigned");
 
   // Check if already in Redeemed tab strictly by Booking ID
   const rSheet = ss.getSheetByName("Redeemed");
@@ -1381,9 +1383,9 @@ function reconcilePendingVouchers(ss) {
  * 5. PERSISTENT SYSTEM SHEETS INITIALIZATION & COOLDOWN ENGINE
  */
 function getOrInitCooldownsSheet(ss) {
-  let sheet = ss.getSheetByName("⏱ Cooldowns");
+  let sheet = ss.getSheetByName("Cooldowns") || ss.getSheetByName("⏱ Cooldowns");
   if (!sheet) {
-    sheet = ss.insertSheet("⏱ Cooldowns", 0);
+    sheet = ss.insertSheet("Cooldowns", 0);
     sheet.appendRow(UNIFIED_COOLDOWN_HEADERS);
     sheet.getRange(1, 1, 1, UNIFIED_COOLDOWN_HEADERS.length).setFontWeight("bold").setBackground("#ECFDF5");
     sheet.setFrozenRows(1);
@@ -1572,7 +1574,7 @@ function doGet(e) {
       const allSheets = ss.getSheets();
       for (const sheet of allSheets) {
         const sName = sheet.getName();
-        if (sName === "New" || sName === "Redeemed" || sName === "Cards" || sName === "Active Cards" || sName === "Blocked Cards" || sName === "⏱ Cooldowns") continue;
+        if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards") continue;
         if (sheet.getLastRow() > 1) {
           const vals = sheet.getDataRange().getValues();
           for (let r = 1; r < vals.length; r++) {
@@ -3480,7 +3482,7 @@ function doGet(e) {
     const sheets = ss.getSheets();
     const sheetNameSet = new Set(sheets.map(s => s.getName()));
     // Ensure persistent system tabs exist if missing
-    if (!sheetNameSet.has("⏱ Cooldowns")) {
+    if (!sheetNameSet.has("⏱ Cooldowns") && !sheetNameSet.has("Cooldowns")) {
       getOrInitCooldownsSheet(ss);
     }
     if (!sheetNameSet.has("Shared_Activity")) {
@@ -3518,14 +3520,14 @@ function doGet(e) {
       const rows = sheet.getDataRange().getValues();
       if (rows.length <= 1) continue;
 
-      if (name === "⚡ Unassigned") {
+      if (name === "⚡ Unassigned" || name === "Unassigned") {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][0] && !rows[i][1]) continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
           let uCode = String(rows[i][1] || '').replace(/^'/, '').trim();
           if (uCode.toUpperCase() === 'PENDING') uCode = 'Pending';
           const uEntry = {
-            brand: "⚡ Unassigned",
+            brand: "Unassigned",
             bookingId: String(rows[i][0] || '').replace(/^'/, ''),
             code: uCode,
             pin: rows[i][2] && String(rows[i][2]).trim() !== '' && String(rows[i][2]).trim() !== 'null' ? String(rows[i][2]).trim() : null,
@@ -3540,7 +3542,7 @@ function doGet(e) {
           result.unassigned.push(uEntry);
           result.vouchers.push(uEntry);
         }
-      } else if (name === "⏱ Cooldowns") {
+      } else if (name === "⏱ Cooldowns" || name === "Cooldowns") {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
           result.cooldowns.push({
@@ -4046,7 +4048,7 @@ function doPost(e) {
           // Dual-Identifier Matching: Match by Booking ID (Col 1) OR Code (Col 2)
           if (targetIds.has(bIdUpper) || targetIds.has(codeUpper)) {
             const currentStatus = String(row[7] || '').trim().toUpperCase();
-            const targetBrand = String(row[10] || '⚡ Unassigned').trim();
+            const targetBrand = String(row[10] || 'Unassigned').trim();
 
             // HARD CONDITION GUARD: Only fulfilled (ACTIVE, real code) vouchers can be approved!
             if (currentStatus !== 'ACTIVE' || currentCode === 'PENDING' || currentCode === 'Pending revalidation' || currentStatus === 'PENDING_REVALIDATION' || !currentCode) {
@@ -4494,7 +4496,7 @@ function doPost(e) {
         const rowBookingUpper = rowBooking.toUpperCase();
 
         if ((rowCodeUpper && codes.has(rowCodeUpper)) || (rowBookingUpper && codes.has(rowBookingUpper))) {
-          const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || '⚡ Unassigned');
+          const rawOrigBrand = String(rRows[i][10] || rRows[i][0] || 'Unassigned');
           const canonicalBrand = extractBrand(rawOrigBrand, "");
           const targetBrand = (canonicalBrand && canonicalBrand !== "Other") ? canonicalBrand : rawOrigBrand;
           const bSheet = getTargetBrandSheet(ss, targetBrand);
@@ -5450,7 +5452,7 @@ function doPost(e) {
       const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "");
 
       // Mandatory Validation 1: Brand is mandatory
-      if (!targetBrand || targetBrand === "Other" || targetBrand === "⚡ Unassigned") {
+      if (!targetBrand || targetBrand === "Other" || targetBrand === "⚡ Unassigned" || targetBrand === "Unassigned") {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Brand is mandatory to record sale."
         })).setMimeType(ContentService.MimeType.JSON);
@@ -5685,7 +5687,7 @@ function doPost(e) {
       const cleanTargetCode = targetCode.replace(/^'/, '').trim().toUpperCase();
       const targetComments = String(data.comments || '').trim();
       const brand = String(data.brand || '').trim();
-      const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '⚡ Unassigned');
+      const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '⚡ Unassigned' || brand === 'Unassigned');
       
       let unmarkedNewRow = -1;
       let restoredBrandRow = -1;
