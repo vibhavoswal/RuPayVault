@@ -8911,7 +8911,12 @@
             code: r.code,
             bookingId: r.bookingId || '',
             brand: r.brand || r.originalTab || 'Voucher',
-            amount: Number(r.amount) || 0,
+            amount: (() => {
+              const nb = normalizeBrandKey(r.brand || r.originalTab || '');
+              if (nb === 'SwiggyOne') return 1;
+              if (nb === 'Thyrocare') return 125;
+              return Number(r.amount) || 0;
+            })(),
             pin: r.pin || '',
             account: r.account || '',
             card: r.card || '',
@@ -8997,7 +9002,12 @@
             .map(s => ({
               code: s.code,
               brand: s.brand || 'Voucher',
-              amount: Number(s.amount) || 0,
+              amount: (() => {
+                const nb = normalizeBrandKey(s.brand || '');
+                if (nb === 'SwiggyOne') return 1;
+                if (nb === 'Thyrocare') return 125;
+                return Number(s.amount) || 0;
+              })(),
               pin: s.pin || '',
               sharedAt: s.sharedAt || '',
               timestampMs: parseTimestamp(s.sharedAt) || Date.now(),

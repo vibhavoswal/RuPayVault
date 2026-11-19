@@ -3630,14 +3630,19 @@ function doGet(e) {
       } else if (name === "Redeemed") {
         // Unified Redeemed Archive (Col 13: Display in UI)
         for (let i = 1; i < rows.length; i++) {
-          if (!rows[i][2] || String(rows[i][2]).trim() === "") continue;
+          if ((!rows[i][1] || String(rows[i][1]).trim() === '') && (!rows[i][2] || String(rows[i][2]).trim() === '')) continue;
           const isDisp = rows[i].length > 12 ? (rows[i][12] !== false && String(rows[i][12]).toUpperCase() !== 'FALSE') : true;
+          let rAmount = Number(rows[i][4]) || 0;
+          const rBrandUpper = String(rows[i][0] || '').toUpperCase();
+          if (rBrandUpper.includes("SWIGGY")) rAmount = 1;
+          else if (rBrandUpper.includes("THYROCARE")) rAmount = 125;
+
           result.redeemed.push({
             brand: String(rows[i][0] || ''),
-            bookingId: String(rows[i][1] || ''),
-            code: String(rows[i][2] || ''),
+            bookingId: String(rows[i][1] || '').replace(/^'/, ''),
+            code: String(rows[i][2] || '').replace(/^'/, ''),
             pin: rows[i][3] && String(rows[i][3]).trim() !== '' && String(rows[i][3]).trim() !== 'null' ? String(rows[i][3]).trim() : null,
-            amount: Number(rows[i][4]) || 0,
+            amount: rAmount,
             dateOfIssue: rows[i][5] ? String(rows[i][5]) : '',
             account: rows[i][6] ? String(rows[i][6]) : '',
             card: rows[i][7] ? String(rows[i][7]) : '',
@@ -3760,14 +3765,14 @@ function doGet(e) {
       } else {
         // Uniform Brand Tabs (Col 10: Display in UI)
         for (let i = 1; i < rows.length; i++) {
-          if (!rows[i][1] || String(rows[i][1]).trim() === "") continue;
+          if ((!rows[i][0] || String(rows[i][0]).trim() === "") && (!rows[i][1] || String(rows[i][1]).trim() === "")) continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
           const brandNameUpper = String(name || '').toUpperCase();
           let voucherAmount = Number(rows[i][3]) || 0;
           if (brandNameUpper.includes("SWIGGY")) voucherAmount = 1;
           else if (brandNameUpper.includes("THYROCARE")) voucherAmount = 125;
 
-          let vCode = String(rows[i][1] || '').replace(/^'/, '').trim();
+          let vCode = String(rows[i][1] || rows[i][0] || '').replace(/^'/, '').trim();
           if (vCode.toUpperCase() === 'PENDING') vCode = 'Pending';
 
           result.vouchers.push({
@@ -4073,10 +4078,13 @@ function doPost(e) {
               if (targetBrandUpper.includes("SWIGGY")) approvedAmount = 1;
               else if (targetBrandUpper.includes("THYROCARE")) approvedAmount = 125;
 
+              const cleanBid = String(row[0] || '').trim().replace(/^'/, '');
+              const cleanCd = String(row[1] || '').trim().replace(/^'/, '');
+              const cleanPin = String(row[2] || '').trim().replace(/^'/, '');
               const brandRow = [
-                row[0], // Booking ID
-                `'${row[1]}`, // Code
-                row[2] ? `'${row[2]}` : "", // PIN
+                cleanBid ? `'${cleanBid}` : '', // Booking ID
+                cleanCd ? `'${cleanCd}` : '',   // Code
+                cleanPin ? `'${cleanPin}` : '', // PIN
                 approvedAmount, // Value
                 row[4] || "", // Date of Issue
                 row[5] || "", // Account
@@ -4503,10 +4511,13 @@ function doPost(e) {
             bSheet.getRange(existingBrandRowIndex, 10).setValue(true);
           } else {
             const originalTimestamp = (rRows[i].length > 11 && rRows[i][11]) ? String(rRows[i][11]) : "";
+            const cleanBid = String(rRows[i][1] || '').trim().replace(/^'/, '');
+            const cleanCd = String(rRows[i][2] || '').trim().replace(/^'/, '');
+            const cleanPin = String(rRows[i][3] || '').trim().replace(/^'/, '');
             const restoredRow = [
-              rRows[i][1],                            // A: Booking ID
-              `'${rRows[i][2]}`,                      // B: Code
-              rRows[i][3] ? `'${rRows[i][3]}` : "",   // C: PIN
+              cleanBid ? `'${cleanBid}` : '',         // A: Booking ID
+              cleanCd ? `'${cleanCd}` : '',           // B: Code
+              cleanPin ? `'${cleanPin}` : '',         // C: PIN
               rRows[i][4],                            // D: Value
               rRows[i][5],                            // E: Date of Issue
               rRows[i][6],                            // F: Account
