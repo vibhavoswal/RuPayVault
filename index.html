@@ -2380,7 +2380,7 @@
       
       <!-- Material 3 Squircle Hero Emblem -->
       <div class="lock-emblem w-16 h-16 rounded-[22px] bg-[#0C8C46]/10 dark:bg-[#0C8C46]/15 border border-[#0C8C46]/20 dark:border-[#0C8C46]/30 flex items-center justify-center text-[#0C8C46] shadow-inner mb-4 transition-transform active:scale-95">
-        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+        <svg aria-hidden="true" class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
           <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
         </svg>
       </div>
@@ -2401,7 +2401,7 @@
       <!-- Resend Code / Request OTP Tonal Pill -->
       <div class="mb-5">
         <button id="btn-request-otp" onclick="requestOtp()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0C8C46]/10 hover:bg-[#0C8C46]/20 active:bg-[#0C8C46]/25 text-[#0C8C46] dark:text-emerald-400 border border-[#0C8C46]/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg id="btn-request-otp-icon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" id="btn-request-otp-icon" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
           </svg>
           <span id="btn-request-otp-text">Send Verification Code</span>
@@ -2452,7 +2452,7 @@
         class="w-full h-12 rounded-full bg-[#0C8C46] hover:bg-[#0A753A] active:scale-[0.98] text-white font-semibold text-sm tracking-wide shadow-md shadow-[#0C8C46]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mb-4 select-none"
       >
         <span id="btn-verify-otp-text">Log In to Vault</span>
-        <svg id="btn-verify-otp-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg aria-hidden="true" id="btn-verify-otp-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="5" y1="12" x2="19" y2="12"></line>
           <polyline points="12 5 19 12 12 19"></polyline>
         </svg>
@@ -2461,13 +2461,13 @@
       <!-- Minimal Quick Action Helper Chips -->
       <div class="lock-action-row flex items-center justify-between w-full text-xs text-neutral-500 dark:text-neutral-400 px-1 pt-1 border-t border-neutral-200/60 dark:border-neutral-800/60">
         <button type="button" onclick="pasteClipboardOtp()" class="hover:text-[#0C8C46] dark:hover:text-emerald-400 active:scale-95 transition-all flex items-center gap-1.5 font-medium py-1">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/>
           </svg>
           <span>Paste Code</span>
         </button>
         <button type="button" onclick="clearOtpInput()" class="hover:text-rose-500 dark:hover:text-rose-400 active:scale-95 transition-all font-medium py-1 flex items-center gap-1">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/>
           </svg>
           <span>Clear</span>
@@ -2487,7 +2487,7 @@
       <!-- Left Cell: Menu Button + Brand Capsule Dropdown -->
       <div class="flex items-center gap-2 h-9">
         <button id="mb-menu-btn" onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
-          <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="12" x2="17" y2="12"></line>
             <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -2497,7 +2497,7 @@
         <button id="mb-brand-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-bold active:scale-95 transition-all shadow-sm">
           <span class="w-2 h-2 rounded-full bg-[#F47A21] shadow-[0_0_8px_rgba(244,122,33,0.4)]"></span>
           <span id="mb-capsule-brand-title" class="truncate max-w-[125px]">Activity Log</span>
-          <svg id="mb-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          <svg aria-hidden="true" id="mb-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
 
@@ -2506,7 +2506,7 @@
         <div id="mb-header-tools" class="flex items-center gap-1.5">
           <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Sheets">
             <span id="mb-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] animate-pulse transition-all"></span>
-            <svg id="mb-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <svg aria-hidden="true" id="mb-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span id="mb-sync-time" class="text-[10px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing">Syncing...</span>
           </button>
         </div>
@@ -2520,11 +2520,11 @@
     <!-- 10-Second Undo Banner -->
     <div id="mb-undo-banner" class="hidden mx-3 mt-2 p-2.5 rounded-xl bg-emerald-950/90 border border-emerald-500/40 shadow-2xl flex items-center justify-between text-xs text-white backdrop-blur-md transition-all z-30">
       <div class="flex items-center gap-2 truncate">
-        <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        <svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         <span id="mb-undo-banner-text" class="truncate text-[11px] font-medium text-emerald-200">Voucher marked as Redeemed & moved to Sheet</span>
       </div>
       <button id="mb-undo-banner-btn" onclick="triggerUndoLast()" class="shrink-0 px-2.5 py-1 rounded-lg bg-[#0C8C46] text-white font-bold text-[11px] hover:bg-emerald-600 active:scale-95 transition-all shadow flex items-center gap-1">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+        <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
         <span>Undo (3s)</span>
       </button>
     </div>
@@ -2546,18 +2546,18 @@
       <div class="flex items-center justify-between gap-1.5 overflow-visible">
         <div class="flex-1 grid grid-cols-2 p-0.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs">
           <button onclick="setActivityFilter('added')" id="mb-btn-filter-added" class="py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow">
-            <svg class="w-3.5 h-3.5 inline-block text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 inline-block text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.58 0-.57-.32-.38-.66.19-.34.05-.08.07-.12C8.48 10.94 10.42 7.54 13 3h1l-1 7h3.5c.49 0 .56.33.47.51l-.07.15C12.9 17.55 11 21 11 21z"/></svg>
             <span>Ingested</span>
             <span id="mb-parent-count-ingested" class="px-1.5 py-0.2 rounded-full text-[9.5px] bg-black/40 text-emerald-200 font-bold">0</span>
           </button>
           <button onclick="setActivityFilter('shared')" id="mb-btn-filter-shared" class="py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
-            <svg class="w-3.5 h-3.5 inline-block text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 inline-block text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             <span>Shared</span>
             <span id="mb-parent-count-shared" class="px-1.5 py-0.2 rounded-full text-[9.5px] bg-neutral-800 text-neutral-300 font-bold">0</span>
           </button>
         </div>
         <button id="mb-btn-clear-trash" onclick="triggerClearTrashAction()" class="relative p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Archive Visible Items">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
           </svg>
           <span id="mb-clear-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
@@ -2568,12 +2568,12 @@
       <div id="mb-ingested-subfilters" class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-black/50 border border-neutral-800/80">
         <div class="flex items-center gap-1.5 text-xs">
           <button onclick="setIngestFilter('tagged')" id="mb-subfilter-tagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all flex items-center gap-1.5 bg-[#0C8C46] text-white shadow">
-            <svg class="w-3.5 h-3.5 inline-block text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 inline-block text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             <span>Tagged</span>
             <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-black/30 text-white font-bold" id="mb-sub-count-tagged">0</span>
           </button>
           <button onclick="setIngestFilter('untagged')" id="mb-subfilter-untagged" class="px-2.5 py-1 rounded-lg text-[10.5px] font-bold text-neutral-400 hover:text-white transition-all flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 inline-block text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 inline-block text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span>Untagged</span>
             <span class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-400 text-black font-black" id="mb-sub-count-untagged">0</span>
           </button>
@@ -2584,11 +2584,11 @@
     <!-- Redeemed Action Bar (Visible ONLY when Redeemed tab is selected) -->
     <div id="mb-redeemed-bar" class="hidden mx-3 mb-2 flex items-center justify-between gap-1.5 shrink-0">
       <span class="text-xs font-bold text-white flex items-center gap-1.5">
-        <svg class="w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>
+        <svg aria-hidden="true" class="w-4 h-4 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>
         <span>Redeemed Archive</span>
       </span>
       <button id="mb-btn-clear-redeemed-trash" onclick="triggerClearTrashAction()" class="relative p-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-400 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm shrink-0" title="Archive Redeemed Archive">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
           <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/>
         </svg>
         <span id="mb-clear-redeemed-badge" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-black text-[9px] font-bold font-mono-apple flex items-center justify-center shadow"></span>
@@ -2600,7 +2600,7 @@
       
       <!-- Four Fountains 30-Day Alert Banner -->
       <div id="mb-ff-alert" class="hidden p-3 rounded-2xl border border-[#F47A21]/30 bg-[#F47A21]/10 text-xs text-[#F47A21] flex items-start gap-2">
-        <svg class="w-4 h-4 text-[#F47A21] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <svg aria-hidden="true" class="w-4 h-4 text-[#F47A21] shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
         <div>
           <strong class="font-semibold text-white">Strict 30-Day Expiry:</strong>
           <p class="text-[11px] text-[#F47A21]/90 mt-0.5">Four Fountains vouchers expire strictly 30 days from redemption date. Redeem immediately.</p>
@@ -2619,7 +2619,7 @@
       <!-- Dedicated Add Button for Misc Tab (Bottom only on Misc) -->
       <div id="floating-misc-add-container" class="hidden pointer-events-auto">
         <button onclick="openAddMiscModal()" class="px-5 py-3 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center gap-2 border border-emerald-400/30 active:scale-95 transition-all">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           <span>Add Voucher</span>
         </button>
       </div>
@@ -2631,7 +2631,7 @@
           <button id="floating-approve-btn" onclick="executeApproveSelectedStaging()" class="btn-approve-pill" title="Approve Vouchers to Brand Tab">
             <span class="pulse-dot"></span>
             <span id="floating-approve-label" class="whitespace-nowrap font-bold flex items-center gap-1.5 text-xs">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Approve</span>
             </span>
           </button>
@@ -2639,18 +2639,18 @@
 
         <!-- Tag Card -->
         <button id="btn-tag-card-dock" onclick="triggerTagPopup()" class="action-circle-btn btn-tag" title="Tag Payment Card">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 7z"/></svg>
           <span id="tag-badge-count" class="tag-count-bubble hidden">0</span>
         </button>
 
         <!-- Google Material Design Share SVG -->
         <button id="btn-whatsapp-dock" onclick="triggerWhatsAppShare()" class="action-circle-btn btn-share" title="Share Voucher">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>
         </button>
 
         <!-- Redeem -->
         <button id="btn-redeem-dock" onclick="batchMarkAsRedeemed()" class="action-circle-btn btn-redeem" title="Mark Selected as Redeemed">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
 
@@ -2658,7 +2658,7 @@
       <button id="dock-select-toggle-btn" onclick="handleDockToggleClick()" class="dock-satellite-btn collapsed shrink-0 pointer-events-auto" title="Select Multiple">
         <!-- Layer 1: Select Icon (Visible when collapsed) -->
         <div class="dock-icon-layer layer-select">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 11 12 14 22 4"></polyline>
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
           </svg>
@@ -2666,7 +2666,7 @@
 
         <!-- Layer 2: Cross (X) Icon (Visible when expanded) -->
         <div class="dock-icon-layer layer-cross">
-          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -2725,7 +2725,7 @@
       <div class="flex items-center justify-between pb-3 border-b border-neutral-800/40">
         <div class="flex items-center gap-2.5">
           <div class="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
           </div>
           <div>
             <h3 class="text-sm font-bold text-white">Tag Payment Card</h3>
@@ -2733,7 +2733,7 @@
           </div>
         </div>
         <button onclick="closeTagModal()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-all text-xs" aria-label="Close modal">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
@@ -2773,7 +2773,7 @@
       <!-- Action Buttons -->
       <div class="flex items-center gap-2 pt-2 border-t border-neutral-800/40">
         <button onclick="commitCardTag()" id="modal-apply-btn" disabled class="flex-1 py-3 px-4 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           <span>Apply Tag</span>
         </button>
         <button onclick="closeTagModal()" class="py-3 px-4 rounded-xl text-xs font-semibold bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-all">
@@ -2797,7 +2797,7 @@
       <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800">
         <div class="flex items-center gap-2.5">
           <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -2809,7 +2809,7 @@
           </div>
         </div>
         <button onclick="closeVoucherDetailSheet()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-colors" aria-label="Close sheet">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
@@ -2838,7 +2838,7 @@
       <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800 shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center shrink-0">
-            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg aria-hidden="true" class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/>
             </svg>
           </span>
@@ -2848,7 +2848,7 @@
           </div>
         </div>
         <button onclick="closeMarkSoldSheet()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-colors shrink-0" aria-label="Close sheet">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
@@ -2867,13 +2867,13 @@
             <div class="flex items-center justify-between mb-1">
               <label class="text-[11px] font-semibold text-neutral-300">Sale Date</label>
               <button type="button" onclick="openNativeDatePicker()" class="text-[10px] text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-0.5 active:scale-95 transition-all" title="Open Calendar">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                <svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
                 <span>Calendar</span>
               </button>
             </div>
             <div class="relative flex items-center">
               <button type="button" onclick="openNativeDatePicker()" class="absolute left-2.5 text-neutral-400 hover:text-emerald-400 transition-colors" title="Pick date">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
               </button>
               <input type="text" id="ms-input-date" placeholder="dd/MM/yy" oninput="updateSaleDatePills('custom')" class="w-full pl-8 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-neutral-200 font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
               <input type="date" id="ms-native-date-picker" class="sr-only" tabindex="-1" onchange="onNativeDatePicked(this.value)">
@@ -2887,7 +2887,7 @@
           <button type="button" id="ms-date-pill-today" onclick="setSaleDatePreset('today')" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-emerald-500/20 text-emerald-300 border-emerald-500/50 transition-all active:scale-95">Today</button>
           <button type="button" id="ms-date-pill-yesterday" onclick="setSaleDatePreset('yesterday')" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white transition-all active:scale-95">Yesterday</button>
           <button type="button" id="ms-date-pill-pick" onclick="openNativeDatePicker()" class="px-2 py-0.5 rounded-lg text-[10px] font-semibold border bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white transition-all active:scale-95 flex items-center gap-1">
-            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+            <svg aria-hidden="true" class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
             <span>Custom</span>
           </button>
         </div>
@@ -2897,7 +2897,7 @@
           <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Redeemed in Account</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
             </span>
             <input type="text" id="ms-input-account" placeholder="e.g. ayaanshekhawat or vibhavoswal9" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
@@ -2908,7 +2908,7 @@
           <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Mobile Number</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </span>
             <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
@@ -2919,7 +2919,7 @@
           <label class="block text-[11px] font-semibold text-neutral-300 mb-1">Sold to</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </span>
             <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
@@ -2936,7 +2936,7 @@
           </div>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             </span>
             <input type="text" id="ms-input-gpay" placeholder="e.g. Abhijeet Kulkarni" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
@@ -2949,7 +2949,7 @@
           Cancel
         </button>
         <button onclick="executeMarkAsSold()" id="ms-confirm-btn" class="flex-1 py-2.5 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           <span>Confirm &amp; Log Sale</span>
         </button>
       </div>
@@ -2969,7 +2969,7 @@
       <div class="flex items-center justify-between pb-2.5 border-b border-neutral-800 shrink-0">
         <div class="flex items-center gap-2.5">
           <span class="p-2 rounded-xl bg-neutral-800 text-emerald-400 border border-neutral-700/60 flex items-center justify-center">
-            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+            <svg aria-hidden="true" class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
           </span>
           <div>
             <h4 class="text-sm font-bold text-white">Benefit Rules &amp; Matrix</h4>
@@ -3011,7 +3011,7 @@
           <h3 class="text-base font-extrabold text-white mt-1">Add Voucher to Misc</h3>
         </div>
         <button onclick="closeAddMiscModal()" class="p-1.5 rounded-full bg-neutral-800 text-neutral-400 hover:text-white spring-press" title="Close" aria-label="Close">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
 
@@ -3047,7 +3047,7 @@
 
         <!-- CTA Save Button -->
         <button type="submit" id="btn-save-misc-voucher" class="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
           <span>Save Voucher</span>
         </button>
       </form>
@@ -3063,7 +3063,7 @@
       <!-- Left Cell: Menu Button + Card Manager Capsule Dropdown -->
       <div class="flex items-center gap-2 h-9">
         <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
-          <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="12" x2="17" y2="12"></line>
             <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -3073,7 +3073,7 @@
         <button id="cm-brand-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-bold active:scale-95 transition-all shadow-sm">
           <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
           <span id="cm-capsule-brand-title" class="truncate max-w-[125px]">Card Manager</span>
-          <svg id="cm-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          <svg aria-hidden="true" id="cm-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
 
@@ -3081,7 +3081,7 @@
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Sheets">
           <span id="cm-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] animate-pulse transition-all"></span>
-          <svg id="cm-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <svg aria-hidden="true" id="cm-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="cm-sync-time" class="text-[10px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing">Syncing...</span>
         </button>
         <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm" title="Add RuPay Card">
@@ -3133,7 +3133,7 @@
       <!-- Left Cell: Menu Button + Bank Manager Capsule Dropdown -->
       <div class="flex items-center gap-2 h-9">
         <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm group" title="Open Menu">
-          <svg class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="12" x2="17" y2="12"></line>
             <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -3143,7 +3143,7 @@
         <button id="ba-brand-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-white text-xs font-bold active:scale-95 transition-all shadow-sm">
           <span class="w-2 h-2 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
           <span id="ba-capsule-brand-title" class="truncate max-w-[130px]">Bank Accounts</span>
-          <svg id="ba-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          <svg aria-hidden="true" id="ba-capsule-chevron" class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
 
@@ -3151,12 +3151,12 @@
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <button id="ba-global-eye-btn" onclick="toggleBankGlobalEye()" class="p-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-300 hover:text-white active:scale-90 transition-all flex items-center justify-center shadow-sm" title="Reveal / Mask Account Numbers">
           <span id="ba-eye-icon-slot">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </span>
         </button>
         <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync Bank Accounts">
           <span id="ba-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] animate-pulse transition-all"></span>
-          <svg id="ba-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <svg aria-hidden="true" id="ba-sync-spinner" class="w-3 h-3 text-amber-500 animate-spin transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           <span id="ba-sync-time" class="text-[10px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing">Syncing...</span>
         </button>
       </div>
@@ -3188,21 +3188,21 @@
     <header class="h-[52px] px-3.5 shrink-0 safe-top-nav flex items-center justify-between border-b border-[var(--theme-border)] bg-[var(--theme-card-bg)]/80 backdrop-blur-md z-30 transition-all">
       <div class="flex items-center gap-2.5">
         <button onclick="openNavDrawer()" class="p-2 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Open Menu" aria-label="Open Menu">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
 
         <!-- Executive Capsule Dropdown Switcher Button -->
         <button id="in-capsule-btn" onclick="toggleExecutiveDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)]/50 border border-[var(--theme-border)] text-[var(--theme-text-main)] text-xs font-bold spring-press shadow-sm" aria-expanded="false" aria-haspopup="true">
           <span id="in-capsule-indicator" class="w-2 h-2 rounded-full bg-[#F47A21]"></span>
           <span id="in-capsule-brand-title" class="truncate max-w-[150px]">RuPay Income Tracker</span>
-          <svg id="in-capsule-chevron" class="w-4 h-4 text-[var(--theme-text-muted)] transition-transform duration-200" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+          <svg aria-hidden="true" id="in-capsule-chevron" class="w-4 h-4 text-[var(--theme-text-muted)] transition-transform duration-200" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
         </button>
       </div>
 
       <!-- Sync Status Pill -->
       <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-card-bg)] active:scale-95 border border-amber-500/40 bg-amber-500/10 text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] font-mono-apple transition-all duration-75 cursor-pointer select-none" title="Sync with Google Sheets">
         <span id="in-sync-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_#f59e0b] animate-pulse transition-all"></span>
-        <svg id="in-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <svg aria-hidden="true" id="in-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
         <span id="in-sync-time" class="text-[10px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing">Syncing...</span>
       </button>
     </header>
@@ -3220,7 +3220,7 @@
       <!-- Add Button: Google Material Design Add SVG + 'Add' text (no duplicate '+') -->
       <div>
         <button id="in-btn-add-entry" onclick="toggleAddMenu()" class="px-3 py-1.5 rounded-xl bg-[#0C8C46] hover:bg-emerald-600 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-sm spring-press shrink-0" title="Add Transaction" aria-label="Add Transaction">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           <span>Add</span>
         </button>
       </div>
@@ -3233,7 +3233,7 @@
         <div class="flex items-center justify-between text-xs font-bold text-[var(--theme-text-muted)] mb-1 gap-2">
           <span class="uppercase tracking-wider truncate">Net Income (<span id="in-kpi-year-label">2026</span>)</span>
           <button type="button" onclick="openIncomePlacardInfo('net')" class="p-1 rounded-lg text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] hover:bg-[var(--theme-card-subtle)] transition-colors spring-press" title="Net Income Breakdown" aria-label="Net Income Info">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
           </button>
         </div>
         <div class="text-3xl font-extrabold text-[var(--theme-text-main)] tracking-tight flex items-baseline gap-1" id="in-kpi-net-income">
@@ -3249,9 +3249,9 @@
             <span class="truncate">Voucher Income</span>
             <div class="flex items-center gap-1 shrink-0">
               <button type="button" onclick="openIncomePlacardInfo('gross')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-emerald-400 transition-colors spring-press" title="Voucher Income Details" aria-label="Voucher Income Info">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
               </button>
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
             </div>
           </div>
           <div class="text-lg font-bold text-emerald-500 dark:text-emerald-400 mt-1" id="in-kpi-gross-income">+₹0.00</div>
@@ -3264,9 +3264,9 @@
             <span class="truncate">Card Charges</span>
             <div class="flex items-center gap-1 shrink-0">
               <button type="button" onclick="openIncomePlacardInfo('charges')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-rose-400 transition-colors spring-press" title="Card Charges Details" aria-label="Card Charges Info">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
               </button>
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
             </div>
           </div>
           <div class="text-lg font-bold text-rose-500 dark:text-rose-400 mt-1" id="in-kpi-card-charges">-₹0.00</div>
@@ -3311,7 +3311,7 @@
           <h3 class="text-sm font-extrabold text-[var(--theme-text-main)]">New Transaction</h3>
         </div>
         <button onclick="closeAddMenu()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
 
@@ -3320,28 +3320,28 @@
         <button onclick="closeAddMenu(); openRecordSaleModal();" class="w-full p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)] border border-[var(--theme-border)] text-left flex items-center justify-between transition-all spring-press group">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
             </div>
             <div>
               <div class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-emerald-400 transition-colors">Record a sale</div>
               <div class="text-[11px] text-[var(--theme-text-sub)]">Cult Elite (₹1,200), Amazon Prime, etc.</div>
             </div>
           </div>
-          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </button>
 
         <!-- Option 2: Record a charge -->
         <button onclick="closeAddMenu(); openRecordChargeModal();" class="w-full p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-border)] border border-[var(--theme-border)] text-left flex items-center justify-between transition-all spring-press group">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
             </div>
             <div>
               <div class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-rose-400 transition-colors">Record a charge</div>
               <div class="text-[11px] text-[var(--theme-text-sub)]">Card replacement, AMC, hotlisting fees</div>
             </div>
           </div>
-          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </button>
       </div>
     </div>
@@ -3369,7 +3369,7 @@
           <h3 class="text-sm font-extrabold text-[var(--theme-text-main)] mt-0.5">Voucher Sale Entry</h3>
         </div>
         <button onclick="closeRecordSaleModal()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
 
@@ -3426,7 +3426,7 @@
       <!-- Submit Button -->
       <div class="pt-1.5 pb-1">
         <button id="in-btn-confirm-sale" onclick="confirmRecordSale()" class="w-full py-2.5 rounded-2xl bg-[#0C8C46] hover:bg-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-950/30 spring-press flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           <span id="in-btn-confirm-sale-text">Confirm &amp; Log Sale (+₹1,200)</span>
         </button>
       </div>
@@ -3455,7 +3455,7 @@
           <h3 class="text-sm font-extrabold text-[var(--theme-text-main)] mt-0.5">Card Fee / Expense Entry</h3>
         </div>
         <button onclick="closeRecordChargeModal()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
 
@@ -3529,7 +3529,7 @@
       <!-- Submit Button -->
       <div class="pt-1 pb-1">
         <button id="in-btn-confirm-charge" onclick="confirmRecordCharge()" class="w-full py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-950/30 spring-press flex items-center justify-center gap-2">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           <span id="in-btn-confirm-charge-text">Confirm &amp; Deduct Charge (-₹708)</span>
         </button>
       </div>
@@ -3552,12 +3552,12 @@
       <div class="flex items-center justify-between pb-1.5 border-b border-[var(--theme-border)]">
         <div class="flex items-center gap-2">
           <div class="w-6 h-6 rounded-lg bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-center text-[var(--theme-text-muted)]">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
           </div>
           <h3 id="in-info-modal-title" class="text-xs sm:text-sm font-extrabold text-[var(--theme-text-main)] truncate max-w-[240px]">Details</h3>
         </div>
         <button onclick="closeIncomePlacardInfo()" class="p-1.5 rounded-full bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] spring-press" title="Close" aria-label="Close">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </div>
 
@@ -3582,14 +3582,14 @@
           </div>
         </div>
         <button onclick="closeAddCardModal()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-colors" aria-label="Close modal">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
       <!-- Card Scanner Viewfinder Button for Add Card -->
       <div class="mb-2">
         <button type="button" onclick="triggerCardOcr('add', 'modal')" id="ocr-btn-add-modal" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
-          <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
           <span id="ocr-label-add-modal">Scan Card (Live Camera / Photo)</span>
         </button>
       </div>
@@ -3653,7 +3653,7 @@
             Cancel
           </button>
           <button onclick="submitAddCard()" class="flex-[1.5] py-2.5 rounded-xl bg-[#0C8C46] hover:bg-[#0A753A] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             <span>Save &amp; Sync Card</span>
           </button>
         </div>
@@ -3674,7 +3674,7 @@
         <div class="flex items-center justify-between pb-3 border-b border-[var(--theme-border)]">
           <div class="flex items-center gap-2.5">
             <div class="w-9 h-9 rounded-2xl bg-emerald-500/20 text-[#0C8C46] flex items-center justify-center font-bold text-base border border-emerald-500/30">
-              <svg class="w-4 h-4 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg aria-hidden="true" class="w-4 h-4 text-[#0C8C46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
                 <polyline points="2 17 12 22 22 17"></polyline>
                 <polyline points="2 12 12 17 22 12"></polyline>
@@ -3685,7 +3685,7 @@
             </div>
           </div>
           <button onclick="closeNavDrawer()" class="p-1.5 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] active:scale-90 transition-transform flex items-center justify-center" title="Close Drawer" aria-label="Close Drawer">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
 
@@ -3693,10 +3693,10 @@
         <div>
           <div class="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text-sub)] px-2 mb-1.5">Cloud Database</div>
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] overflow-hidden divide-y divide-[var(--theme-border)] shadow-sm">
-            <a id="sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-3 flex items-center justify-between hover:bg-[var(--theme-card-subtle)] active:bg-emerald-500/10 transition-colors group">
+            <a id="sheet-link-btn" href="https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="p-3 flex items-center justify-between hover:bg-[var(--theme-card-subtle)] active:bg-emerald-500/10 transition-colors group" title="Open Google Spreadsheet in new tab" aria-label="Open Google Spreadsheet in new tab">
               <div class="flex items-center gap-3">
                 <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-[#0C8C46] flex items-center justify-center font-bold">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V7h6v2zm6 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
                 </div>
                 <div>
                   <div class="text-xs font-bold text-[var(--theme-text-main)]">Google Sheets</div>
@@ -3760,45 +3760,45 @@
           <div class="rounded-2xl bg-[var(--theme-card-bg)] border border-[var(--theme-border)] divide-y divide-[var(--theme-border)] text-xs text-[var(--theme-text-muted)] overflow-hidden shadow-sm">
             <button onclick="switchWorkspace('income'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 <span>RuPay Income Tracker</span>
               </span>
-              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="switchWorkspace('banks'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2 2 7h20L12 2z"/></svg>
                 <span>Bank Accounts Manager</span>
               </span>
-              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="switchWorkspace('vouchers'); filterVaultBrand('Redeemed'); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span>Redeemed Archive</span>
               </span>
-              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button onclick="openBenefitRulesModal(); closeNavDrawer();" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] flex items-center justify-between">
               <span class="flex items-center gap-2">
-                <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
                 <span>Benefit Rules &amp; Matrix</span>
               </span>
-              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
             <button id="drawer-gmail-scan-btn" onclick="triggerManualGmailScan()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
               <span class="flex items-center gap-2">
-                <svg id="drawer-gmail-icon" class="w-3.5 h-3.5 text-amber-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                <svg aria-hidden="true" id="drawer-gmail-icon" class="w-3.5 h-3.5 text-amber-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                 <span id="drawer-gmail-label">Scan RuPay Emails</span>
               </span>
               <span class="text-[9px] px-1.5 py-0.5 rounded-full font-mono-apple font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Force</span>
             </button>
             <button id="drawer-sync-btn" onclick="triggerDrawerSync()" class="w-full p-2.5 text-left hover:bg-[var(--theme-card-subtle)] active:bg-neutral-800 flex items-center justify-between active:scale-[0.98] transition-all duration-75 cursor-pointer">
               <span class="flex items-center gap-2">
-                <svg id="drawer-sync-spinner" class="w-3.5 h-3.5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                <svg aria-hidden="true" id="drawer-sync-spinner" class="w-3.5 h-3.5 text-neutral-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
                 <span id="drawer-sync-label">Sync Cloud Database</span>
               </span>
-              <svg class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
             </button>
           </div>
         </div>
@@ -3809,7 +3809,7 @@
       <div class="pt-3 border-t border-[var(--theme-border)] flex items-center justify-between text-xs">
         <span class="text-[10px] font-mono-apple text-[var(--theme-text-sub)]">Session 24h TTL</span>
         <button onclick="closeNavDrawer(); lockVaultManual();" class="px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-[#F47A21]/40 text-[#F47A21] font-bold active:scale-95 transition-all text-xs flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <span>Lock Vault</span>
         </button>
       </div>
@@ -3825,15 +3825,15 @@
       <div class="flex items-center justify-between pb-1">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
           </div>
           <div>
             <h3 class="text-sm font-bold text-white tracking-tight">Smart Card Scanner</h3>
             <p class="text-[10px] text-neutral-400">Align card within the frame</p>
           </div>
         </div>
-        <button type="button" onclick="closeCardScannerModal()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-colors">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <button type="button" onclick="closeCardScannerModal()" class="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white flex items-center justify-center transition-colors" title="Close" aria-label="Close modal">
+          <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
@@ -3876,7 +3876,7 @@
         <div id="scanner-recognized-overlay" class="hidden absolute inset-0 bg-neutral-950/92 backdrop-blur-md z-20 flex flex-col items-center justify-center p-4 text-center transition-all">
           <!-- Success Badge -->
           <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-            <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
             <span>Card Recognized &amp; Verified</span>
           </div>
 
@@ -3918,18 +3918,18 @@
       <!-- Secondary Controls Row -->
       <div class="flex items-center justify-between text-xs px-1 pt-1" id="scanner-secondary-controls">
         <button type="button" onclick="triggerFileInputFromModal()" class="text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors text-[11px] font-medium py-1">
-          <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           <span>Upload / Pick Photo</span>
         </button>
         <button type="button" id="scanner-btn-toggle-cam" onclick="toggleCameraStream()" class="text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors text-[11px] font-medium py-1">
-          <svg class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
           <span id="scanner-toggle-cam-label">Restart Camera</span>
         </button>
       </div>
 
       <!-- Privacy Note -->
       <div class="text-[10px] text-neutral-500 text-center flex items-center justify-center gap-1">
-        <svg class="w-3 h-3 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        <svg aria-hidden="true" class="w-3 h-3 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
         <span>100% On-Device Neural Vision • Zero Data Leaves Your Device</span>
       </div>
 
@@ -5423,7 +5423,7 @@
             <div class="p-3.5 rounded-2xl border bg-emerald-950/20 border-emerald-500/30 space-y-2">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400 inline-flex items-center gap-1">
-                  <svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                   <span>Code Delivered</span>
                 </span>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple">Active & Usable</span>
@@ -5488,7 +5488,7 @@
               <div class="flex justify-between items-center text-xs">
                 <span class="text-neutral-400">Sale Status:</span>
                 <span class="font-mono-apple text-emerald-400 font-semibold text-[11px] inline-flex items-center gap-1">
-                  <svg class="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  <svg aria-hidden="true" class="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                   Logged to RuPay Income
                 </span>
               </div>
@@ -5507,7 +5507,7 @@
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">${isShared ? 'Platform:' : 'Card:'}</span>
               <span class="font-mono-apple ${isShared ? 'text-[#F47A21]' : (isTagged ? 'text-emerald-400' : 'text-amber-400')} font-bold">
-                ${isShared ? 'WhatsApp Export' : (isTagged ? act.card : '<span class="inline-flex items-center gap-1 text-amber-400"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Untagged (Needs Card Tag)</span>')}
+                ${isShared ? 'WhatsApp Export' : (isTagged ? act.card : '<span class="inline-flex items-center gap-1 text-amber-400"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Untagged (Needs Card Tag)</span>')}
               </span>
             </div>
           </div>
@@ -5519,14 +5519,14 @@
         if (isShared) {
           footerEl.innerHTML = `
             <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Mark as Redeemed</span>
             </button>
             <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all" title="Done" aria-label="Done">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         } else if (isStaging) {
@@ -5538,35 +5538,35 @@
             ${isTargetBrandSoldEligible ? (
               isAlreadySold ? `
                 <button disabled class="flex-1 h-10 px-3 rounded-xl bg-neutral-800/80 text-neutral-400 border border-neutral-700/60 font-semibold text-xs flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0 cursor-not-allowed opacity-70" title="Sale already marked and logged to RuPay Income">
-                  <svg class="w-4 h-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                   <span class="truncate">Sale Logged</span>
                 </button>
               ` : `
                 <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="${saleBtnTitle}">
-                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
                   <span class="truncate">${saleBtnLabel}</span>
                 </button>
               `
             ) : ''}
             ${!isTagged ? `
               <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Card</span>
               </button>
             ` : ''}
             ${hasArrived ? `
               <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                 <span class="truncate">Approve to Brand Tab</span>
               </button>
             ` : (isRevalidation ? `
               ${act.payUrl ? `
                 <a href="${act.payUrl}" target="_blank" class="w-10 h-10 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-all active:scale-95" title="Open Revalidation Link" aria-label="Open Revalidation Link">
-                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                 </a>
               ` : ''}
               <button onclick="closeVoucherDetailSheet(); markRevalidated('${act.id}', '${act.bookingId}');" class="btn-mark-reval ${isTargetBrandSoldEligible ? 'w-10 h-10 shrink-0' : 'flex-1 min-w-0 px-3'} h-10 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all whitespace-nowrap" title="Mark Revalidated" aria-label="Mark Revalidated">
-                <svg class="w-4 h-4 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 ${!isTargetBrandSoldEligible ? '<span>Mark Revalidated</span>' : ''}
               </button>
             ` : '')}
@@ -5574,7 +5574,7 @@
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         } else {
@@ -5582,25 +5582,25 @@
           footerEl.innerHTML = `
             ${isTargetBrandSoldEligible ? `
               <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Mark as sold and log to RuPay Income">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
                 <span class="truncate">Mark as Sold</span>
               </button>
             ` : ''}
             ${!isTagged ? `
               <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
-                <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Card</span>
               </button>
             ` : ''}
             <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[#25D366] hover:text-white transition-all active:scale-95 flex items-center justify-center" title="Share via WhatsApp" aria-label="Share via WhatsApp">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
             <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Redeem</span>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
         }
@@ -6722,7 +6722,7 @@
       const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
-      const undoIconSvg = `<svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+      const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
       const msg = `Marked ${brand} as Redeemed`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
       if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
@@ -6770,7 +6770,7 @@
       const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
-      const undoIconSvg = `<svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+      const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
       const contextLabel = context === 'ingested' ? 'Ingested' : (context === 'shared' ? 'Shared' : 'Redeemed');
       const msg = `Cleared ${targets.length} ${targets.length === 1 ? 'item' : 'items'} from ${contextLabel}`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
@@ -6878,7 +6878,7 @@
       const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
-      const undoIconSvg = `<svg class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
+      const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
 
       if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
@@ -7451,28 +7451,28 @@
           title: 'Voucher Manager',
           subtitle: 'Vault & Redemptions',
           bg: 'bg-[#0C8C46]',
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>'
+          svg: '<svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>'
         },
         cards: {
           key: 'cards',
           title: 'Card Manager',
           subtitle: 'Debit & Credit Cards',
           bg: 'bg-blue-600',
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
+          svg: '<svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
         },
         banks: {
           key: 'banks',
           title: 'Bank Accounts Manager',
           subtitle: 'Accounts, Nominees & Balances',
           bg: 'bg-rose-600',
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>'
+          svg: '<svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>'
         },
         income: {
           key: 'income',
           title: 'RuPay Income Tracker',
           subtitle: 'Voucher Sales & Card Charges',
           bg: 'bg-[#F47A21]',
-          svg: '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
+          svg: '<svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>'
         }
       };
 
@@ -7494,7 +7494,7 @@
               <div class="text-[10px] text-[var(--theme-text-sub)]">${item.subtitle}</div>
             </div>
           </div>
-          <svg class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
         </div>
       `;
     }
@@ -7778,16 +7778,16 @@
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${isPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} font-bold">
                 ${isPositive ? `
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
                 ` : `
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
                 `}
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
                   <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${item.title}</h4>
                   <button type="button" onclick="event.stopPropagation(); openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors shrink-0" title="View details" aria-label="View details">
-                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                    <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
                   </button>
                 </div>
                 <div class="text-[10px] text-[var(--theme-text-sub)] flex items-center gap-1.5 mt-0.5 truncate">
@@ -9463,11 +9463,11 @@
 
           let rightTagOrTime = '';
           if (isShared) {
-            rightTagOrTime = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> SHARED</span>`;
+            rightTagOrTime = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#F47A21]/15 text-[#F47A21] border border-[#F47A21]/30 inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> SHARED</span>`;
           } else if (isTaggedView) {
-            rightTagOrTime = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono-apple font-bold bg-[#0C8C46]/20 border border-[#0C8C46]/50 text-emerald-300 inline-flex items-center gap-1 shadow-sm"><svg class="w-3.5 h-3.5 text-emerald-300 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg> ${act.card}</span>`;
+            rightTagOrTime = `<span class="px-2.5 py-1 rounded-lg text-xs font-mono-apple font-bold bg-[#0C8C46]/20 border border-[#0C8C46]/50 text-emerald-300 inline-flex items-center gap-1 shadow-sm"><svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-300 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg> ${act.card}</span>`;
           } else {
-            rightTagOrTime = `<span class="px-2 py-0.5 rounded-full bg-black/60 border border-neutral-800 text-neutral-300 text-[11px] font-mono-apple inline-flex items-center gap-1"><svg class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${act.timestampStr || 'Recent'}</span>`;
+            rightTagOrTime = `<span class="px-2 py-0.5 rounded-full bg-black/60 border border-neutral-800 text-neutral-300 text-[11px] font-mono-apple inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${act.timestampStr || 'Recent'}</span>`;
           }
 
           return `
@@ -9480,12 +9480,12 @@
                   <div class="font-bold text-sm">${vBrandName}</div>
                   ${isIngested ? `
                     <span class="px-2 py-0.5 rounded font-mono-apple text-[10.5px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 inline-flex items-center gap-1">
-                      <svg class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> &lt;${act.account || '-'}&gt;
+                      <svg aria-hidden="true" class="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> &lt;${act.account || '-'}&gt;
                     </span>
                   ` : ''}
                   ${isIngested && isIngestedVoucherSold(act) ? `
                     <span class="px-2 py-0.5 rounded font-mono-apple text-[10.5px] font-bold bg-neutral-800 text-neutral-400 border border-neutral-700/60 inline-flex items-center gap-1" title="Sale already marked and logged to RuPay Income">
-                      <svg class="w-2.5 h-2.5 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Sale Logged
+                      <svg aria-hidden="true" class="w-2.5 h-2.5 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Sale Logged
                     </span>
                   ` : ''}
                 </div>
@@ -9518,7 +9518,7 @@
                 ` : (isRevalidation ? `
                   <div class="inline-flex items-center gap-2">
                     ${act.payUrl ? `
-                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1.5 transition-all">
+                      <a href="${act.payUrl}" target="_blank" onclick="event.stopPropagation()" class="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black shadow-xs inline-flex items-center gap-1.5 transition-all" title="Open Revalidation URL" aria-label="Open Revalidation URL">
                         <span>Revalidate</span>
                         <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                       </a>
@@ -9593,7 +9593,7 @@
                         <span class="font-bold text-white truncate text-[13px]">${brandDisplay}</span>
                         ${isTaggedView && isCardTagged(act.card) ? `
                           <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
-                            <svg class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            <svg aria-hidden="true" class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                             ${act.card}
                           </span>
                         ` : ''}
@@ -9628,7 +9628,7 @@
                     <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
                             class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
                             title="Inspect Voucher Code, PIN & Audit">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -9683,7 +9683,7 @@
                 <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
                         class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
                         title="Inspect Voucher Code, PIN & Audit">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -9702,10 +9702,10 @@
           <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
             <div class="w-12 h-12 mx-auto rounded-full bg-[#0C8C46]/10 border border-[#0C8C46]/20 flex items-center justify-center text-[#0C8C46] text-xl font-bold">
               ${activityFilter === 'shared' 
-                ? '<svg class="w-6 h-6 text-[#F47A21]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>' 
+                ? '<svg aria-hidden="true" class="w-6 h-6 text-[#F47A21]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>' 
                 : (state.ingestFilter === 'untagged' 
-                  ? '<svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' 
-                  : '<svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
+                  ? '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' 
+                  : '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
                 )}
             </div>
             <h4 class="font-bold text-sm text-neutral-200">
@@ -9763,14 +9763,14 @@
                 ${r.pin ? `<div class="font-mono-apple text-xs text-neutral-400 mt-0.5">PIN: ${r.pin}</div>` : ''}
               </td>
               <td class="p-3 text-xs text-neutral-400">
-                <div class="inline-flex items-center gap-1"><svg class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${r.redeemedTimestampIST || 'Recent'}</div>
+                <div class="inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${r.redeemedTimestampIST || 'Recent'}</div>
                 ${r.originalTab ? `<div class="text-[10px] text-neutral-500">Tab: ${r.originalTab}</div>` : ''}
               </td>
               <td class="p-3">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> REDEEMED</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> REDEEMED</span>
               </td>
               <td class="p-3 text-right">
-                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="text-xs font-semibold text-[#F47A21] hover:underline inline-flex items-center gap-1"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> Restore</button>
+                <button onclick="undoRedemption('${r.code}', '${r.brand}')" class="text-xs font-semibold text-[#F47A21] hover:underline inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> Restore</button>
               </td>
             </tr>
           `;
@@ -9824,11 +9824,11 @@
               <!-- Bottom Row: Timestamp & Restore Button -->
               <div class="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-xs pointer-events-auto">
                 <div class="flex items-center gap-1.5 text-[11px] text-neutral-400">
-                  <span class="inline-flex items-center gap-1"><svg class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${r.redeemedTimestampIST || 'Recent'}</span>
+                  <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${r.redeemedTimestampIST || 'Recent'}</span>
                   ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${r.originalTab}</span>` : ''}
                 </div>
                 <button onclick="event.stopPropagation(); undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-[#F47A21]/80 hover:border-[#F47A21]/40 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> <span>Restore to Vault</span>
+                  <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> <span>Restore to Vault</span>
                 </button>
               </div>
             </div>
@@ -9836,7 +9836,7 @@
         }).join('') : `
           <div class="rounded-2xl p-8 bg-neutral-900/60 border border-neutral-800 text-center space-y-3">
             <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl font-bold">
-              <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>
+              <svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>
             </div>
             <h4 class="font-bold text-sm text-neutral-200">No redeemed vouchers in archive</h4>
             <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
@@ -9943,7 +9943,7 @@
               </span>
             ` : `
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 bg-amber-950/60 border border-amber-500/30' : (v.status === 'USED' ? 'text-neutral-400 bg-neutral-800' : 'text-[#0C8C46] bg-emerald-950/60 border border-[#0C8C46]/30')}">
-                ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Pending</span>' : (v.status === 'PENDING' ? 'Pending' : v.status)}
+                ${(isVoucherProcessing(v) || v.status === 'PENDING') ? '<span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/></svg> Pending</span>' : (v.status === 'PENDING' ? 'Pending' : v.status)}
               </span>
             `}
           </td>
@@ -9984,7 +9984,7 @@
               <span>Saving to Sheet...</span>
             </span>
             <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
-              <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
               <span>${v.card || 'RuPay Select'}</span>
             </div>
           </div>
@@ -9995,7 +9995,7 @@
               ${formatArrivalDate(v.timestampIST)}
             </span>
             <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
-              <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
               <span>${v.card || 'RuPay Select'}</span>
             </div>
           </div>
@@ -10121,11 +10121,11 @@
         }
 
         const iconSvg = item.key === 'ActivityLog'
-          ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>`
+          ? `<svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>`
           : (item.key === 'Misc'
-            ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>`
+            ? `<svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>`
             : (item.key === 'Redeemed'
-              ? `<svg class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>`
+              ? `<svg aria-hidden="true" class="w-3.5 h-3.5 shrink-0 ${isSel ? 'text-white' : 'text-neutral-400'}" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM6.24 5h11.52l.83 1H5.42l.82-1zM5 19V8h14v11H5zm11-5.5l-4 4-4-4 1.41-1.41L11 13.67V10h2v3.67l1.59-1.58L16 13.5z"/></svg>`
               : ''));
 
         return `
@@ -10867,7 +10867,7 @@
         container.innerHTML = `
           <div class="text-center py-10 text-neutral-400 space-y-2">
             <div class="w-12 h-12 mx-auto rounded-2xl bg-neutral-800/80 border border-neutral-700/60 flex items-center justify-center text-neutral-400">
-              <svg class="w-6 h-6 text-neutral-300" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+              <svg aria-hidden="true" class="w-6 h-6 text-neutral-300" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
             </div>
             <div class="font-bold text-sm text-neutral-300">No active ${category} cards</div>
             <p class="text-xs text-neutral-500 max-w-xs mx-auto">Click "+ Add" above to onboard your RuPay ${category} cards into the portfolio.</p>
@@ -10909,7 +10909,7 @@
               <div class="w-8 flex items-center justify-center">
                 ${hasLinkedAcc ? `
                   <button onclick="toggleCardInfo('${rawNum}')" title="Toggle Linked Account Info" class="w-6 h-6 rounded-md ${isInfoRevealed ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/5'} flex items-center justify-center transition-all active:scale-95">
-                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="16" x2="12" y2="12"></line>
                       <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -10929,13 +10929,13 @@
                   <div id="num-display-${rawNum}" class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors">
                     ${maskedNum}
                   </div>
-                  <svg class="w-3.5 h-3.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
                 <button onclick="toggleCardPeek('${rawNum}')" title="Reveal / Mask Card Details" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 text-neutral-400 hover:text-white flex items-center justify-center transition-all shrink-0">
                   ${isPeeked ? `
-                    <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    <svg aria-hidden="true" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                   `}
                 </button>
               </div>
@@ -10949,7 +10949,7 @@
                   <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">Expiry</div>
                   <div class="font-mono-apple text-xs font-bold text-neutral-200 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
                     <span>${card.expiry || '10/33'}</span>
-                    <svg class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <svg aria-hidden="true" class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   </div>
                 </button>
 
@@ -10958,25 +10958,25 @@
                   <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">CVV</div>
                   <div id="cvv-display-${rawNum}" class="font-mono-apple text-xs font-bold text-neutral-200 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
                     <span>${cvvDisplay}</span>
-                    <svg class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <svg aria-hidden="true" class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   </div>
                 </button>
               </div>
 
               <!-- iOS Share Button -->
               <button onclick="triggerCardShare('${card.bank || 'Bank'}', '${card.type || 'Debit'}', '${rawNum}', '${card.expiry || '10/33'}', '${card.cvv || '000'}')" title="Share Card Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-neutral-200 border border-white/10 flex items-center justify-center transition-all shrink-0">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
               </button>
             </div>
 
             <!-- Action Buttons: Block & Block & Replace -->
             <div class="flex items-center gap-2 pt-2.5 border-t border-white/10">
               <button onclick="swipeBlockCard('${rawNum}', '${card.name || 'Card'}')" class="flex-1 py-2 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 <span>Block</span>
               </button>
               <button onclick="toggleReplaceDrawer('${rawNum}')" class="flex-[1.5] py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-md text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 <span>Block &amp; Replace</span>
               </button>
             </div>
@@ -10985,18 +10985,18 @@
             <div id="replace-drawer-${rawNum}" class="hidden mt-3 pt-3 border-t border-rose-500/30 bg-black/60 -mx-4 -mb-4 p-4 rounded-b-2xl transition-all">
               <div class="flex items-center justify-between mb-2">
                 <div class="text-xs font-bold text-white flex items-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  <svg aria-hidden="true" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                   <span>Enter Replacement Card</span>
                 </div>
-                <button onclick="toggleReplaceDrawer('${rawNum}')" class="text-neutral-400 hover:text-white p-1">
-                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <button onclick="toggleReplaceDrawer('${rawNum}')" class="text-neutral-400 hover:text-white p-1" title="Close replacement drawer" aria-label="Close replacement drawer">
+                  <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               </div>
 
               <!-- Card Scanner Viewfinder Button -->
               <div class="mb-2.5">
                 <button type="button" onclick="triggerCardOcr('rep', '${rawNum}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
-                  <svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+                  <svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                   <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Live Camera / Photo)</span>
                 </button>
               </div>
@@ -11021,7 +11021,7 @@
                   <input id="rep-notes-${rawNum}" name="notes" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
                 <button type="submit" class="w-full mt-1.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>Save &amp; Activate Replacement Card</span>
                 </button>
               </form>
@@ -11237,7 +11237,7 @@
 
         if (badge) {
           badge.classList.remove('hidden');
-          badge.innerHTML = `<svg class="w-3.5 h-3.5 inline-block mr-1 text-emerald-400 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Detected: ${match.name} (${match.bank} ${match.type})`;
+          badge.innerHTML = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 text-emerald-400 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Detected: ${match.name} (${match.bank} ${match.type})`;
         }
       } else if (badge && inputEl.id === 'add-card-num') {
         badge.classList.add('hidden');
@@ -11805,7 +11805,7 @@
 
       // Reveal the celebration overlay
       if (overlay) overlay.classList.remove('hidden');
-      if (status) status.innerHTML = '<span class="text-emerald-300 font-semibold tracking-wide flex items-center justify-center gap-1.5"><svg class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Card Identified &amp; Luhn Check Passed</span>';
+      if (status) status.innerHTML = '<span class="text-emerald-300 font-semibold tracking-wide flex items-center justify-center gap-1.5"><svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Card Identified &amp; Luhn Check Passed</span>';
 
       // Allow user to see the recognized numbers animate on screen (800ms)
       await new Promise(r => setTimeout(r, 800));
@@ -11857,7 +11857,7 @@
         }
         successPill.innerHTML = `
           <div class="flex items-center gap-1.5">
-            <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
             <span class="text-[11px] font-semibold">Card Identified &amp; Verified</span>
           </div>
           <span class="text-[10px] font-mono-apple bg-emerald-400/20 px-1.5 py-0.5 rounded text-emerald-200">LUHN OK</span>
@@ -12910,8 +12910,8 @@
     const bankPeekStates = new Set();
     const bankCardInfoStates = new Set();
 
-    const BA_COPY_SVG = `<svg class="w-3.5 h-3.5 text-white/50 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-    const BA_MICRO_COPY_SVG = `<svg class="w-2.5 h-2.5 text-white/40 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const BA_COPY_SVG = `<svg aria-hidden="true" class="w-3.5 h-3.5 text-white/50 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+    const BA_MICRO_COPY_SVG = `<svg aria-hidden="true" class="w-2.5 h-2.5 text-white/40 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0 copy-target-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
 
     function normalizeBankAccounts(remoteAccounts) {
       if (!Array.isArray(remoteAccounts) || remoteAccounts.length === 0) {
@@ -13065,9 +13065,9 @@
       const slot = document.getElementById('ba-eye-icon-slot');
       if (!slot) return;
       if (isBankGlobalMasked) {
-        slot.innerHTML = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+        slot.innerHTML = `<svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
       } else {
-        slot.innerHTML = `<svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        slot.innerHTML = `<svg aria-hidden="true" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
       }
     }
 
@@ -13173,12 +13173,12 @@
         container.innerHTML = `
           <div class="py-12 px-6 text-center rounded-2xl border border-neutral-800 bg-neutral-900/60 shadow-lg">
             <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
             <h3 class="text-sm font-extrabold text-white mb-1">No Accounts Found for ${memObj.name}</h3>
             <p class="text-xs text-neutral-400 mb-4 max-w-xs mx-auto">No bank accounts have been registered under this family profile yet.</p>
             <button onclick="showToast('Add Account for ${memObj.short} coming soon')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-neutral-800 hover:bg-neutral-700 transition-colors inline-flex items-center gap-1.5 shadow-md">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>+ Link Bank Account for ${memObj.short}</span>
             </button>
           </div>
@@ -13192,7 +13192,7 @@
             ${filtered.length} Account${filtered.length > 1 ? 's' : ''} Listed
           </span>
           <span class="text-[11px] text-neutral-400 flex items-center gap-1">
-            <svg class="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg aria-hidden="true" class="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
             <span>Tap any field to copy</span>
           </span>
         </div>
@@ -13214,7 +13214,7 @@
 
               <div class="w-8 flex items-center justify-center">
                 <button onclick="toggleBankCardInfo('${acc.id}')" title="Account Details &amp; Additional Info" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
-                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -13240,9 +13240,9 @@
                 <!-- Eye Peek Toggle Button (Exact Card Manager Style) -->
                 <button onclick="toggleBankCardPeek('${acc.id}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
                   ${isCurrentlyUnmasked ? `
-                    <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                    <svg aria-hidden="true" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                   `}
                 </button>
               </div>
@@ -13264,8 +13264,8 @@
                 ${isCustEditing ? `
                   <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
                     <input id="bank-input-cust-${acc.id}" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
-                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
-                    <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
+                    <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                   </div>
                 ` : acc.custId ? `
                   <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
@@ -13290,7 +13290,7 @@
 
               <!-- iOS Share Button (Directly Below Eye Icon in One Continuous Vertical Line) -->
               <button onclick="triggerBankAccountShare('${acc.bank}', '${acc.holder}', '${acc.accNumber}', '${acc.ifsc}')" title="Share Bank Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
               </button>
             </div>
 
@@ -13300,7 +13300,7 @@
                 <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
                   <input id="bank-input-upi-${acc.id}" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
                   <button onclick="saveBankInlineField('${acc.id}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
-                  <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+                  <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 </div>
               ` : acc.upi ? `
                 <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
@@ -13328,7 +13328,7 @@
               <div class="mt-2.5 pt-2.5 border-t border-white/10 bg-black/35 -mx-4 -mb-4 p-3 rounded-b-2xl transition-all space-y-2">
                 <div class="flex items-center justify-between text-[11px] font-bold text-amber-300/90 pb-1 border-b border-white/10">
                   <div class="flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <svg aria-hidden="true" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="16" x2="12" y2="12"></line>
                       <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -13605,12 +13605,12 @@
     const INTERLOCK_COMBO_ICON = `
       <div class="relative w-10 h-8 flex items-center justify-center pointer-events-none">
         <div class="w-6 h-6 rounded-full bg-[#25D366] flex items-center justify-center shadow-md">
-          <svg class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+          <svg aria-hidden="true" class="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
             <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/>
           </svg>
         </div>
         <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 border-2 border-neutral-900 flex items-center justify-center -ml-2 shadow-md">
-          <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <path d="M7 12l4 4L20 6"></path>
             <path d="M2 12l4 4 2-2"></path>
           </svg>
@@ -13619,7 +13619,7 @@
     `;
 
     const CLOSE_ICON = `
-      <svg class="w-6 h-6 text-neutral-300 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg aria-hidden="true" class="w-6 h-6 text-neutral-300 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
@@ -13788,7 +13788,7 @@
             approveTrack.classList.add('open');
             if (actionPill) actionPill.classList.add('has-approve');
             if (approveLabel) {
-              approveLabel.innerHTML = `<svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve${count > 1 ? ` (${count})` : ''}</span>`;
+              approveLabel.innerHTML = `<svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><span>Approve${count > 1 ? ` (${count})` : ''}</span>`;
             }
           } else {
             approveTrack.classList.remove('open');
