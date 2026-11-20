@@ -1367,7 +1367,7 @@ function reconcilePendingVouchers(ss) {
     const currentPin = String(sRows[i][2] || '').trim();
     const status = String(sRows[i][7] || '').trim();
 
-    if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || status === 'PROCESSING' || code === 'PENDING' || code === 'Pending revalidation' || /processing/i.test(code) || /processing/i.test(status)) && /^RUPS/i.test(bid)) {
+    if ((status === 'PENDING' || status === 'PENDING_REVALIDATION' || status === 'REVALIDATED' || status === 'PROCESSING' || code === 'PENDING' || code === 'Pending revalidation' || /processing/i.test(code) || /processing/i.test(status)) && /^RUPS/i.test(bid)) {
       // In-memory data sanitization for pending rows (Gmail search is handled centrally in processRupayEmails batch)
       if (code === 'PENDING') {
         newSheet.getRange(i + 1, 2).setValue("'Pending");
@@ -1968,12 +1968,12 @@ function doGet(e) {
         payUrlAfterStage15 === testPayUrl
       );
 
-      // Phase 2: Test User-Revalidation Safeguard (Mark Revalidated -> Sticky PENDING)
+      // Phase 2: Test User-Revalidation Safeguard (Mark Revalidated -> Sticky REVALIDATED)
       // Step 4: Simulate MARK_REVALIDATED operation
       let markUpdated = false;
       if (foundRow > 0) {
         nSheet.getRange(foundRow, 2).setValue('Pending');
-        nSheet.getRange(foundRow, 8).setValue('PENDING');
+        nSheet.getRange(foundRow, 8).setValue('REVALIDATED');
         if (rows[0].length >= 12) {
           nSheet.getRange(foundRow, 12).setValue('');
         }
@@ -1995,7 +1995,7 @@ function doGet(e) {
       });
       SpreadsheetApp.flush();
 
-      // Verify row remained sticky PENDING
+      // Verify row remained sticky REVALIDATED
       rows = nSheet.getDataRange().getValues();
       let codeAfterCron = "";
       let statusAfterCron = "";
@@ -2011,7 +2011,7 @@ function doGet(e) {
         }
       }
 
-      const cronProtected = (codeAfterCron === "Pending" && statusAfterCron === "PENDING" && payUrlAfterCron === "");
+      const cronProtected = (codeAfterCron === "Pending" && statusAfterCron === "REVALIDATED" && payUrlAfterCron === "");
       const timestampRemainedUnchanged = (tsAfterStage15 === nowStr && tsAfterCron === nowStr);
 
       // Phase 3: Cleanup and verify zero residual artifacts
@@ -4198,7 +4198,7 @@ function doPost(e) {
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
-      // 1D. Mark Revalidated Voucher in "New" Tab (Transitions PENDING_REVALIDATION -> PENDING)
+      // 1D. Mark Revalidated Voucher in "New" Tab (Transitions PENDING_REVALIDATION -> REVALIDATED)
       if (data.action === "MARK_REVALIDATED") {
         let newSheet = ss.getSheetByName("New");
         if (!newSheet) {
@@ -4214,12 +4214,46 @@ function doPost(e) {
           const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
           if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
             newSheet.getRange(r + 1, 2).setValue("'Pending");
-            newSheet.getRange(r + 1, 8).setValue('PENDING');
+            newSheet.getRange(r + 1, 8).setValue('REVALIDATED');
             if (dataRows[0].length >= 12) {
               newSheet.getRange(r + 1, 12).setValue('');
             }
             updated = true;
             addRevalidatedBookingToProperties(targetBid);
+            break;
+          }
+        }
+        SpreadsheetApp.flush();
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          updated: updated,
+          bookingId: targetBid
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      // 1D-2. Undo Mark Revalidated Voucher in "New" Tab (Compensating Reverse Mutation: REVALIDATED -> PENDING_REVALIDATION)
+      if (data.action === "UNDO_MARK_REVALIDATED") {
+        let newSheet = ss.getSheetByName("New");
+        if (!newSheet) {
+          return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        const targetBid = String(data.bookingId || data.id || '').trim().toUpperCase();
+        if (!targetBid) {
+          return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
+        }
+        const payUrl = String(data.payUrl || '').trim();
+        const dataRows = newSheet.getDataRange().getValues();
+        let updated = false;
+        for (let r = 1; r < dataRows.length; r++) {
+          const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
+          if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
+            newSheet.getRange(r + 1, 2).setValue("'Pending revalidation");
+            newSheet.getRange(r + 1, 8).setValue('PENDING_REVALIDATION');
+            if (dataRows[0].length >= 12 && payUrl) {
+              newSheet.getRange(r + 1, 12).setValue(payUrl);
+            }
+            updated = true;
+            removeRevalidatedBookingFromProperties(targetBid);
             break;
           }
         }
@@ -5249,7 +5283,7 @@ function doPost(e) {
         .concat(data.bookingIds || [])
         .concat(data.code ? [data.code] : [])
         .concat(data.bookingId ? [data.bookingId] : []);
-      const PLACEHOLDER_BACKEND = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', '-']);
+      const PLACEHOLDER_BACKEND = new Set(['PENDING', 'PROCESSING', 'PENDING REVALIDATION', 'PENDING_REVALIDATION', 'REVALIDATED', '-']);
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
           .map(c => String(c).replace(/^'/, '').trim().toUpperCase())

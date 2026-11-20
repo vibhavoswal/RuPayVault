@@ -25,8 +25,13 @@
 - Use clean brand typography, logos, or semantic category icons instead.
 
 ## 5. No Redundant Status Text Labels (Color & Placard State Sufficiency)
-- **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`, `"Awaiting"`) onto cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation, or emerald for arrived/active) already serves as the definitive semantic signal.
+- **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`, `"Awaiting"`, `"Revalidation Completed"`) onto cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation pending, lime/mint lighter green for revalidation completed, or emerald for arrived/active) already serves as the definitive semantic signal.
 - **Card Title / Line 1 Rule**: The title row must display **Brand name ONLY** (+ linked Card tag when tagged). Never clutter card headers with redundant state labels.
+- **Definitive 4-Tier Visual Palette**:
+  1. **Delivered / Arrived (Emerald Green)**: `card-arrived` (Border: `emerald-500/30`, Left Stripe: `emerald-500`). Code delivered and ready to use/approve.
+  2. **Revalidation Completed (Lighter Shade of Green / Lime-Mint)**: `card-revalidated` (Border: `lime-500/35`, Left Stripe: `lime-400`). Payment revalidation completed; awaiting coupon code delivery.
+  3. **Pending Revalidation (Cyan)**: `card-revalidation` (Border: `cyan-500/40`, Left Stripe: `cyan-500`). Validation link active; OTP payment required.
+  4. **Initial Pending / Processing (Rose / Red)**: `card-pending` (Border: `rose-500/30`, Left Stripe: `rose-500`). Order acknowledged; awaiting delivery or revalidation email.
 - Color, borders, and left accent stripes convey lifecycle state cleanly with zero visual noise.
 - Descriptive status text is strictly reserved for the detailed inspection modal / sheet (`(i)` detail sheet), keeping primary list feeds sleek, clean, and scannable.
 
@@ -143,22 +148,23 @@ Every operation must be evaluated against these 7 core safeguards:
 - **Safeguard 6 (Backend Transactional Integrity)**: Locate row in `Redeemed`, copy back to original brand tab with `ACTIVE` status, and safely delete row in descending index order under script lock. Self-healing check verifies if row was already restored.
 - **Safeguard 7 (Context Preservation)**: Restores card into matching brand carousel view.
 
-#### Operation: `MARK_REVALIDATED` & `SWITCH_ALL_REVALIDATED_TO_PENDING` (Transitioning Staged Voucher to Revalidated / Awaiting Code)
+#### Operation: `MARK_REVALIDATED` & `UNDO_MARK_REVALIDATED` (Transitioning Staged Voucher to Revalidated / Awaiting Code)
 - **Safeguard 1 (Mutation Journal)**: Dedicated persistent revalidation register (`rupay_revalidated_bids`) with zero time-based expiration. Remains active until the real delivered coupon code arrives. In addition, dual-recorded in `UniversalMutationJournal` for short-term in-flight sync safety.
 - **Safeguard 2 (Quarantine Shield)**: N/A (constructive in-place state transition). Explicitly excluded from destructive quarantine so it is never suppressed.
-- **Safeguard 3 (Optimistic UI & Feedback)**: Optimistically update voucher to red `card-pending` status ("Waiting for voucher code"), clear payment link button, and close detail sheet immediately.
+- **Safeguard 3 (Zero-Delay Execution & 3s Interactive Undo Banner)**: Optimistically update voucher to lighter shade of green `card-revalidated` status ("Revalidation Completed" in detail sheet), clear payment link button, close detail sheet, and present 3-second interactive Undo banner (`"Revalidation completed ([Brand]). Tap to Undo"`). Tapping Undo reverts state to `PENDING_REVALIDATION` and dispatches compensating `UNDO_MARK_REVALIDATED` to Google Apps Script.
 - **Safeguard 4 (Rollback Handler)**: Explicit `rollback` callback supplied to `apiFetch('MARK_REVALIDATED', ...)` reverting `state.staging` to snapshot and removing the booking ID from the revalidated register upon network or server error.
 - **Safeguard 5 (Mutation Mutex)**: Executed via `apiFetch`, incrementing `pendingMutationsCount` and deferring conflicting background syncs.
 - **Safeguard 6 (Backend Transactional Integrity & Idempotency)**:
   - Guarded by top-level `LockService.getScriptLock().tryLock(30000)`.
-  - In `MARK_REVALIDATED` and batch transition `SWITCH_ALL_REVALIDATED_TO_PENDING`: updates `New` tab (Col 2: `'PENDING'`, Col 8: `'PENDING'`, Col 12: `''`).
+  - In `MARK_REVALIDATED`: updates `New` tab (Col 2: `'Pending'`, Col 8: `'REVALIDATED'`, Col 12: `''`).
+  - In `UNDO_MARK_REVALIDATED`: updates `New` tab (Col 2: `'Pending revalidation'`, Col 8: `'PENDING_REVALIDATION'`, Col 12: `payUrl`) and removes booking ID from `REVALIDATED_BOOKINGS`.
   - Stores revalidated booking ID in `PropertiesService.getScriptProperties()` under `REVALIDATED_BOOKINGS`.
   - In `recordPendingRevalidation()`: check `isBookingRevalidated(targetBid)` before modifying rows; never clobbers a user-revalidated voucher back to `PENDING_REVALIDATION`, while cleanly transitioning fresh Stage 1 vouchers (`PENDING`/`PROCESSING`) to `PENDING_REVALIDATION` with their payment URL.
   - **Timestamp Invariant**: When a pending revalidation email or link arrives, Col 9 (`Timestamp`) is strictly immutable and preserved as the initial ingested time. Thread initial date is anchored on ingestion, and `recordPendingRedemption` heals Col 9 to the earlier Stage 1 acknowledgment time if the revalidation email was ingested first.
   - When real coupon code arrives in `processRupayEmails`: purge booking ID from `REVALIDATED_BOOKINGS`.
   - Removed legacy hardcoded auto-heal clobber list.
 - **Safeguard 7 (Context Preservation)**: Retains active filter and selection context.
-- **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_REVAL_DUMMY` on live sheet and safely purged, asserting that timestamp remains unchanged across the entire revalidation transition and repeat crons.
+- **Mandatory Verification**: Tested via `VERIFY_SAFEGUARD_REVAL_DUMMY` on live sheet and safely purged, asserting that status transitions to `REVALIDATED` and timestamp remains unchanged across the entire revalidation transition and repeat crons.
 
 #### Operation: `RECORD_INCOME_ENTRY` (Recording Sales into "RuPay Income" and Charges into "RuPay Charges")
 - **Safeguard 1 (Mutation Journal)**: Record optimistic transaction entry in `state.income.ledger` with unique ID (`inc-${Date.now()}`), preventing loss during background syncs.

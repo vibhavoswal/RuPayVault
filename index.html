@@ -146,6 +146,39 @@
       border-left-color: #06b6d4 !important;
       box-shadow: 0 2px 8px rgba(6, 182, 212, 0.08) !important;
     }
+    [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated,
+    html.light .mobile-view [id^="mb-card-"].card-revalidated {
+      background: #F4FBF4 !important;
+      border-color: rgba(101, 163, 13, 0.35) !important;
+      border-left-color: #84cc16 !important;
+      box-shadow: 0 2px 8px rgba(101, 163, 13, 0.08) !important;
+    }
+    [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated.ring-1,
+    [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated.ring-2,
+    html.light .mobile-view [id^="mb-card-"].card-revalidated.ring-1,
+    html.light .mobile-view [id^="mb-card-"].card-revalidated.ring-2 {
+      background: #ECFDF0 !important;
+      border-color: #65a30d !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .bg-lime-950\/20,
+    html.light #voucher-detail-sheet .bg-lime-950\/20 {
+      background-color: #f7fee7 !important;
+      border-color: rgba(132, 204, 22, 0.4) !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .text-lime-400,
+    html.light #voucher-detail-sheet .text-lime-400,
+    [data-theme="light"] #voucher-detail-sheet .text-lime-300,
+    html.light #voucher-detail-sheet .text-lime-300 {
+      color: #4d7c0f !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .bg-lime-500\/15,
+    html.light #voucher-detail-sheet .bg-lime-500\/15 {
+      background-color: #ecfccb !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .bg-lime-400,
+    html.light #voucher-detail-sheet .bg-lime-400 {
+      background-color: #65a30d !important;
+    }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidation .bg-cyan-950\/70,
     html.light .mobile-view [id^="mb-card-"].card-revalidation .bg-cyan-950\/70 {
       background: #E0F2FE !important;
@@ -4673,11 +4706,11 @@
         this.remove(key);
       },
 
-      // --- REVALIDATION REGISTER (Sticky PENDING status on revalidated vouchers) ---
+      // --- REVALIDATION REGISTER (Sticky REVALIDATED status on revalidated vouchers) ---
       recordRevalidate(bookingId) {
         if (!bookingId) return;
         const clean = String(bookingId).trim().toUpperCase();
-        this.record('STAGING_REVALIDATE', 'staging', clean, { status: 'PENDING' });
+        this.record('STAGING_REVALIDATE', 'staging', clean, { status: 'REVALIDATED' });
       },
 
       isRevalidated(bookingId) {
@@ -4889,13 +4922,13 @@
       if (payload.codes) targetIds.push(...(Array.isArray(payload.codes) ? payload.codes : [payload.codes]));
       if (payload.code) targetIds.push(payload.code);
       if (payload.bookingIds) targetIds.push(...(Array.isArray(payload.bookingIds) ? payload.bookingIds : [payload.bookingIds]));
-      if (payload.bookingId && action !== 'MARK_REVALIDATED') targetIds.push(payload.bookingId);
+      if (payload.bookingId && action !== 'MARK_REVALIDATED' && action !== 'UNDO_MARK_REVALIDATED') targetIds.push(payload.bookingId);
       if (payload.cardNumber && action !== 'ADD_CARD') targetIds.push(payload.cardNumber);
       if (payload.oldCardNumber) targetIds.push(payload.oldCardNumber);
 
       // Non-destructive, promotion, and restorative actions (additions, approvals, updates, or undos) must NEVER be quarantined
       const nonQuarantineActions = new Set([
-        'TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED',
+        'TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'UNDO_MARK_REVALIDATED',
         'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE',
         'APPROVE_STAGING'
       ]);
@@ -5042,10 +5075,10 @@
           const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
           state.staging = decryptedStaging.map(s => {
             const cleanBid = String(s.bookingId || s.id || '').trim().toUpperCase();
-            if (revalSet.has(cleanBid)) {
+            if (revalSet.has(cleanBid) || s.status === 'REVALIDATED') {
               const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code) && !/processing/i.test(s.code);
               if (!isRealCode) {
-                s.status = 'PENDING';
+                s.status = 'REVALIDATED';
                 s.code = 'Pending';
                 s.payUrl = '';
                 s.isRevalidation = false;
@@ -5287,8 +5320,24 @@
     }
 
     /* --- VOUCHER STATUS PREDICATES & CLASSIFIERS --- */
+    function isVoucherArrived(v) {
+      if (!v) return false;
+      const c = String(v.code || '').trim();
+      return !!c && c.toUpperCase() !== 'PENDING' && c !== '-' && !/processing/i.test(c) && !/revalidat/i.test(c);
+    }
+
+    function isVoucherRevalidated(v) {
+      if (!v) return false;
+      if (isVoucherArrived(v)) return false;
+      const s = String(v.status || '').trim().toUpperCase();
+      const cleanBid = String(v.bookingId || v.id || '').trim().toUpperCase();
+      const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
+      return s === 'REVALIDATED' || s === 'REVALIDATION_COMPLETED' || /revalidation completed/i.test(s) || (cleanBid && revalSet.has(cleanBid));
+    }
+
     function isVoucherRevalidation(v) {
       if (!v) return false;
+      if (isVoucherArrived(v) || isVoucherRevalidated(v)) return false;
       const s = String(v.status || '').trim().toUpperCase();
       const c = String(v.code || '').trim();
       return s === 'PENDING_REVALIDATION' || c === 'Pending revalidation' || /revalidation/i.test(c);
@@ -5303,17 +5352,10 @@
 
     function isVoucherPending(v) {
       if (!v) return false;
-      if (isVoucherRevalidation(v)) return false;
+      if (isVoucherArrived(v) || isVoucherRevalidation(v) || isVoucherRevalidated(v)) return false;
       const s = String(v.status || '').trim().toUpperCase();
       const c = String(v.code || '').trim();
       return isVoucherProcessing(v) || s === 'PENDING' || c.toUpperCase() === 'PENDING' || c === '-' || !c;
-    }
-
-    function isVoucherArrived(v) {
-      if (!v) return false;
-      if (isVoucherRevalidation(v) || isVoucherPending(v)) return false;
-      const c = String(v.code || '').trim();
-      return !!c && c.toUpperCase() !== 'PENDING' && c !== '-' && !/processing/i.test(c) && !/revalidat/i.test(c);
     }
 
     /* --- VOUCHER DETAIL iOS BOTTOM SHEET (MATERIAL SVG INFO ICON) --- */
@@ -5357,6 +5399,7 @@
       const brandDisplay = getBrandDisplayName(act.brand);
       const isTagged = isCardTagged(act.card);
       const isRevalidation = isVoucherRevalidation(act);
+      const isRevalidated = isVoucherRevalidated(act);
       const isProcessing = isVoucherProcessing(act);
       const isPending = isVoucherPending(act);
       const hasArrived = isVoucherArrived(act);
@@ -5401,6 +5444,20 @@
                 </button>
               </div>
             </div>
+          ` : (isRevalidated ? `
+            <!-- REVALIDATION COMPLETED NOTICE -->
+            <div class="p-3.5 rounded-2xl bg-lime-950/20 border border-lime-500/35 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-lime-400 inline-flex items-center gap-1">
+                  <svg aria-hidden="true" class="w-3.5 h-3.5 text-lime-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  <span>Revalidation Completed</span>
+                </span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-300 font-mono-apple">Payment Verified</span>
+              </div>
+              <div class="text-xs text-neutral-300">
+                Payment revalidation successful. Awaiting coupon code delivery from RuPay (24–48h).
+              </div>
+            </div>
           ` : (isRevalidation ? `
             <!-- VALIDATION PENDING NOTICE -->
             <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-center justify-between text-xs">
@@ -5410,7 +5467,7 @@
               </div>
               <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 font-mono-apple">Action Required</span>
             </div>
-          ` : '')}
+          ` : ''))}
 
           <!-- AUDIT METADATA BOX -->
           <div class="p-3.5 rounded-2xl bg-black/60 border border-neutral-800 space-y-2.5">
@@ -5424,7 +5481,15 @@
               </div>
             ` : ''}
 
-            ${!hasArrived && !isRevalidation ? `
+            ${isRevalidated ? `
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-neutral-400">Status:</span>
+                <span class="font-mono-apple text-lime-400 font-semibold text-[11px] inline-flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-lime-400"></span>
+                  Revalidation Completed
+                </span>
+              </div>
+            ` : (!hasArrived && !isRevalidation ? `
               <div class="flex justify-between items-center text-xs">
                 <span class="text-neutral-400">Status:</span>
                 <span class="font-mono-apple text-rose-400 font-semibold text-[11px] inline-flex items-center gap-1.5">
@@ -5432,7 +5497,7 @@
                   Pending delivery (24–48h)
                 </span>
               </div>
-            ` : ''}
+            ` : '')}
 
             ${isStaging && act.targetBrand ? `
               <div class="flex justify-between items-center text-xs">
@@ -6249,7 +6314,7 @@
       }).catch(err => console.warn('Background sync error (LOG_SHARED):', err));
     }
 
-    /* --- MARK REVALIDATED ACTION (TRANSITIONS PENDING_REVALIDATION TO PENDING) --- */
+    /* --- MARK REVALIDATED ACTION (TRANSITIONS PENDING_REVALIDATION TO REVALIDATED) --- */
     async function markRevalidated(id, bookingId) {
       const targetBid = String(bookingId || '').trim();
       const targetId = String(id || '').trim();
@@ -6266,14 +6331,16 @@
       }
 
       const activeBid = item.bookingId || targetBid || targetId;
+      const brandName = getBrandDisplayName(item.brand || 'Voucher');
       const prevStatus = item.status;
       const prevCode = item.code;
       const prevPayUrl = item.payUrl;
       const prevIsRevalidation = item.isRevalidation;
+      const previousStaging = JSON.parse(JSON.stringify(state.staging));
 
       // 1. Optimistic Local State Update:
-      // Change status & code to PENDING, remove revalidation flags and payment URL
-      item.status = 'PENDING';
+      // Change status to REVALIDATED, code to Pending, remove revalidation flags and payment URL
+      item.status = 'REVALIDATED';
       item.code = 'Pending';
       item.payUrl = '';
       item.isRevalidation = false;
@@ -6282,36 +6349,67 @@
       addRevalidatedBid(activeBid);
       if (targetBid) addRevalidatedBid(targetBid);
 
-      // 3. Persist to encrypted cache and immediately re-render (turns placard red)
+      // 3. Persist to encrypted cache and immediately re-render (turns placard lighter green: card-revalidated)
       await saveEncryptedStaging(state.staging);
       renderVault();
       if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
         closeVoucherDetailSheet();
       }
-      showToast('Marked as revalidated. Waiting for voucher code.');
 
       // 4. Background Sync to Google Apps Script ("New" tab in Google Sheets via authenticated POST)
-      try {
-        await apiFetch('MARK_REVALIDATED', {
-          bookingId: activeBid
-        }, {
-          silent: true,
-          rollback: () => {
-            // SG4 Rollback Handler: revert local state and remove from persistent register
-            removeRevalidatedBid(activeBid);
-            if (targetBid) removeRevalidatedBid(targetBid);
-            item.status = prevStatus || 'PENDING_REVALIDATION';
-            item.code = prevCode || 'Pending revalidation';
-            item.payUrl = prevPayUrl || '';
-            item.isRevalidation = prevIsRevalidation !== undefined ? prevIsRevalidation : true;
-            saveEncryptedStaging(state.staging);
-            renderVault();
-            showToast('Failed to mark revalidated on server. Rolled back.');
-          }
-        });
-      } catch (err) {
+      apiFetch('MARK_REVALIDATED', {
+        bookingId: activeBid
+      }, {
+        silent: true,
+        rollback: () => {
+          // SG4 Rollback Handler: revert local state and remove from persistent register
+          removeRevalidatedBid(activeBid);
+          if (targetBid) removeRevalidatedBid(targetBid);
+          item.status = prevStatus || 'PENDING_REVALIDATION';
+          item.code = prevCode || 'Pending revalidation';
+          item.payUrl = prevPayUrl || '';
+          item.isRevalidation = prevIsRevalidation !== undefined ? prevIsRevalidation : true;
+          saveEncryptedStaging(state.staging);
+          renderVault();
+          showToast('Failed to mark revalidated on server. Rolled back.');
+        }
+      }).catch(err => {
         console.warn('Background sync error (MARK_REVALIDATED):', err);
-      }
+      });
+
+      // 5. 3-Second Interactive Undo Banner with Explicit Compensating Reverse Call UNDO_MARK_REVALIDATED
+      showCardUndoBanner(
+        `Revalidation completed (${brandName})`,
+        async () => {
+          // UNDO ACTION: Revert local memory state, persistent register, and dispatch compensating API call
+          removeRevalidatedBid(activeBid);
+          if (targetBid) removeRevalidatedBid(targetBid);
+          state.staging = previousStaging;
+          await saveEncryptedStaging(state.staging);
+          renderVault();
+          showToast(`Reverted revalidation for ${brandName}`);
+
+          // Backend compensating reverse call to Google Sheets
+          apiFetch('UNDO_MARK_REVALIDATED', {
+            bookingId: activeBid,
+            payUrl: prevPayUrl || ''
+          }, {
+            silent: true,
+            rollback: () => {
+              // Re-apply revalidation if undo fails
+              addRevalidatedBid(activeBid);
+              if (targetBid) addRevalidatedBid(targetBid);
+              item.status = 'REVALIDATED';
+              item.code = 'Pending';
+              item.payUrl = '';
+              item.isRevalidation = false;
+              saveEncryptedStaging(state.staging);
+              renderVault();
+              showToast('Server sync failed to undo revalidation.');
+            }
+          }).catch(err => console.warn('Background sync error (UNDO_MARK_REVALIDATED):', err));
+        }
+      );
     }
 
     /* --- DISMISS STAGING VOUCHER (MOVES TO TOMBSTONE / ARCHIVE) --- */
@@ -6912,24 +7010,24 @@
       }, 1000);
     }
 
-    function triggerUndoLast() {
+    async function triggerUndoLast() {
       if (undoState.actionType === 'card' && typeof undoState.onCardUndo === 'function') {
         const cb = undoState.onCardUndo;
         hideUndoToast();
-        cb();
+        await cb();
       } else if (undoState.actionType === 'clear') {
         if (typeof undoState.onCardUndo === 'function') {
           const cb = undoState.onCardUndo;
           hideUndoToast();
-          cb();
+          await cb();
         } else {
-          restoreClearedItems();
+          await restoreClearedItems();
         }
       } else if (undoState.code && undoState.brand) {
         const c = undoState.code;
         const b = undoState.brand;
         hideUndoToast();
-        undoRedemption(c, b);
+        await undoRedemption(c, b);
       }
     }
 
@@ -7084,27 +7182,23 @@
         }
       }
 
-      [dtBadge, mbBadge].forEach(b => {
-        if (b) {
-          if (selectedCount > 0 && normActive === 'ActivityLog') {
-            b.textContent = selectedCount;
-            b.classList.remove('hidden');
-          } else {
-            b.classList.add('hidden');
-          }
+      if (mbBadge) {
+        if (selectedCount > 0 && normActive === 'ActivityLog') {
+          mbBadge.textContent = selectedCount;
+          mbBadge.classList.remove('hidden');
+        } else {
+          mbBadge.classList.add('hidden');
         }
-      });
+      }
 
-      [dtRedeemedBadge, mbRedeemedBadge].forEach(b => {
-        if (b) {
-          if (selectedCount > 0 && normActive === 'Redeemed') {
-            b.textContent = selectedCount;
-            b.classList.remove('hidden');
-          } else {
-            b.classList.add('hidden');
-          }
+      if (mbRedeemedBadge) {
+        if (selectedCount > 0 && normActive === 'Redeemed') {
+          mbRedeemedBadge.textContent = selectedCount;
+          mbRedeemedBadge.classList.remove('hidden');
+        } else {
+          mbRedeemedBadge.classList.add('hidden');
         }
-      });
+      }
     }
 
     function triggerClearTrashAction() {
@@ -7309,9 +7403,7 @@
           };
         }
       } else if (normKey === 'Redeemed') {
-        if (dtFilterBar) dtFilterBar.classList.add('hidden');
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
-        if (dtRedeemedBar) dtRedeemedBar.classList.remove('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.remove('hidden');
         if (mbDenomBanner) mbDenomBanner.classList.remove('hidden');
 
@@ -7391,6 +7483,7 @@
       incomeYearFilter: '2026',
       incomeLedgerTypeFilter: 'all'
     };
+    window.state = state;
 
     /* --- WORKSPACE NAVIGATION (CARDS, VOUCHERS, BANKS, INCOME) --- */
     function switchWorkspace(target) {
@@ -8575,13 +8668,13 @@
               const cleanBid = String(bId || '').trim().toUpperCase();
               const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
 
-              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid))) {
+              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid)) || status === 'REVALIDATED' || status === 'REVALIDATION_COMPLETED') {
                 const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code) && !/processing/i.test(code);
                 if (isRealCode) {
                   removeRevalidatedBid(cleanBid);
                   if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
                 } else {
-                  status = 'PENDING';
+                  status = 'REVALIDATED';
                   code = 'Pending';
                   payUrl = '';
                 }
@@ -9195,13 +9288,13 @@
               const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
 
               // If marked revalidated locally, keep it sticky as PENDING until real code arrives
-              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid))) {
+              if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid)) || status === 'REVALIDATED' || status === 'REVALIDATION_COMPLETED') {
                 const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code) && !/processing/i.test(code);
                 if (isRealCode) {
                   removeRevalidatedBid(cleanBid);
                   if (cleanOrigBid) removeRevalidatedBid(cleanOrigBid);
                 } else {
-                  status = 'PENDING';
+                  status = 'REVALIDATED';
                   code = 'Pending';
                   payUrl = '';
                 }
@@ -9463,14 +9556,16 @@
         }
 
         // Sort Priority for Ingested:
-        // 1. Revalidation Pending at the very top (highest action priority)
-        // 2. Red ones (code not arrived / PENDING delivery 24-48h / Processing) in the middle
-        // 3. Code arrived (Green / ACTIVE / delivered) at the bottom
+        // 1. Revalidation Pending at the very top (highest action priority: OTP link needs payment)
+        // 2. Revalidation Completed (lighter green / lime-mint: payment verified, waiting for code delivery)
+        // 3. Red ones (code not arrived / PENDING delivery 24-48h / Processing) in the middle
+        // 4. Code arrived (Emerald Green / ACTIVE / delivered) at the bottom
         // Within each priority tier: newest arrivals first (reverse-chronological)
         const getPriorityTier = (a) => {
           if (isVoucherRevalidation(a)) return 1;
-          if (isVoucherPending(a)) return 2;
-          return 3;
+          if (isVoucherRevalidated(a)) return 2;
+          if (isVoucherPending(a)) return 3;
+          return 4;
         };
 
         allActivities.sort((a, b) => {
@@ -9491,18 +9586,19 @@
           const isShared = act.type === 'SHARED';
           const isIngested = act.type === 'INGESTED';
           const isRevalidation = isVoucherRevalidation(act);
+          const isRevalidated = isVoucherRevalidated(act);
           const isProcessing = isVoucherProcessing(act);
           const isPending = isVoucherPending(act);
           const hasArrived = isVoucherArrived(act);
           const brandDisplay = getBrandDisplayName(act.brand);
           const isChecked = state.selectedIds.has(act.id) || state.selectedIds.has(act.code) || state.selectedIds.has('shared-' + act.code);
 
-          const cardClass = hasArrived ? 'card-arrived' : (isRevalidation ? 'card-revalidation' : 'card-pending');
+          const cardClass = hasArrived ? 'card-arrived' : (isRevalidated ? 'card-revalidated' : (isRevalidation ? 'card-revalidation' : 'card-pending'));
           const borderClass = isChecked
-            ? (hasArrived ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]' : (isRevalidation ? 'border-cyan-500 ring-2 ring-cyan-500' : 'border-rose-500 ring-2 ring-rose-500'))
-            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidation ? 'border-cyan-500/40 hover:border-cyan-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm'));
-          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidation ? 'bg-[#081822]/85' : 'bg-[#260e12]/75');
-          const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidation ? 'border-l-4 border-l-cyan-500' : 'border-l-4 border-l-rose-500');
+            ? (hasArrived ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]' : (isRevalidated ? 'border-lime-400 ring-2 ring-lime-400' : (isRevalidation ? 'border-cyan-500 ring-2 ring-cyan-500' : 'border-rose-500 ring-2 ring-rose-500')))
+            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidated ? 'border-lime-500/35 hover:border-lime-500/60 shadow-sm' : (isRevalidation ? 'border-cyan-500/40 hover:border-cyan-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm')));
+          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidated ? 'bg-[#0c2417]/75' : (isRevalidation ? 'bg-[#081822]/85' : 'bg-[#260e12]/75'));
+          const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidated ? 'border-l-4 border-l-lime-400' : (isRevalidation ? 'border-l-4 border-l-cyan-500' : 'border-l-4 border-l-rose-500'));
 
           if (isIngested) {
             return `
@@ -13591,6 +13687,7 @@
           const hasNonApprovable = selectedStaging.some(s =>
             isVoucherPending(s) ||
             isVoucherRevalidation(s) ||
+            isVoucherRevalidated(s) ||
             isVoucherProcessing(s) ||
             !isVoucherArrived(s)
           );
@@ -13627,6 +13724,7 @@
       if (selectedStaging.some(s =>
         isVoucherPending(s) ||
         isVoucherRevalidation(s) ||
+        isVoucherRevalidated(s) ||
         isVoucherProcessing(s) ||
         !isVoucherArrived(s)
       )) {
@@ -14215,6 +14313,14 @@
             cardEl.classList.remove('border-[#0C8C46]', 'ring-2', 'ring-[#0C8C46]');
             cardEl.classList.add('border-emerald-500/30');
           }
+        } else if (cardEl.classList.contains('card-revalidated')) {
+          if (isSelected) {
+            cardEl.classList.add('border-lime-400', 'ring-2', 'ring-lime-400');
+            cardEl.classList.remove('border-lime-500/35');
+          } else {
+            cardEl.classList.remove('border-lime-400', 'ring-2', 'ring-lime-400');
+            cardEl.classList.add('border-lime-500/35');
+          }
         } else if (cardEl.classList.contains('card-revalidation')) {
           if (isSelected) {
             cardEl.classList.add('border-cyan-500', 'ring-2', 'ring-cyan-500');
@@ -14657,7 +14763,7 @@
         return;
       }
 
-      const pendingTargets = targetVouchers.filter(v => isVoucherPending(v) || isVoucherProcessing(v) || isVoucherRevalidation(v));
+      const pendingTargets = targetVouchers.filter(v => isVoucherPending(v) || isVoucherProcessing(v) || isVoucherRevalidation(v) || isVoucherRevalidated(v));
       if (pendingTargets.length > 0) {
         showToast("Cannot redeem pending vouchers awaiting code delivery");
         return;
