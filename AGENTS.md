@@ -21,7 +21,7 @@
 - **Undo Toast**: Exactly 3.0-second countdown with reverse horizontal glide rollback (`anim-rollback-700`).
 
 ### 3. Navigation & Default State
-- The app must **always default to ⚡ Activity Log on page load/reload**.
+- The app must **always default to Activity Log on page load/reload**.
 - Deck selector must NOT show false-active glowing borders on unselected tabs.
 
 ### 4. No Redundant Status Labels on Cards (STRICT)

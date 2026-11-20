@@ -4,7 +4,7 @@ This document tracks planned architectural enhancements, pending bug fixes, and 
 
 ---
 
-## ✅ RESOLVED: Concurrency Guard & Sync-Mutation Interlock ("Shield & Queue")
+## RESOLVED: Concurrency Guard & Sync-Mutation Interlock ("Shield & Queue")
 
 - **Status**: Completed & Verified
 - **Area**: Frontend Sync (`index.html`) & Backend Consistency (`CronCode.gs`)
