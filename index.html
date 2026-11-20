@@ -301,9 +301,7 @@
     }
     /* Header action bars and alerts */
     [data-theme="light"] #mb-redeemed-bar span.text-white,
-    html.light #mb-redeemed-bar span.text-white,
-    [data-theme="light"] #dt-redeemed-bar span.text-white,
-    html.light #dt-redeemed-bar span.text-white {
+    html.light #mb-redeemed-bar span.text-white {
       color: #141212 !important;
     }
     [data-theme="light"] #mb-ff-alert,
@@ -326,25 +324,19 @@
       border-color: rgba(12, 140, 70, 0.2) !important;
     }
     [data-theme="light"] #mb-ingested-subfilters,
-    html.light #mb-ingested-subfilters,
-    [data-theme="light"] #dt-ingested-subfilters,
-    html.light #dt-ingested-subfilters {
+    html.light #mb-ingested-subfilters {
       background-color: #eaefea !important;
       border-color: rgba(12, 140, 70, 0.2) !important;
       color: #141212 !important;
     }
     [data-theme="light"] #mb-ingested-subfilters button:not(.bg-\[\#0C8C46\]),
-    html.light #mb-ingested-subfilters button:not(.bg-\[\#0C8C46\]),
-    [data-theme="light"] #dt-ingested-subfilters button:not(.bg-\[\#0C8C46\]),
-    html.light #dt-ingested-subfilters button:not(.bg-\[\#0C8C46\]) {
+    html.light #mb-ingested-subfilters button:not(.bg-\[\#0C8C46\]) {
       background-color: #ffffff !important;
       border-color: rgba(12, 140, 70, 0.15) !important;
       color: #374151 !important;
     }
     [data-theme="light"] #mb-ingested-subfilters button.bg-\[\#0C8C46\],
-    html.light #mb-ingested-subfilters button.bg-\[\#0C8C46\],
-    [data-theme="light"] #dt-ingested-subfilters button.bg-\[\#0C8C46\],
-    html.light #dt-ingested-subfilters button.bg-\[\#0C8C46\] {
+    html.light #mb-ingested-subfilters button.bg-\[\#0C8C46\] {
       color: #ffffff !important;
     }
     [data-theme="light"] #voucher-detail-sheet > div,
@@ -568,17 +560,7 @@
     .pin-shake {
       animation: pin-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }
-    [data-theme="light"] .mobile-view #btn-master-trigger,
-    html.light .mobile-view #btn-master-trigger {
-      background: #ffffff !important;
-      color: #141212 !important;
-      border-color: #0C8C46 !important;
-      box-shadow: 0 8px 25px rgba(12, 140, 70, 0.18) !important;
-    }
-    [data-theme="light"] .mobile-view #btn-master-trigger svg,
-    html.light .mobile-view #btn-master-trigger svg {
-      stroke: #141212 !important;
-    }
+
     /* Empty State in Light Mode */
     [data-theme="light"] .mobile-view .text-neutral-200,
     html.light .mobile-view .text-neutral-200 {
@@ -597,67 +579,7 @@
     }
     /* Desktop View Light Mode */
     [data-theme="light"] .desktop-view,
-    html.light .desktop-view {
-      color: #141212 !important;
-    }
-    [data-theme="light"] #dt-activity-filters-bar,
-    html.light #dt-activity-filters-bar,
-    [data-theme="light"] #dt-redeemed-bar,
-    html.light #dt-redeemed-bar {
-      background-color: #ffffff !important;
-      border-color: rgba(12, 140, 70, 0.15) !important;
-    }
-    [data-theme="light"] #dt-activity-filters-bar button:not(.bg-\[\#0C8C46\]),
-    html.light #dt-activity-filters-bar button:not(.bg-\[\#0C8C46\]),
-    [data-theme="light"] #dt-btn-clear-trash,
-    html.light #dt-btn-clear-trash,
-    [data-theme="light"] #dt-btn-clear-redeemed-trash,
-    html.light #dt-btn-clear-redeemed-trash {
-      background-color: #f5f7f5 !important;
-      border-color: rgba(12, 140, 70, 0.15) !important;
-      color: #5e5959 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody tr,
-    html.light #dt-vault-tbody tr {
-      border-bottom-color: rgba(12, 140, 70, 0.12) !important;
-    }
-    [data-theme="light"] #dt-vault-tbody tr:hover,
-    html.light #dt-vault-tbody tr:hover {
-      background-color: rgba(12, 140, 70, 0.04) !important;
-    }
-    [data-theme="light"] #dt-vault-tbody .text-white,
-    html.light #dt-vault-tbody .text-white {
-      color: #141212 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody .text-neutral-300,
-    html.light #dt-vault-tbody .text-neutral-300 {
-      color: #141212 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody .text-neutral-400,
-    html.light #dt-vault-tbody .text-neutral-400 {
-      color: #5e5959 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody button.bg-neutral-800,
-    html.light #dt-vault-tbody button.bg-neutral-800 {
-      background-color: #f0f6f2 !important;
-      color: #141212 !important;
-      border: 0.5px solid rgba(12, 140, 70, 0.20) !important;
-    }
-    [data-theme="light"] #dt-vault-tbody span.bg-black\/60,
-    html.light #dt-vault-tbody span.bg-black\/60 {
-      background-color: #f0f6f2 !important;
-      border-color: rgba(12, 140, 70, 0.15) !important;
-      color: #5e5959 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody .text-amber-300,
-    html.light #dt-vault-tbody .text-amber-300 {
-      color: #b45309 !important;
-    }
-    [data-theme="light"] #dt-vault-tbody .bg-amber-500\/15,
-    html.light #dt-vault-tbody .bg-amber-500\/15 {
-      background-color: #fef3c7 !important;
-      border-color: #fcd34d !important;
-    }
+
 
     * {
       box-sizing: border-box;
@@ -6827,17 +6749,13 @@
       undoState.brand = brand;
       undoState.secondsLeft = 3;
 
-      const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
-      const dtBtn = document.getElementById('dt-undo-banner-btn');
       const mbBtn = document.getElementById('mb-undo-banner-btn');
-      const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
       const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
       const msg = `Marked ${brand} as Redeemed`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
-      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
       if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.innerHTML = btnTxt; }
 
       undoState.timer = setInterval(() => {
@@ -6846,7 +6764,6 @@
           hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
-          if (dtBtn) dtBtn.innerHTML = t;
           if (mbBtn) mbBtn.innerHTML = t;
         }
       }, 1000);
@@ -6860,11 +6777,8 @@
       undoState.onCardUndo = onUndo;
       undoState.secondsLeft = 3;
 
-      const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
-      const dtBtn = document.getElementById('dt-undo-banner-btn');
       const mbBtn = document.getElementById('mb-undo-banner-btn');
-      const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
       const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
@@ -6872,7 +6786,6 @@
       const msg = `Cleared ${targets.length} ${targets.length === 1 ? 'item' : 'items'} from ${contextLabel}`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
 
-      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
       if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.innerHTML = btnTxt; }
 
       undoState.timer = setInterval(() => {
@@ -6881,7 +6794,6 @@
           hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
-          if (dtBtn) dtBtn.innerHTML = t;
           if (mbBtn) mbBtn.innerHTML = t;
         }
       }, 1000);
@@ -6970,9 +6882,7 @@
       undoState.onCardUndo = null;
       undoState.clearedItems = null;
       undoState.pendingRedeem = null;
-      const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
-      if (dtBanner) dtBanner.classList.add('hidden');
       if (mbBanner) mbBanner.classList.add('hidden');
     }
 
@@ -6982,17 +6892,13 @@
       undoState.onCardUndo = onUndo;
       undoState.secondsLeft = 3;
 
-      const dtBanner = document.getElementById('dt-undo-banner');
       const mbBanner = document.getElementById('mb-undo-banner');
-      const dtBtn = document.getElementById('dt-undo-banner-btn');
       const mbBtn = document.getElementById('mb-undo-banner-btn');
-      const dtText = document.getElementById('dt-undo-banner-text');
       const mbText = document.getElementById('mb-undo-banner-text');
 
       const undoIconSvg = `<svg aria-hidden="true" class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>`;
       const btnTxt = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
 
-      if (dtBanner) { dtBanner.classList.remove('hidden'); if (dtText) dtText.textContent = msg; if (dtBtn) dtBtn.innerHTML = btnTxt; }
       if (mbBanner) { mbBanner.classList.remove('hidden'); if (mbText) mbText.textContent = msg; if (mbBtn) mbBtn.innerHTML = btnTxt; }
 
       undoState.timer = setInterval(() => {
@@ -7001,7 +6907,6 @@
           hideUndoToast();
         } else {
           const t = `${undoIconSvg}Undo (${undoState.secondsLeft}s)`;
-          if (dtBtn) dtBtn.innerHTML = t;
           if (mbBtn) mbBtn.innerHTML = t;
         }
       }, 1000);
@@ -7123,15 +7028,7 @@
       }
       activityFilter = filter;
       ['added', 'shared'].forEach(f => {
-        const dtBtn = document.getElementById(`dt-btn-filter-${f}`);
         const mbBtn = document.getElementById(`mb-btn-filter-${f}`);
-        if (dtBtn) {
-          if (f === filter) {
-            dtBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-[#0C8C46] text-white shadow flex items-center gap-1.5 transition-all';
-          } else {
-            dtBtn.className = 'px-3 py-1 rounded-lg text-xs font-medium bg-neutral-900 text-neutral-300 border border-neutral-800 hover:border-neutral-700 flex items-center gap-1.5 transition-all';
-          }
-        }
         if (mbBtn) {
           if (f === filter) {
             mbBtn.className = 'py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 bg-[#0C8C46] text-white shadow';
@@ -7142,12 +7039,7 @@
       });
 
       const isIngested = filter === 'added';
-      const dtIngested = document.getElementById('dt-ingested-subfilters');
       const mbIngested = document.getElementById('mb-ingested-subfilters');
-      if (dtIngested) {
-        if (isIngested) dtIngested.classList.remove('hidden');
-        else dtIngested.classList.add('hidden');
-      }
       if (mbIngested) {
         if (isIngested) mbIngested.classList.remove('hidden');
         else mbIngested.classList.add('hidden');
@@ -7162,9 +7054,7 @@
 
     function updateClearTrashBadges() {
       const normActive = normalizeBrandKey(state.activeFilterBrand);
-      const dtBadge = document.getElementById('dt-clear-badge');
       const mbBadge = document.getElementById('mb-clear-badge');
-      const dtRedeemedBadge = document.getElementById('dt-clear-redeemed-badge');
       const mbRedeemedBadge = document.getElementById('mb-clear-redeemed-badge');
 
       let selectedCount = 0;
@@ -7386,16 +7276,12 @@
 
     function getCumulativeHeader(brandKey) {
       const normKey = normalizeBrandKey(brandKey);
-      const dtFilterBar = document.getElementById('dt-activity-filters-bar');
       const mbFilterBar = document.getElementById('mb-activity-filters-bar');
-      const dtRedeemedBar = document.getElementById('dt-redeemed-bar');
       const mbRedeemedBar = document.getElementById('mb-redeemed-bar');
       const mbDenomBanner = document.getElementById('mb-denomination-banner');
 
       if (normKey === 'ActivityLog') {
-        if (dtFilterBar) dtFilterBar.classList.remove('hidden');
         if (mbFilterBar) mbFilterBar.classList.remove('hidden');
-        if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
         if (mbDenomBanner) mbDenomBanner.classList.add('hidden');
 
@@ -7438,9 +7324,7 @@
           sub: 'Cumulative list of all vouchers marked redeemed and stored in Google Sheets'
         };
       } else {
-        if (dtFilterBar) dtFilterBar.classList.add('hidden');
         if (mbFilterBar) mbFilterBar.classList.add('hidden');
-        if (dtRedeemedBar) dtRedeemedBar.classList.add('hidden');
         if (mbRedeemedBar) mbRedeemedBar.classList.add('hidden');
         if (mbDenomBanner) mbDenomBanner.classList.remove('hidden');
       }
@@ -8455,15 +8339,7 @@
     }
 
     function updateHubStats() {
-      const cardCountBadge = document.getElementById('hub-cards-badge');
-      const voucherCountBadge = document.getElementById('hub-vouchers-badge');
-      if (cardCountBadge && state.cards) {
-        const activeCards = state.cards.filter(c => String(c.status || '').toUpperCase() === 'ACTIVE');
-        cardCountBadge.textContent = String(activeCards.length || state.cards.length);
-      }
-      if (voucherCountBadge && state.vouchers) {
-        voucherCountBadge.textContent = String(state.vouchers.length);
-      }
+      // Hub stats consolidated into modern workspace badges
     }
 
     const MATRIX_RULES = [
@@ -8641,23 +8517,7 @@
     function setTab(tab) {
       state.activeTab = tab;
       
-      // Desktop Views
-      ['cards', 'vault'].forEach(t => {
-        const v = document.getElementById(`dt-view-${t}`);
-        if (v) v.classList.toggle('hidden', t !== tab);
-        const sb = document.getElementById(`dt-sidebar-${t}`);
-        if (sb) {
-          if (t === tab) {
-            sb.style.background = 'var(--system-blue)';
-            sb.style.color = '#fff';
-            sb.style.fontWeight = '600';
-          } else {
-            sb.style.background = 'transparent';
-            sb.style.color = 'var(--label-primary)';
-            sb.style.fontWeight = '400';
-          }
-        }
-      });
+
 
       // Mobile Views
       ['cards', 'vault'].forEach(t => {
@@ -8864,8 +8724,6 @@
         });
         const drawerLabel = document.getElementById('drawer-sync-label');
         if (drawerLabel) drawerLabel.textContent = 'Syncing...';
-        const dtStatus = document.getElementById('dt-sync-status');
-        if (dtStatus) dtStatus.textContent = 'Syncing now...';
       } else if (status === 'success') {
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
@@ -8905,10 +8763,6 @@
         });
         const drawerLabel = document.getElementById('drawer-sync-label');
         if (drawerLabel) drawerLabel.textContent = 'Sync Cloud Database';
-        const dtStatus = document.getElementById('dt-sync-status');
-        if (dtStatus) dtStatus.textContent = `Live (${state.vouchers ? state.vouchers.length : 0})`;
-        const dtDot = document.getElementById('dt-sync-dot');
-        if (dtDot) dtDot.style.background = 'var(--system-green)';
       } else if (status === 'error') {
         spinnerIds.forEach(id => {
           const el = document.getElementById(id);
@@ -8944,10 +8798,6 @@
         });
         const drawerLabel = document.getElementById('drawer-sync-label');
         if (drawerLabel) drawerLabel.textContent = 'Sync Cloud Database';
-        const dtStatus = document.getElementById('dt-sync-status');
-        if (dtStatus) dtStatus.textContent = 'Offline (cached)';
-        const dtDot = document.getElementById('dt-sync-dot');
-        if (dtDot) dtDot.style.background = 'var(--system-orange)';
       } else {
         // Idle
         spinnerIds.forEach(id => {
@@ -9183,8 +9033,7 @@
           // AES-GCM Encrypted cache persistence (never plaintext)
           await saveEncryptedVouchers(state.vouchers);
 
-          if (document.getElementById('dt-sync-status')) document.getElementById('dt-sync-status').textContent = `Live (${state.vouchers.length})`;
-          if (document.getElementById('dt-sync-dot')) document.getElementById('dt-sync-dot').style.background = 'var(--system-green)';
+
         }
 
         if (data.redeemed && Array.isArray(data.redeemed)) {
@@ -9436,8 +9285,7 @@
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
         const sheetLink = document.getElementById('sheet-link-btn');
         if (sheetLink) sheetLink.href = sheetUrl;
-        const dtSheetLink = document.getElementById('dt-sheet-link-btn');
-        if (dtSheetLink) dtSheetLink.href = sheetUrl;
+
         try {
           localStorage.setItem('rupay_sheet_url', sheetUrl);
         } catch(e) {}
@@ -9488,13 +9336,7 @@
 
     /* --- RENDER CARDS --- */
     function renderCards() {
-      const active = state.cards.filter(c => (c.status || '').toLowerCase() === 'active');
-      const blocked = state.cards.filter(c => (c.status || '').toLowerCase() === 'blocked').sort((a,b) => new Date(b.blockedDate || 0) - new Date(a.blockedDate || 0));
-
-      if (document.getElementById('dt-cards-count')) document.getElementById('dt-cards-count').textContent = active.length;
-      if (document.getElementById('dt-blocked-count')) document.getElementById('dt-blocked-count').textContent = blocked.length;
-      if (document.getElementById('dt-blocked-inline-count')) document.getElementById('dt-blocked-inline-count').textContent = blocked.length;
-      if (document.getElementById('mb-blocked-count')) document.getElementById('mb-blocked-count').textContent = blocked.length;
+      updateDrawerCardCount();
     }
 
     /* --- RENDER VAULT (APPROACH 6: GLASS + THUMB ZONE) --- */
@@ -9640,7 +9482,7 @@
           return (b.timestampMs || 0) - (a.timestampMs || 0);
         });
 
-        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = allActivities.length;
+
 
         const isTaggedView = state.ingestFilter === 'tagged';
 
@@ -9829,8 +9671,7 @@
           );
         }
 
-        if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = rList.length;
-        if (document.getElementById('mb-vault-count')) document.getElementById('mb-vault-count').textContent = rList.length;
+
 
         // Mobile VIP Wallet Cards for Redeemed Tab
         document.getElementById('mb-vouchers-list').innerHTML = rList.length ? rList.map((r, i) => {
@@ -9946,24 +9787,7 @@
         return 0;                    // Maintain original sheet order
       });
 
-      if (document.getElementById('dt-vault-count')) document.getElementById('dt-vault-count').textContent = state.vouchers.length;
 
-      const sel = state.vouchers.filter(v => state.selectedIds.has(v.id));
-      const selSum = sel.reduce((a, v) => a + (v.amount || 0), 0);
-
-      // Desktop Batch Action Bar
-      const dtBar = document.getElementById('dt-batch-bar');
-      if (dtBar) {
-        if (state.isSelectMode && sel.length) {
-          dtBar.classList.remove('hidden');
-          const dtSelCount = document.getElementById('dt-sel-count');
-          if (dtSelCount) dtSelCount.textContent = `${sel.length} Selected`;
-          const dtSelSum = document.getElementById('dt-sel-sum');
-          if (dtSelSum) dtSelSum.textContent = `Total: ₹${selSum.toLocaleString()}`;
-        } else {
-          dtBar.classList.add('hidden');
-        }
-      }
 
       // Mobile VIP Wallet Cards (Minimal Subtle Cobalt Edge Placards)
       document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
@@ -10155,8 +9979,7 @@
       try {
         localStorage.setItem('rupay_active_brand', brand);
       } catch(e) {}
-      const dtSel = document.getElementById('dt-brand-filter');
-      if (dtSel) dtSel.value = brand;
+
 
       const bConfig = BRAND_CONFIG.find(x => x.key === normalizeBrandKey(brand));
       const capTitle = document.getElementById('mb-capsule-brand-title');
@@ -10682,8 +10505,7 @@
       if (badgeDc) badgeDc.textContent = dcCount;
       if (badgeCc) badgeCc.textContent = ccCount;
 
-      const drawerCount = document.getElementById('drawer-card-count');
-      if (drawerCount) drawerCount.textContent = `${allCards.length} Cards`;
+
     }
 
     function getBankThemeClass(bank) {
@@ -13662,15 +13484,6 @@
 
     function collapseActionMenu() {
       isMenuExpanded = false;
-      const menuEl = document.getElementById('menu-expanded');
-      const triggerBtn = document.getElementById('btn-master-trigger');
-      const backdrop = document.getElementById('capsule-backdrop');
-      if (menuEl) {
-        menuEl.classList.add('hidden');
-        menuEl.classList.remove('flex');
-      }
-      if (triggerBtn) triggerBtn.classList.remove('hidden');
-      if (backdrop) backdrop.classList.add('hidden');
       updateFloatingDock();
     }
 
@@ -13700,7 +13513,6 @@
       const selectAllLabel = document.getElementById('mb-select-all-label');
       const menuBtn = document.getElementById('mb-menu-btn');
       const headerTools = document.getElementById('mb-header-tools');
-      const dtBtn = document.getElementById('dt-select-btn');
 
       if (state.isSelectMode) {
         if (menuBtn) menuBtn.classList.add('hidden');
@@ -13713,8 +13525,6 @@
           const allSelected = items.length > 0 && items.every(item => state.selectedIds.has(item.id) || (item.code && state.selectedIds.has(item.code)));
           if (selectAllLabel) selectAllLabel.textContent = allSelected ? 'Deselect All' : 'Select All';
         }
-
-        if (dtBtn) dtBtn.textContent = 'Done';
       } else {
         if (menuBtn) menuBtn.classList.remove('hidden');
         if (headerTools) headerTools.classList.remove('hidden');
@@ -13722,7 +13532,6 @@
           selectAllBtn.classList.add('hidden');
           selectAllBtn.classList.remove('flex');
         }
-        if (dtBtn) dtBtn.textContent = 'Select Multiple';
       }
 
       // UPDATE TWO-PILL BOTTOM DOCK (Expands strictly from right to left)
@@ -13872,14 +13681,6 @@
       collapseActionMenu();
       if (state.isSelectMode) {
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn');
-        const dtBtn = document.getElementById('dt-select-btn');
-        if (dtBtn) dtBtn.textContent = 'Select Multiple';
-        if (mbBtn) {
-          mbBtn.textContent = 'Select';
-          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
-          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
-        }
       }
 
       renderVault();
@@ -14185,8 +13986,6 @@
       allTargets.forEach(v => {
         const mbEl = document.getElementById(`mb-card-${v.id}`);
         if (mbEl) mbEl.classList.add('anim-slide-out');
-        const dtRow = document.getElementById(`dt-row-${v.id}`);
-        if (dtRow) dtRow.classList.add('anim-slide-out');
       });
 
       // Wait 500ms for slide-out animation to complete
@@ -14218,14 +14017,6 @@
 
         // Exit select mode upon completion
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn');
-        const dtBtn = document.getElementById('dt-select-btn');
-        if (dtBtn) dtBtn.textContent = 'Select Multiple';
-        if (mbBtn) {
-          mbBtn.textContent = 'Select';
-          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
-          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
-        }
 
         // Save local encrypted cache
         await Promise.all([
@@ -14937,14 +14728,6 @@
 
         // REQUIREMENT: Exit Select Mode & show back the Interlock master combo icon
         state.isSelectMode = false;
-        const mbBtn = document.getElementById('mb-select-btn');
-        const dtBtn = document.getElementById('dt-select-btn');
-        if (dtBtn) dtBtn.textContent = 'Select Multiple';
-        if (mbBtn) {
-          mbBtn.textContent = 'Select';
-          mbBtn.classList.add('bg-neutral-800', 'text-[#F47A21]');
-          mbBtn.classList.remove('bg-[#F47A21]', 'text-white', 'shadow-md');
-        }
 
         renderDeckSelector();
         renderVault();
@@ -15035,8 +14818,6 @@
       const activeSheetUrl = (savedSheetUrl && savedSheetUrl.includes('/d/')) ? savedSheetUrl : GOOGLE_SHEET_URL;
       const sheetLink = document.getElementById('sheet-link-btn');
       if (sheetLink) sheetLink.href = activeSheetUrl;
-      const dtSheetLink = document.getElementById('dt-sheet-link-btn');
-      if (dtSheetLink) dtSheetLink.href = activeSheetUrl;
 
       // 2. Initialize security: Check 24-Hour session & hydrate encrypted cache
       const isDevUnlock = isDevEnvironment();
@@ -15052,8 +14833,6 @@
 
       // 3. Always default to Activity Log on page load/reload and sub-filter to Ingested
       state.activeFilterBrand = 'ActivityLog';
-      const dtSel = document.getElementById('dt-brand-filter');
-      if (dtSel) dtSel.value = 'ActivityLog';
       localStorage.removeItem('rupay_active_brand');
       setActivityFilter('added');
 
