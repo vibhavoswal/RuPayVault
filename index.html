@@ -148,32 +148,36 @@
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated,
     html.light .mobile-view [id^="mb-card-"].card-revalidated {
-      background: #F4FBF4 !important;
-      border-color: rgba(101, 163, 13, 0.35) !important;
+      background: #EFFDE6 !important;
+      border-color: rgba(132, 204, 22, 0.45) !important;
       border-left-color: #84cc16 !important;
-      box-shadow: 0 2px 8px rgba(101, 163, 13, 0.08) !important;
+      box-shadow: 0 2px 8px rgba(132, 204, 22, 0.12) !important;
     }
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated.ring-1,
     [data-theme="light"] .mobile-view [id^="mb-card-"].card-revalidated.ring-2,
     html.light .mobile-view [id^="mb-card-"].card-revalidated.ring-1,
     html.light .mobile-view [id^="mb-card-"].card-revalidated.ring-2 {
-      background: #ECFDF0 !important;
+      background: #E4FBD5 !important;
       border-color: #65a30d !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-lime-950\/20,
-    html.light #voucher-detail-sheet .bg-lime-950\/20 {
-      background-color: #f7fee7 !important;
-      border-color: rgba(132, 204, 22, 0.4) !important;
+    [data-theme="light"] #voucher-detail-sheet .bg-\[\#18522a\]\/40,
+    html.light #voucher-detail-sheet .bg-lime-950\/20,
+    html.light #voucher-detail-sheet .bg-\[\#18522a\]\/40 {
+      background-color: #effde6 !important;
+      border-color: rgba(132, 204, 22, 0.45) !important;
     }
     [data-theme="light"] #voucher-detail-sheet .text-lime-400,
     html.light #voucher-detail-sheet .text-lime-400,
     [data-theme="light"] #voucher-detail-sheet .text-lime-300,
     html.light #voucher-detail-sheet .text-lime-300 {
-      color: #4d7c0f !important;
+      color: #365314 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-lime-500\/15,
-    html.light #voucher-detail-sheet .bg-lime-500\/15 {
-      background-color: #ecfccb !important;
+    [data-theme="light"] #voucher-detail-sheet .bg-lime-400\/20,
+    html.light #voucher-detail-sheet .bg-lime-500\/15,
+    html.light #voucher-detail-sheet .bg-lime-400\/20 {
+      background-color: #d9f99d !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-lime-400,
     html.light #voucher-detail-sheet .bg-lime-400 {
@@ -5446,13 +5450,13 @@
             </div>
           ` : (isRevalidated ? `
             <!-- REVALIDATION COMPLETED NOTICE -->
-            <div class="p-3.5 rounded-2xl bg-lime-950/20 border border-lime-500/35 space-y-2">
+            <div class="p-3.5 rounded-2xl bg-[#18522a]/40 border border-lime-400/45 space-y-2">
               <div class="flex items-center justify-between">
                 <span class="text-[10px] uppercase font-bold tracking-wider text-lime-400 inline-flex items-center gap-1">
                   <svg aria-hidden="true" class="w-3.5 h-3.5 text-lime-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                   <span>Revalidation Completed</span>
                 </span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-300 font-mono-apple">Payment Verified</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-lime-400/20 text-lime-300 font-mono-apple">Payment Verified</span>
               </div>
               <div class="text-xs text-neutral-300">
                 Payment revalidation successful. Awaiting coupon code delivery from RuPay (24–48h).
@@ -9596,8 +9600,8 @@
           const cardClass = hasArrived ? 'card-arrived' : (isRevalidated ? 'card-revalidated' : (isRevalidation ? 'card-revalidation' : 'card-pending'));
           const borderClass = isChecked
             ? (hasArrived ? 'border-[#0C8C46] ring-2 ring-[#0C8C46]' : (isRevalidated ? 'border-lime-400 ring-2 ring-lime-400' : (isRevalidation ? 'border-cyan-500 ring-2 ring-cyan-500' : 'border-rose-500 ring-2 ring-rose-500')))
-            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidated ? 'border-lime-500/35 hover:border-lime-500/60 shadow-sm' : (isRevalidation ? 'border-cyan-500/40 hover:border-cyan-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm')));
-          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidated ? 'bg-[#0c2417]/75' : (isRevalidation ? 'bg-[#081822]/85' : 'bg-[#260e12]/75'));
+            : (hasArrived ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-sm' : (isRevalidated ? 'border-lime-400/45 hover:border-lime-400/70 shadow-sm' : (isRevalidation ? 'border-cyan-500/40 hover:border-cyan-500/70 shadow-sm' : 'border-rose-500/30 hover:border-rose-500/60 shadow-sm')));
+          const bgClass = hasArrived ? 'bg-[#062414]/75' : (isRevalidated ? 'bg-[#18522a]/90' : (isRevalidation ? 'bg-[#081822]/85' : 'bg-[#260e12]/75'));
           const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidated ? 'border-l-4 border-l-lime-400' : (isRevalidation ? 'border-l-4 border-l-cyan-500' : 'border-l-4 border-l-rose-500'));
 
           if (isIngested) {
@@ -14316,10 +14320,10 @@
         } else if (cardEl.classList.contains('card-revalidated')) {
           if (isSelected) {
             cardEl.classList.add('border-lime-400', 'ring-2', 'ring-lime-400');
-            cardEl.classList.remove('border-lime-500/35');
+            cardEl.classList.remove('border-lime-400/45');
           } else {
             cardEl.classList.remove('border-lime-400', 'ring-2', 'ring-lime-400');
-            cardEl.classList.add('border-lime-500/35');
+            cardEl.classList.add('border-lime-400/45');
           }
         } else if (cardEl.classList.contains('card-revalidation')) {
           if (isSelected) {

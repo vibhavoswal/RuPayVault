@@ -28,8 +28,8 @@
 - **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`, `"Awaiting"`, `"Revalidation Completed"`) onto cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation pending, lime/mint lighter green for revalidation completed, or emerald for arrived/active) already serves as the definitive semantic signal.
 - **Card Title / Line 1 Rule**: The title row must display **Brand name ONLY** (+ linked Card tag when tagged). Never clutter card headers with redundant state labels.
 - **Definitive 4-Tier Visual Palette**:
-  1. **Delivered / Arrived (Emerald Green)**: `card-arrived` (Border: `emerald-500/30`, Left Stripe: `emerald-500`). Code delivered and ready to use/approve.
-  2. **Revalidation Completed (Lighter Shade of Green / Lime-Mint)**: `card-revalidated` (Border: `lime-500/35`, Left Stripe: `lime-400`). Payment revalidation completed; awaiting coupon code delivery.
+  1. **Delivered / Arrived (Emerald Green)**: `card-arrived` (Background: `bg-[#062414]/75` [Dark] / `#EBF7EE` [Light], Border: `emerald-500/30`, Left Stripe: `emerald-500`). Code delivered and ready to use/approve.
+  2. **Revalidation Completed (Lighter Shade of Green / Spring Lime)**: `card-revalidated` (Background: `bg-[#18522a]/90` [Dark] / `#EFFDE6` [Light], Border: `lime-400/45`, Left Stripe: `lime-400`). Visibly distinct lighter spring green; payment revalidation completed, awaiting coupon code delivery.
   3. **Pending Revalidation (Cyan)**: `card-revalidation` (Border: `cyan-500/40`, Left Stripe: `cyan-500`). Validation link active; OTP payment required.
   4. **Initial Pending / Processing (Rose / Red)**: `card-pending` (Border: `rose-500/30`, Left Stripe: `rose-500`). Order acknowledged; awaiting delivery or revalidation email.
 - Color, borders, and left accent stripes convey lifecycle state cleanly with zero visual noise.
