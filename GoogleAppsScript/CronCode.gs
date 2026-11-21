@@ -36,9 +36,9 @@ const UNIFIED_COOLDOWN_HEADERS = [
 // Centralized System Sheet Names: Protected from brand tab scanning, deletion, or rogue voucher leaks
 const SYSTEM_SHEET_NAMES = new Set([
   "New",
-  "⚡ Unassigned",
+  "\u26A1 Unassigned",
   "Unassigned",
-  "⏱ Cooldowns",
+  "\u23F1 Cooldowns",
   "Cooldowns",
   "Active Cards",
   "Blocked Cards",
@@ -345,7 +345,7 @@ function getTargetBrandSheet(ss, brand) {
   }
 
   // Strict Whitelist: If brand is not a recognized canonical tab, route to Unassigned (Never create new tabs)
-  let unassigned = ss.getSheetByName("Unassigned") || ss.getSheetByName("⚡ Unassigned");
+  let unassigned = ss.getSheetByName("Unassigned") || ss.getSheetByName("\u26A1 Unassigned");
   if (!unassigned) {
     unassigned = ss.insertSheet("Unassigned");
     unassigned.appendRow(UNIFIED_BRAND_HEADERS);
@@ -1388,7 +1388,7 @@ function reconcilePendingVouchers(ss) {
  * 5. PERSISTENT SYSTEM SHEETS INITIALIZATION & COOLDOWN ENGINE
  */
 function getOrInitCooldownsSheet(ss) {
-  let sheet = ss.getSheetByName("Cooldowns") || ss.getSheetByName("⏱ Cooldowns");
+  let sheet = ss.getSheetByName("Cooldowns") || ss.getSheetByName("\u23F1 Cooldowns");
   if (!sheet) {
     sheet = ss.insertSheet("Cooldowns", 0);
     sheet.appendRow(UNIFIED_COOLDOWN_HEADERS);
@@ -3553,7 +3553,7 @@ function doGet(e) {
     const sheets = ss.getSheets();
     const sheetNameSet = new Set(sheets.map(s => s.getName()));
     // Ensure persistent system tabs exist if missing
-    if (!sheetNameSet.has("⏱ Cooldowns") && !sheetNameSet.has("Cooldowns")) {
+    if (!sheetNameSet.has("\u23F1 Cooldowns") && !sheetNameSet.has("Cooldowns")) {
       getOrInitCooldownsSheet(ss);
     }
     if (!sheetNameSet.has("Shared_Activity")) {
@@ -3591,7 +3591,7 @@ function doGet(e) {
       const rows = sheet.getDataRange().getValues();
       if (rows.length <= 1) continue;
 
-      if (name === "⚡ Unassigned" || name === "Unassigned") {
+      if (name === "\u26A1 Unassigned" || name === "Unassigned") {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][0] && !rows[i][1]) continue;
           const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
@@ -3613,7 +3613,7 @@ function doGet(e) {
           result.unassigned.push(uEntry);
           result.vouchers.push(uEntry);
         }
-      } else if (name === "⏱ Cooldowns" || name === "Cooldowns") {
+      } else if (name === "\u23F1 Cooldowns" || name === "Cooldowns") {
         for (let i = 1; i < rows.length; i++) {
           if (!rows[i][0] || String(rows[i][0]).trim() === "") continue;
           result.cooldowns.push({
@@ -5877,7 +5877,7 @@ function doPost(e) {
       const targetBrand = extractBrand(rawBrand, "") !== "Other" ? extractBrand(rawBrand, "") : (rawBrand || "");
 
       // Mandatory Validation 1: Brand is mandatory
-      if (!targetBrand || targetBrand === "Other" || targetBrand === "⚡ Unassigned" || targetBrand === "Unassigned") {
+      if (!targetBrand || targetBrand === "Other" || targetBrand === "\u26A1 Unassigned" || targetBrand === "Unassigned") {
         return ContentService.createTextOutput(JSON.stringify({
           error: "Brand is mandatory to record sale."
         })).setMimeType(ContentService.MimeType.JSON);
@@ -6112,7 +6112,7 @@ function doPost(e) {
       const cleanTargetCode = targetCode.replace(/^'/, '').trim().toUpperCase();
       const targetComments = String(data.comments || '').trim();
       const brand = String(data.brand || '').trim();
-      const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '⚡ Unassigned' || brand === 'Unassigned');
+      const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '\u26A1 Unassigned' || brand === 'Unassigned');
       
       let unmarkedNewRow = -1;
       let restoredBrandRow = -1;

@@ -5336,7 +5336,7 @@
       const s = String(v.status || '').trim().toUpperCase();
       const cleanBid = String(v.bookingId || v.id || '').trim().toUpperCase();
       const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
-      return s === 'REVALIDATED' || s === 'REVALIDATION_COMPLETED' || /revalidation completed/i.test(s) || (cleanBid && revalSet.has(cleanBid));
+      return s === 'REVALIDATED' || s === 'REVALIDATION_COMPLETED' || /revalidation completed/i.test(s) || Boolean(cleanBid && revalSet.has(cleanBid));
     }
 
     function isVoucherRevalidation(v) {
@@ -9929,8 +9929,8 @@
         ` : '');
 
         const isMisc = (normActiveBrand === 'Misc');
-        const specificBrandName = v.bookingId || v.account || 'Misc';
-        const cardTitleHtml = isMisc ? `
+        const specificBrandName = isMisc ? (v.bookingId || v.account || 'Misc') : bConfig.name;
+        const cardTitleHtml = `
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
@@ -9939,18 +9939,13 @@
                   </div>
                 ` : ''}
                 <span class="font-bold text-white text-sm tracking-tight">${specificBrandName}</span>
-                <span class="font-mono-apple font-semibold text-emerald-400 text-xs">₹${(v.amount || 500).toLocaleString()}</span>
-              </div>
-            </div>
-        ` : `
-            <div class="flex items-center justify-between text-xs pointer-events-none">
-              <div class="flex items-center gap-2">
-                ${state.isSelectMode ? `
-                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
-                    <input type="checkbox" aria-label="Select voucher Pass ${i + 1}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
-                  </div>
+                ${isCardTagged(v.card) ? `
+                  <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
+                    <svg aria-hidden="true" class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    ${v.card}
+                  </span>
                 ` : ''}
-                <span class="font-mono-apple font-bold text-[#F47A21] text-[11px] tracking-wider">PASS #${i + 1}</span>
+                ${(v.amount > 0 || isMisc) ? `<span class="font-mono-apple font-semibold text-emerald-400 text-xs">₹${(v.amount || bConfig.denomination || 500).toLocaleString()}</span>` : ''}
               </div>
             </div>
         `;
