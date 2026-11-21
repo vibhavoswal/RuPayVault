@@ -26,7 +26,10 @@
 
 ## 5. No Redundant Status Text Labels (Color & Placard State Sufficiency)
 - **NEVER add explicit redundant text badges or labels** (e.g. `"Processing"`, `"Revalidate"`, `"Pending"`, `"Awaiting"`, `"Revalidation Completed"`) onto cards or placards when the placard's visual state (such as red placard tint, rose border/left stripe for pending/processing, cyan for revalidation pending, lime/mint lighter green for revalidation completed, or emerald for arrived/active) already serves as the definitive semantic signal.
-- **Card Title / Line 1 Rule**: The title row must display **Brand name ONLY** (+ linked Card tag when tagged). Never clutter card headers with redundant state labels.
+- **Card Title / Line 1 Rule**:
+  - In mixed multi-brand feeds (Activity Log, Ingested Staging queue, Redeemed archive), the title row displays the **Brand name ONLY** (+ linked Card tag when tagged).
+  - In dedicated single-brand tabs (Brand VIP Carousel passes), the title row displays the **Pass identifier (`PASS #1`, `PASS #2`, etc.)**, or brand/booking ID in Misc.
+  - Never clutter card headers with redundant state labels (such as "Processing", "Revalidate", "Pending", "Awaiting", "Revalidation Completed").
 - **Definitive 4-Tier Visual Palette**:
   1. **Delivered / Arrived (Emerald Green)**: `card-arrived` (Background: `bg-[#062414]/75` [Dark] / `#EBF7EE` [Light], Border: `emerald-500/30`, Left Stripe: `emerald-500`). Code delivered and ready to use/approve.
   2. **Revalidation Completed (Lighter Shade of Green / Spring Lime)**: `card-revalidated` (Background: `bg-[#18522a]/90` [Dark] / `#EFFDE6` [Light], Border: `lime-400/45`, Left Stripe: `lime-400`). Visibly distinct lighter spring green; payment revalidation completed, awaiting coupon code delivery.
