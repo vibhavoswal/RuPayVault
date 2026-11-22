@@ -4696,7 +4696,7 @@
       remove(key) {
         if (!key) return;
         try {
-          const clean = String(key).trim().toUpperCase();
+          const clean = String(key).replace(/['\s]/g, '').trim().toUpperCase();
           const filtered = this.getAll().filter(e => {
             if (e.primaryKey === clean) return false;
             if (e.secondaryKeys && e.secondaryKeys.includes(clean)) return false;
@@ -4717,10 +4717,17 @@
         });
       },
 
-      isTombstoned(identifier) {
+      isTombstoned(identifier, context = null) {
         if (!identifier) return false;
         const clean = String(identifier).replace(/['\s]/g, '').trim().toUpperCase();
-        return this.getAll().some(e => e.action === 'TOMBSTONE_HIDE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean))));
+        return this.getAll().some(e => {
+          if (e.action !== 'TOMBSTONE_HIDE') return false;
+          const matchKey = (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean)));
+          if (!matchKey) return false;
+          if (!context) return true;
+          const itemContext = e.entityType || e.patch?.context || 'all';
+          return itemContext === 'all' || itemContext === context || itemContext === 'quarantine';
+        });
       },
 
       // --- STAGING APPROVALS (Staging -> Brand Tabs) ---
@@ -4895,8 +4902,8 @@
       UniversalMutationJournal.recordTombstone(ids, 'quarantine');
     }
 
-    function isIdentifierQuarantined(id) {
-      return UniversalMutationJournal.isTombstoned(id);
+    function isIdentifierQuarantined(id, context = 'voucher') {
+      return UniversalMutationJournal.isTombstoned(id, context);
     }
 
     function isCardQuarantined(cardNum) {
@@ -4907,7 +4914,7 @@
       if (inFlightCards.some(c => String(c.cardNumber || '').replace(/['\s]/g, '').toUpperCase() === clean)) {
         return false;
       }
-      return UniversalMutationJournal.isTombstoned(cardNum);
+      return UniversalMutationJournal.isTombstoned(cardNum, 'card');
     }
 
     // Revalidation Register (Persistent store with zero TTL in localStorage)
@@ -5000,10 +5007,15 @@
         'TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'UNDO_MARK_REVALIDATED',
         'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE', 'UNMARK_VOUCHER_SALE',
         'RESTORE_DISMISSED_SHARED', 'RESTORE_DISMISSED_STAGING', 'RESTORE_CLEARED_ACTIVITY', 'RESTORE_CLEARED_REDEEMED',
-        'APPROVE_STAGING'
+        'APPROVE_STAGING', 'DISMISS_SHARED', 'UNBLOCK_CARD', 'UNDO_BLOCK_AND_REPLACE_CARD'
       ]);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
+      } else if (action === 'UNDO_BLOCK_AND_REPLACE_CARD') {
+        if (payload.newCardNumber) quarantineIdentifiers([payload.newCardNumber]);
+        if (payload.oldCardNumber) UniversalMutationJournal.unquarantine(payload.oldCardNumber);
+      } else if (action === 'UNBLOCK_CARD') {
+        if (payload.cardNumber) UniversalMutationJournal.unquarantine(payload.cardNumber);
       }
       updateSyncPulseIndicator(true);
 
@@ -5449,7 +5461,7 @@
         const targetCode = v.code && v.code !== 'Pending' && v.code !== '-' ? v.code : '';
         const targetBid = v.bookingId || '';
         const s = (typeof sharedActivity !== 'undefined' && Array.isArray(sharedActivity))
-          ? sharedActivity.find(x => (targetCode && x.code === targetCode) || (targetBid && x.code === targetBid))
+          ? sharedActivity.find(x => (targetCode && x.code === targetCode) || (targetBid && (x.bookingId === targetBid || x.code === targetBid)))
           : null;
         if (s) {
           timeMs = s.timestampMs || parseTimestamp(s.sharedAt);
@@ -5485,7 +5497,7 @@
       }
 
       if (!act) {
-        const s = sharedActivity.find(x => x.code === id || ('shared-' + x.code) === id);
+        const s = sharedActivity.find(x => x.code === id || ('shared-' + x.code) === id || (x.bookingId && (x.bookingId === id || ('shared-' + x.bookingId) === id)));
         if (s) {
           act = {
             id: 'shared-' + s.code,
@@ -6170,8 +6182,9 @@
 
       // SG1 & SG2: Quarantine identifier & journal entry ONLY if voucher is leaving vault
       if (!isStagingNotArrived) {
-        if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, 'voucher');
-        if (cleanBid && cleanBid.startsWith('RUPS-')) UniversalMutationJournal.recordTombstone(cleanBid, 'voucher');
+        const tombContext = isStaging ? 'staging' : 'voucher';
+        if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, tombContext);
+        if (cleanBid && cleanBid !== '-' && !cleanBid.startsWith('#')) UniversalMutationJournal.recordTombstone(cleanBid, tombContext);
       }
 
       // Optimistic Local State Updates:
@@ -6264,7 +6277,8 @@
       // Persist encrypted caches & re-render
       await Promise.all([
         saveEncryptedStaging(state.staging),
-        saveEncryptedVouchers(state.vouchers)
+        saveEncryptedVouchers(state.vouchers),
+        saveEncryptedIncome(state.income)
       ]);
       renderDeckSelector();
       renderVault();
@@ -6315,7 +6329,8 @@
           saveRedeemedList();
           await Promise.all([
             saveEncryptedStaging(state.staging),
-            saveEncryptedVouchers(state.vouchers)
+            saveEncryptedVouchers(state.vouchers),
+            saveEncryptedIncome(state.income)
           ]);
           if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
           if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
@@ -6348,6 +6363,7 @@
           saveRedeemedList();
           saveEncryptedStaging(state.staging);
           saveEncryptedVouchers(state.vouchers);
+          saveEncryptedIncome(state.income);
           if (cleanCode) UniversalMutationJournal.unquarantine(cleanCode);
           if (cleanBid) UniversalMutationJournal.unquarantine(cleanBid);
           renderDeckSelector();
@@ -6438,14 +6454,23 @@
       } catch(e) {}
     }
 
-    function logSharedActivity(code, brand, amount, pin, platform = 'WhatsApp') {
-      if (!code) return;
-      UniversalMutationJournal.remove(code);
-      UniversalMutationJournal.remove('shared-' + code);
+    function logSharedActivity(code, brand, amount, pin, platform = 'WhatsApp', bookingId = '') {
+      const cleanCode = (code && code !== 'Pending' && code !== '-') ? String(code).trim() : '';
+      const cleanBid = (bookingId || '').trim();
+      const effectiveId = cleanCode || cleanBid || (code ? String(code).trim() : '');
+      if (!effectiveId) return;
+
+      UniversalMutationJournal.remove(effectiveId);
+      UniversalMutationJournal.remove('shared-' + effectiveId);
       const timeStr = nowIST();
-      const existingIdx = sharedActivity.findIndex(s => s.code === code);
+      const existingIdx = sharedActivity.findIndex(s => {
+        if (cleanCode && s.code === cleanCode) return true;
+        if (cleanBid && (s.bookingId === cleanBid || s.code === cleanBid)) return true;
+        return false;
+      });
       const entry = {
-        code: code,
+        code: cleanCode || (cleanBid ? 'Pending' : (code || '')),
+        bookingId: cleanBid,
         brand: brand || 'Voucher',
         amount: Number(amount) || 0,
         pin: pin || '',
@@ -6457,9 +6482,9 @@
       } else {
         sharedActivity.unshift(entry);
       }
-      const inMemVoucher = (state.vouchers || []).find(v => v.code === code);
+      const inMemVoucher = (state.vouchers || []).find(v => (cleanCode && v.code === cleanCode) || (cleanBid && v.bookingId === cleanBid));
       if (inMemVoucher) inMemVoucher.shared_at = entry.timestampMs;
-      const inMemStaging = (state.staging || []).find(s => s.code === code || s.id === code);
+      const inMemStaging = (state.staging || []).find(s => (cleanCode && s.code === cleanCode) || (cleanBid && (s.bookingId === cleanBid || s.id === cleanBid)));
       if (inMemStaging) inMemStaging.shared_at = entry.timestampMs;
       saveSharedActivity();
       renderDeckSelector();
@@ -6468,7 +6493,8 @@
       // Cloud Persistence: Shared_Activity tab in Google Sheets with rollback handler (SG4)
       const prevSharedSnapshot = [...sharedActivity];
       apiFetch('LOG_SHARED', {
-        code: code,
+        code: entry.code,
+        bookingId: cleanBid,
         brand: entry.brand,
         amount: entry.amount,
         pin: entry.pin,
@@ -6478,6 +6504,7 @@
         rollback: () => {
           sharedActivity = prevSharedSnapshot;
           if (inMemVoucher) delete inMemVoucher.shared_at;
+          if (inMemStaging) delete inMemStaging.shared_at;
           saveSharedActivity();
           renderDeckSelector();
           renderVault();
@@ -6837,6 +6864,7 @@
         originalTab: sheetBrand
       });
       saveRedeemedList();
+      saveEncryptedVouchers(state.vouchers);
 
       const summaryLabel = getBrandDisplayName(sheetBrand);
       const pendingRedeem = {
@@ -8813,8 +8841,8 @@
             .filter(s => {
               const bId = String(s.bookingId || '').trim().toUpperCase();
               const c = String(s.code || '').trim().toUpperCase();
-              if (bId && (isIdentifierQuarantined(bId) || inFlightApprovalKeys.has(bId))) return false;
-              if (c && (isIdentifierQuarantined(c) || inFlightApprovalKeys.has(c))) return false;
+              if (bId && (isIdentifierQuarantined(bId, 'staging') || inFlightApprovalKeys.has(bId))) return false;
+              if (c && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
               return true;
             })
             .map((s, idx) => {
@@ -9181,6 +9209,8 @@
           state.vouchers = data.vouchers.filter(v => {
             const c = (v.code || '').trim().toUpperCase();
             const bid = (v.bookingId || '').trim().toUpperCase();
+            if (c && isIdentifierQuarantined(c, 'voucher')) return false;
+            if (bid && isIdentifierQuarantined(bid, 'voucher')) return false;
             if (!c || c === '-' || c === 'PENDING') {
               if (bid && bid !== '-' && !bid.startsWith('#')) {
                 if (seenBookingIds.has(bid)) return false;
@@ -9381,9 +9411,10 @@
           sharedActivity = data.shared
             .filter(s => {
               const code = (s.code || '').trim();
-              if (!code) return false;
+              const bid = (s.bookingId || '').trim();
+              if (!code && !bid) return false;
               // Shield: Prevent sync flicker for recently dismissed or cleared shared activities
-              if (UniversalMutationJournal.isTombstoned(code) || UniversalMutationJournal.isTombstoned('shared-' + code)) {
+              if (UniversalMutationJournal.isTombstoned(code, 'shared') || UniversalMutationJournal.isTombstoned('shared-' + code, 'shared') || (bid && (UniversalMutationJournal.isTombstoned(bid, 'shared') || UniversalMutationJournal.isTombstoned('shared-' + bid, 'shared')))) {
                 return false;
               }
               return s.displayInUI !== false && String(s.displayInUI).toLowerCase() !== 'false';
@@ -9430,8 +9461,8 @@
             .filter(s => {
               const bId = String(s.bookingId || '').trim().toUpperCase();
               const c = String(s.code || '').trim().toUpperCase();
-              if (bId && (isIdentifierQuarantined(bId) || inFlightApprovalKeys.has(bId))) return false;
-              if (c && (isIdentifierQuarantined(c) || inFlightApprovalKeys.has(c))) return false;
+              if (bId && (isIdentifierQuarantined(bId, 'staging') || inFlightApprovalKeys.has(bId))) return false;
+              if (c && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
               return true;
             })
             .map((s, idx) => {
@@ -9523,7 +9554,7 @@
           await saveEncryptedStaging(state.staging);
         }
 
-        if (data.income) {
+        if (data.income && (Array.isArray(data.income.ledger) ? (data.income.ledger.length > 0 || !state.income || !Array.isArray(state.income.ledger) || state.income.ledger.length === 0) : true)) {
           state.income = data.income;
           await saveEncryptedIncome(state.income);
           if (state.activeWorkspace === 'income') {
@@ -9917,6 +9948,8 @@
         if (v.displayInUI === false || isVoucherRedeemed(v)) return false;
         const c = (v.code || '').trim();
         const bid = (v.bookingId || '').trim();
+        if (c && isIdentifierQuarantined(c, 'voucher')) return false;
+        if (bid && isIdentifierQuarantined(bid, 'voucher')) return false;
         if (!c || c === '-' || c.toUpperCase() === 'PENDING') {
           if (bid && bid !== '-' && !bid.startsWith('#')) {
             if (renderedBookings.has(bid)) return false;
@@ -12986,21 +13019,32 @@
         const mNum = String(m.accNumber || '').replace(/['\s]/g, '');
         const r = remoteAccounts.find(x => {
           const rNum = String(x.Account_Number || x.accNumber || '').replace(/['\s]/g, '');
-          return rNum && mNum && rNum === mNum;
+          const matchNum = rNum && mNum && rNum === mNum;
+          const matchId = (x.Account_ID && (x.Account_ID === m.id || x.Account_ID === m.accId)) || (x.id && x.id === m.id);
+          return matchNum || matchId;
         });
         if (!r) return { ...m };
+        const valCustId = r.Customer_ID !== undefined ? String(r.Customer_ID || '').replace(/^'/, '').trim() : (r.custId !== undefined ? String(r.custId || '').trim() : '');
+        const valUpi = r.UPI_VPA !== undefined ? String(r.UPI_VPA || '').trim() : (r.upi !== undefined ? String(r.upi || '').trim() : '');
+        const valAlias = r.Customer_ID_Alias !== undefined ? String(r.Customer_ID_Alias || '').trim() : (r.alias !== undefined ? String(r.alias || '').trim() : '');
+        const valBranch = r.Branch_Name !== undefined ? String(r.Branch_Name || '').trim() : (r.branch !== undefined ? String(r.branch || '').trim() : '');
+        const valSignOn = r.Sign_On_Password !== undefined ? String(r.Sign_On_Password || '').trim() : (r.signOnPass !== undefined ? String(r.signOnPass || '').trim() : '');
+        const valTxnPass = r.Transaction_Password !== undefined ? String(r.Transaction_Password || '').trim() : (r.txnPass !== undefined ? String(r.txnPass || '').trim() : '');
+        const valTxnPin = r.Transaction_PIN !== undefined ? String(r.Transaction_PIN || '').replace(/^'/, '').trim() : (r.txnPin !== undefined ? String(r.txnPin || '').trim() : '');
+        const valLoginPin = r.Login_PIN !== undefined ? String(r.Login_PIN || '').replace(/^'/, '').trim() : (r.loginPin !== undefined ? String(r.loginPin || '').trim() : '');
+        const valNotes = r.Notes !== undefined ? String(r.Notes || '').trim() : (r.notes !== undefined ? String(r.notes || '').trim() : '');
         return {
           ...m,
-          custId: r.Customer_ID !== undefined ? (String(r.Customer_ID || '').replace(/^'/, '').trim() || null) : (r.custId !== undefined ? r.custId : m.custId),
-          upi: r.UPI_VPA !== undefined ? (String(r.UPI_VPA || '').trim() || null) : (r.upi !== undefined ? r.upi : m.upi),
-          alias: r.Customer_ID_Alias !== undefined ? (String(r.Customer_ID_Alias || '').trim() || null) : (r.alias !== undefined ? r.alias : m.alias),
-          branch: r.Branch_Name !== undefined ? (String(r.Branch_Name || '').trim() || null) : (r.branch !== undefined ? r.branch : m.branch),
-          signOnPass: r.Sign_On_Password !== undefined ? (String(r.Sign_On_Password || '').trim() || null) : (r.signOnPass !== undefined ? r.signOnPass : m.signOnPass),
-          txnPass: r.Transaction_Password !== undefined ? (String(r.Transaction_Password || '').trim() || null) : (r.txnPass !== undefined ? r.txnPass : m.txnPass),
-          txnPin: r.Transaction_PIN !== undefined ? (String(r.Transaction_PIN || '').replace(/^'/, '').trim() || null) : (r.txnPin !== undefined ? r.txnPin : m.txnPin),
-          loginPin: r.Login_PIN !== undefined ? (String(r.Login_PIN || '').replace(/^'/, '').trim() || null) : (r.loginPin !== undefined ? r.loginPin : m.loginPin),
-          notes: r.Notes !== undefined ? (String(r.Notes || '').trim() || null) : (r.notes !== undefined ? r.notes : m.notes),
-          status: r.Status !== undefined ? (String(r.Status || 'ACTIVE').trim()) : (r.status || m.status || 'ACTIVE')
+          custId: valCustId || m.custId || null,
+          upi: valUpi || m.upi || null,
+          alias: valAlias || m.alias || null,
+          branch: valBranch || m.branch || null,
+          signOnPass: valSignOn || m.signOnPass || null,
+          txnPass: valTxnPass || m.txnPass || null,
+          txnPin: valTxnPin || m.txnPin || null,
+          loginPin: valLoginPin || m.loginPin || null,
+          notes: valNotes || m.notes || null,
+          status: r.Status !== undefined ? String(r.Status || 'ACTIVE').trim() : (r.status || m.status || 'ACTIVE')
         };
       });
     }
@@ -14639,7 +14683,7 @@
           return;
         }
         targets.forEach(v => {
-          logSharedActivity(v.code, v.brand, v.amount, v.pin);
+          logSharedActivity(v.code, v.brand, v.amount, v.pin, 'WhatsApp', v.bookingId);
         });
         if (state.isSelectMode) {
           state.isSelectMode = false;
@@ -14681,7 +14725,7 @@
       }
 
       targets.forEach(v => {
-        logSharedActivity(v.code, v.brand, v.amount, v.pin);
+        logSharedActivity(v.code, v.brand, v.amount, v.pin, 'WhatsApp', v.bookingId);
       });
 
       if (state.isSelectMode) {
@@ -14810,7 +14854,7 @@
     function _flushPendingShare() {
       if (state.pendingShareVoucher) {
         const pv = state.pendingShareVoucher;
-        logSharedActivity(pv.code, pv.brand, pv.amount, pv.pin);
+        logSharedActivity(pv.code, pv.brand, pv.amount, pv.pin, 'WhatsApp', pv.bookingId);
         state.pendingShareVoucher = null;
       }
     }
@@ -14851,9 +14895,10 @@
 
     function shareSingle(id) {
       let v = state.vouchers.find(x => x.id === id);
-      if (!v) v = state.vouchers.find(x => x.code === id);
+      if (!v) v = state.vouchers.find(x => x.code === id || (x.bookingId && x.bookingId === id));
+      if (!v) v = (state.staging || []).find(x => x.id === id || x.code === id || (x.bookingId && x.bookingId === id));
       if (!v) {
-        const s = sharedActivity.find(x => x.code === id);
+        const s = sharedActivity.find(x => x.code === id || (x.bookingId && x.bookingId === id));
         if (s) v = { ...s };
       }
       if (!v) return;
@@ -14864,7 +14909,7 @@
           title: `${getBrandDisplayName(v.brand || 'Voucher')} Voucher`,
           text: text
         }).then(() => {
-          logSharedActivity(v.code, v.brand, v.amount, v.pin);
+          logSharedActivity(v.code, v.brand, v.amount, v.pin, 'WhatsApp', v.bookingId);
           showToast('Shared & logged to Activity Log');
           renderDeckSelector();
         }).catch((err) => {
@@ -14967,6 +15012,7 @@
 
         saveSharedActivity();
         saveRedeemedList();
+        saveEncryptedVouchers(state.vouchers);
 
         state.selectedIds.clear();
 

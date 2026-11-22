@@ -3256,6 +3256,7 @@ function doGet(e) {
         }
       }
 
+      invalidateAppCache(['INCOME', 'VOUCHERS']);
       SpreadsheetApp.flush();
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -3605,10 +3606,6 @@ function doGet(e) {
         shared: vouchers.shared || [],
         income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
       };
-
-      if (wsParam === "vouchers") {
-        combined.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
-      }
 
       return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
     }
@@ -5411,7 +5408,8 @@ function doPost(e) {
           const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim();
           if (codes.has(rowCode.toUpperCase()) || codes.has(rowBid.toUpperCase())) {
             sheet.getRange(i + 1, 7).setValue(cardTag); // Col 7: Card
-            updated.push({ brand: sName, bookingId: rowBid, code: rowCode, card: cardTag });
+            const resolvedBrand = (sName === "New" && vals[i].length > 10 && vals[i][10]) ? String(vals[i][10]).trim() : sName;
+            updated.push({ brand: resolvedBrand, bookingId: rowBid, code: rowCode, card: cardTag });
           }
         }
       }
@@ -5487,6 +5485,7 @@ function doPost(e) {
       const sSheet = getOrInitSharedActivitySheet(ss);
       const items = Array.isArray(data.items) ? data.items : [{
         code: data.code,
+        bookingId: data.bookingId,
         brand: data.brand,
         amount: data.amount,
         pin: data.pin,
@@ -5496,8 +5495,9 @@ function doPost(e) {
       const logged = [];
 
       items.forEach(item => {
-        if (!item.code) return;
-        const cStr = String(item.code).replace(/^'/, '').trim();
+        const itemCode = (item.code && item.code !== 'Pending' && item.code !== '-') ? item.code : (item.bookingId || item.code || '');
+        if (!itemCode) return;
+        const cStr = String(itemCode).replace(/^'/, '').trim();
         const cStrUpper = cStr.toUpperCase();
         let foundIndex = -1;
         for (let i = 1; i < sRows.length; i++) {
