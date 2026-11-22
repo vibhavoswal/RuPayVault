@@ -2111,8 +2111,10 @@ function doGet(e) {
   // Data Migration: Split "RuPay Income" by moving negative card charges to "RuPay Charges"
   if (e && e.parameter && e.parameter.action === "MIGRATE_RUPAY_CHARGES_TAB") {
     const lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Server is busy processing another write operation. Please retry in a moment." })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
-      lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
       if (!incomeSheet) {
@@ -2199,8 +2201,10 @@ function doGet(e) {
   // Safeguards Audit Verification Endpoint for RECORD_INCOME_ENTRY & Date-Sorted Insertion
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_INCOME_DUMMY") {
     const lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Server is busy processing another write operation. Please retry in a moment." })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
-      lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
       if (!incomeSheet) return ContentService.createTextOutput(JSON.stringify({ error: "RuPay Income sheet not found" })).setMimeType(ContentService.MimeType.JSON);
@@ -2315,8 +2319,10 @@ function doGet(e) {
   // Safeguards Audit Verification Endpoint for MARK_VOUCHER_AS_SOLD (Atomic Ingested/Brand -> Redeemed + RuPay Income)
   if (e && e.parameter && e.parameter.action === "VERIFY_SAFEGUARD_SOLD_DUMMY") {
     const lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Server is busy processing another write operation. Please retry in a moment." })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
-      lock.tryLock(30000);
       const ss = getSpreadsheet();
       let nSheet = ss.getSheetByName("New");
       if (!nSheet) {
@@ -2962,8 +2968,10 @@ function doGet(e) {
   // Action: Take backup of "RuPay Income" as "RuPayIncomeBackup", format "RuPay Income" like other tabs, and tally
   if (e && e.parameter && e.parameter.action === "FORMAT_AND_BACKUP_RUPAY_INCOME") {
     const lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Server is busy processing another write operation. Please retry in a moment." })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
-      lock.tryLock(30000);
       const ss = getSpreadsheet();
       const incomeSheet = ss.getSheetByName("RuPay Income");
       if (!incomeSheet) {
@@ -3180,13 +3188,18 @@ function doGet(e) {
 
   // Action: Remove RuPay Income row & unmark sale in "New" tab
   if (e && e.parameter && e.parameter.action === "REMOVE_RUPAY_INCOME_AND_UNMARK_SALE") {
+    const targetBid = String(e.parameter.bookingId || '').trim();
+    const targetComments = String(e.parameter.comments || '').trim();
+    if (!targetBid && !targetComments) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Missing required bookingId or comments parameter" })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     const lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) {
+      return ContentService.createTextOutput(JSON.stringify({ error: "Server is busy processing another write operation. Please retry in a moment." })).setMimeType(ContentService.MimeType.JSON);
+    }
     try {
-      lock.tryLock(30000);
       const ss = getSpreadsheet();
-      
-      const targetBid = String(e.parameter.bookingId || "RUPS-38B3BF39").trim();
-      const targetComments = String(e.parameter.comments || "Account: lakshaysharma2067 | Jana DC 7267").trim();
       
       const incomeSheet = ss.getSheetByName("RuPay Income");
       let deletedIncomeRow = -1;
@@ -3197,7 +3210,7 @@ function doGet(e) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
-          if ((comm.includes("lakshaysharma2067") && comm.includes("7267")) || (targetComments && comm === targetComments)) {
+          if (targetComments && comm === targetComments) {
             deletedIncomeRow = r + 1;
             deletedData = iVals[r];
             incomeSheet.deleteRow(r + 1);
@@ -3211,7 +3224,7 @@ function doGet(e) {
 
       const newSheet = ss.getSheetByName("New");
       let unmarkedNewRow = -1;
-      if (newSheet) {
+      if (newSheet && targetBid) {
         const nVals = newSheet.getDataRange().getValues();
         for (let r = 1; r < nVals.length; r++) {
           const bId = String(nVals[r][0] || '').replace(/^'/, '').trim().toUpperCase();
@@ -5067,7 +5080,7 @@ function doPost(e) {
         const aRows = aSheet.getDataRange().getValues();
         for (let i = aRows.length - 1; i >= 1; i--) {
           const aNum = String(aRows[i][4] || '').replace(/['\s]/g, '').trim();
-          if (aNum === newCardNum) {
+          if (aNum === newCardNum || (newCardNum.length === 4 && aNum.endsWith(newCardNum))) {
             aSheet.deleteRow(i + 1);
             newDeleted = true;
             break;

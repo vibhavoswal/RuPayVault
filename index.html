@@ -6594,9 +6594,9 @@
       const prevShared = [...sharedActivity];
       const targetItem = sharedActivity.find(s => s.code === code);
       const brandName = targetItem ? getBrandDisplayName(targetItem.brand) : 'Shared';
-      const inMemVoucher = (state.vouchers || []).find(v => v.code === code);
+      const inMemVoucher = (state.vouchers || []).find(v => v.code === code || (v.bookingId && v.bookingId === code));
       if (inMemVoucher) delete inMemVoucher.shared_at;
-      const inMemStaging = (state.staging || []).find(s => s.code === code || s.id === code);
+      const inMemStaging = (state.staging || []).find(s => s.code === code || s.id === code || (s.bookingId && s.bookingId === code));
       if (inMemStaging) delete inMemStaging.shared_at;
 
       sharedActivity = sharedActivity.filter(s => s.code !== code);
@@ -7971,14 +7971,14 @@
               </div>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                  <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${item.title}</h4>
+                  <h4 class="text-xs font-bold text-[var(--theme-text-main)] truncate">${escapeHtml(item.title)}</h4>
                   <button type="button" onclick="event.stopPropagation(); openIncomePlacardInfo('item', '${safeItemId}')" class="p-0.5 rounded text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] transition-colors shrink-0" title="View details" aria-label="View details">
                     <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
                   </button>
                 </div>
                 <div class="text-[10px] text-[var(--theme-text-sub)] flex items-center gap-1.5 mt-0.5 truncate">
-                  <span>${item.date || ''}</span>
-                  ${item.account ? `<span>•</span><span class="font-mono text-[9px] opacity-75">${item.account}</span>` : ''}
+                  <span>${escapeHtml(item.date || '')}</span>
+                  ${item.account ? `<span>•</span><span class="font-mono text-[9px] opacity-75">${escapeHtml(item.account)}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -8112,14 +8112,14 @@
             ${item.account ? `
               <div class="flex items-center justify-between">
                 <span class="text-[var(--theme-text-sub)]">Account:</span>
-                <span class="font-mono font-bold text-[var(--theme-text-main)]">${item.account}</span>
+                <span class="font-mono font-bold text-[var(--theme-text-main)]">${escapeHtml(item.account)}</span>
               </div>
             ` : ''}
             ${item.comments ? `
               <div class="pt-2 border-t border-[var(--theme-border)] space-y-1">
                 <div class="text-[10px] uppercase font-bold text-[var(--theme-text-sub)]">Comments / Notes</div>
                 <div class="p-2.5 rounded-xl bg-black/20 border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] font-mono break-words leading-relaxed select-text">
-                  ${item.comments}
+                  ${escapeHtml(item.comments)}
                 </div>
               </div>
             ` : `
@@ -9847,7 +9847,7 @@
           : (isRecentlyShared
               ? 'border-[#007AFF]/40 shadow-sm bg-gradient-to-br from-neutral-900 to-neutral-950'
               : (isRecentArrival
-                  ? (isChecked ? 'cobalt-accent-dark border-neutral-800 ring-2 ring-[#0C8C46]/50' : 'cobalt-accent-dark border-neutral-800')
+                  ? 'cobalt-accent-dark border-neutral-800'
                   : 'border-neutral-800 hover:border-neutral-700 bg-gradient-to-br from-neutral-900 to-neutral-950'));
 
         // Bottom Line: ONLY for unshared recent arrivals (< 7 days) or pending commitments
@@ -10958,7 +10958,8 @@
           text: payload
         }).then(() => {
           showToast('Shared via iOS Share Sheet!');
-        }).catch(() => {
+        }).catch((err) => {
+          if (err && err.name === 'AbortError') return;
           copyToClipboard(payload);
           showToast('Card credentials copied to clipboard');
         });
@@ -14639,10 +14640,19 @@
     }
 
     function copyShareText() {
-      navigator.clipboard.writeText(document.getElementById('share-preview-text').value).then(() => {
+      const val = document.getElementById('share-preview-text').value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(val).then(() => {
+          _flushPendingShare();
+          showToast('Formatted WhatsApp text copied!');
+        }).catch(() => {
+          fallbackCopy(val);
+          _flushPendingShare();
+        });
+      } else {
+        fallbackCopy(val);
         _flushPendingShare();
-        showToast('Formatted WhatsApp text copied!');
-      });
+      }
     }
 
     function triggerNativeShare() {
@@ -14681,7 +14691,8 @@
           logSharedActivity(v.code, v.brand, v.amount, v.pin);
           showToast('Shared & logged to Activity Log');
           renderDeckSelector();
-        }).catch(() => {
+        }).catch((err) => {
+          if (err && err.name === 'AbortError') return;
           state.pendingShareVoucher = v;
           document.getElementById('share-preview-text').value = text;
           document.getElementById('modal-share').classList.remove('hidden');
