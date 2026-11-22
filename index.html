@@ -573,6 +573,17 @@
       background-color: #e2e8f0 !important;
       color: #0f172a !important;
     }
+    [data-theme="light"] #mb-sync-pill-btn.border-amber-500\/40,
+    [data-theme="light"] #cm-sync-pill-btn.border-amber-500\/40,
+    [data-theme="light"] #ba-sync-pill-btn.border-amber-500\/40,
+    [data-theme="light"] #in-sync-pill-btn.border-amber-500\/40,
+    html.light #mb-sync-pill-btn.border-amber-500\/40,
+    html.light #cm-sync-pill-btn.border-amber-500\/40,
+    html.light #ba-sync-pill-btn.border-amber-500\/40,
+    html.light #in-sync-pill-btn.border-amber-500\/40 {
+      border-color: rgba(245, 158, 11, 0.4) !important;
+      background-color: rgba(245, 158, 11, 0.1) !important;
+    }
     [data-theme="light"] #mb-sync-time:not(.is-syncing):not(.is-error),
     [data-theme="light"] #cm-sync-time:not(.is-syncing):not(.is-error),
     [data-theme="light"] #ba-sync-time:not(.is-syncing):not(.is-error),
@@ -2474,10 +2485,10 @@
       <!-- Right Cell: Sync Time OR Select All Button in Select Mode -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
         <div id="mb-header-tools" class="flex items-center gap-1.5">
-          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync Sheets" aria-label="Sync Sheets">
+          <button id="mb-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync with Google Sheets" aria-label="Sync with Google Sheets">
             <span id="mb-sync-dot" class="hidden"></span>
-            <svg aria-hidden="true" id="mb-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-            <span id="mb-sync-time" class="text-[10.5px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing font-mono-apple whitespace-nowrap shrink-0">Syncing...</span>
+            <svg aria-hidden="true" id="mb-sync-spinner" class="w-3.5 h-3.5 text-[#0C8C46] dark:text-emerald-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.09 9.09 16.5 10.5 10 17z"/></svg>
+            <span id="mb-sync-time" class="text-[10.5px] text-neutral-400 transition-colors font-mono-apple whitespace-nowrap shrink-0">Synced</span>
           </button>
         </div>
         <!-- Select All / Deselect All Button (visible only in select mode) -->
@@ -3032,10 +3043,10 @@
 
       <!-- Right Cell: Sync Time + Spinner, + Add Card -->
       <div class="flex items-center gap-1.5 h-9 justify-end">
-        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync Sheets" aria-label="Sync Sheets">
+        <button id="cm-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync with Google Sheets" aria-label="Sync with Google Sheets">
           <span id="cm-sync-dot" class="hidden"></span>
-          <svg aria-hidden="true" id="cm-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-          <span id="cm-sync-time" class="text-[10.5px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing font-mono-apple whitespace-nowrap shrink-0">Syncing...</span>
+          <svg aria-hidden="true" id="cm-sync-spinner" class="w-3.5 h-3.5 text-[#0C8C46] dark:text-emerald-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.09 9.09 16.5 10.5 10 17z"/></svg>
+          <span id="cm-sync-time" class="text-[10.5px] text-neutral-400 transition-colors font-mono-apple whitespace-nowrap shrink-0">Synced</span>
         </button>
         <button onclick="openAddCardModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-semibold flex items-center gap-1 active:scale-95 transition-all shadow-sm" title="Add RuPay Card">
           <span>+ Add</span>
@@ -3107,10 +3118,10 @@
             <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </span>
         </button>
-        <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-amber-500/40 bg-amber-500/10 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync Bank Accounts" aria-label="Sync Bank Accounts">
+        <button id="ba-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync with Google Sheets" aria-label="Sync with Google Sheets">
           <span id="ba-sync-dot" class="hidden"></span>
-          <svg aria-hidden="true" id="ba-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-          <span id="ba-sync-time" class="text-[10.5px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing font-mono-apple whitespace-nowrap shrink-0">Syncing...</span>
+          <svg aria-hidden="true" id="ba-sync-spinner" class="w-3.5 h-3.5 text-[#0C8C46] dark:text-emerald-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.09 9.09 16.5 10.5 10 17z"/></svg>
+          <span id="ba-sync-time" class="text-[10.5px] text-neutral-400 transition-colors font-mono-apple whitespace-nowrap shrink-0">Synced</span>
         </button>
       </div>
     </header>
@@ -3152,12 +3163,14 @@
         </button>
       </div>
 
-      <!-- Sync Status Pill -->
-      <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--theme-card-subtle)] hover:bg-[var(--theme-card-bg)] active:scale-95 border border-amber-500/40 bg-amber-500/10 text-[11px] text-[var(--theme-text-sub)] hover:text-[var(--theme-text-main)] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync with Google Sheets" aria-label="Sync with Google Sheets">
-        <span id="in-sync-dot" class="hidden"></span>
-        <svg aria-hidden="true" id="in-sync-spinner" class="w-3.5 h-3.5 text-amber-500 animate-spin transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        <span id="in-sync-time" class="text-[10.5px] text-[#ea580c] dark:text-[#F47A21] transition-colors is-syncing font-mono-apple whitespace-nowrap shrink-0">Syncing...</span>
-      </button>
+      <!-- Right Cell: Sync Status Pill -->
+      <div class="flex items-center gap-1.5 h-9 justify-end">
+        <button id="in-sync-pill-btn" onclick="syncWithGoogleSheets(true)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 border border-neutral-800 text-neutral-300 hover:text-white text-[11px] font-mono-apple transition-all duration-75 cursor-pointer select-none whitespace-nowrap shrink-0" title="Sync with Google Sheets" aria-label="Sync with Google Sheets">
+          <span id="in-sync-dot" class="hidden"></span>
+          <svg aria-hidden="true" id="in-sync-spinner" class="w-3.5 h-3.5 text-[#0C8C46] dark:text-emerald-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.09 9.09 16.5 10.5 10 17z"/></svg>
+          <span id="in-sync-time" class="text-[10.5px] text-neutral-400 transition-colors font-mono-apple whitespace-nowrap shrink-0">Synced</span>
+        </button>
+      </div>
     </header>
 
     <!-- Subheader: Year Selector & "+ Add" Action Bar -->
@@ -4906,10 +4919,12 @@
         if (pill) {
           if (isSaving) {
             pill.classList.add('border-amber-500/40', 'bg-amber-500/10');
+            pill.classList.remove('border-neutral-800');
             pill.title = 'Saving changes to Google Sheets...';
             pill.setAttribute('aria-label', 'Saving changes to Google Sheets');
           } else {
             pill.classList.remove('border-amber-500/40', 'bg-amber-500/10');
+            pill.classList.add('border-neutral-800');
             const savedTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
             pill.title = savedTime ? `Synced at ${savedTime} (Tap to sync)` : 'Synced with Google Sheets (Tap to sync)';
             pill.setAttribute('aria-label', savedTime ? `Synced at ${savedTime}` : 'Synced with Google Sheets');
@@ -7527,7 +7542,7 @@
         const cmTitle = document.getElementById('cm-capsule-brand-title');
         if (cmTitle) cmTitle.textContent = `${currentCardCategoryFilter || 'Debit'} Cards`;
 
-        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'banks') {
         isCardManagerOpen = false;
@@ -7539,7 +7554,7 @@
 
         renderBankManager();
 
-        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'income') {
         isCardManagerOpen = false;
@@ -7551,7 +7566,7 @@
 
         renderIncomeTracker();
 
-        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
@@ -7565,7 +7580,7 @@
         const mbTitle = document.getElementById('mb-capsule-brand-title');
         if (mbTitle && bConfig) mbTitle.textContent = bConfig.name;
 
-        const savedSyncTime = localStorage.getItem('rupay_sync_time');
+        const savedSyncTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
 
         renderDeckSelector();
@@ -8820,7 +8835,7 @@
           const el = document.getElementById(id);
           if (el) {
             el.classList.add('border-amber-500/40', 'bg-amber-500/10');
-            el.classList.remove('border-rose-500/30');
+            el.classList.remove('border-rose-500/30', 'border-neutral-800');
             el.title = 'Syncing live vouchers with Google Sheets...';
             el.setAttribute('aria-label', 'Syncing live vouchers');
           }
@@ -8860,6 +8875,7 @@
           const el = document.getElementById(id);
           if (el) {
             el.classList.remove('border-amber-500/40', 'bg-amber-500/10', 'border-rose-500/30');
+            el.classList.add('border-neutral-800');
             el.title = timeStr ? `Synced at ${timeStr} (Tap to sync)` : 'Synced with Google Sheets (Tap to sync)';
             el.setAttribute('aria-label', timeStr ? `Synced at ${timeStr}` : 'Synced with Google Sheets');
           }
@@ -14870,9 +14886,11 @@
       setActivityFilter('added');
 
       // 4. Restore last synced time to all headers only if not actively syncing
-      const savedTime = localStorage.getItem('rupay_sync_time');
+      const savedTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
       if (savedTime && !isSyncing) {
         updateAllSyncIndicators('success', savedTime);
+      } else if (!isSyncing) {
+        updateAllSyncIndicators('success', 'Synced');
       }
 
       // Initialize drawer sheet count if cache exists
