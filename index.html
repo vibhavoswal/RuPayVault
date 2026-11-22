@@ -2399,11 +2399,11 @@
           pattern="[0-9]*" 
           maxlength="6" 
           autocomplete="one-time-code" 
-          oninput="handleOtpInput(this)"
-          onkeydown="handleOtpKeydown(event, this)"
-          onpaste="handleOtpPaste(event)"
-          onfocus="updateOtpCellsDisplay()"
-          onblur="updateOtpCellsDisplay()"
+          oninput="if (typeof handleOtpInput === 'function') handleOtpInput(this)"
+          onkeydown="if (typeof handleOtpKeydown === 'function') handleOtpKeydown(event, this)"
+          onpaste="if (typeof handleOtpPaste === 'function') handleOtpPaste(event)"
+          onfocus="if (typeof updateOtpCellsDisplay === 'function') updateOtpCellsDisplay()"
+          onblur="if (typeof updateOtpCellsDisplay === 'function') updateOtpCellsDisplay()"
           class="absolute inset-0 w-full h-full opacity-0 z-20 cursor-pointer"
           autofocus
           aria-label="6-digit verification code"
@@ -4989,7 +4989,7 @@
                 });
               }
               // Retry on transient lock contention
-              if (data.error.includes('Server is processing another request') && attempt < maxAttempts) {
+              if ((data.error.includes('Server is processing another request') || data.error.includes('Server is busy processing')) && attempt < maxAttempts) {
                 await new Promise(r => setTimeout(r, 1200));
                 continue;
               }
@@ -7852,7 +7852,7 @@
       // Filter ledger by selected year
       const filteredYear = state.incomeYearFilter === 'all'
         ? ledger
-        : ledger.filter(item => String(item.year) === String(state.incomeYearFilter));
+        : ledger.filter(item => String(item.year || getIncomeYearFromDate(item.date) || '2026') === String(state.incomeYearFilter));
 
       let grossIncome = 0;
       let cardCharges = 0;
@@ -7914,7 +7914,7 @@
       // 1. Filter by Year
       let list = state.incomeYearFilter === 'all'
         ? ledger
-        : ledger.filter(item => String(item.year) === String(state.incomeYearFilter));
+        : ledger.filter(item => String(item.year || getIncomeYearFromDate(item.date) || '2026') === String(state.incomeYearFilter));
 
       // 2. Filter by Type
       if (state.incomeLedgerTypeFilter === 'income') {
@@ -8931,8 +8931,9 @@
     }
 
     function syncBankAccountsQuietly() {
-      const token = getSessionToken();
-      fetch(`${API_ENDPOINT}?action=GET_BANK_ACCOUNTS&token=${encodeURIComponent(token)}`)
+      const token = getSessionToken() || '';
+      const sep = API_ENDPOINT.includes('?') ? '&' : '?';
+      fetch(`${API_ENDPOINT}${sep}action=GET_BANK_ACCOUNTS&token=${encodeURIComponent(token)}`)
         .then(res => res.json())
         .then(async data => {
           if (data && data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
@@ -9038,13 +9039,13 @@
           const inFlightApprovals = MutationJournal.getApprovals();
           const inFlightUndos = MutationJournal.getUndos();
 
-          // Deduplication sets for remote data
+          // Deduplication sets for remote data (case-insensitive)
           const seenCodes = new Set();
           const seenBookingIds = new Set();
           state.vouchers = data.vouchers.filter(v => {
-            const c = (v.code || '').trim();
-            const bid = (v.bookingId || '').trim();
-            if (!c || c === '-' || c.toUpperCase() === 'PENDING') {
+            const c = (v.code || '').trim().toUpperCase();
+            const bid = (v.bookingId || '').trim().toUpperCase();
+            if (!c || c === '-' || c === 'PENDING') {
               if (bid && bid !== '-' && !bid.startsWith('#')) {
                 if (seenBookingIds.has(bid)) return false;
                 seenBookingIds.add(bid);
@@ -9121,11 +9122,11 @@
           inFlightApprovals.forEach(app => {
             const cUpper = (app.code || '').trim().toUpperCase();
             const bUpper = (app.bookingId || '').trim().toUpperCase();
-            const alreadyInRemote = (cUpper && seenCodes.has(app.code)) || (bUpper && seenBookingIds.has(app.bookingId));
+            const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(app);
-              if (app.code) seenCodes.add(app.code);
-              if (app.bookingId) seenBookingIds.add(app.bookingId);
+              if (cUpper) seenCodes.add(cUpper);
+              if (bUpper) seenBookingIds.add(bUpper);
             }
           });
 
@@ -9133,11 +9134,11 @@
           inFlightUndos.forEach(und => {
             const cUpper = (und.code || '').trim().toUpperCase();
             const bUpper = (und.bookingId || '').trim().toUpperCase();
-            const alreadyInRemote = (cUpper && seenCodes.has(und.code)) || (bUpper && seenBookingIds.has(und.bookingId));
+            const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(und);
-              if (und.code) seenCodes.add(und.code);
-              if (und.bookingId) seenBookingIds.add(und.bookingId);
+              if (cUpper) seenCodes.add(cUpper);
+              if (bUpper) seenBookingIds.add(bUpper);
             }
           });
 
@@ -9254,6 +9255,7 @@
             .map(s => ({
               code: s.code,
               brand: s.brand || 'Voucher',
+              bookingId: s.bookingId || (String(s.code || '').startsWith('RUPS-') ? s.code : ''),
               amount: (() => {
                 const nb = normalizeBrandKey(s.brand || '');
                 if (nb === 'SwiggyOne') return 1;
@@ -11000,16 +11002,23 @@
       const targetCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cardNum);
       const previousAccountFilter = currentCardAccountFilter;
 
+      let isUndone = false;
+      let phase2Timer = null;
+      let phase3Timer = null;
+      let phase4Timer = null;
+
       // Phase 1 (0ms): Tactile micro-press
       cardEl.style.transform = 'scale(0.98)';
 
       // Phase 2 (100ms): Horizontal slide through
-      setTimeout(() => {
+      phase2Timer = setTimeout(() => {
+        if (isUndone) return;
         cardEl.classList.add('anim-swipe-horizontal-700');
 
         // Zero Delay: Dispatch BLOCK_CARD immediately
         apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
           rollback: () => {
+            if (isUndone) return;
             state.cards = previousCards;
             currentCardAccountFilter = previousAccountFilter;
             UniversalMutationJournal.unquarantine(cardNum);
@@ -11026,6 +11035,18 @@
         showCardUndoBanner(
           `Blocked ${cardName} (••${cardNum.slice(-4)})`,
           async () => {
+            isUndone = true;
+            clearTimeout(phase2Timer);
+            clearTimeout(phase3Timer);
+            clearTimeout(phase4Timer);
+
+            // Revert visual transforms if element is still in DOM
+            const activeCardEl = document.getElementById(`card-box-${cardNum}`);
+            if (activeCardEl) {
+              activeCardEl.style.transform = '';
+              activeCardEl.classList.remove('anim-swipe-horizontal-700', 'anim-collapse-700');
+            }
+
             // UNDO ACTION: Revert local state, restore filter, unquarantine
             state.cards = previousCards;
             currentCardAccountFilter = previousAccountFilter;
@@ -11050,12 +11071,14 @@
       }, 100);
 
       // Phase 3 (380ms): Silky height collapse
-      setTimeout(() => {
+      phase3Timer = setTimeout(() => {
+        if (isUndone) return;
         cardEl.classList.add('anim-collapse-700');
       }, 380);
 
       // Phase 4 (800ms): Remove from memory & update UI optimistically
-      setTimeout(() => {
+      phase4Timer = setTimeout(() => {
+        if (isUndone) return;
         state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cardNum);
         if (targetCard) UniversalMutationJournal.recordBlock(cardNum, targetCard);
 
@@ -13893,12 +13916,13 @@
       // Safeguard 1 & 2: Unquarantine and journal
       UniversalMutationJournal.unquarantine(rawCode);
       const journalKey = `misc_${rawCode}`;
-      UniversalMutationJournal.record('MISC_VOUCHER_ADD', {
-        brandName,
-        code: rawCode,
-        pin,
-        amount
-      }, 60000);
+      UniversalMutationJournal.record(
+        'MISC_VOUCHER_ADD',
+        'voucher',
+        rawCode,
+        { brandName, code: rawCode, pin, amount },
+        [journalKey]
+      );
 
       // Safeguard 3: Optimistic local state update
       const tempId = 'misc_' + Date.now();
@@ -13957,7 +13981,7 @@
             }, {
               rollback: async () => {
                 state.vouchers = [optimisticVoucher, ...state.vouchers];
-                UniversalMutationJournal.record('MISC_VOUCHER_ADD', journalKey, { voucher: optimisticVoucher });
+                UniversalMutationJournal.record('MISC_VOUCHER_ADD', 'voucher', rawCode, { voucher: optimisticVoucher }, [journalKey]);
                 renderVault();
                 showToast('Failed to remove voucher from server');
               }

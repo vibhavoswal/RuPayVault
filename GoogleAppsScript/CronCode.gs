@@ -3925,7 +3925,18 @@ function doGet(e) {
 function doPost(e) {
   const ss = getSpreadsheet();
   try {
-    const data = JSON.parse(e.postData.contents);
+    let data = {};
+    if (e && e.postData && e.postData.contents) {
+      try {
+        data = JSON.parse(e.postData.contents);
+      } catch (jsonErr) {
+        return ContentService.createTextOutput(JSON.stringify({ error: "Malformed JSON payload: " + jsonErr.message })).setMimeType(ContentService.MimeType.JSON);
+      }
+    } else if (e && e.parameter) {
+      data = e.parameter;
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({ error: "No post data or parameters provided" })).setMimeType(ContentService.MimeType.JSON);
+    }
 
     // 0A. Request Email OTP (strictly to vibhavoswal3@gmail.com)
     if (data.action === "REQUEST_OTP") {
