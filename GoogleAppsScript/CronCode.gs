@@ -367,6 +367,22 @@ function getOrCreateHmacSecret() {
   return secret;
 }
 
+function invalidateAppCache(partitions) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const target = Array.isArray(partitions) ? partitions : ['CORE', 'VOUCHERS', 'INCOME'];
+    const keys = [];
+    if (target.includes('CORE')) keys.push('CACHE_CORE');
+    if (target.includes('VOUCHERS')) keys.push('CACHE_VOUCHERS');
+    if (target.includes('INCOME')) keys.push('CACHE_INCOME');
+    if (keys.length) {
+      cache.removeAll(keys);
+    }
+  } catch (err) {
+    console.warn('Cache invalidation warning:', err.message);
+  }
+}
+
 function generateSessionToken(email) {
   const now = Date.now();
   const expiry = now + (7 * 24 * 60 * 60 * 1000); // Strict 1-Week (7-Day) Sliding Window
@@ -902,6 +918,7 @@ function processRupayEmails() {
     reconcilePendingVouchers(ss);
 
     SpreadsheetApp.flush();
+    invalidateAppCache(['VOUCHERS', 'CORE']);
   } catch(err) {
     console.error("Error in processRupayEmails:", err);
   } finally {
@@ -3564,6 +3581,38 @@ function doGet(e) {
       }
     }
 
+    // High-Speed Fast Path: Return partitioned CacheService payload (~300ms)
+    const cache = CacheService.getScriptCache();
+    const wsParam = (e && e.parameter && e.parameter.workspace) ? String(e.parameter.workspace).toLowerCase() : "";
+    const cachedCoreStr = cache.get("CACHE_CORE");
+    const cachedVouchersStr = cache.get("CACHE_VOUCHERS");
+    const cachedIncomeStr = cache.get("CACHE_INCOME");
+
+    if (cachedCoreStr && cachedVouchersStr && (cachedIncomeStr || wsParam === "vouchers")) {
+      const core = JSON.parse(cachedCoreStr);
+      const vouchers = JSON.parse(cachedVouchersStr);
+      const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
+
+      const combined = {
+        sheetUrl: core.sheetUrl || ss.getUrl(),
+        unassigned: core.unassigned || [],
+        cooldowns: core.cooldowns || [],
+        cards: core.cards || [],
+        systemStatus: core.systemStatus || {},
+        vouchers: vouchers.vouchers || [],
+        staging: vouchers.staging || [],
+        redeemed: vouchers.redeemed || [],
+        shared: vouchers.shared || [],
+        income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
+      };
+
+      if (wsParam === "vouchers") {
+        combined.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
+      }
+
+      return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+    }
+
     const sheets = ss.getSheets();
     const sheetNameSet = new Set(sheets.map(s => s.getName()));
     // Ensure persistent system tabs exist if missing
@@ -3907,6 +3956,33 @@ function doGet(e) {
       };
     } catch (_) {}
 
+    // Store in CacheService partitioned into Core, Vouchers, and Income (6-hour TTL)
+    try {
+      const cache = CacheService.getScriptCache();
+      const partCore = JSON.stringify({
+        sheetUrl: result.sheetUrl,
+        unassigned: result.unassigned,
+        cooldowns: result.cooldowns,
+        cards: result.cards,
+        systemStatus: result.systemStatus
+      });
+      const partVouchers = JSON.stringify({
+        vouchers: result.vouchers,
+        staging: result.staging,
+        redeemed: result.redeemed,
+        shared: result.shared
+      });
+      const partIncome = JSON.stringify({
+        income: result.income
+      });
+
+      if (partCore.length < 100000) cache.put("CACHE_CORE", partCore, 21600);
+      if (partVouchers.length < 100000) cache.put("CACHE_VOUCHERS", partVouchers, 21600);
+      if (partIncome.length < 100000) cache.put("CACHE_INCOME", partIncome, 21600);
+    } catch (cErr) {
+      console.warn("CacheService store warning:", cErr.message);
+    }
+
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({
@@ -4111,7 +4187,10 @@ function doPost(e) {
     }
 
     try {
-        // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
+      // Invalidate partition cache immediately on mutative writes
+      invalidateAppCache();
+
+      // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
       if (data.action === "APPROVE_STAGING") {
         let newSheet = ss.getSheetByName("New");
         if (!newSheet) {

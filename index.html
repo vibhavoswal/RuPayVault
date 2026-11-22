@@ -2345,7 +2345,28 @@
       color: #0C8C46 !important;
     }
 
+    /* Instant 0ms Pre-Paint: Unhide app and suppress lock screen if authenticated session exists */
+    html.vault-authenticated #vault-lock-screen {
+      display: none !important;
+    }
+    html.vault-authenticated #mobile-app-container {
+      display: flex !important;
+    }
+
   </style>
+  <script>
+    (function() {
+      try {
+        const token = localStorage.getItem('rupay_session_token');
+        const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || urlParams.get('dev_unlock') === 'true';
+        if ((token && expiry && Date.now() < expiry) || isDev) {
+          document.documentElement.classList.add('vault-authenticated');
+        }
+      } catch (_) {}
+    })();
+  </script>
 </head>
 <body class="flex flex-col h-full w-full select-none">
 
@@ -3958,6 +3979,20 @@
     // Derive AES-GCM Key in memory for local encrypted cache from session token and salt
     async function deriveKeyFromSession(sessionSecret, saltBytes) {
       if (!sessionSecret) return null;
+      try {
+        const cachedJwkStr = sessionStorage.getItem('rupay_session_key_jwk');
+        if (cachedJwkStr) {
+          const jwk = JSON.parse(cachedJwkStr);
+          return await crypto.subtle.importKey(
+            "jwk",
+            jwk,
+            { name: "AES-GCM", length: 256 },
+            true,
+            ["encrypt", "decrypt"]
+          );
+        }
+      } catch (_) {}
+
       const enc = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
         "raw",
@@ -3966,7 +4001,7 @@
         false,
         ["deriveKey"]
       );
-      return crypto.subtle.deriveKey(
+      const derivedKey = await crypto.subtle.deriveKey(
         {
           name: "PBKDF2",
           salt: saltBytes,
@@ -3975,9 +4010,16 @@
         },
         keyMaterial,
         { name: "AES-GCM", length: 256 },
-        false,
+        true,
         ["encrypt", "decrypt"]
       );
+
+      try {
+        const exportedJwk = await crypto.subtle.exportKey("jwk", derivedKey);
+        sessionStorage.setItem('rupay_session_key_jwk', JSON.stringify(exportedJwk));
+      } catch (_) {}
+
+      return derivedKey;
     }
 
     // Encrypt payload with AES-GCM
@@ -4271,6 +4313,7 @@
 
     /* --- LOCK SCREEN DISPLAY CONTROLLER --- */
     function showLockScreen() {
+      document.documentElement.classList.remove('vault-authenticated');
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.remove('hidden');
@@ -4284,6 +4327,7 @@
     }
 
     function hideLockScreen() {
+      document.documentElement.classList.add('vault-authenticated');
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.add('hidden');
@@ -5167,6 +5211,10 @@
       state.income = { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] };
       state.selectedIds.clear();
       securityState.cryptoKey = null;
+      try {
+        sessionStorage.removeItem('rupay_session_key_jwk');
+      } catch (_) {}
+      document.documentElement.classList.remove('vault-authenticated');
 
       showLockScreen();
 
@@ -5177,6 +5225,10 @@
     async function lockVaultManual() {
       localStorage.removeItem('rupay_session_token');
       localStorage.removeItem('rupay_session_expiry');
+      try {
+        sessionStorage.removeItem('rupay_session_key_jwk');
+      } catch (_) {}
+      document.documentElement.classList.remove('vault-authenticated');
       await lockVault(true);
       showToast('Vault locked & session terminated');
     }
@@ -7261,6 +7313,10 @@
 
     function setIngestFilter(filter) {
       state.ingestFilter = filter; // 'untagged' | 'tagged'
+      try {
+        localStorage.setItem('rupay_ingest_filter', filter);
+        sessionStorage.setItem('rupay_ingest_filter', filter);
+      } catch (_) {}
       updateIngestFilterUI();
       state.selectedIds.clear();
       collapseActionMenu();
@@ -7289,7 +7345,10 @@
         state.selectedIds.clear();
         collapseActionMenu();
       }
-      activityFilter = 'added';
+      activityFilter = filter || 'added';
+      try {
+        sessionStorage.setItem('rupay_activity_filter', activityFilter);
+      } catch (_) {}
       updateIngestFilterUI();
       updateClearTrashBadges();
       renderDeckSelector();
@@ -9051,12 +9110,11 @@
         }
       }
 
-      // Mutation Mutex Shield: Prevent premature read during active write operations
-      // Icon-based saving indication: Amber spinner animates without janky text wrapping
+      // Non-blocking Mutation In-Flight Indication:
+      // UniversalMutationJournal & MutationJournal safely preserve optimistic updates without waterfall blocking
       if (pendingMutationsCount > 0) {
         syncPendingAfterMutation = true;
         updateSyncPulseIndicator(true);
-        return;
       }
 
       isSyncing = true;
@@ -9071,6 +9129,10 @@
         const params = new URLSearchParams();
         if (token) params.set('token', token);
         params.set('ingest', 'false');
+        const activeWs = state.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+        if (activeWs === 'vouchers') {
+          params.set('workspace', 'vouchers');
+        }
 
         const syncUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + params.toString();
         activeSyncController = new AbortController();
@@ -9732,16 +9794,22 @@
         ` : `
           <div class="py-12 px-6 text-center space-y-3 rounded-2xl bg-neutral-900/40 border border-neutral-800/60 my-4">
             <div class="w-12 h-12 mx-auto rounded-full bg-[#0C8C46]/10 border border-[#0C8C46]/20 flex items-center justify-center text-[#0C8C46] text-xl font-bold">
-              ${state.ingestFilter === 'untagged' 
-                ? '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' 
-                : '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>'
+              ${(!state.staging || state.staging.length === 0)
+                ? '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+                : (state.ingestFilter === 'untagged' 
+                  ? '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>' 
+                  : '<svg aria-hidden="true" class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>')
               }
             </div>
             <h4 class="font-bold text-sm text-neutral-200">
-              ${state.ingestFilter === 'untagged' ? 'No untagged vouchers' : 'No tagged vouchers'}
+              ${(!state.staging || state.staging.length === 0)
+                ? 'Inbox Zero'
+                : (state.ingestFilter === 'untagged' ? 'No untagged vouchers' : 'No tagged vouchers')}
             </h4>
             <p class="text-xs text-neutral-400 max-w-xs mx-auto leading-relaxed">
-              ${state.ingestFilter === 'untagged' ? 'All recent redemptions have been tagged with a card.' : 'Tag untagged vouchers to view them here.'}
+              ${(!state.staging || state.staging.length === 0)
+                ? 'All ingested redemptions have been processed and synced to sheets.'
+                : (state.ingestFilter === 'untagged' ? 'All recent redemptions have been tagged with a card.' : 'Tag untagged vouchers to view them here.')}
             </p>
           </div>
         `);
@@ -10101,6 +10169,7 @@
       state.activeFilterBrand = brand;
       try {
         localStorage.setItem('rupay_active_brand', brand);
+        sessionStorage.setItem('rupay_active_brand', brand);
       } catch(e) {}
 
 
@@ -15006,10 +15075,17 @@
         lockVault();
       }
 
-      // 3. Always default to Activity Log on page load/reload and sub-filter to Ingested
-      state.activeFilterBrand = 'ActivityLog';
-      localStorage.removeItem('rupay_active_brand');
-      setActivityFilter('added');
+      // 3. Restore last viewed Brand tab and filter continuity across reloads
+      const savedBrand = localStorage.getItem('rupay_active_brand') || sessionStorage.getItem('rupay_active_brand') || 'ActivityLog';
+      state.activeFilterBrand = savedBrand;
+      const savedIngestFilter = localStorage.getItem('rupay_ingest_filter') || sessionStorage.getItem('rupay_ingest_filter') || 'tagged';
+      state.ingestFilter = savedIngestFilter;
+      const savedActivityFilter = sessionStorage.getItem('rupay_activity_filter') || 'added';
+      activityFilter = savedActivityFilter;
+      setActivityFilter(savedActivityFilter);
+      if (savedBrand !== 'ActivityLog') {
+        filterVaultBrand(savedBrand, { preserveScroll: true });
+      }
 
       // 4. Restore last synced time to all headers only if not actively syncing
       const savedTime = localStorage.getItem('rupay_sync_time') || sessionStorage.getItem('rupay_last_sync_time');
