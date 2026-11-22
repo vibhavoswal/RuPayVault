@@ -4954,7 +4954,8 @@
       // Non-destructive, promotion, and restorative actions (additions, approvals, updates, or undos) must NEVER be quarantined
       const nonQuarantineActions = new Set([
         'TAG_CARD', 'ADD_CARD', 'ADD_MISC_VOUCHER', 'MARK_REVALIDATED', 'UNDO_MARK_REVALIDATED',
-        'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE',
+        'LOG_SHARED', 'RECORD_INCOME_ENTRY', 'UNDO_REDEEM', 'UNMARK_INGESTED_SALE', 'UNMARK_VOUCHER_SALE',
+        'RESTORE_DISMISSED_SHARED', 'RESTORE_DISMISSED_STAGING', 'RESTORE_CLEARED_ACTIVITY', 'RESTORE_CLEARED_REDEEMED',
         'APPROVE_STAGING'
       ]);
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
@@ -5465,6 +5466,7 @@
       const timeStr = act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
       const sharedRemainingMs = getVoucherSharedRemainingMs(act);
       const isCurrentlyShared = sharedRemainingMs > 0;
+      const dismissKey = (act.code && act.code !== 'Pending' && act.code !== '-') ? act.code : (act.bookingId || '');
 
       const catEl = document.getElementById('vdetail-category');
       if (catEl) {
@@ -5497,7 +5499,7 @@
                 <p class="text-xs text-neutral-300">
                   Shared indicator active on placard for 3 hours.
                 </p>
-                <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] font-bold active:scale-95 transition-all shrink-0">
+                <button onclick="dismissSharedActivity('${dismissKey}'); closeVoucherDetailSheet();" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] font-bold active:scale-95 transition-all shrink-0">
                   Dismiss
                 </button>
               </div>
@@ -5630,7 +5632,7 @@
               <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Mark as Redeemed</span>
             </button>
-            <button onclick="dismissSharedActivity('${act.code}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
+            <button onclick="dismissSharedActivity('${dismissKey}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all" title="Done" aria-label="Done">
@@ -5903,7 +5905,7 @@
       let act = (state.staging || []).find(s => s.id === id || s.bookingId === id || s.code === id);
       let isStaging = !!act;
       if (!act) {
-        act = state.vouchers.find(v => v.id === id || v.code === id);
+        act = state.vouchers.find(v => v.id === id || v.code === id || (v.bookingId && v.bookingId === id));
       }
       if (!act) {
         showToast('Voucher not found');
@@ -6063,9 +6065,35 @@
       const soldToInput = document.getElementById('ms-input-sold-to');
       const soldTo = (soldToInput ? soldToInput.value : '').trim();
 
-      // Build canonical title and comment string
-      const isPrime = brandKey.toLowerCase().includes('prime') || brandKey.toLowerCase().includes('amazon');
-      const incomeTitle = isPrime ? 'Amazon Prime' : 'Cult Fit';
+      // Build canonical title matching backend RuPay Income conventions
+      let incomeTitle = 'Cult Fit';
+      const bLow = brandKey.toLowerCase();
+      if (bLow.includes('prime') || bLow.includes('amazon')) {
+        incomeTitle = 'Amazon Prime';
+      } else if (bLow.includes('cult')) {
+        incomeTitle = 'Cult Fit';
+      } else if (bLow.includes('swiggy')) {
+        incomeTitle = 'SwiggyOne';
+      } else if (bLow.includes('thyrocare')) {
+        incomeTitle = 'Thyrocare';
+      } else if (bLow.includes('uber')) {
+        incomeTitle = 'Uber';
+      } else if (bLow.includes('kalyan')) {
+        incomeTitle = 'Kalyan';
+      } else if (bLow.includes('apollo')) {
+        incomeTitle = 'Apollo';
+      } else if (bLow.includes('lakme')) {
+        incomeTitle = 'Lakme';
+      } else if (bLow.includes('reliance')) {
+        incomeTitle = 'Reliance';
+      } else if (bLow.includes('four') || bLow.includes('fountain')) {
+        incomeTitle = 'FourFountains';
+      } else if (bLow.includes('big') || bLow.includes('basket')) {
+        incomeTitle = 'BigBasket';
+      } else {
+        incomeTitle = brandDisplay || brandKey;
+      }
+      const isPrime = bLow.includes('prime') || bLow.includes('amazon');
 
       // Amazon Prime does not use or log mobile number
       const mobileInput = document.getElementById('ms-input-mobile');
@@ -6589,32 +6617,58 @@
       );
     }
 
-    function dismissSharedActivity(code) {
-      if (!code) return;
+    function dismissSharedActivity(targetKey) {
+      if (!targetKey || targetKey === 'Pending' || targetKey === '-') return;
+      const cleanTarget = String(targetKey).trim().toUpperCase();
       const prevShared = [...sharedActivity];
-      const targetItem = sharedActivity.find(s => s.code === code);
+      const targetItem = sharedActivity.find(s => 
+        (s.code && s.code.toUpperCase() === cleanTarget) || 
+        (s.bookingId && s.bookingId.toUpperCase() === cleanTarget)
+      );
       const brandName = targetItem ? getBrandDisplayName(targetItem.brand) : 'Shared';
-      const inMemVoucher = (state.vouchers || []).find(v => v.code === code || (v.bookingId && v.bookingId === code));
+      const inMemVoucher = (state.vouchers || []).find(v => 
+        (v.code && v.code.toUpperCase() === cleanTarget) || 
+        (v.bookingId && v.bookingId.toUpperCase() === cleanTarget)
+      );
       if (inMemVoucher) delete inMemVoucher.shared_at;
-      const inMemStaging = (state.staging || []).find(s => s.code === code || s.id === code || (s.bookingId && s.bookingId === code));
+      const inMemStaging = (state.staging || []).find(s => 
+        (s.code && s.code.toUpperCase() === cleanTarget) || 
+        (s.id && s.id === targetKey) || 
+        (s.bookingId && s.bookingId.toUpperCase() === cleanTarget)
+      );
       if (inMemStaging) delete inMemStaging.shared_at;
 
-      sharedActivity = sharedActivity.filter(s => s.code !== code);
-      UniversalMutationJournal.recordTombstone(code, 'shared');
+      sharedActivity = sharedActivity.filter(s => {
+        const cMatch = s.code && s.code.toUpperCase() === cleanTarget;
+        const bMatch = s.bookingId && s.bookingId.toUpperCase() === cleanTarget;
+        return !cMatch && !bMatch;
+      });
+      UniversalMutationJournal.recordTombstone(cleanTarget, 'shared');
+      if (targetItem && targetItem.bookingId) {
+        UniversalMutationJournal.recordTombstone(targetItem.bookingId.toUpperCase(), 'shared');
+      }
+      if (targetItem && targetItem.code && targetItem.code !== 'Pending' && targetItem.code !== '-') {
+        UniversalMutationJournal.recordTombstone(targetItem.code.toUpperCase(), 'shared');
+      }
       saveSharedActivity();
       renderDeckSelector();
       renderVault();
       updateClearTrashBadges();
 
+      const apiPayload = {
+        code: (targetItem && targetItem.code && targetItem.code !== 'Pending' && targetItem.code !== '-') ? targetItem.code : cleanTarget,
+        bookingId: (targetItem && targetItem.bookingId) ? targetItem.bookingId : (cleanTarget.startsWith('RUPS-') ? cleanTarget : undefined)
+      };
+
       // Zero Delay: Dispatch DISMISS_SHARED immediately
-      apiFetch('DISMISS_SHARED', {
-        code: code
-      }, {
+      apiFetch('DISMISS_SHARED', apiPayload, {
         rollback: async () => {
           sharedActivity = prevShared;
           if (inMemVoucher) inMemVoucher.shared_at = targetItem ? targetItem.timestampMs : Date.now();
           if (inMemStaging) inMemStaging.shared_at = targetItem ? targetItem.timestampMs : Date.now();
-          UniversalMutationJournal.unquarantine(code);
+          UniversalMutationJournal.unquarantine(cleanTarget);
+          if (targetItem && targetItem.bookingId) UniversalMutationJournal.unquarantine(targetItem.bookingId);
+          if (targetItem && targetItem.code) UniversalMutationJournal.unquarantine(targetItem.code);
           saveSharedActivity();
           renderDeckSelector();
           renderVault();
@@ -6633,7 +6687,9 @@
           sharedActivity = prevShared;
           if (inMemVoucher) inMemVoucher.shared_at = targetItem ? targetItem.timestampMs : Date.now();
           if (inMemStaging) inMemStaging.shared_at = targetItem ? targetItem.timestampMs : Date.now();
-          UniversalMutationJournal.unquarantine(code);
+          UniversalMutationJournal.unquarantine(cleanTarget);
+          if (targetItem && targetItem.bookingId) UniversalMutationJournal.unquarantine(targetItem.bookingId);
+          if (targetItem && targetItem.code) UniversalMutationJournal.unquarantine(targetItem.code);
           saveSharedActivity();
           renderDeckSelector();
           renderVault();
@@ -6641,14 +6697,16 @@
           showToast('Dismissal undone.');
 
           try {
-            await apiFetch('RESTORE_DISMISSED_SHARED', {
-              code: code
-            }, {
+            await apiFetch('RESTORE_DISMISSED_SHARED', apiPayload, {
               rollback: async () => {
-                sharedActivity = sharedActivity.filter(s => s.code !== code);
+                sharedActivity = sharedActivity.filter(s => {
+                  const cMatch = s.code && s.code.toUpperCase() === cleanTarget;
+                  const bMatch = s.bookingId && s.bookingId.toUpperCase() === cleanTarget;
+                  return !cMatch && !bMatch;
+                });
                 if (inMemVoucher) delete inMemVoucher.shared_at;
                 if (inMemStaging) delete inMemStaging.shared_at;
-                UniversalMutationJournal.recordTombstone(code, 'shared');
+                UniversalMutationJournal.recordTombstone(cleanTarget, 'shared');
                 saveSharedActivity();
                 renderDeckSelector();
                 renderVault();
@@ -6678,7 +6736,12 @@
         return;
       }
 
-      sharedActivity = sharedActivity.filter(s => s.code !== code);
+      const cleanRedeemKey = String(code || '').trim().toUpperCase();
+      sharedActivity = sharedActivity.filter(s => {
+        const cMatch = s.code && s.code.toUpperCase() === cleanRedeemKey;
+        const bMatch = s.bookingId && s.bookingId.toUpperCase() === cleanRedeemKey;
+        return !cMatch && !bMatch;
+      });
       saveSharedActivity();
 
       let foundAmount = 0;
@@ -6747,6 +6810,7 @@
       hideUndoToast();
 
       const bookingIds = [];
+      const prevRedeemedList = [...redeemedList];
 
       targetCodes.forEach(c => {
         const matches = state.vouchers.filter(x => x.code === c || (x.bookingId && x.bookingId === c));
@@ -6797,7 +6861,15 @@
           UniversalMutationJournal.unquarantine(c);
           if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(restoredObj.bookingId);
         }
-        redeemedList = redeemedList.filter(x => x.code !== c && (!r?.bookingId || x.bookingId !== r.bookingId));
+        const cleanC = String(c || '').trim().toUpperCase();
+        const cleanRBooking = r?.bookingId ? String(r.bookingId).trim().toUpperCase() : '';
+        redeemedList = redeemedList.filter(x => {
+          const xCodeUpper = String(x.code || '').trim().toUpperCase();
+          const xBidUpper = String(x.bookingId || '').trim().toUpperCase();
+          const cMatch = cleanC && xCodeUpper === cleanC;
+          const bMatch = cleanRBooking && xBidUpper === cleanRBooking;
+          return !cMatch && !bMatch;
+        });
       });
       saveRedeemedList();
       saveEncryptedVouchers(state.vouchers);
@@ -6820,6 +6892,8 @@
           const v = state.vouchers.find(x => x.code === c);
           if (v) v.status = 'USED';
         });
+        redeemedList = prevRedeemedList;
+        saveRedeemedList();
         saveEncryptedVouchers(state.vouchers);
         renderDeckSelector();
         renderVault();
@@ -9813,7 +9887,7 @@
       // Mobile VIP Wallet Cards (Minimal Subtle Cobalt Edge Placards)
       document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
-        const isChecked = state.selectedIds.has(v.id);
+        const isChecked = state.selectedIds.has(v.id) || (v.code && state.selectedIds.has(v.code));
 
         const timeMs = v.timestampIST ? parseTimestamp(v.timestampIST) : 0;
         const isRecentArrival = (timeMs > 0 && (Date.now() - timeMs) <= (7 * 24 * 3600 * 1000));
@@ -13748,6 +13822,8 @@
       const bookingIdSet = new Set(bookingIds);
       const codeSet = new Set(codes);
       state.staging = state.staging.filter(s => !bookingIdSet.has(s.bookingId) && !codeSet.has(s.code));
+      saveEncryptedStaging(state.staging);
+      saveEncryptedVouchers(state.vouchers);
 
       // 3. Clear selection and exit Select Mode
       state.selectedIds.clear();
@@ -13761,7 +13837,10 @@
       showToast(`Approved ${approvedCount} voucher${approvedCount > 1 ? 's' : ''} to brand tab!`);
 
       // Transactional rollback callback if backend rejects or network fails
+      let rolledBack = false;
       const rollback = () => {
+        if (rolledBack) return;
+        rolledBack = true;
         approvedItemsToJournal.forEach(v => {
           if (v.code) {
             MutationJournal.removeApproval(v.code);
@@ -13943,6 +14022,7 @@
 
       const prevVouchers = [...state.vouchers];
       state.vouchers.unshift(optimisticVoucher);
+      saveEncryptedVouchers(state.vouchers);
       renderVault();
 
       // Zero Delay: Dispatch ADD_MISC_VOUCHER immediately
@@ -13954,6 +14034,7 @@
       }, {
         rollback: () => {
           state.vouchers = prevVouchers;
+          saveEncryptedVouchers(state.vouchers);
           renderVault();
           UniversalMutationJournal.remove(journalKey);
           showToast('Network error: failed to save voucher to sheet.');
@@ -13972,6 +14053,7 @@
           // UNDO ACTION: Revert local state and journal entry
           UniversalMutationJournal.remove(journalKey);
           state.vouchers = prevVouchers;
+          saveEncryptedVouchers(state.vouchers);
           renderVault();
           showToast('Voucher addition cancelled.');
 
@@ -13981,6 +14063,7 @@
             }, {
               rollback: async () => {
                 state.vouchers = [optimisticVoucher, ...state.vouchers];
+                saveEncryptedVouchers(state.vouchers);
                 UniversalMutationJournal.record('MISC_VOUCHER_ADD', 'voucher', rawCode, { voucher: optimisticVoucher }, [journalKey]);
                 renderVault();
                 showToast('Failed to remove voucher from server');
@@ -14781,7 +14864,15 @@
 
         targetVouchers.forEach(v => {
           v.status = 'USED';
-          sharedActivity = sharedActivity.filter(s => s.code !== v.code);
+          const vCodeUpper = String(v.code || '').trim().toUpperCase();
+          const vBidUpper = String(v.bookingId || '').trim().toUpperCase();
+          sharedActivity = sharedActivity.filter(s => {
+            const sCodeUpper = String(s.code || '').trim().toUpperCase();
+            const sBidUpper = String(s.bookingId || '').trim().toUpperCase();
+            const cMatch = vCodeUpper && sCodeUpper === vCodeUpper;
+            const bMatch = vBidUpper && sBidUpper === vBidUpper;
+            return !cMatch && !bMatch;
+          });
           if (!isVoucherRedeemed(v)) {
             redeemedList.unshift({
               code: v.code,

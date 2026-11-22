@@ -298,15 +298,14 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
 
   // If no strictly later row found, insert before TOTAL row if present, else append at bottom
   if (insertRowIndex === -1) {
-    const lastRow = sheet.getLastRow();
-    if (lastRow <= 1) {
+    if (vals.length <= 1) {
       insertRowIndex = 2;
     } else {
-      const lastCol0 = String(sheet.getRange(lastRow, 1).getValue() || '').trim().toUpperCase();
+      const lastCol0 = String(vals[vals.length - 1][0] || '').trim().toUpperCase();
       if (lastCol0 === 'TOTAL') {
-        insertRowIndex = lastRow;
+        insertRowIndex = vals.length;
       } else {
-        insertRowIndex = lastRow + 1;
+        insertRowIndex = vals.length + 1;
       }
     }
   }
@@ -3210,7 +3209,9 @@ function doGet(e) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
-          if (targetComments && comm === targetComments) {
+          const matchComment = targetComments && comm === targetComments;
+          const matchBidInComm = targetBid && comm.toUpperCase().includes(targetBid.toUpperCase());
+          if (matchComment || matchBidInComm) {
             deletedIncomeRow = r + 1;
             deletedData = iVals[r];
             incomeSheet.deleteRow(r + 1);
