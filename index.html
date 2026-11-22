@@ -3773,7 +3773,7 @@
 
       <!-- Footer -->
       <div class="pt-3 border-t border-[var(--theme-border)] flex items-center justify-between text-xs">
-        <span class="text-[10px] font-mono-apple text-[var(--theme-text-sub)]">Session 24h TTL</span>
+        <span class="text-[10px] font-mono-apple text-[var(--theme-text-sub)]">Session 7d TTL</span>
         <button onclick="closeNavDrawer(); lockVaultManual();" class="px-3 py-1.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-[#F47A21]/40 text-[#F47A21] font-bold active:scale-95 transition-all text-xs flex items-center gap-1.5">
           <svg aria-hidden="true" class="w-3.5 h-3.5 text-[#F47A21]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           <span>Lock Vault</span>
@@ -3911,7 +3911,7 @@
   <script>
     const API_ENDPOINT = "https://script.google.com/macros/s/AKfycbwna8RJuVnxHJrw8vA05j2l_lLbr62cuNNUgZL0fOzX1jCoxpKld2sYOxugXvCw_VK0ZQ/exec";
     const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/13TlzJsJ3E3vbXYi_FASgQtr9rhORpEho0I57CFTQcOA/edit?usp=sharing";
-    /* --- SECURITY & 24-HOUR EMAIL OTP SESSION ENGINE (vibhavoswal3@gmail.com) --- */
+    /* --- SECURITY & 1-WEEK EMAIL OTP SESSION ENGINE (vibhavoswal3@gmail.com) --- */
     const securityState = {
       isUnlocked: false,
       enteredPin: '',
@@ -3939,7 +3939,7 @@
       }
     }
 
-    // Check if 24-Hour session is active and not expired
+    // Check if 1-Week session is active and not expired
     function isSessionValid() {
       if (isDevEnvironment()) return true;
       const expiry = Number(localStorage.getItem('rupay_session_expiry') || 0);
@@ -4419,7 +4419,7 @@
       }
     }
 
-    // Verify OTP with Server & Issue 24-Hour Session Token
+    // Verify OTP with Server & Issue 1-Week Session Token
     async function verifyEnteredPin() {
       const input = document.getElementById('vault-otp-input');
       const entered = (input && input.value) ? input.value.replace(/\D/g, '').slice(0, 6) : securityState.enteredPin;
@@ -4507,7 +4507,7 @@
                   pending.reject(err);
                 }
               } else {
-                showToast('Vault Unlocked · 24-Hour Session Active');
+                showToast('Vault Unlocked · 1-Week Session Active');
               }
             } catch (unlockErr) {
               console.error('Critical unlock error:', unlockErr);
@@ -5173,7 +5173,7 @@
       renderAll();
     }
 
-    // Explicit User Lock (Invalidates 24-Hour Session)
+    // Explicit User Lock (Invalidates 1-Week Session)
     async function lockVaultManual() {
       localStorage.removeItem('rupay_session_token');
       localStorage.removeItem('rupay_session_expiry');
@@ -14994,7 +14994,7 @@
       const sheetLink = document.getElementById('sheet-link-btn');
       if (sheetLink) sheetLink.href = activeSheetUrl;
 
-      // 2. Initialize security: Check 24-Hour session & hydrate encrypted cache
+      // 2. Initialize security: Check 1-Week session & hydrate encrypted cache
       const isDevUnlock = isDevEnvironment();
 
       if (isSessionValid() || isDevUnlock) {

@@ -355,7 +355,7 @@ function getTargetBrandSheet(ss, brand) {
 }
 
 /**
- * 0. AUTHENTICATION & 24-HOUR HMAC SESSION ENGINE (Restricted to vibhavoswal3@gmail.com)
+ * 0. AUTHENTICATION & 1-WEEK HMAC SESSION ENGINE (Restricted to vibhavoswal3@gmail.com)
  */
 function getOrCreateHmacSecret() {
   const props = PropertiesService.getScriptProperties();
@@ -369,7 +369,7 @@ function getOrCreateHmacSecret() {
 
 function generateSessionToken(email) {
   const now = Date.now();
-  const expiry = now + (24 * 60 * 60 * 1000); // Strict 24-Hour Sliding Window
+  const expiry = now + (7 * 24 * 60 * 60 * 1000); // Strict 1-Week (7-Day) Sliding Window
   const secret = getOrCreateHmacSecret();
   const payloadStr = email + ":" + now + ":" + expiry;
   const payloadB64 = Utilities.base64Encode(payloadStr);
@@ -3466,7 +3466,7 @@ function doGet(e) {
     }
   }
 
-  // Fetch all Bank Accounts in JSON format (Requires 24-Hour Session Token)
+  // Fetch all Bank Accounts in JSON format (Requires 1-Week Session Token)
   if (e && e.parameter && e.parameter.action === "GET_BANK_ACCOUNTS") {
     const providedAuth = e.parameter.token || e.parameter.auth || e.parameter.key || "";
     const authCheck = validateAuth(providedAuth);
@@ -3500,7 +3500,7 @@ function doGet(e) {
     }
   }
 
-  // SECURITY CHECK: Enforce 24-Hour HMAC Session Token
+  // SECURITY CHECK: Enforce 1-Week HMAC Session Token
   const providedAuth = (e && e.parameter) ? (e.parameter.token || e.parameter.auth || e.parameter.key || "") : "";
   const authCheck = validateAuth(providedAuth);
   if (!authCheck.valid) {
@@ -4037,7 +4037,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // 0B. Verify OTP and issue 24-hour Session Token
+    // 0B. Verify OTP and issue 1-Week Session Token
     if (data.action === "VERIFY_OTP") {
       const props = PropertiesService.getScriptProperties();
       const storedOtp = props.getProperty("VAULT_ACTIVE_OTP");
@@ -4055,7 +4055,7 @@ function doPost(e) {
       props.deleteProperty("VAULT_ACTIVE_OTP");
       props.deleteProperty("VAULT_OTP_EXPIRES_AT");
 
-      // Generate 24-hour session token
+      // Generate 1-Week session token
       const session = generateSessionToken(AUTHORIZED_USER);
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -4066,7 +4066,7 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Protected actions: Validate 24-Hour HMAC Session Token
+    // Protected actions: Validate 1-Week HMAC Session Token
     const providedAuth = data.token || data.auth || (e.parameter ? (e.parameter.token || e.parameter.auth || e.parameter.key) : "") || "";
     const authCheck = validateAuth(providedAuth);
     if (!authCheck.valid) {
