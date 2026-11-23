@@ -6925,10 +6925,12 @@
       saveEncryptedVouchers(state.vouchers);
 
       const summaryLabel = getBrandDisplayName(sheetBrand);
+      const resolvedBid = (v ? v.bookingId : '') || bookingId || '';
       const pendingRedeem = {
-        items: [{ brand: normalizeBrandKey(sheetBrand), code: code, bookingId: (v ? v.bookingId : '') || bookingId || '' }],
+        items: [{ brand: normalizeBrandKey(sheetBrand), code: code, bookingId: resolvedBid }],
         byBrand: { [sheetBrand]: [code] },
         codes: [code],
+        bookingIds: resolvedBid && resolvedBid !== '-' && !resolvedBid.startsWith('#') ? [resolvedBid] : [],
         brandName: summaryLabel,
         isCommitted: false,
         prevVouchers: prevVouchersSnapshot,
@@ -7013,8 +7015,8 @@
 
         if (restoredObj) {
           MutationJournal.recordUndo(restoredObj);
-          UniversalMutationJournal.unquarantine(c);
-          if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(restoredObj.bookingId);
+          UniversalMutationJournal.unquarantine(cleanC);
+          if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(String(restoredObj.bookingId).replace(/^'/, '').trim().toUpperCase());
         }
         const cleanRBooking = r?.bookingId ? String(r.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
         redeemedList = redeemedList.filter(x => {
@@ -7051,8 +7053,13 @@
 
       const rollbackUndo = () => {
         targetCodes.forEach(c => {
-          MutationJournal.removeUndo(c);
-          const v = state.vouchers.find(x => x.code === c);
+          const cleanC = String(c).replace(/^'/, '').trim().toUpperCase();
+          MutationJournal.removeUndo(cleanC);
+          const v = state.vouchers.find(x => {
+            const xc = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+            const xb = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            return (xc && xc === cleanC) || (xb && xb === cleanC);
+          });
           if (v) v.status = 'USED';
         });
         redeemedList = prevRedeemedList;
@@ -7381,18 +7388,18 @@
             : (pending.codes || []).map(c => ({ code: c }))
         );
         const items = rawItems.map(it => ({
-          bookingId: it.bookingId || '',
+          bookingId: String(it.bookingId || '').replace(/^'/, '').trim(),
           brand: normalizeBrandKey(it.brand || ''),
-          code: it.code || ''
+          code: String(it.code || '').replace(/^'/, '').trim()
         }));
 
+        const cleanCodes = (pending.codes || []).map(c => String(c).replace(/^'/, '').trim()).filter(Boolean);
+        const cleanBids = (pending.bookingIds || []).map(b => String(b).replace(/^'/, '').trim()).filter(Boolean);
+
         const rollbackRedeem = () => {
-          removeUncommittedRedeem(pending.codes);
-          if (pending.codes) {
-            (Array.isArray(pending.codes) ? pending.codes : [pending.codes]).forEach(c => {
-              UniversalMutationJournal.unquarantine(c);
-            });
-          }
+          removeUncommittedRedeem(cleanCodes);
+          cleanCodes.forEach(c => UniversalMutationJournal.unquarantine(c.toUpperCase()));
+          cleanBids.forEach(b => UniversalMutationJournal.unquarantine(b.toUpperCase()));
           if (pending.prevVouchers && Array.isArray(pending.prevVouchers)) {
             state.vouchers = [...pending.prevVouchers];
             saveEncryptedVouchers(state.vouchers);
@@ -7407,7 +7414,8 @@
 
         const res = await apiFetch('MOVE_TO_REDEEMED', {
           items: items,
-          codes: pending.codes || []
+          codes: cleanCodes,
+          bookingIds: cleanBids
         }, { silent: true, keepalive: !!options.keepalive, rollback: rollbackRedeem });
 
         if (res && res.error) {
@@ -9801,15 +9809,24 @@
 
         // Search Filter (Desktop)
         if (state.searchQuery) {
-          const q = state.searchQuery.toLowerCase();
-          allActivities = allActivities.filter(a =>
-            (a.brand && a.brand.toLowerCase().includes(q)) ||
-            (a.code && a.code.toLowerCase().includes(q)) ||
-            (a.bookingId && a.bookingId.toLowerCase().includes(q)) ||
-            (a.account && a.account.toLowerCase().includes(q)) ||
-            (a.card && a.card.toLowerCase().includes(q)) ||
-            (a.pin && String(a.pin).toLowerCase().includes(q))
-          );
+          const q = state.searchQuery.trim().toLowerCase();
+          const cleanQ = q.replace(/^'/, '');
+          allActivities = allActivities.filter(a => {
+            const b = String(a.brand || '').toLowerCase();
+            const c = String(a.code || '').replace(/^'/, '').toLowerCase();
+            const bid = String(a.bookingId || '').replace(/^'/, '').toLowerCase();
+            const acc = String(a.account || '').toLowerCase();
+            const crd = String(a.card || '').toLowerCase();
+            const pin = String(a.pin || '').replace(/^'/, '').toLowerCase();
+            return (
+              b.includes(q) || (cleanQ && b.includes(cleanQ)) ||
+              c.includes(q) || (cleanQ && c.includes(cleanQ)) ||
+              bid.includes(q) || (cleanQ && bid.includes(cleanQ)) ||
+              acc.includes(q) || (cleanQ && acc.includes(cleanQ)) ||
+              crd.includes(q) || (cleanQ && crd.includes(cleanQ)) ||
+              pin.includes(q) || (cleanQ && pin.includes(cleanQ))
+            );
+          });
         }
 
         // Sort Priority for Ingested:
@@ -9960,15 +9977,24 @@
       if (isRedeemedTab) {
         let rList = redeemedList.filter(r => r.displayInUI !== false);
         if (state.searchQuery) {
-          const q = state.searchQuery.toLowerCase();
-          rList = rList.filter(r =>
-            (r.brand && r.brand.toLowerCase().includes(q)) ||
-            (r.code && r.code.toLowerCase().includes(q)) ||
-            (r.bookingId && r.bookingId.toLowerCase().includes(q)) ||
-            (r.account && r.account.toLowerCase().includes(q)) ||
-            (r.card && r.card.toLowerCase().includes(q)) ||
-            (r.pin && String(r.pin).toLowerCase().includes(q))
-          );
+          const q = state.searchQuery.trim().toLowerCase();
+          const cleanQ = q.replace(/^'/, '');
+          rList = rList.filter(r => {
+            const b = String(r.brand || '').toLowerCase();
+            const c = String(r.code || '').replace(/^'/, '').toLowerCase();
+            const bid = String(r.bookingId || '').replace(/^'/, '').toLowerCase();
+            const acc = String(r.account || '').toLowerCase();
+            const crd = String(r.card || '').toLowerCase();
+            const pin = String(r.pin || '').replace(/^'/, '').toLowerCase();
+            return (
+              b.includes(q) || (cleanQ && b.includes(cleanQ)) ||
+              c.includes(q) || (cleanQ && c.includes(cleanQ)) ||
+              bid.includes(q) || (cleanQ && bid.includes(cleanQ)) ||
+              acc.includes(q) || (cleanQ && acc.includes(cleanQ)) ||
+              crd.includes(q) || (cleanQ && crd.includes(cleanQ)) ||
+              pin.includes(q) || (cleanQ && pin.includes(cleanQ))
+            );
+          });
         }
 
 
@@ -10068,15 +10094,24 @@
         return true;
       });
       if (state.searchQuery) {
-        const q = state.searchQuery.toLowerCase();
-        vs = vs.filter(v => 
-          (v.brand && v.brand.toLowerCase().includes(q)) ||
-          (v.code && v.code.toLowerCase().includes(q)) ||
-          (v.bookingId && v.bookingId.toLowerCase().includes(q)) ||
-          (v.account && v.account.toLowerCase().includes(q)) ||
-          (v.card && v.card.toLowerCase().includes(q)) ||
-          (v.pin && String(v.pin).toLowerCase().includes(q))
-        );
+        const q = state.searchQuery.trim().toLowerCase();
+        const cleanQ = q.replace(/^'/, '');
+        vs = vs.filter(v => {
+          const b = String(v.brand || '').toLowerCase();
+          const c = String(v.code || '').replace(/^'/, '').toLowerCase();
+          const bid = String(v.bookingId || '').replace(/^'/, '').toLowerCase();
+          const acc = String(v.account || '').toLowerCase();
+          const crd = String(v.card || '').toLowerCase();
+          const pin = String(v.pin || '').replace(/^'/, '').toLowerCase();
+          return (
+            b.includes(q) || (cleanQ && b.includes(cleanQ)) ||
+            c.includes(q) || (cleanQ && c.includes(cleanQ)) ||
+            bid.includes(q) || (cleanQ && bid.includes(cleanQ)) ||
+            acc.includes(q) || (cleanQ && acc.includes(cleanQ)) ||
+            crd.includes(q) || (cleanQ && crd.includes(cleanQ)) ||
+            pin.includes(q) || (cleanQ && pin.includes(cleanQ))
+          );
+        });
       }
 
       // Sort: Reverse-chronological by timestampIST (newest arrivals on top). Untimestamped vouchers below in original sheet order.
@@ -15169,10 +15204,12 @@
 
         const summaryLabel = targetVouchers.length === 1 ? getBrandDisplayName(targetVouchers[0].brand) : `${targetVouchers.length} vouchers`;
 
+        const movedBids = targetVouchers.map(v => v.bookingId).filter(b => b && b !== '-' && !b.startsWith('#'));
         const pendingRedeem = {
           items: targetVouchers.map(v => ({ brand: normalizeBrandKey(v.brand), code: v.code, bookingId: (v ? v.bookingId : '') || '' })),
           byBrand: byBrand,
           codes: movedCodes,
+          bookingIds: movedBids,
           brandName: summaryLabel,
           isCommitted: false,
           prevVouchers: prevVouchersSnapshot,

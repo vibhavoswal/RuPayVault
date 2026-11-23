@@ -1009,8 +1009,8 @@ function extractAmount(body, brand) {
  * Hierarchical Invariant: Primary match on RUPS- Booking ID; Fallback to unique Voucher Code.
  */
 function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
-  const bUpper = (bookingId && bookingId !== '-' && !bookingId.startsWith('#')) ? String(bookingId).trim().toUpperCase() : '';
-  const cUpper = (code && code !== '-' && code.toUpperCase() !== 'PENDING' && !/processing/i.test(code)) ? String(code).trim().toUpperCase() : '';
+  const bUpper = (bookingId && bookingId !== '-' && !bookingId.startsWith('#')) ? String(bookingId).replace(/^'/, '').trim().toUpperCase() : '';
+  const cUpper = (code && code !== '-' && code.toUpperCase() !== 'PENDING' && !/processing/i.test(code)) ? String(code).replace(/^'/, '').trim().toUpperCase() : '';
   if (!bUpper && !cUpper) return null;
 
   const checkSheet = (sheet) => {
@@ -1130,7 +1130,7 @@ function recordPendingRevalidation(ss, data) {
   // Determine canonical target brand (Col 11)
   const canonicalBrand = extractBrand(data.brand, "");
   const targetBrand = canonicalBrand !== "Other" ? canonicalBrand : (data.brand || "Unassigned");
-  const targetBid = String(data.bookingId || '').trim().toUpperCase();
+  const targetBid = String(data.bookingId || '').replace(/^'/, '').trim().toUpperCase();
 
   // Guard 0: If user has explicitly marked this booking as revalidated, NEVER revert to PENDING_REVALIDATION!
   if (isBookingRevalidated(targetBid)) {
@@ -1147,7 +1147,7 @@ function recordPendingRevalidation(ss, data) {
   // 1. Search "New" tab by Booking ID
   const newRows = newSheet.getDataRange().getValues();
   for (let i = 1; i < newRows.length; i++) {
-    const rowBid = String(newRows[i][0] || '').trim().toUpperCase();
+    const rowBid = String(newRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
     if (rowBid === targetBid || (rowBid.startsWith("RUPS-") && targetBid.includes(rowBid)) || (targetBid.startsWith("RUPS-") && rowBid.includes(targetBid))) {
       const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
       const currentCode = String(newRows[i][1] || '').trim();
@@ -4309,14 +4309,14 @@ function doPost(e) {
         if (!newSheet) {
           return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
         }
-        const targetBid = String(data.bookingId || data.id || '').trim().toUpperCase();
+        const targetBid = String(data.bookingId || data.id || '').replace(/^'/, '').trim().toUpperCase();
         if (!targetBid) {
           return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
         }
         const dataRows = newSheet.getDataRange().getValues();
         let updated = false;
         for (let r = 1; r < dataRows.length; r++) {
-          const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
+          const rowBid = String(dataRows[r][0] || '').replace(/^'/, '').trim().toUpperCase();
           if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
             newSheet.getRange(r + 1, 2).setValue("'Pending");
             newSheet.getRange(r + 1, 8).setValue('REVALIDATED');
@@ -4342,7 +4342,7 @@ function doPost(e) {
         if (!newSheet) {
           return ContentService.createTextOutput(JSON.stringify({ error: '"New" tab not found' })).setMimeType(ContentService.MimeType.JSON);
         }
-        const targetBid = String(data.bookingId || data.id || '').trim().toUpperCase();
+        const targetBid = String(data.bookingId || data.id || '').replace(/^'/, '').trim().toUpperCase();
         if (!targetBid) {
           return ContentService.createTextOutput(JSON.stringify({ error: 'No booking ID provided' })).setMimeType(ContentService.MimeType.JSON);
         }
@@ -4350,7 +4350,7 @@ function doPost(e) {
         const dataRows = newSheet.getDataRange().getValues();
         let updated = false;
         for (let r = 1; r < dataRows.length; r++) {
-          const rowBid = String(dataRows[r][0] || '').trim().toUpperCase();
+          const rowBid = String(dataRows[r][0] || '').replace(/^'/, '').trim().toUpperCase();
           if (rowBid === targetBid || (rowBid.startsWith('RUPS-') && targetBid.includes(rowBid)) || (targetBid.startsWith('RUPS-') && rowBid.includes(targetBid))) {
             newSheet.getRange(r + 1, 2).setValue("'Pending revalidation");
             newSheet.getRange(r + 1, 8).setValue('PENDING_REVALIDATION');
@@ -5818,11 +5818,17 @@ function doPost(e) {
       const codes = new Set(
         (Array.isArray(rawCodes) ? rawCodes : [rawCodes])
           .map(c => String(c).replace(/^'/, '').trim().toUpperCase())
-          .filter(Boolean)
+          .filter(c => c && c !== 'PENDING' && !/processing/i.test(c) && c !== '-' && !c.startsWith('#'))
       );
-      if (data.bookingId) codes.add(String(data.bookingId).replace(/^'/, '').trim().toUpperCase());
+      if (data.bookingId) {
+        const b = String(data.bookingId).replace(/^'/, '').trim().toUpperCase();
+        if (b && b !== '-' && !b.startsWith('#')) codes.add(b);
+      }
       if (data.bookingIds && Array.isArray(data.bookingIds)) {
-        data.bookingIds.forEach(b => codes.add(String(b).replace(/^'/, '').trim().toUpperCase()));
+        data.bookingIds.forEach(b => {
+          const bStr = String(b).replace(/^'/, '').trim().toUpperCase();
+          if (bStr && bStr !== '-' && !bStr.startsWith('#')) codes.add(bStr);
+        });
       }
       const restored = [];
 
@@ -5832,7 +5838,7 @@ function doPost(e) {
           const vals = sh.getDataRange().getValues();
           for (let i = 1; i < vals.length; i++) {
             const rowCode = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
-            if (rowCode && codes.has(rowCode)) {
+            if (rowCode && rowCode !== '-' && codes.has(rowCode)) {
               sh.getRange(i + 1, 8).setValue(true); // Col 8: Display in UI = TRUE
               sh.getRange(i + 1, 6).setValue("DELIVERED");
               restored.push(rowCode);
@@ -5847,7 +5853,9 @@ function doPost(e) {
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
             const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim().toUpperCase();
-            if ((rowBid && codes.has(rowBid)) || (rowCode && codes.has(rowCode))) {
+            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
+            const codeMatch = rowCode && rowCode !== '-' && rowCode !== 'PENDING' && codes.has(rowCode);
+            if (bidMatch || codeMatch) {
               newSheet.getRange(i + 1, 10).setValue(true); // Col 10: Display in UI = TRUE
               restored.push(rowBid || rowCode);
             }
@@ -5860,7 +5868,9 @@ function doPost(e) {
           for (let i = 1; i < vals.length; i++) {
             const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim().toUpperCase();
             const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim().toUpperCase();
-            if ((rowBid && codes.has(rowBid)) || (rowCode && codes.has(rowCode))) {
+            const bidMatch = rowBid && rowBid !== '-' && !rowBid.startsWith('#') && codes.has(rowBid);
+            const codeMatch = rowCode && rowCode !== '-' && rowCode !== 'PENDING' && codes.has(rowCode);
+            if (bidMatch || codeMatch) {
               sheet.getRange(i + 1, 10).setValue(true); // Col 10: Display in UI = TRUE
               restored.push(rowBid || rowCode);
             }
