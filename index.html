@@ -3979,9 +3979,11 @@
     // Derive AES-GCM Key in memory for local encrypted cache from session token and salt
     async function deriveKeyFromSession(sessionSecret, saltBytes) {
       if (!sessionSecret) return null;
+      const secretFingerprint = String(sessionSecret).slice(-16);
       try {
+        const cachedHash = sessionStorage.getItem('rupay_session_key_hash');
         const cachedJwkStr = sessionStorage.getItem('rupay_session_key_jwk');
-        if (cachedJwkStr) {
+        if (cachedJwkStr && cachedHash === secretFingerprint) {
           const jwk = JSON.parse(cachedJwkStr);
           return await crypto.subtle.importKey(
             "jwk",
@@ -4017,6 +4019,7 @@
       try {
         const exportedJwk = await crypto.subtle.exportKey("jwk", derivedKey);
         sessionStorage.setItem('rupay_session_key_jwk', JSON.stringify(exportedJwk));
+        sessionStorage.setItem('rupay_session_key_hash', secretFingerprint);
       } catch (_) {}
 
       return derivedKey;
@@ -4510,6 +4513,10 @@
         const data = await res.json();
 
         if (data && data.success && data.token) {
+          try {
+            sessionStorage.removeItem('rupay_session_key_jwk');
+            sessionStorage.removeItem('rupay_session_key_hash');
+          } catch (_) {}
           localStorage.setItem('rupay_session_token', String(data.token));
           localStorage.setItem('rupay_session_expiry', String(data.expiry));
 
@@ -5230,6 +5237,7 @@
       securityState.cryptoKey = null;
       try {
         sessionStorage.removeItem('rupay_session_key_jwk');
+        sessionStorage.removeItem('rupay_session_key_hash');
       } catch (_) {}
       document.documentElement.classList.remove('vault-authenticated');
 
@@ -5244,6 +5252,7 @@
       localStorage.removeItem('rupay_session_expiry');
       try {
         sessionStorage.removeItem('rupay_session_key_jwk');
+        sessionStorage.removeItem('rupay_session_key_hash');
       } catch (_) {}
       document.documentElement.classList.remove('vault-authenticated');
       await lockVault(true);
@@ -13921,7 +13930,13 @@
           selectAllBtn.classList.remove('hidden');
           selectAllBtn.classList.add('flex');
           const items = (typeof getActiveSelectableItems === 'function') ? getActiveSelectableItems() : [];
-          const allSelected = items.length > 0 && items.every(item => state.selectedIds.has(item.id) || (item.code && state.selectedIds.has(item.code)));
+          const allSelected = items.length > 0 && items.every(item => {
+            const cleanCode = item.code ? String(item.code).replace(/^'/, '').trim().toUpperCase() : '';
+            const cleanBid = item.bookingId ? String(item.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
+            return state.selectedIds.has(item.id) ||
+                   (cleanCode && (state.selectedIds.has(cleanCode) || state.selectedIds.has(item.code))) ||
+                   (cleanBid && (state.selectedIds.has(cleanBid) || state.selectedIds.has(item.bookingId)));
+          });
           if (selectAllLabel) selectAllLabel.textContent = allSelected ? 'Deselect All' : 'Select All';
         }
       } else {
@@ -13983,9 +13998,13 @@
         // Appears ONLY when in Ingested AND all selected items are GREEN (ACTIVE & fulfilled)
         let allGreen = false;
         if (isIngestedView && count > 0) {
-          const selectedStaging = (state.staging || []).filter(s =>
-            state.selectedIds.has(s.id) || state.selectedIds.has(s.bookingId) || state.selectedIds.has(s.code)
-          );
+          const selectedStaging = (state.staging || []).filter(s => {
+            const cleanBid = s.bookingId ? String(s.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
+            const cleanCode = s.code ? String(s.code).replace(/^'/, '').trim().toUpperCase() : '';
+            return state.selectedIds.has(s.id) ||
+                   (cleanBid && (state.selectedIds.has(cleanBid) || state.selectedIds.has(s.bookingId))) ||
+                   (cleanCode && (state.selectedIds.has(cleanCode) || state.selectedIds.has(s.code)));
+          });
 
           const hasNonApprovable = selectedStaging.some(s =>
             isVoucherPending(s) ||
@@ -14506,9 +14525,9 @@
         }).map(s => ({ id: s.id, code: s.code, bookingId: s.bookingId, status: s.status || 'PENDING' }));
       } else if (normActiveBrand === 'Redeemed') {
         return (redeemedList || []).filter(r => r.displayInUI !== false).map(r => ({
-          id: 'redeemed-' + r.code,
-          code: r.code,
-          bookingId: '',
+          id: 'redeemed-' + (r.code || r.bookingId || Math.random().toString(36).substr(2, 6)),
+          code: r.code || '',
+          bookingId: r.bookingId || '',
           status: 'REDEEMED'
         }));
       } else {
@@ -14541,13 +14560,25 @@
         showToast('No passes to select in this tab');
         return;
       }
-      const allSelected = items.every(item => state.selectedIds.has(item.id) || (item.code && state.selectedIds.has(item.code)));
+      const allSelected = items.every(item => {
+        const cleanCode = item.code ? String(item.code).replace(/^'/, '').trim().toUpperCase() : '';
+        const cleanBid = item.bookingId ? String(item.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
+        return state.selectedIds.has(item.id) ||
+               (cleanCode && (state.selectedIds.has(cleanCode) || state.selectedIds.has(item.code))) ||
+               (cleanBid && (state.selectedIds.has(cleanBid) || state.selectedIds.has(item.bookingId)));
+      });
 
       if (allSelected) {
         items.forEach(item => {
           state.selectedIds.delete(item.id);
-          if (item.code) state.selectedIds.delete(item.code);
-          if (item.bookingId) state.selectedIds.delete(item.bookingId);
+          if (item.code) {
+            state.selectedIds.delete(item.code);
+            state.selectedIds.delete(String(item.code).replace(/^'/, '').trim().toUpperCase());
+          }
+          if (item.bookingId) {
+            state.selectedIds.delete(item.bookingId);
+            state.selectedIds.delete(String(item.bookingId).replace(/^'/, '').trim().toUpperCase());
+          }
         });
         showToast('Deselected all passes in this tab');
       } else {

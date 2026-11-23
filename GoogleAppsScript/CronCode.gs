@@ -603,8 +603,14 @@ function parseRupayVoucherEmail(msg) {
       rawVal = multiMatch[1].trim();
     }
   }
-  // Strip markdown (*, _, `, quotes) and surrounding whitespace
-  rawVal = rawVal.replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "").trim();
+  // Strip markdown (*, _, `, quotes), HTML entities (&nbsp;, &amp;) and surrounding whitespace
+  rawVal = rawVal
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/^[*_~`\s'"]+|[*_~`\s'"]+$/g, "")
+    .trim();
 
   // Guard against non-code prose, URL paths, or disclaimer snippets (e.g. "/service if the...")
   if (/^\/service|payment|validation|on\s*hold|\bterms\b|\bkindly\b/i.test(rawVal)) {
@@ -798,9 +804,9 @@ function processRupayEmails() {
       console.warn("Could not load tombstones in processRupayEmails:", eTomb.message);
     }
 
-    // Label-based idempotent search: exclude threads already processed
+    // Label-based idempotent search: search for unread messages or threads not yet marked Ingested
     const ingestedLabel = getOrCreateIngestedLabel();
-    const query = 'newer_than:2d -(label:Ingested) (RUPS OR subject:RUPS OR from:rupay OR "rupay@truztee.com" OR "RuPay Select")';
+    const query = 'newer_than:2d (is:unread OR -(label:Ingested)) (RUPS OR subject:RUPS OR from:rupay OR "rupay@truztee.com" OR "RuPay Select")';
     let threads = [];
     try {
       threads = GmailApp.search(query, 0, 30);
@@ -839,6 +845,10 @@ function processRupayEmails() {
         if (Date.now() - START_MS > 240000) {
           console.warn("processRupayEmails: 4-minute time budget reached in message loop.");
           break;
+        }
+
+        if (msg.isUnread && msg.isUnread()) {
+          try { msg.markRead(); } catch (_) {}
         }
 
         const parsed = parseRupayVoucherEmail(msg);
@@ -1342,8 +1352,9 @@ function fulfillVoucherCode(ss, data) {
   if (existingBrandMatch) {
     // If it exists in the brand tab but code or pin wasn't populated yet, heal it in place!
     const row = existingBrandMatch.rowData;
-    const existingCode = String(row[1] || '').trim();
-    if (!existingCode || existingCode === 'PENDING' || existingCode === '-') {
+    const existingCode = String(row[1] || '').replace(/^'/, '').trim().toUpperCase();
+    const isUnfulfilled = !existingCode || existingCode === 'PENDING' || existingCode === '-' || /pending/i.test(existingCode) || /processing/i.test(existingCode) || /revalidat/i.test(existingCode);
+    if (isUnfulfilled) {
       existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 2).setValue(`'${data.code}`);
       if (data.pin) existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 3).setValue(`'${data.pin}`);
       existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 8).setValue("ACTIVE");
@@ -5155,6 +5166,7 @@ function doPost(e) {
           const bNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
           if (bNum === targetCardNum || (targetCardNum.length === 4 && bNum.endsWith(targetCardNum))) {
             const rowData = bRows[b];
+            const restoredNotes = (rowData[10] && !/^(Blocked|Replaced) via App$/i.test(String(rowData[10]).trim())) ? String(rowData[10]).trim() : '';
             const activeRow = [
               rowData[0], // Bank
               rowData[1], // Card_Type
@@ -5164,7 +5176,7 @@ function doPost(e) {
               "'" + String(rowData[5] || '').replace(/^'/, ''), // Expiry
               "'" + String(rowData[6] || '').replace(/^'/, ''), // CVV
               "ACTIVE",
-              "", // Notes cleared
+              restoredNotes, // Preserved user notes
               // 13 benefits
               rowData[11], rowData[12], rowData[13], rowData[14], rowData[15],
               rowData[16], rowData[17], rowData[18], rowData[19], rowData[20],
@@ -5237,6 +5249,7 @@ function doPost(e) {
           const bNum = String(bRows[b][4] || '').replace(/['\s]/g, '').trim();
           if (bNum === oldCardNum || (oldCardNum.length === 4 && bNum.endsWith(oldCardNum))) {
             const rowData = bRows[b];
+            const restoredNotes = (rowData[10] && !/^(Blocked|Replaced) via App$/i.test(String(rowData[10]).trim())) ? String(rowData[10]).trim() : '';
             const activeRow = [
               rowData[0], // Bank
               rowData[1], // Card_Type
@@ -5246,7 +5259,7 @@ function doPost(e) {
               "'" + String(rowData[5] || '').replace(/^'/, ''),
               "'" + String(rowData[6] || '').replace(/^'/, ''),
               "ACTIVE",
-              "", // Notes cleared
+              restoredNotes, // Preserved user notes
               rowData[11], rowData[12], rowData[13], rowData[14], rowData[15],
               rowData[16], rowData[17], rowData[18], rowData[19], rowData[20],
               rowData[21], rowData[22], rowData[23],
