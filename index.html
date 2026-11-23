@@ -4790,7 +4790,7 @@
         if (!Array.isArray(codes) || !cardTag) return;
         codes.forEach(c => {
           if (c) {
-            const clean = String(c).trim().toUpperCase();
+            const clean = String(c).replace(/^'/, '').trim().toUpperCase();
             this.record('CARD_TAG', 'staging', clean, { cardTag });
           }
         });
@@ -4800,9 +4800,13 @@
         const tags = {};
         this.getAll().forEach(e => {
           if (e.action === 'CARD_TAG' && e.patch && e.patch.cardTag) {
-            tags[e.primaryKey] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
+            const pk = String(e.primaryKey || '').replace(/^'/, '').trim().toUpperCase();
+            tags[pk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
             if (e.secondaryKeys) {
-              e.secondaryKeys.forEach(sk => tags[sk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt });
+              e.secondaryKeys.forEach(sk => {
+                const cleanSk = String(sk || '').replace(/^'/, '').trim().toUpperCase();
+                tags[cleanSk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
+              });
             }
           }
         });
@@ -4810,7 +4814,8 @@
       },
 
       removeTag(code) {
-        this.remove(code);
+        if (!code) return;
+        this.remove(String(code).replace(/^'/, '').trim().toUpperCase());
       },
 
       // --- CARDS (Optimistic add / block / replace) ---
@@ -5831,7 +5836,7 @@
     function markIngestedVoucherSold(bidOrCode) {
       if (!bidOrCode) return;
       const list = getIngestedSoldBids();
-      const clean = String(bidOrCode).trim().toUpperCase();
+      const clean = String(bidOrCode).replace(/^'/, '').trim().toUpperCase();
       if (!list.includes(clean)) {
         list.push(clean);
         try {
@@ -5845,16 +5850,16 @@
     function unmarkIngestedVoucherSold(bidOrCode) {
       if (!bidOrCode) return;
       const list = getIngestedSoldBids();
-      const clean = String(bidOrCode).trim().toUpperCase();
-      const updated = list.filter(x => x !== clean);
+      const clean = String(bidOrCode).replace(/^'/, '').trim().toUpperCase();
+      const updated = list.filter(x => String(x).replace(/^'/, '').trim().toUpperCase() !== clean);
       try {
         localStorage.setItem('rupay_ingested_sales_logged', JSON.stringify(updated));
       } catch (e) {
         console.warn('Failed to save to localStorage:', e);
       }
       const found = (state.staging || []).find(s =>
-        (s.bookingId && String(s.bookingId).trim().toUpperCase() === clean) ||
-        (s.code && String(s.code).trim().toUpperCase() === clean)
+        (s.bookingId && String(s.bookingId).replace(/^'/, '').trim().toUpperCase() === clean) ||
+        (s.code && String(s.code).replace(/^'/, '').trim().toUpperCase() === clean)
       );
       if (found) {
         found.isSaleMarked = false;
@@ -5869,9 +5874,10 @@
       if (act.saleDetails && (act.saleDetails.price || act.saleDetails.date)) return true;
       const list = getIngestedSoldBids();
       if (!list.length) return false;
-      const bid = String(act.bookingId || act.id || '').trim().toUpperCase();
-      const code = String(act.code || '').trim().toUpperCase();
-      return (bid && list.includes(bid)) || (code && code !== 'PENDING' && code !== '-' && list.includes(code));
+      const soldSet = new Set(list.map(x => String(x).replace(/^'/, '').trim().toUpperCase()));
+      const bid = String(act.bookingId || act.id || '').replace(/^'/, '').trim().toUpperCase();
+      const code = String(act.code || '').replace(/^'/, '').trim().toUpperCase();
+      return (bid && soldSet.has(bid)) || (code && code !== 'PENDING' && code !== '-' && soldSet.has(code));
     }
 
     function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
@@ -8919,20 +8925,20 @@
         const res = await fetch(`${API_ENDPOINT}?action=GET_INGESTED_ONLY&token=${encodeURIComponent(token)}`);
         const data = await res.json();
         if (data && data.success && Array.isArray(data.staging)) {
-          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
           const inFlightTags = MutationJournal.getTags();
           const inFlightApprovalKeys = new Set();
           MutationJournal.getApprovals().forEach(v => {
-            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).trim().toUpperCase());
-            if (v.code) inFlightApprovalKeys.add(String(v.code).trim().toUpperCase());
+            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).replace(/^'/, '').trim().toUpperCase());
+            if (v.code) inFlightApprovalKeys.add(String(v.code).replace(/^'/, '').trim().toUpperCase());
           });
 
           state.staging = data.staging
             .filter(s => {
-              const bId = String(s.bookingId || '').trim().toUpperCase();
-              const c = String(s.code || '').trim().toUpperCase();
+              const bId = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+              const c = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
               if (bId && (isIdentifierQuarantined(bId, 'staging') || inFlightApprovalKeys.has(bId))) return false;
-              if (c && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
+              if (c && c !== '-' && c !== 'PENDING' && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
               return true;
             })
             .map((s, idx) => {
@@ -8941,8 +8947,9 @@
               let code = (s.code && s.code.toUpperCase() === 'PENDING') ? 'Pending' : (s.code || 'Pending');
               let payUrl = s.payUrl || '';
 
-              const cleanBid = String(bId || '').trim().toUpperCase();
-              const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
+              const cleanBid = String(bId || '').replace(/^'/, '').trim().toUpperCase();
+              const cleanOrigBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+              const cleanCode = String(code || '').replace(/^'/, '').trim().toUpperCase();
 
               if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid)) || status === 'REVALIDATED' || status === 'REVALIDATION_COMPLETED') {
                 const isRealCode = code && code !== 'PENDING' && code !== '-' && !/pending/i.test(code) && !/revalidat/i.test(code) && !/processing/i.test(code);
@@ -8957,13 +8964,13 @@
               }
 
               let cardVal = (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned';
-              const tagMatch = inFlightTags[code.toUpperCase()] || (bId ? inFlightTags[bId.toUpperCase()] : null);
+              const tagMatch = inFlightTags[cleanCode] || (cleanBid ? inFlightTags[cleanBid] : null);
               if (cardVal === 'Unassigned') {
                 if (tagMatch) cardVal = tagMatch.cardTag;
               } else {
                 if (tagMatch) {
-                  if (code) MutationJournal.removeTag(code);
-                  if (bId) MutationJournal.removeTag(bId);
+                  if (cleanCode) MutationJournal.removeTag(cleanCode);
+                  if (cleanBid) MutationJournal.removeTag(cleanBid);
                 }
               }
 
@@ -9297,8 +9304,8 @@
           const seenCodes = new Set();
           const seenBookingIds = new Set();
           state.vouchers = data.vouchers.filter(v => {
-            const c = (v.code || '').trim().toUpperCase();
-            const bid = (v.bookingId || '').trim().toUpperCase();
+            const c = String(v.code || '').replace(/^'/, '').trim().toUpperCase();
+            const bid = String(v.bookingId || '').replace(/^'/, '').trim().toUpperCase();
             if (c && isIdentifierQuarantined(c, 'voucher')) return false;
             if (bid && isIdentifierQuarantined(bid, 'voucher')) return false;
             if (!c || c === '-' || c === 'PENDING') {
@@ -9328,32 +9335,40 @@
             if (vCode.toUpperCase() === 'PENDING') vCode = 'Pending';
             v.code = vCode;
             const vBid = (v.bookingId || '').trim();
+            const cleanVCode = String(vCode).replace(/^'/, '').trim().toUpperCase();
+            const cleanVBid = String(vBid).replace(/^'/, '').trim().toUpperCase();
             const isPendingRedeem = !!(
-              (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted && undoState.pendingRedeem.codes?.includes(vCode)) ||
-              (getUncommittedRedeems().some(u => u.codes?.includes(vCode)))
+              (undoState.pendingRedeem && !undoState.pendingRedeem.isCommitted && (
+                undoState.pendingRedeem.codes?.some(c => String(c).replace(/^'/, '').trim().toUpperCase() === cleanVCode) ||
+                (cleanVBid && undoState.pendingRedeem.bookingIds?.some(b => String(b).replace(/^'/, '').trim().toUpperCase() === cleanVBid))
+              )) ||
+              (getUncommittedRedeems().some(u => 
+                u.codes?.some(c => String(c).replace(/^'/, '').trim().toUpperCase() === cleanVCode) ||
+                (cleanVBid && u.bookingIds?.some(b => String(b).replace(/^'/, '').trim().toUpperCase() === cleanVBid))
+              ))
             );
 
             // Reconcile card tags: in-flight journal tag overrides unassigned remote tag
             let cardVal = (v.card && String(v.card).trim() !== '' && String(v.card).trim() !== 'Unassigned' && String(v.card).trim() !== '-') ? String(v.card).trim() : 'Unassigned';
-            const tagMatch = inFlightTags[vCode.toUpperCase()] || (vBid ? inFlightTags[vBid.toUpperCase()] : null);
+            const tagMatch = inFlightTags[cleanVCode] || (cleanVBid ? inFlightTags[cleanVBid] : null);
             if (cardVal === 'Unassigned') {
               if (tagMatch) cardVal = tagMatch.cardTag;
             } else {
               // Remote sheet has persisted the tag! Clean from journal
               if (tagMatch) {
-                if (vCode) MutationJournal.removeTag(vCode);
-                if (vBid) MutationJournal.removeTag(vBid);
+                if (cleanVCode) MutationJournal.removeTag(cleanVCode);
+                if (cleanVBid) MutationJournal.removeTag(cleanVBid);
               }
             }
 
             // Remote sheet has officially persisted the approved/restored voucher
-            if (vCode) {
-              MutationJournal.removeApproval(vCode);
-              MutationJournal.removeUndo(vCode);
+            if (cleanVCode) {
+              MutationJournal.removeApproval(cleanVCode);
+              MutationJournal.removeUndo(cleanVCode);
             }
-            if (vBid) {
-              MutationJournal.removeApproval(vBid);
-              MutationJournal.removeUndo(vBid);
+            if (cleanVBid) {
+              MutationJournal.removeApproval(cleanVBid);
+              MutationJournal.removeUndo(cleanVBid);
             }
 
             return {
@@ -9376,8 +9391,8 @@
 
           // PRESERVATION MERGE: Any in-flight approvals NOT yet returned by remote Google Sheet are merged to front!
           inFlightApprovals.forEach(app => {
-            const cUpper = (app.code || '').trim().toUpperCase();
-            const bUpper = (app.bookingId || '').trim().toUpperCase();
+            const cUpper = String(app.code || '').replace(/^'/, '').trim().toUpperCase();
+            const bUpper = String(app.bookingId || '').replace(/^'/, '').trim().toUpperCase();
             const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(app);
@@ -9388,8 +9403,8 @@
 
           // PRESERVATION MERGE: Any in-flight undos NOT yet returned by remote Google Sheet are merged to front!
           inFlightUndos.forEach(und => {
-            const cUpper = (und.code || '').trim().toUpperCase();
-            const bUpper = (und.bookingId || '').trim().toUpperCase();
+            const cUpper = String(und.code || '').replace(/^'/, '').trim().toUpperCase();
+            const bUpper = String(und.bookingId || '').replace(/^'/, '').trim().toUpperCase();
             const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(und);
@@ -9405,16 +9420,16 @@
         }
 
         if (data.redeemed && Array.isArray(data.redeemed)) {
-          const inFlightUndos = new Set(MutationJournal.getUndos().flatMap(u => [(u.code || '').trim().toUpperCase(), (u.bookingId || '').trim().toUpperCase()]).filter(Boolean));
-          const clearedRedeemedSet = MutationJournal.getClearedRedeemed();
+          const inFlightUndos = new Set(MutationJournal.getUndos().flatMap(u => [String(u.code || '').replace(/^'/, '').trim().toUpperCase(), String(u.bookingId || '').replace(/^'/, '').trim().toUpperCase()]).filter(Boolean));
+          const clearedRedeemedSet = new Set(Array.from(MutationJournal.getClearedRedeemed()).map(x => String(x).replace(/^'/, '').trim().toUpperCase()));
 
           const remoteRedeemed = data.redeemed.filter(r => {
-            const rc = (r.code || '').trim();
-            const rb = (r.bookingId || '').trim();
-            if (!rc || rc.toUpperCase() === 'PENDING' || rc === '-') return false;
+            const rc = String(r.code || '').replace(/^'/, '').trim().toUpperCase();
+            const rb = String(r.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            if (!rc || rc === 'PENDING' || rc === '-') return false;
             // Shield: Filter out any voucher that was restored to vault or cleared
-            if (inFlightUndos.has(rc.toUpperCase()) || (rb && inFlightUndos.has(rb.toUpperCase()))) return false;
-            if (clearedRedeemedSet.has(rc.toUpperCase()) || (rb && clearedRedeemedSet.has(rb.toUpperCase()))) return false;
+            if (inFlightUndos.has(rc) || (rb && inFlightUndos.has(rb))) return false;
+            if (clearedRedeemedSet.has(rc) || (rb && clearedRedeemedSet.has(rb))) return false;
             return true;
           }).map(r => ({
             code: r.code,
@@ -9540,19 +9555,19 @@
         }
 
         if (data.staging && Array.isArray(data.staging)) {
-          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
           const inFlightTags = MutationJournal.getTags();
           const inFlightApprovalKeys = new Set();
           MutationJournal.getApprovals().forEach(v => {
-            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).trim().toUpperCase());
-            if (v.code) inFlightApprovalKeys.add(String(v.code).trim().toUpperCase());
+            if (v.bookingId) inFlightApprovalKeys.add(String(v.bookingId).replace(/^'/, '').trim().toUpperCase());
+            if (v.code) inFlightApprovalKeys.add(String(v.code).replace(/^'/, '').trim().toUpperCase());
           });
           state.staging = data.staging
             .filter(s => {
-              const bId = String(s.bookingId || '').trim().toUpperCase();
-              const c = String(s.code || '').trim().toUpperCase();
+              const bId = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+              const c = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
               if (bId && (isIdentifierQuarantined(bId, 'staging') || inFlightApprovalKeys.has(bId))) return false;
-              if (c && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
+              if (c && c !== '-' && c !== 'PENDING' && (isIdentifierQuarantined(c, 'staging') || inFlightApprovalKeys.has(c))) return false;
               return true;
             })
             .map((s, idx) => {
@@ -9561,8 +9576,9 @@
               let code = (s.code && s.code.toUpperCase() === 'PENDING') ? 'Pending' : (s.code || 'Pending');
               let payUrl = s.payUrl || '';
 
-              const cleanBid = String(bId || '').trim().toUpperCase();
-              const cleanOrigBid = String(s.bookingId || '').trim().toUpperCase();
+              const cleanBid = String(bId || '').replace(/^'/, '').trim().toUpperCase();
+              const cleanOrigBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+              const cleanCode = String(code || '').replace(/^'/, '').trim().toUpperCase();
 
               // If marked revalidated locally, keep it sticky as PENDING until real code arrives
               if (revalSet.has(cleanBid) || (cleanOrigBid && revalSet.has(cleanOrigBid)) || status === 'REVALIDATED' || status === 'REVALIDATION_COMPLETED') {
@@ -9578,20 +9594,20 @@
               }
 
               let cardVal = (s.card && String(s.card).trim() !== '' && String(s.card).trim() !== 'Unassigned' && String(s.card).trim() !== '-') ? String(s.card).trim() : 'Unassigned';
-              const tagMatch = inFlightTags[code.toUpperCase()] || (bId ? inFlightTags[bId.toUpperCase()] : null);
+              const tagMatch = inFlightTags[cleanCode] || (cleanBid ? inFlightTags[cleanBid] : null);
               if (cardVal === 'Unassigned') {
                 if (tagMatch) cardVal = tagMatch.cardTag;
               } else {
                 if (tagMatch) {
-                  if (code) MutationJournal.removeTag(code);
-                  if (bId) MutationJournal.removeTag(bId);
+                  if (cleanCode) MutationJournal.removeTag(cleanCode);
+                  if (cleanBid) MutationJournal.removeTag(cleanBid);
                 }
               }
 
               // Strict Invariant: Preserve earliest initial ingested timestamp across revalidations
               const prevItem = (state.staging || []).find(x =>
-                (cleanBid && String(x.bookingId || '').trim().toUpperCase() === cleanBid) ||
-                (cleanOrigBid && String(x.bookingId || '').trim().toUpperCase() === cleanOrigBid)
+                (cleanBid && String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase() === cleanBid) ||
+                (cleanOrigBid && String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase() === cleanOrigBid)
               );
               let resolvedTimestamp = s.timestampIST || null;
               if (prevItem && prevItem.timestampIST) {
@@ -14022,9 +14038,17 @@
       UniversalMutationJournal.recordTombstone([...bookingIds, ...codes], 'staging');
 
       // 2. Remove from state.staging (Inbox Zero)
-      const bookingIdSet = new Set(bookingIds);
-      const codeSet = new Set(codes);
-      state.staging = state.staging.filter(s => !bookingIdSet.has(s.bookingId) && !codeSet.has(s.code));
+      const bookingIdSet = new Set(bookingIds.map(b => String(b).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      const codeSet = new Set(codes.map(c => String(c).replace(/^'/, '').trim().toUpperCase()).filter(Boolean));
+      const selectedIdSet = new Set(selectedStaging.map(s => s.id).filter(Boolean));
+      state.staging = state.staging.filter(s => {
+        if (s.id && selectedIdSet.has(s.id)) return false;
+        const sb = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+        const sc = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
+        if (sb && bookingIdSet.has(sb)) return false;
+        if (sc && sc !== '-' && sc !== 'PENDING' && codeSet.has(sc)) return false;
+        return true;
+      });
       saveEncryptedStaging(state.staging);
       saveEncryptedVouchers(state.vouchers);
 
@@ -14372,16 +14396,22 @@
         const isPlaceholder = c => !c || PLACEHOLDER_CODES.has(String(c).trim().toUpperCase()) || /^processing$/i.test(c);
 
         targetVouchers.forEach(v => {
-          if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) lookupCodesSet.add(v.bookingId);
-          if (v.code && !isPlaceholder(v.code)) lookupCodesSet.add(v.code);
+          const b = String(v.bookingId || '').replace(/^'/, '').trim();
+          const c = String(v.code || '').replace(/^'/, '').trim();
+          if (b && b !== '-' && !b.startsWith('#')) lookupCodesSet.add(b);
+          if (c && !isPlaceholder(c)) lookupCodesSet.add(c);
         });
         targetStaging.forEach(s => {
-          if (s.bookingId && s.bookingId !== '-' && !s.bookingId.startsWith('#')) lookupCodesSet.add(s.bookingId);
-          if (s.code && !isPlaceholder(s.code)) lookupCodesSet.add(s.code);
+          const b = String(s.bookingId || '').replace(/^'/, '').trim();
+          const c = String(s.code || '').replace(/^'/, '').trim();
+          if (b && b !== '-' && !b.startsWith('#')) lookupCodesSet.add(b);
+          if (c && !isPlaceholder(c)) lookupCodesSet.add(c);
         });
         targetRedeemed.forEach(r => {
-          if (r.bookingId && r.bookingId !== '-' && !r.bookingId.startsWith('#')) lookupCodesSet.add(r.bookingId);
-          if (r.code && !isPlaceholder(r.code)) lookupCodesSet.add(r.code);
+          const b = String(r.bookingId || '').replace(/^'/, '').trim();
+          const c = String(r.code || '').replace(/^'/, '').trim();
+          if (b && b !== '-' && !b.startsWith('#')) lookupCodesSet.add(b);
+          if (c && !isPlaceholder(c)) lookupCodesSet.add(c);
         });
         const lookupCodes = Array.from(lookupCodesSet);
         MutationJournal.recordTags(lookupCodes, cardTag);
