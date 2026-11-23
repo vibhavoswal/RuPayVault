@@ -367,13 +367,71 @@ function getOrCreateHmacSecret() {
   return secret;
 }
 
+function getDataVersionInfo(ss) {
+  const props = PropertiesService.getScriptProperties();
+  let ver = props.getProperty("APP_DATA_VERSION");
+  let lastUpdated = props.getProperty("LAST_UPDATED_MS");
+  if (!ver || !lastUpdated) {
+    ver = "1";
+    lastUpdated = String(Date.now());
+    props.setProperties({
+      "APP_DATA_VERSION": ver,
+      "LAST_UPDATED_MS": lastUpdated
+    });
+  }
+  let verNum = Number(ver) || 1;
+  let lastUpdatedNum = Number(lastUpdated) || Date.now();
+
+  // Passive DriveApp check for external manual Google Sheets edits
+  try {
+    if (ss && ss.getId) {
+      const driveUpdated = DriveApp.getFileById(ss.getId()).getLastUpdated().getTime();
+      if (driveUpdated > (lastUpdatedNum + 3000)) {
+        verNum++;
+        lastUpdatedNum = driveUpdated;
+        props.setProperties({
+          "APP_DATA_VERSION": String(verNum),
+          "LAST_UPDATED_MS": String(lastUpdatedNum)
+        });
+        invalidateAppCache();
+      }
+    }
+  } catch (_) {}
+
+  return {
+    version: verNum,
+    lastUpdated: lastUpdatedNum
+  };
+}
+
+function bumpDataVersion(partitions) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const current = Number(props.getProperty("APP_DATA_VERSION") || "1");
+    const nextVer = String(current + 1);
+    const nowMs = String(Date.now());
+    props.setProperties({
+      "APP_DATA_VERSION": nextVer,
+      "LAST_UPDATED_MS": nowMs
+    });
+    invalidateAppCache(partitions);
+  } catch (err) {
+    console.warn("Version bump warning:", err.message);
+  }
+}
+
 function invalidateAppCache(partitions) {
   try {
     const cache = CacheService.getScriptCache();
     const target = Array.isArray(partitions) ? partitions : ['CORE', 'VOUCHERS', 'INCOME'];
     const keys = [];
     if (target.includes('CORE')) keys.push('CACHE_CORE');
-    if (target.includes('VOUCHERS')) keys.push('CACHE_VOUCHERS');
+    if (target.includes('VOUCHERS')) {
+      keys.push('CACHE_VOUCHERS_META', 'CACHE_STAGING_REDEEMED');
+      for (let i = 1; i <= 20; i++) {
+        keys.push('CACHE_VOUCHERS_' + i);
+      }
+    }
     if (target.includes('INCOME')) keys.push('CACHE_INCOME');
     if (keys.length) {
       cache.removeAll(keys);
@@ -928,7 +986,7 @@ function processRupayEmails() {
     reconcilePendingVouchers(ss);
 
     SpreadsheetApp.flush();
-    invalidateAppCache(['VOUCHERS', 'CORE']);
+    bumpDataVersion(['VOUCHERS', 'CORE']);
   } catch(err) {
     console.error("Error in processRupayEmails:", err);
   } finally {
@@ -3267,7 +3325,7 @@ function doGet(e) {
         }
       }
 
-      invalidateAppCache(['INCOME', 'VOUCHERS']);
+      bumpDataVersion(['INCOME', 'VOUCHERS']);
       SpreadsheetApp.flush();
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -3558,19 +3616,17 @@ function doGet(e) {
 
     // Fast-Path: Spreadsheet modification check (~150ms)
     if (e && e.parameter && e.parameter.action === "CHECK_MODIFIED") {
-      let lastUpdatedMs = 0;
-      try {
-        lastUpdatedMs = DriveApp.getFileById(ss.getId()).getLastUpdated().getTime();
-      } catch (_) {
-        lastUpdatedMs = Date.now();
-      }
+      const versionInfo = getDataVersionInfo(ss);
       const clientTimestamp = Number(e.parameter.since || 0);
-      const notModified = clientTimestamp > 0 && Math.abs(lastUpdatedMs - clientTimestamp) < 1000;
+      const clientVersion = Number(e.parameter.version || 0);
+      const notModified = (clientVersion > 0 && clientVersion === versionInfo.version) ||
+                          (clientTimestamp > 0 && Math.abs(versionInfo.lastUpdated - clientTimestamp) < 1000);
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "CHECK_MODIFIED",
         notModified: notModified,
-        lastUpdated: lastUpdatedMs
+        version: versionInfo.version,
+        lastUpdated: versionInfo.lastUpdated
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -3597,29 +3653,44 @@ function doGet(e) {
     const cache = CacheService.getScriptCache();
     const wsParam = (e && e.parameter && e.parameter.workspace) ? String(e.parameter.workspace).toLowerCase() : "";
     const cachedCoreStr = cache.get("CACHE_CORE");
-    const cachedVouchersStr = cache.get("CACHE_VOUCHERS");
+    const cachedMetaStr = cache.get("CACHE_VOUCHERS_META");
+    const cachedStagingRedeemedStr = cache.get("CACHE_STAGING_REDEEMED");
     const cachedIncomeStr = cache.get("CACHE_INCOME");
 
-    if (cachedCoreStr && cachedVouchersStr && (cachedIncomeStr || wsParam === "vouchers")) {
+    if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && (cachedIncomeStr || wsParam === "vouchers")) {
       try {
+        const meta = JSON.parse(cachedMetaStr);
         const core = JSON.parse(cachedCoreStr);
-        const vouchers = JSON.parse(cachedVouchersStr);
-        const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
+        const stagingRedeemed = JSON.parse(cachedStagingRedeemedStr);
+        const vouchers = [];
+        let allChunksPresent = true;
+        for (let c = 1; c <= meta.numChunks; c++) {
+          const chunkStr = cache.get("CACHE_VOUCHERS_" + c);
+          if (!chunkStr) { allChunksPresent = false; break; }
+          vouchers.push(...JSON.parse(chunkStr));
+        }
 
-        const combined = {
-          sheetUrl: core.sheetUrl || ss.getUrl(),
-          unassigned: core.unassigned || [],
-          cooldowns: core.cooldowns || [],
-          cards: core.cards || [],
-          systemStatus: core.systemStatus || {},
-          vouchers: vouchers.vouchers || [],
-          staging: vouchers.staging || [],
-          redeemed: vouchers.redeemed || [],
-          shared: vouchers.shared || [],
-          income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
-        };
+        if (allChunksPresent) {
+          const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
+          const versionInfo = getDataVersionInfo(ss);
 
-        return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+          const combined = {
+            sheetUrl: core.sheetUrl || ss.getUrl(),
+            unassigned: core.unassigned || [],
+            cooldowns: core.cooldowns || [],
+            cards: core.cards || [],
+            systemStatus: core.systemStatus || {},
+            vouchers: vouchers,
+            staging: stagingRedeemed.staging || [],
+            redeemed: stagingRedeemed.redeemed || [],
+            shared: stagingRedeemed.shared || [],
+            income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] },
+            version: versionInfo.version,
+            lastUpdated: versionInfo.lastUpdated
+          };
+
+          return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+        }
       } catch (cacheParseErr) {
         console.warn("Corrupted CacheService data, falling back to full sheet read:", cacheParseErr.message);
       }
@@ -3661,6 +3732,7 @@ function doGet(e) {
     for (const sheet of sheets) {
       const name = sheet.getName();
       if (SKIPPED_SYNC_SHEETS.has(name)) continue;
+      if (wsParam === "vouchers" && (name === "RuPay Income" || name === "RuPay Charges")) continue;
       if (sheet.getLastRow() <= 1) continue;
 
       const rows = sheet.getDataRange().getValues();
@@ -3968,9 +4040,11 @@ function doGet(e) {
       };
     } catch (_) {}
 
-    // Store in CacheService partitioned into Core, Vouchers, and Income (6-hour TTL)
+    // Store in CacheService partitioned into Core, Vouchers (chunked), and Income (6-hour TTL)
     try {
       const cache = CacheService.getScriptCache();
+      const versionInfo = getDataVersionInfo(ss);
+
       const partCore = JSON.stringify({
         sheetUrl: result.sheetUrl,
         unassigned: result.unassigned,
@@ -3978,19 +4052,39 @@ function doGet(e) {
         cards: result.cards,
         systemStatus: result.systemStatus
       });
-      const partVouchers = JSON.stringify({
-        vouchers: result.vouchers,
+      if (partCore.length < 100000) cache.put("CACHE_CORE", partCore, 21600);
+
+      const CHUNK_SIZE = 100;
+      const numChunks = Math.ceil(result.vouchers.length / CHUNK_SIZE) || 1;
+      for (let c = 0; c < numChunks; c++) {
+        const slice = result.vouchers.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE);
+        const chunkJson = JSON.stringify(slice);
+        if (chunkJson.length < 100000) {
+          cache.put("CACHE_VOUCHERS_" + (c + 1), chunkJson, 21600);
+        }
+      }
+
+      const stagingRedeemed = JSON.stringify({
         staging: result.staging,
         redeemed: result.redeemed,
         shared: result.shared
       });
+      if (stagingRedeemed.length < 100000) cache.put("CACHE_STAGING_REDEEMED", stagingRedeemed, 21600);
+
+      const partMeta = JSON.stringify({
+        numChunks: numChunks,
+        total: result.vouchers.length,
+        version: versionInfo.version
+      });
+      cache.put("CACHE_VOUCHERS_META", partMeta, 21600);
+
       const partIncome = JSON.stringify({
         income: result.income
       });
-
-      if (partCore.length < 100000) cache.put("CACHE_CORE", partCore, 21600);
-      if (partVouchers.length < 100000) cache.put("CACHE_VOUCHERS", partVouchers, 21600);
       if (partIncome.length < 100000) cache.put("CACHE_INCOME", partIncome, 21600);
+
+      result.version = versionInfo.version;
+      result.lastUpdated = versionInfo.lastUpdated;
     } catch (cErr) {
       console.warn("CacheService store warning:", cErr.message);
     }
@@ -4199,8 +4293,8 @@ function doPost(e) {
     }
 
     try {
-      // Invalidate partition cache immediately on mutative writes
-      invalidateAppCache();
+      // Bump data version and invalidate partition cache immediately on mutative writes
+      bumpDataVersion();
 
       // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
       if (data.action === "APPROVE_STAGING") {

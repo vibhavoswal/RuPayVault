@@ -4061,6 +4061,7 @@
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_vault_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_vouchers_cache'); // Clear legacy plaintext cache
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted cache:", err);
       }
@@ -4089,6 +4090,7 @@
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_cards_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_cards_cache'); // Clear legacy plaintext cache
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted cards cache:", err);
       }
@@ -4120,6 +4122,7 @@
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_accounts_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_accounts_cache'); // Clear legacy plaintext cache
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted accounts cache:", err);
       }
@@ -4153,6 +4156,7 @@
         const serialized = JSON.stringify(staging || []);
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_staging_encrypted_cache', JSON.stringify(encrypted));
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted staging cache:", err);
       }
@@ -4180,6 +4184,7 @@
         const serialized = JSON.stringify(income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] });
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_income_encrypted_cache', JSON.stringify(encrypted));
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted income cache:", err);
       }
@@ -4211,6 +4216,7 @@
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_bank_accounts_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_bank_accounts_data'); // Clear legacy plaintext cache
+        persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted bank accounts cache:", err);
       }
@@ -4231,6 +4237,54 @@
       } catch (err) {
         console.warn("Encrypted bank accounts cache decryption failed:", err);
         return null;
+      }
+    }
+
+    // Fast L1 View Cache (Synchronous sessionStorage cache for 0ms First Paint)
+    function persistL1ViewCache() {
+      try {
+        if (!isSessionValid() && !isDevEnvironment()) return;
+        const snapshot = {
+          vouchers: state.vouchers || [],
+          cards: state.cards || [],
+          staging: state.staging || [],
+          income: state.income || null,
+          accounts: state.accounts || [],
+          bankAccounts: state.bankAccounts || [],
+          redeemed: redeemedList || [],
+          shared: sharedActivity || [],
+          activeWorkspace: state.activeWorkspace || 'vouchers',
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem('rupay_l1_view_cache', JSON.stringify(snapshot));
+      } catch (_) {}
+    }
+
+    function tryHydrateL1ViewCache() {
+      try {
+        if (!isSessionValid() && !isDevEnvironment()) return false;
+        const raw = sessionStorage.getItem('rupay_l1_view_cache');
+        if (!raw) return false;
+        const cache = JSON.parse(raw);
+        if (!cache || !Array.isArray(cache.vouchers) || cache.vouchers.length === 0) return false;
+
+        state.vouchers = cache.vouchers || [];
+        state.cards = cache.cards || [];
+        state.staging = cache.staging || [];
+        if (cache.income) state.income = cache.income;
+        if (cache.accounts) state.accounts = cache.accounts;
+        if (cache.bankAccounts) state.bankAccounts = cache.bankAccounts;
+        if (Array.isArray(cache.redeemed)) redeemedList = cache.redeemed;
+        if (Array.isArray(cache.shared)) sharedActivity = cache.shared;
+
+        const urlWs = (new URLSearchParams(window.location.search)).get('ws');
+        const targetWs = urlWs || cache.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+        switchWorkspace(targetWs);
+        renderAll();
+        return true;
+      } catch (e) {
+        console.warn('L1 cache hydration error:', e);
+        return false;
       }
     }
 
@@ -5197,11 +5251,19 @@
         const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         switchWorkspace(savedWorkspace);
         renderAll();
-        flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
-        // Instant non-blocking fast-path Ingested fetch upon reload/unlock (~400ms)
-        syncIngestedFast().catch(e => console.warn('Fast Ingested sync warning:', e));
-        // Deferred deep sync for all tabs in background
-        syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
+        persistL1ViewCache();
+
+        // Sequentialized mutation flush & background sync to eliminate lock collision
+        if (getUncommittedRedeems().length > 0) {
+          flushUncommittedRedeems().then(() => {
+            syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
+          }).catch(e => {
+            console.warn('Background uncommitted flush warning:', e);
+            syncWithGoogleSheets(false).catch(err => console.warn('Background sync warning:', err));
+          });
+        } else {
+          syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
+        }
       }
     }
 
@@ -5236,6 +5298,7 @@
       state.selectedIds.clear();
       securityState.cryptoKey = null;
       try {
+        sessionStorage.removeItem('rupay_l1_view_cache');
         sessionStorage.removeItem('rupay_session_key_jwk');
         sessionStorage.removeItem('rupay_session_key_hash');
       } catch (_) {}
@@ -5251,6 +5314,7 @@
       localStorage.removeItem('rupay_session_token');
       localStorage.removeItem('rupay_session_expiry');
       try {
+        sessionStorage.removeItem('rupay_l1_view_cache');
         sessionStorage.removeItem('rupay_session_key_jwk');
         sessionStorage.removeItem('rupay_session_key_hash');
       } catch (_) {}
@@ -9268,6 +9332,33 @@
         flushUncommittedRedeems().catch(e => console.warn('Background uncommitted flush warning:', e));
 
         const token = getSessionToken();
+        const cachedVersion = Number(localStorage.getItem('rupay_remote_version') || sessionStorage.getItem('rupay_remote_version') || 0);
+        const cachedLastUpdated = Number(localStorage.getItem('rupay_remote_last_updated') || sessionStorage.getItem('rupay_remote_last_updated') || 0);
+
+        // High-Speed 304 Check: Skip downloading if remote data is not modified
+        if (!isManual && cachedVersion > 0 && state.vouchers && state.vouchers.length > 0 && pendingMutationsCount === 0) {
+          try {
+            const checkParams = new URLSearchParams();
+            if (token) checkParams.set('token', token);
+            checkParams.set('action', 'CHECK_MODIFIED');
+            checkParams.set('version', String(cachedVersion));
+            checkParams.set('since', String(cachedLastUpdated));
+            const checkUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + checkParams.toString();
+            const checkRes = await fetch(checkUrl);
+            const checkData = await checkRes.json();
+            if (checkData && checkData.success && checkData.notModified) {
+              const now = new Date();
+              const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              try {
+                localStorage.setItem('rupay_sync_time', timeStr);
+              } catch (_) {}
+              updateAllSyncIndicators('success', timeStr);
+              return;
+            }
+          } catch (checkErr) {
+            console.warn('CHECK_MODIFIED fast-path skipped:', checkErr);
+          }
+        }
         const params = new URLSearchParams();
         if (token) params.set('token', token);
         params.set('ingest', 'false');
@@ -9693,6 +9784,19 @@
           localStorage.setItem('rupay_sheet_url', sheetUrl);
         } catch(e) {}
 
+        if (data.version) {
+          try {
+            localStorage.setItem('rupay_remote_version', String(data.version));
+            sessionStorage.setItem('rupay_remote_version', String(data.version));
+          } catch (_) {}
+        }
+        if (data.lastUpdated) {
+          try {
+            localStorage.setItem('rupay_remote_last_updated', String(data.lastUpdated));
+            sessionStorage.setItem('rupay_remote_last_updated', String(data.lastUpdated));
+          } catch (_) {}
+        }
+
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         try {
@@ -9707,6 +9811,7 @@
 
         renderAll();
         updateHubStats();
+        persistL1ViewCache();
 
         if (isManual) {
           showToast('Synced with Google Sheets');
@@ -15316,6 +15421,13 @@
         initDesignMode();
       } catch(e) {}
 
+      // 0c. 0ms INSTANT SYNCHRONOUS L1 PAINT (Zero Blank Screen)
+      const isDevUnlock = isDevEnvironment();
+      if (isSessionValid() || isDevUnlock) {
+        hideLockScreen();
+        tryHydrateL1ViewCache();
+      }
+
       // 1. Restore cached Google Sheet URL (defaulting to exact RuPay Sheet URL)
       const savedSheetUrl = localStorage.getItem('rupay_sheet_url');
       const activeSheetUrl = (savedSheetUrl && savedSheetUrl.includes('/d/')) ? savedSheetUrl : GOOGLE_SHEET_URL;
@@ -15323,8 +15435,6 @@
       if (sheetLink) sheetLink.href = activeSheetUrl;
 
       // 2. Initialize security: Check 1-Week session & hydrate encrypted cache
-      const isDevUnlock = isDevEnvironment();
-
       if (isSessionValid() || isDevUnlock) {
         if (isDevUnlock) {
           hideLockScreen();
