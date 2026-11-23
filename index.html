@@ -5012,7 +5012,7 @@
       if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       } else if (action === 'UNDO_BLOCK_AND_REPLACE_CARD') {
-        if (payload.newCardNumber) quarantineIdentifiers([payload.newCardNumber]);
+        if (payload.newCardNumber) UniversalMutationJournal.recordTombstone(payload.newCardNumber, 'card');
         if (payload.oldCardNumber) UniversalMutationJournal.unquarantine(payload.oldCardNumber);
       } else if (action === 'UNBLOCK_CARD') {
         if (payload.cardNumber) UniversalMutationJournal.unquarantine(payload.cardNumber);
@@ -5280,9 +5280,9 @@
       if (b.includes('bigbasket')) return 'BigBasket';
       if (b.includes('reliance')) return 'Reliance';
       if (b.includes('apollo')) return 'Apollo';
-      if (b.includes('amazon') || b.includes('primevideo')) return 'AmazonPrime';
-      if (b.includes('cult')) return 'CultFit';
       if (b.includes('timesprime')) return 'TimesPrime';
+      if (b.includes('amazon') || b.includes('primevideo') || b.includes('prime')) return 'AmazonPrime';
+      if (b.includes('cult')) return 'CultFit';
       if (b.includes('tattvaspa') || b.includes('tattva')) return 'TattvaSpa';
       if (b.includes('taxspanner') || b.includes('tax')) return 'TaxSpanner';
       if (b.includes('thyrocare')) return 'Thyrocare';
@@ -6203,13 +6203,18 @@
         if (cleanBid && cleanBid !== '-' && !cleanBid.startsWith('#')) UniversalMutationJournal.recordTombstone(cleanBid, tombContext);
       }
 
-      // Optimistic Local State Updates:
+      // Optimistic Local State Updates (with normalized key matching to prevent quote/case divergence):
+      const normBid = cleanBid.replace(/^'/, '').trim().toUpperCase();
+      const normCode = cleanCode.replace(/^'/, '').trim().toUpperCase();
+
       if (isStaging) {
         if (isStagingNotArrived) {
           // Keep in staging! Store sale details on the voucher instance
-          const foundStaging = (state.staging || []).find(s =>
-            (cleanBid && s.bookingId === cleanBid) || (cleanCode && s.code === cleanCode) || s.id === v.id
-          );
+          const foundStaging = (state.staging || []).find(s => {
+            const sBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            const sCode = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
+            return (normBid && sBid === normBid) || (normCode && sCode === normCode) || s.id === v.id;
+          });
           if (foundStaging) {
             foundStaging.isSaleMarked = true;
             foundStaging.saleMarked = true;
@@ -6226,14 +6231,28 @@
           if (cleanBid) markIngestedVoucherSold(cleanBid);
           if (cleanCode && cleanCode !== 'PENDING') markIngestedVoucherSold(cleanCode);
         } else {
-          state.staging = (state.staging || []).filter(s =>
-            (!cleanBid || s.bookingId !== cleanBid) && (!cleanCode || s.code !== cleanCode)
-          );
+          state.staging = (state.staging || []).filter(s => {
+            const sBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            const sCode = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
+            if (normBid && sBid === normBid) return false;
+            if (normCode && sCode === normCode) return false;
+            return true;
+          });
         }
       } else {
-        const found = state.vouchers.find(x => (cleanCode && x.code === cleanCode) || (cleanBid && x.bookingId === cleanBid));
+        const found = state.vouchers.find(x => {
+          const xCode = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+          const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+          return (normCode && xCode === normCode) || (normBid && xBid === normBid);
+        });
         if (found) found.status = 'USED';
-        state.vouchers = state.vouchers.filter(x => (!cleanCode || x.code !== cleanCode) && (!cleanBid || x.bookingId !== cleanBid));
+        state.vouchers = state.vouchers.filter(x => {
+          const xCode = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+          const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+          if (normCode && xCode === normCode) return false;
+          if (normBid && xBid === normBid) return false;
+          return true;
+        });
       }
 
       // Add to redeemedList ONLY if NOT keepInStaging
@@ -6647,10 +6666,9 @@
       const brandName = item.brand || 'Ingested';
       const previousStaging = (state.staging || []).map(s => ({ ...s }));
 
-      // Safeguard 1 & 2: Ephemeral Quarantine & Optimistic Local Update
+      // Safeguard 1 & 2: Ephemeral Quarantine & Optimistic Local Update (scoped strictly to staging)
       item.displayInUI = false;
-      quarantineIdentifiers([activeBid]);
-      if (item.id) quarantineIdentifiers([item.id]);
+      UniversalMutationJournal.recordTombstone([activeBid, item.id].filter(Boolean), 'staging');
 
       await saveEncryptedStaging(state.staging);
       renderDeckSelector();
@@ -6929,8 +6947,17 @@
       const prevRedeemedList = [...redeemedList];
 
       targetCodes.forEach(c => {
-        const matches = state.vouchers.filter(x => x.code === c || (x.bookingId && x.bookingId === c));
-        const r = redeemedList.find(x => x.code === c || (x.bookingId && x.bookingId === c));
+        const cleanC = String(c || '').replace(/^'/, '').trim().toUpperCase();
+        const matches = state.vouchers.filter(x => {
+          const xc = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+          const xbid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+          return (xc && xc === cleanC) || (xbid && xbid === cleanC);
+        });
+        const r = redeemedList.find(x => {
+          const rc = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+          const rbid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+          return (rc && rc === cleanC) || (rbid && rbid === cleanC);
+        });
         const targetBrandName = normalizeBrandKey(brand || (r ? (r.originalTab || r.brand) : 'Voucher'));
 
         const bId = (r ? r.bookingId : null) || (matches[0] ? matches[0].bookingId : null);
@@ -6948,8 +6975,14 @@
           restoredObj = matches[0];
           // If there were somehow duplicate entries in state, prune down to 1
           if (matches.length > 1) {
-            const firstIdx = state.vouchers.findIndex(x => x.code === c);
-            state.vouchers = state.vouchers.filter((x, idx) => x.code !== c || idx === firstIdx);
+            const firstIdx = state.vouchers.findIndex(x => {
+              const xc = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+              return xc === cleanC;
+            });
+            state.vouchers = state.vouchers.filter((x, idx) => {
+              const xc = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+              return xc !== cleanC || idx === firstIdx;
+            });
           }
         } else {
           restoredObj = {
@@ -6977,15 +7010,23 @@
           UniversalMutationJournal.unquarantine(c);
           if (restoredObj.bookingId) UniversalMutationJournal.unquarantine(restoredObj.bookingId);
         }
-        const cleanC = String(c || '').trim().toUpperCase();
-        const cleanRBooking = r?.bookingId ? String(r.bookingId).trim().toUpperCase() : '';
+        const cleanRBooking = r?.bookingId ? String(r.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
         redeemedList = redeemedList.filter(x => {
-          const xCodeUpper = String(x.code || '').trim().toUpperCase();
-          const xBidUpper = String(x.bookingId || '').trim().toUpperCase();
+          const xCodeUpper = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+          const xBidUpper = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
           const cMatch = cleanC && xCodeUpper === cleanC;
           const bMatch = cleanRBooking && xBidUpper === cleanRBooking;
           return !cMatch && !bMatch;
         });
+        if (Array.isArray(sharedActivity)) {
+          sharedActivity.forEach(sa => {
+            const saCode = String(sa.code || '').replace(/^'/, '').trim().toUpperCase();
+            const saBid = String(sa.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            if ((cleanC && saCode === cleanC) || (cleanRBooking && saBid === cleanRBooking)) {
+              sa.status = 'DELIVERED';
+            }
+          });
+        }
       });
       saveRedeemedList();
       saveEncryptedVouchers(state.vouchers);
@@ -7325,6 +7366,7 @@
     async function commitRedeemToBackend(pending, options = {}) {
       if (!pending || pending.isCommitted) return;
       pending.isCommitted = true;
+      saveUncommittedRedeem(pending);
       try {
         // Option B: Single Consolidated Batch Payload (zero lock collisions, single roundtrip)
         const rawItems = pending.items || (
@@ -7339,6 +7381,7 @@
         }));
 
         const rollbackRedeem = () => {
+          removeUncommittedRedeem(pending.codes);
           if (pending.codes) {
             (Array.isArray(pending.codes) ? pending.codes : [pending.codes]).forEach(c => {
               UniversalMutationJournal.unquarantine(c);
@@ -13974,9 +14017,9 @@
         approvedItemsToJournal.push(voucherObj);
       });
 
-      // Record in Unified Mutation Journal & Quarantine from Staging immediately
+      // Record in Unified Mutation Journal & Quarantine from Staging immediately (scoped strictly to staging so vault render is immediate)
       MutationJournal.recordApprovals(approvedItemsToJournal);
-      quarantineIdentifiers([...bookingIds, ...codes]);
+      UniversalMutationJournal.recordTombstone([...bookingIds, ...codes], 'staging');
 
       // 2. Remove from state.staging (Inbox Zero)
       const bookingIdSet = new Set(bookingIds);

@@ -982,11 +982,11 @@ function extractBrand(subject, body) {
   if (combined.includes("big basket") || combined.includes("bigbasket")) return "BigBasket";
   if (combined.includes("thyrocare") || combined.includes("health check")) return "Thyrocare";
   if (combined.includes("cult")) return "CultFit";
-  if (combined.includes("amazon") || combined.includes("prime video") || combined.includes("primevideo")) return "AmazonPrime";
+  if (combined.includes("times prime") || combined.includes("timesprime") || combined.includes("tpace")) return "TimesPrime";
+  if (combined.includes("amazon") || combined.includes("prime video") || combined.includes("primevideo") || combined.includes("prime")) return "AmazonPrime";
   if (combined.includes("taxspanner")) return "TaxSpanner";
   if (combined.includes("decathlon")) return "Decathlon";
   if (combined.includes("tattva")) return "TattvaSpa";
-  if (combined.includes("times prime") || combined.includes("timesprime") || combined.includes("tpace")) return "TimesPrime";
   if (combined.includes("swiggy")) return "SwiggyOne";
 
   return "Other";
@@ -3590,24 +3590,28 @@ function doGet(e) {
     const cachedIncomeStr = cache.get("CACHE_INCOME");
 
     if (cachedCoreStr && cachedVouchersStr && (cachedIncomeStr || wsParam === "vouchers")) {
-      const core = JSON.parse(cachedCoreStr);
-      const vouchers = JSON.parse(cachedVouchersStr);
-      const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
+      try {
+        const core = JSON.parse(cachedCoreStr);
+        const vouchers = JSON.parse(cachedVouchersStr);
+        const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
 
-      const combined = {
-        sheetUrl: core.sheetUrl || ss.getUrl(),
-        unassigned: core.unassigned || [],
-        cooldowns: core.cooldowns || [],
-        cards: core.cards || [],
-        systemStatus: core.systemStatus || {},
-        vouchers: vouchers.vouchers || [],
-        staging: vouchers.staging || [],
-        redeemed: vouchers.redeemed || [],
-        shared: vouchers.shared || [],
-        income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
-      };
+        const combined = {
+          sheetUrl: core.sheetUrl || ss.getUrl(),
+          unassigned: core.unassigned || [],
+          cooldowns: core.cooldowns || [],
+          cards: core.cards || [],
+          systemStatus: core.systemStatus || {},
+          vouchers: vouchers.vouchers || [],
+          staging: vouchers.staging || [],
+          redeemed: vouchers.redeemed || [],
+          shared: vouchers.shared || [],
+          income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }
+        };
 
-      return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+      } catch (cacheParseErr) {
+        console.warn("Corrupted CacheService data, falling back to full sheet read:", cacheParseErr.message);
+      }
     }
 
     const sheets = ss.getSheets();
@@ -4831,6 +4835,20 @@ function doPost(e) {
         }
       }
 
+      // Revert Shared_Activity status to DELIVERED for restored vouchers
+      const sSheet = ss.getSheetByName("Shared_Activity");
+      if (sSheet && restored.length > 0) {
+        const restoredCodesSet = new Set(restored.map(r => r.code).filter(Boolean).map(c => String(c).replace(/^'/, '').trim().toUpperCase()));
+        const restoredBidsSet = new Set(restored.map(r => r.bookingId).filter(Boolean).map(b => String(b).replace(/^'/, '').trim().toUpperCase()));
+        const sRows = sSheet.getDataRange().getValues();
+        for (let i = 1; i < sRows.length; i++) {
+          const sCode = String(sRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+          if (restoredCodesSet.has(sCode) || restoredBidsSet.has(sCode)) {
+            sSheet.getRange(i + 1, 6).setValue("DELIVERED");
+          }
+        }
+      }
+
       SpreadsheetApp.flush();
 
       if (restored.length > 0) {
@@ -5069,7 +5087,15 @@ function doPost(e) {
         }
 
         if (existingActiveRow > 1) {
-          // Update in-place to prevent duplication (including benefits and timestamp)
+          // Update in-place to prevent duplication while strictly preserving tracked redemptions
+          const existingRow = currentARows[existingActiveRow - 1];
+          const mergedBenefits = benefits.map((bVal, bIdx) => {
+            const existingVal = existingRow[9 + bIdx];
+            if (existingVal !== undefined && existingVal !== null && String(existingVal).trim() !== "") {
+              return existingVal;
+            }
+            return bVal;
+          });
           const updatedRowValues = [
             bank,
             type,
@@ -5080,7 +5106,7 @@ function doPost(e) {
             "'" + String(cvv).replace(/^'/, ''),
             "ACTIVE",
             notes,
-            ...benefits,
+            ...mergedBenefits,
             nowStr
           ];
           aSheet.getRange(existingActiveRow, 1, 1, updatedRowValues.length).setValues([updatedRowValues]);
@@ -5143,7 +5169,28 @@ function doPost(e) {
               rowData[21], rowData[22], rowData[23],
               formatISTTimestamp(new Date())
             ];
-            aSheet.appendRow(activeRow);
+            // Deduplication shield: Check if bNum already exists in Active Cards
+            const aRows = aSheet.getDataRange().getValues();
+            let existingIdx = -1;
+            for (let ar = 1; ar < aRows.length; ar++) {
+              const aNum = String(aRows[ar][4] || '').replace(/['\s]/g, '').trim();
+              if (aNum === bNum) {
+                existingIdx = ar + 1;
+                break;
+              }
+            }
+            if (existingIdx > 1) {
+              const existingActive = aRows[existingIdx - 1];
+              for (let benIdx = 0; benIdx < 13; benIdx++) {
+                const exVal = existingActive[9 + benIdx];
+                if (exVal !== undefined && exVal !== null && String(exVal).trim() !== "" && (!activeRow[9 + benIdx] || String(activeRow[9 + benIdx]).trim() === "" || String(activeRow[9 + benIdx]).toLowerCase() === "unredeemed")) {
+                  activeRow[9 + benIdx] = exVal;
+                }
+              }
+              aSheet.getRange(existingIdx, 1, 1, activeRow.length).setValues([activeRow]);
+            } else {
+              aSheet.appendRow(activeRow);
+            }
             bSheet.deleteRow(b + 1);
             restored = true;
             break;
@@ -5203,7 +5250,28 @@ function doPost(e) {
               rowData[21], rowData[22], rowData[23],
               formatISTTimestamp(new Date())
             ];
-            aSheet.appendRow(activeRow);
+            // Deduplication shield: Check if bNum already exists in Active Cards
+            const aRows = aSheet.getDataRange().getValues();
+            let existingIdx = -1;
+            for (let ar = 1; ar < aRows.length; ar++) {
+              const aNum = String(aRows[ar][4] || '').replace(/['\s]/g, '').trim();
+              if (aNum === bNum) {
+                existingIdx = ar + 1;
+                break;
+              }
+            }
+            if (existingIdx > 1) {
+              const existingActive = aRows[existingIdx - 1];
+              for (let benIdx = 0; benIdx < 13; benIdx++) {
+                const exVal = existingActive[9 + benIdx];
+                if (exVal !== undefined && exVal !== null && String(exVal).trim() !== "" && (!activeRow[9 + benIdx] || String(activeRow[9 + benIdx]).trim() === "" || String(activeRow[9 + benIdx]).toLowerCase() === "unredeemed")) {
+                  activeRow[9 + benIdx] = exVal;
+                }
+              }
+              aSheet.getRange(existingIdx, 1, 1, activeRow.length).setValues([activeRow]);
+            } else {
+              aSheet.appendRow(activeRow);
+            }
             bSheet.deleteRow(b + 1);
             oldRestored = true;
             break;
@@ -5252,7 +5320,15 @@ function doPost(e) {
         }
 
         if (existingRowIndex > 1) {
-          // Update in-place to prevent duplication (including benefits and timestamp)
+          // Update in-place to prevent duplication while strictly preserving tracked redemptions
+          const existingRow = aRows[existingRowIndex - 1];
+          const mergedBenefits = benefits.map((bVal, bIdx) => {
+            const existingVal = existingRow[9 + bIdx];
+            if (existingVal !== undefined && existingVal !== null && String(existingVal).trim() !== "") {
+              return existingVal;
+            }
+            return bVal;
+          });
           const updatedRowValues = [
             bank,
             type,
@@ -5263,7 +5339,7 @@ function doPost(e) {
             "'" + String(cvv).replace(/^'/, ''),
             "ACTIVE",
             notes,
-            ...benefits,
+            ...mergedBenefits,
             nowStr
           ];
           aSheet.getRange(existingRowIndex, 1, 1, updatedRowValues.length).setValues([updatedRowValues]);
@@ -6099,7 +6175,7 @@ function doPost(e) {
         }
       } else {
         // Find & remove from Brand tab (or any brand tab)
-        const brandSheet = ss.getSheetByName(targetBrand) || ss.getSheetByName(rawBrand);
+        const brandSheet = ss.getSheetByName(targetBrand) || ss.getSheetByName(rawBrand) || getTargetBrandSheet(ss, targetBrand || rawBrand);
         if (brandSheet) {
           const bRows = brandSheet.getDataRange().getValues();
           const targetBidUpper = rawBid.replace(/^'/, '').trim().toUpperCase();
@@ -6122,6 +6198,37 @@ function doPost(e) {
               voucherFound = true;
               break;
             }
+          }
+        }
+        // Fallback: If not found in primary target brand sheet, search across all canonical brand sheets
+        if (!voucherFound) {
+          const allSheets = ss.getSheets();
+          for (const s of allSheets) {
+            const sName = s.getName();
+            if (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards" || s === brandSheet) continue;
+            const bRows = s.getDataRange().getValues();
+            const targetBidUpper = rawBid.replace(/^'/, '').trim().toUpperCase();
+            const targetCodeUpper = rawCode.replace(/^'/, '').trim().toUpperCase();
+            for (let i = bRows.length - 1; i >= 1; i--) {
+              const rowBid = String(bRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+              const rowCode = String(bRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
+              const matchBid = targetBidUpper && (rowBid === targetBidUpper || (rowBid.startsWith("RUPS-") && targetBidUpper.includes(rowBid)) || (targetBidUpper.startsWith("RUPS-") && rowBid.includes(targetBidUpper)));
+              const matchCode = targetCodeUpper && targetCodeUpper !== 'PENDING' && targetCodeUpper !== '-' && rowCode === targetCodeUpper;
+              if (matchBid || matchCode) {
+                finalBid = String(bRows[i][0] || finalBid);
+                finalCode = String(bRows[i][1] || finalCode);
+                finalPin = String(bRows[i][2] || finalPin);
+                finalAmount = Number(bRows[i][3]) || finalAmount;
+                finalDateOfIssue = String(bRows[i][4] || finalDateOfIssue);
+                finalAccount = String(bRows[i][5] || finalAccount);
+                finalCard = String(bRows[i][6] || finalCard);
+                finalAppendedTs = String(bRows[i][8] || finalAppendedTs);
+                s.deleteRow(i + 1);
+                voucherFound = true;
+                break;
+              }
+            }
+            if (voucherFound) break;
           }
         }
       }
@@ -6532,6 +6639,48 @@ function promoteTombstones(ss, hasLock) {
           rSheet.deleteRow(rRowsToDelete[d]);
         }
         promotedTotal += rRowsToAppend.length;
+      }
+    }
+
+    // 3. Scan Canonical Brand Tabs (Col 10: Display in UI)
+    const allSheets = ss.getSheets();
+    for (const bSheet of allSheets) {
+      const bName = bSheet.getName();
+      if (SYSTEM_SHEET_NAMES.has(bName) || bName === "Cards" || bName === "New" || bName === "Redeemed") continue;
+      if (bSheet.getLastRow() <= 1) continue;
+
+      const bVals = bSheet.getDataRange().getValues();
+      const bRowsToDelete = [];
+      const bRowsToAppend = [];
+
+      for (let i = 1; i < bVals.length; i++) {
+        const row = bVals[i];
+        const isDisp = row[9]; // Col 10: Display in UI
+        if (isDisp === false || String(isDisp).toLowerCase() === 'false') {
+          bRowsToAppend.push([
+            formatAsTextCell(row[0]), // Booking ID
+            formatAsTextCell(row[1]), // Code
+            formatAsTextCell(row[2]), // PIN
+            bName,                    // Brand
+            row[3] || "",             // Value
+            row[5] || "",             // Account
+            row[6] || "",             // Card
+            bName,                    // Source Tab
+            row[7] || "ACTIVE",       // Original Status
+            nowIst                    // Tombstoned Timestamp (IST)
+          ]);
+          bRowsToDelete.push(i + 1);
+        }
+      }
+
+      if (bRowsToAppend.length > 0) {
+        const lastRow = tSheet.getLastRow();
+        tSheet.getRange(lastRow + 1, 1, bRowsToAppend.length, 3).setNumberFormat("@");
+        tSheet.getRange(lastRow + 1, 1, bRowsToAppend.length, bRowsToAppend[0].length).setValues(bRowsToAppend);
+        for (let d = bRowsToDelete.length - 1; d >= 0; d--) {
+          bSheet.deleteRow(bRowsToDelete[d]);
+        }
+        promotedTotal += bRowsToAppend.length;
       }
     }
 
