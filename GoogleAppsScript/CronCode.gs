@@ -5411,14 +5411,21 @@ function doPost(e) {
 
       for (const sheet of sheets) {
         const sName = sheet.getName();
-        if (sName !== "New" && (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards")) continue;
+        if (sName !== "New" && sName !== "Redeemed" && (SYSTEM_SHEET_NAMES.has(sName) || sName === "Cards")) continue;
         const vals = sheet.getDataRange().getValues();
+        const isRedeemedTab = sName === "Redeemed";
+        const bidColIdx = isRedeemedTab ? 1 : 0;
+        const codeColIdx = isRedeemedTab ? 2 : 1;
+        const cardColNumber = isRedeemedTab ? 8 : 7;
+
         for (let i = 1; i < vals.length; i++) {
-          const rowBid = String(vals[i][0] || "").replace(/^'/, '').trim();
-          const rowCode = String(vals[i][1] || "").replace(/^'/, '').trim();
+          const rowBid = String(vals[i][bidColIdx] || "").replace(/^'/, '').trim();
+          const rowCode = String(vals[i][codeColIdx] || "").replace(/^'/, '').trim();
           if (codes.has(rowCode.toUpperCase()) || codes.has(rowBid.toUpperCase())) {
-            sheet.getRange(i + 1, 7).setValue(cardTag); // Col 7: Card
-            const resolvedBrand = (sName === "New" && vals[i].length > 10 && vals[i][10]) ? String(vals[i][10]).trim() : sName;
+            sheet.getRange(i + 1, cardColNumber).setValue(cardTag);
+            const resolvedBrand = isRedeemedTab
+              ? String(vals[i][0] || vals[i][10] || "Voucher").trim()
+              : ((sName === "New" && vals[i].length > 10 && vals[i][10]) ? String(vals[i][10]).trim() : sName);
             updated.push({ brand: resolvedBrand, bookingId: rowBid, code: rowCode, card: cardTag });
           }
         }
@@ -5837,9 +5844,10 @@ function doPost(e) {
         if (isCharge) {
           targetSheet = getOrCreateRuPayChargesSheet(ss);
         } else {
-          return ContentService.createTextOutput(JSON.stringify({
-            error: `"${targetSheetName}" tab not found in spreadsheet`
-          })).setMimeType(ContentService.MimeType.JSON);
+          targetSheet = ss.insertSheet("RuPay Income");
+          targetSheet.appendRow(["Brand", "Date", "Sale Value", "Comments"]);
+          targetSheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#F3F4F6");
+          targetSheet.setFrozenRows(1);
         }
       }
 

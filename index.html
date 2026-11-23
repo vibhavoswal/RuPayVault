@@ -5503,18 +5503,20 @@
       if (!act) {
         const s = sharedActivity.find(x => x.code === id || ('shared-' + x.code) === id || (x.bookingId && (x.bookingId === id || ('shared-' + x.bookingId) === id)));
         if (s) {
+          const originVoucher = (state.vouchers || []).find(v => (s.code && v.code === s.code) || (s.bookingId && v.bookingId === s.bookingId)) ||
+                                (state.staging || []).find(v => (s.code && v.code === s.code) || (s.bookingId && v.bookingId === s.bookingId));
           act = {
             id: 'shared-' + s.code,
             code: s.code,
-            brand: s.brand || 'Voucher',
-            amount: s.amount || 0,
-            pin: s.pin || '',
-            account: '-',
-            card: 'Shared',
+            brand: s.brand || (originVoucher ? originVoucher.brand : 'Voucher'),
+            amount: s.amount || (originVoucher ? originVoucher.amount : 0),
+            pin: s.pin || (originVoucher ? originVoucher.pin : ''),
+            account: (originVoucher ? originVoucher.account : '-'),
+            card: s.card || (originVoucher ? originVoucher.card : 'Unassigned'),
             timestampStr: s.sharedAt,
             timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
             status: 'SHARED',
-            bookingId: s.bookingId || ''
+            bookingId: s.bookingId || (originVoucher ? originVoucher.bookingId : '') || ''
           };
           isShared = true;
         }
@@ -7381,7 +7383,7 @@
     function isCardTagged(cardStr) {
       if (!cardStr) return false;
       const c = String(cardStr).trim();
-      return c !== '' && c !== 'Unassigned' && c !== 'RuPay Select' && c !== '-' && c.toUpperCase() !== 'NA' && c.toLowerCase() !== 'null' && c.toLowerCase() !== 'undefined';
+      return c !== '' && c !== 'Unassigned' && c !== 'RuPay Select' && c !== '-' && c !== 'Shared' && c.toUpperCase() !== 'NA' && c.toLowerCase() !== 'null' && c.toLowerCase() !== 'undefined';
     }
 
     function setIngestFilter(filter) {
@@ -14274,7 +14276,7 @@
       if (last4.length !== 4) return;
       const cardTag = `${variant} ${last4}`;
 
-      // Identify selected vouchers from both active vault and staging queue
+      // Identify selected vouchers from active vault, staging queue, and redeemed list
       const targetVouchers = state.vouchers.filter(v =>
         state.selectedIds.has(v.id) ||
         (v.code && v.code !== '-' && state.selectedIds.has(v.code)) ||
@@ -14288,7 +14290,14 @@
         (s.code && s.code !== 'PENDING' && s.code !== '-' && state.selectedIds.has(s.code))
       );
 
-      const allTargets = [...targetVouchers, ...targetStaging];
+      const targetRedeemed = (redeemedList || []).filter(r =>
+        state.selectedIds.has(r.id) ||
+        (r.code && r.code !== '-' && state.selectedIds.has(r.code)) ||
+        (r.bookingId && state.selectedIds.has(r.bookingId)) ||
+        state.selectedIds.has('redeemed-' + r.code)
+      );
+
+      const allTargets = [...targetVouchers, ...targetStaging, ...targetRedeemed];
 
       if (!allTargets.length) {
         showToast('No vouchers selected');
@@ -14308,9 +14317,11 @@
       setTimeout(async () => {
         const previousVouchers = state.vouchers.map(v => ({ ...v }));
         const previousStaging = (state.staging || []).map(s => ({ ...s }));
+        const previousRedeemed = (redeemedList || []).map(r => ({ ...r }));
 
         targetVouchers.forEach(v => { v.card = cardTag; });
         targetStaging.forEach(s => { s.card = cardTag; });
+        targetRedeemed.forEach(r => { r.card = cardTag; });
 
         const targetCount = allTargets.length;
         const lookupCodesSet = new Set();
@@ -14325,6 +14336,10 @@
           if (s.bookingId && s.bookingId !== '-' && !s.bookingId.startsWith('#')) lookupCodesSet.add(s.bookingId);
           if (s.code && !isPlaceholder(s.code)) lookupCodesSet.add(s.code);
         });
+        targetRedeemed.forEach(r => {
+          if (r.bookingId && r.bookingId !== '-' && !r.bookingId.startsWith('#')) lookupCodesSet.add(r.bookingId);
+          if (r.code && !isPlaceholder(r.code)) lookupCodesSet.add(r.code);
+        });
         const lookupCodes = Array.from(lookupCodesSet);
         MutationJournal.recordTags(lookupCodes, cardTag);
 
@@ -14335,11 +14350,13 @@
         state.isSelectMode = false;
 
         // Save local encrypted cache
+        saveRedeemedList();
         await Promise.all([
           saveEncryptedVouchers(state.vouchers),
           saveEncryptedStaging(state.staging)
         ]);
         renderVault();
+        if (state.activeWorkspace === 'activity') renderActivityLog();
         showToast(`Tagged ${targetCount} voucher${targetCount > 1 ? 's' : ''} as ${cardTag} · Moved to Tagged`);
 
         // Backend synchronization with Safeguard Rollback Handler (SG4)
@@ -14351,12 +14368,15 @@
             rollback: async () => {
               state.vouchers = previousVouchers;
               state.staging = previousStaging;
+              redeemedList = previousRedeemed;
+              saveRedeemedList();
               lookupCodes.forEach(code => MutationJournal.removeTag(code));
               await Promise.all([
                 saveEncryptedVouchers(state.vouchers),
                 saveEncryptedStaging(state.staging)
               ]);
               renderVault();
+              if (state.activeWorkspace === 'activity') renderActivityLog();
               showToast('Tagging failed on server. Changes restored.');
             }
           });
