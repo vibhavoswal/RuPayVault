@@ -5066,7 +5066,7 @@
             } else {
               lastErr = err;
             }
-            if (err.message && (err.message.includes('Session expired') || err.message.includes('unauthorized'))) {
+            if (err.message && /session expired|unauthorized/i.test(err.message)) {
               throw err;
             }
             if (attempt < maxAttempts) {
@@ -5458,10 +5458,14 @@
         timeMs = typeof v.shared_at === 'number' ? v.shared_at : parseTimestamp(v.shared_at);
       }
       if (!timeMs && (v.code || v.bookingId)) {
-        const targetCode = v.code && v.code !== 'Pending' && v.code !== '-' ? v.code : '';
-        const targetBid = v.bookingId || '';
+        const targetCode = v.code && v.code !== 'Pending' && v.code !== '-' ? String(v.code).replace(/^'/, '').trim().toUpperCase() : '';
+        const targetBid = v.bookingId ? String(v.bookingId).replace(/^'/, '').trim().toUpperCase() : '';
         const s = (typeof sharedActivity !== 'undefined' && Array.isArray(sharedActivity))
-          ? sharedActivity.find(x => (targetCode && x.code === targetCode) || (targetBid && (x.bookingId === targetBid || x.code === targetBid)))
+          ? sharedActivity.find(x => {
+              const xCd = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+              const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+              return (targetCode && xCd === targetCode) || (targetBid && (xBid === targetBid || xCd === targetBid));
+            })
           : null;
         if (s) {
           timeMs = s.timestampMs || parseTimestamp(s.sharedAt);
@@ -5510,7 +5514,7 @@
             timestampStr: s.sharedAt,
             timestampMs: s.timestampMs || parseTimestamp(s.sharedAt),
             status: 'SHARED',
-            bookingId: ''
+            bookingId: s.bookingId || ''
           };
           isShared = true;
         }
@@ -5691,11 +5695,21 @@
       const footerEl = document.getElementById('vdetail-footer');
       if (footerEl) {
         if (isShared) {
+          const isStagedShared = state.staging && state.staging.some(s => (act.code && act.code !== 'Pending' && s.code === act.code) || (act.bookingId && s.bookingId === act.bookingId));
+          const stagedItem = isStagedShared ? state.staging.find(s => (act.code && act.code !== 'Pending' && s.code === act.code) || (act.bookingId && s.bookingId === act.bookingId)) : null;
+          const stagedArrived = stagedItem ? isVoucherArrived(stagedItem) : false;
           footerEl.innerHTML = `
-            <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
-              <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              <span>Mark as Redeemed</span>
-            </button>
+            ${isStagedShared ? (stagedArrived ? `
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${stagedItem.id}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span>Approve to Brand Tab</span>
+              </button>
+            ` : '') : `
+              <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}', '${act.bookingId || ''}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
+                <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                <span>Mark as Redeemed</span>
+              </button>
+            `}
             <button onclick="dismissSharedActivity('${dismissKey}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
@@ -5769,7 +5783,7 @@
             <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[#25D366] hover:text-white transition-all active:scale-95 flex items-center justify-center" title="Share via WhatsApp" aria-label="Share via WhatsApp">
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
-            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
+            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}', '${act.bookingId || ''}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
               <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Redeem</span>
             </button>
@@ -6378,7 +6392,9 @@
               code: cleanCode,
               brand: brandKey,
               isStaging: isStaging,
-              comments: commentStr
+              comments: commentStr,
+              price: rawPrice,
+              date: normalizedSaleDate
             }, {
               rollback: () => {
                 showToast('Failed to reverse sale on server');
@@ -6800,7 +6816,7 @@
       );
     }
 
-    async function markVoucherAsRedeemed(code, brand) {
+    async function markVoucherAsRedeemed(code, brand, optionalBookingId) {
       if (!code || String(code).trim().toUpperCase() === 'PENDING' || /processing/i.test(code) || String(code).trim() === '-') {
         showToast('Pending vouchers cannot be redeemed yet');
         return;
@@ -6810,15 +6826,18 @@
         return;
       }
       // Strict state machine guard: Vouchers in staging MUST be approved to brand tab first
-      if (state.staging && state.staging.some(s => s.code === code || s.bookingId === code)) {
+      if (state.staging && state.staging.some(s => (code && (s.code === code || s.bookingId === code)) || (optionalBookingId && s.bookingId === optionalBookingId))) {
         showToast("Voucher is in staging. Approve to brand tab before redeeming.");
         return;
       }
 
       const cleanRedeemKey = String(code || '').trim().toUpperCase();
+      const cleanBidKey = String(optionalBookingId || '').trim().toUpperCase();
       sharedActivity = sharedActivity.filter(s => {
-        const cMatch = s.code && s.code.toUpperCase() === cleanRedeemKey;
-        const bMatch = s.bookingId && s.bookingId.toUpperCase() === cleanRedeemKey;
+        const sCd = String(s.code || '').trim().toUpperCase();
+        const sBid = String(s.bookingId || '').trim().toUpperCase();
+        const cMatch = cleanRedeemKey && (sCd === cleanRedeemKey || sBid === cleanRedeemKey);
+        const bMatch = cleanBidKey && (sBid === cleanBidKey || sCd === cleanBidKey);
         return !cMatch && !bMatch;
       });
       saveSharedActivity();
@@ -6826,19 +6845,32 @@
       let foundAmount = 0;
       let foundPin = '';
       let sheetBrand = normalizeBrandKey(brand || '');
-      let bookingId = '';
+      let bookingId = optionalBookingId || '';
       let account = '';
       let card = '';
       let dateOfIssue = '';
       let expiry = '';
       let timestampIST = '';
 
-      const v = state.vouchers.find(x => x.code === code);
+      const cleanTarget = String(code || '').replace(/^'/, '').trim().toUpperCase();
+      const cleanBid = String(optionalBookingId || '').replace(/^'/, '').trim().toUpperCase();
+      const v = (state.vouchers || []).find(x => {
+        const xCd = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
+        const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+        const xId = String(x.id || '').trim();
+        return (cleanTarget && (xCd === cleanTarget || xBid === cleanTarget || xId === code)) ||
+               (cleanBid && (xBid === cleanBid || xCd === cleanBid));
+      });
+
+      // Capture snapshot before mutation for resilient 2-way rollback
+      const prevVouchersSnapshot = (state.vouchers || []).map(x => ({ ...x }));
+      const prevRedeemedSnapshot = (redeemedList || []).map(x => ({ ...x }));
+
       if (v) {
         v.status = 'USED';
         foundAmount = v.amount || foundAmount;
         foundPin = v.pin || foundPin;
-        bookingId = (v ? v.bookingId : '') || '';
+        bookingId = (v ? v.bookingId : '') || bookingId || '';
         account = (v ? v.account : '') || '';
         card = (v ? v.card : '') || '';
         dateOfIssue = (v ? v.dateOfIssue : '') || '';
@@ -6872,7 +6904,9 @@
         byBrand: { [sheetBrand]: [code] },
         codes: [code],
         brandName: summaryLabel,
-        isCommitted: false
+        isCommitted: false,
+        prevVouchers: prevVouchersSnapshot,
+        prevRedeemedList: prevRedeemedSnapshot
       };
 
       // Zero Delay: Dispatch backend redemption immediately!
@@ -7308,6 +7342,16 @@
               UniversalMutationJournal.unquarantine(c);
             });
           }
+          if (pending.prevVouchers && Array.isArray(pending.prevVouchers)) {
+            state.vouchers = [...pending.prevVouchers];
+            saveEncryptedVouchers(state.vouchers);
+          }
+          if (pending.prevRedeemedList && Array.isArray(pending.prevRedeemedList)) {
+            redeemedList = [...pending.prevRedeemedList];
+            saveRedeemedList();
+          }
+          renderDeckSelector();
+          renderVault();
         };
 
         const res = await apiFetch('MOVE_TO_REDEEMED', {
@@ -7317,6 +7361,7 @@
 
         if (res && res.error) {
           console.error('[Redeem] Backend rejected move to redeemed:', res.error);
+          rollbackRedeem();
           showToast('Redemption sync failed: ' + res.error);
           return;
         }
@@ -8025,7 +8070,7 @@
         if (price > 0) {
           grossIncome += price;
           incomeCount++;
-        } else {
+        } else if (price < 0) {
           cardCharges += Math.abs(price);
           chargeCount++;
         }
@@ -14175,6 +14220,7 @@
               code: rawCode
             }, {
               rollback: async () => {
+                UniversalMutationJournal.unquarantine(rawCode);
                 state.vouchers = [optimisticVoucher, ...state.vouchers];
                 saveEncryptedVouchers(state.vouchers);
                 UniversalMutationJournal.record('MISC_VOUCHER_ADD', 'voucher', rawCode, { voucher: optimisticVoucher }, [journalKey]);
@@ -14976,6 +15022,10 @@
         const movedCodes = [];
         const byBrand = {};
 
+        // Snapshot prior state for resilient 2-way rollback
+        const prevVouchersSnapshot = (state.vouchers || []).map(x => ({ ...x }));
+        const prevRedeemedSnapshot = (redeemedList || []).map(x => ({ ...x }));
+
         targetVouchers.forEach(v => {
           v.status = 'USED';
           const vCodeUpper = String(v.code || '').trim().toUpperCase();
@@ -15031,7 +15081,9 @@
           byBrand: byBrand,
           codes: movedCodes,
           brandName: summaryLabel,
-          isCommitted: false
+          isCommitted: false,
+          prevVouchers: prevVouchersSnapshot,
+          prevRedeemedList: prevRedeemedSnapshot
         };
 
         // Zero Delay: Dispatch batch redemption immediately!

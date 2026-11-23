@@ -5069,16 +5069,21 @@ function doPost(e) {
         }
 
         if (existingActiveRow > 1) {
-          // Update in-place to prevent duplication
-          aSheet.getRange(existingActiveRow, 1).setValue(bank);
-          aSheet.getRange(existingActiveRow, 2).setValue(type);
-          aSheet.getRange(existingActiveRow, 3).setValue(name);
-          aSheet.getRange(existingActiveRow, 4).setValue("'" + String(linkedAcc).replace(/^'/, ''));
-          aSheet.getRange(existingActiveRow, 5).setValue("'" + newCardNum);
-          aSheet.getRange(existingActiveRow, 6).setValue("'" + String(expiry).replace(/^'/, ''));
-          aSheet.getRange(existingActiveRow, 7).setValue("'" + String(cvv).replace(/^'/, ''));
-          aSheet.getRange(existingActiveRow, 8).setValue("ACTIVE");
-          aSheet.getRange(existingActiveRow, 9).setValue(notes);
+          // Update in-place to prevent duplication (including benefits and timestamp)
+          const updatedRowValues = [
+            bank,
+            type,
+            name,
+            "'" + String(linkedAcc).replace(/^'/, ''),
+            "'" + newCardNum,
+            "'" + String(expiry).replace(/^'/, ''),
+            "'" + String(cvv).replace(/^'/, ''),
+            "ACTIVE",
+            notes,
+            ...benefits,
+            nowStr
+          ];
+          aSheet.getRange(existingActiveRow, 1, 1, updatedRowValues.length).setValues([updatedRowValues]);
         } else {
           // Append brand new active row
           const newRow = [
@@ -5247,16 +5252,21 @@ function doPost(e) {
         }
 
         if (existingRowIndex > 1) {
-          // Update in-place to prevent duplication
-          aSheet.getRange(existingRowIndex, 1).setValue(bank);
-          aSheet.getRange(existingRowIndex, 2).setValue(type);
-          aSheet.getRange(existingRowIndex, 3).setValue(name);
-          aSheet.getRange(existingRowIndex, 4).setValue("'" + String(linkedAcc).replace(/^'/, ''));
-          aSheet.getRange(existingRowIndex, 5).setValue("'" + cardNum);
-          aSheet.getRange(existingRowIndex, 6).setValue("'" + String(expiry).replace(/^'/, ''));
-          aSheet.getRange(existingRowIndex, 7).setValue("'" + String(cvv).replace(/^'/, ''));
-          aSheet.getRange(existingRowIndex, 8).setValue("ACTIVE");
-          aSheet.getRange(existingRowIndex, 9).setValue(notes);
+          // Update in-place to prevent duplication (including benefits and timestamp)
+          const updatedRowValues = [
+            bank,
+            type,
+            name,
+            "'" + String(linkedAcc).replace(/^'/, ''),
+            "'" + cardNum,
+            "'" + String(expiry).replace(/^'/, ''),
+            "'" + String(cvv).replace(/^'/, ''),
+            "ACTIVE",
+            notes,
+            ...benefits,
+            nowStr
+          ];
+          aSheet.getRange(existingRowIndex, 1, 1, updatedRowValues.length).setValues([updatedRowValues]);
         } else {
           aSheet.appendRow([
             bank,
@@ -6025,6 +6035,15 @@ function doPost(e) {
         }
       }
 
+      // Ensure "RuPay Income" sheet exists before modifying any voucher rows
+      let incomeSheet = ss.getSheetByName("RuPay Income");
+      if (!incomeSheet) {
+        incomeSheet = ss.insertSheet("RuPay Income");
+        incomeSheet.appendRow(["Brand", "Date", "Sale Value", "Comments"]);
+        incomeSheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#F3F4F6");
+        incomeSheet.setFrozenRows(1);
+      }
+
       let voucherFound = false;
       let finalBid = rawBid;
       let finalCode = rawCode;
@@ -6124,11 +6143,8 @@ function doPost(e) {
       }
 
       // Step 2: Format Comment & Insert into "RuPay Income" Tab
-      let incomeSheet = ss.getSheetByName("RuPay Income");
       if (!incomeSheet) {
-        return ContentService.createTextOutput(JSON.stringify({
-          error: '"RuPay Income" tab not found in spreadsheet'
-        })).setMimeType(ContentService.MimeType.JSON);
+        incomeSheet = ss.getSheetByName("RuPay Income");
       }
 
       const soldTo = String(sale.soldTo || '').trim();
@@ -6215,6 +6231,8 @@ function doPost(e) {
       const cleanTargetBid = targetBid.replace(/^'/, '').trim().toUpperCase();
       const cleanTargetCode = targetCode.replace(/^'/, '').trim().toUpperCase();
       const targetComments = String(data.comments || '').trim();
+      const targetPrice = Math.abs(Number(data.price) || 0);
+      const targetDate = String(data.date || data.saleDate || '').trim();
       const brand = String(data.brand || '').trim();
       const isStaging = data.isStaging !== false && (data.isStaging || !brand || brand === '\u26A1 Unassigned' || brand === 'Unassigned');
       
@@ -6316,16 +6334,22 @@ function doPost(e) {
       // Step 3: Delete matching sale entry from "RuPay Income" tab (search backwards to match most recent)
       const incomeSheet = ss.getSheetByName("RuPay Income");
       let deletedIncomeRow = -1;
-      if (incomeSheet && (targetComments || cleanTargetBid || cleanTargetCode)) {
+      if (incomeSheet) {
         const iVals = incomeSheet.getDataRange().getValues();
         for (let r = iVals.length - 1; r >= 1; r--) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
+          const rowPrice = Math.abs(Number(iVals[r][2]) || 0);
+          const rowDate = String(iVals[r][1] || '').trim();
+
           const matchComment = targetComments && comm === targetComments;
           const matchBidInComm = cleanTargetBid && (comm.toUpperCase().includes(cleanTargetBid) || (targetBid && comm.includes(targetBid)));
           const matchCodeInComm = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && (comm.toUpperCase().includes(cleanTargetCode) || (targetCode && comm.includes(targetCode)));
-          if (matchComment || matchBidInComm || matchCodeInComm) {
+          const matchPriceAndDate = targetPrice > 0 && rowPrice === targetPrice && (!targetDate || rowDate === targetDate || rowDate.includes(targetDate) || targetDate.includes(rowDate));
+          const matchBrandAndPrice = brand && col0.includes(brand.toUpperCase()) && (!targetPrice || rowPrice === targetPrice);
+
+          if (matchComment || matchBidInComm || matchCodeInComm || (matchPriceAndDate && (matchBrandAndPrice || !brand)) || (targetComments && comm.includes(targetComments) && matchPriceAndDate)) {
             deletedIncomeRow = r + 1;
             incomeSheet.deleteRow(r + 1);
             break;
