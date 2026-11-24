@@ -1627,6 +1627,7 @@ function doGet(e) {
       }
 
       SpreadsheetApp.flush();
+      bumpDataVersion();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         report: report
@@ -1679,6 +1680,7 @@ function doGet(e) {
       }
 
       SpreadsheetApp.flush();
+      bumpDataVersion();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         report: report
@@ -3616,11 +3618,14 @@ function doGet(e) {
 
     // Fast-Path: Spreadsheet modification check (~150ms)
     if (e && e.parameter && e.parameter.action === "CHECK_MODIFIED") {
+      const bypass = !!(e.parameter.bypass_cache === "true" || e.parameter.force === "true");
       const versionInfo = getDataVersionInfo(ss);
       const clientTimestamp = Number(e.parameter.since || 0);
       const clientVersion = Number(e.parameter.version || 0);
-      const notModified = (clientVersion > 0 && clientVersion === versionInfo.version) ||
-                          (clientTimestamp > 0 && Math.abs(versionInfo.lastUpdated - clientTimestamp) < 1000);
+      const notModified = !bypass && (
+        (clientVersion > 0 && clientVersion === versionInfo.version) ||
+        (clientTimestamp > 0 && Math.abs(versionInfo.lastUpdated - clientTimestamp) < 1000)
+      );
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "CHECK_MODIFIED",
@@ -3649,51 +3654,68 @@ function doGet(e) {
       }
     }
 
-    // High-Speed Fast Path: Return partitioned CacheService payload (~300ms)
-    const cache = CacheService.getScriptCache();
+    // High-Speed Fast Path: Return partitioned CacheService payload (~100-300ms) unless bypass_cache requested
+    const bypassCache = !!(e && e.parameter && (e.parameter.bypass_cache === "true" || e.parameter.force === "true" || e.parameter.nocache === "true"));
     const wsParam = (e && e.parameter && e.parameter.workspace) ? String(e.parameter.workspace).toLowerCase() : "";
-    const cachedCoreStr = cache.get("CACHE_CORE");
-    const cachedMetaStr = cache.get("CACHE_VOUCHERS_META");
-    const cachedStagingRedeemedStr = cache.get("CACHE_STAGING_REDEEMED");
-    const cachedIncomeStr = cache.get("CACHE_INCOME");
+    const cache = CacheService.getScriptCache();
 
-    if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && (cachedIncomeStr || wsParam === "vouchers")) {
-      try {
-        const meta = JSON.parse(cachedMetaStr);
-        const core = JSON.parse(cachedCoreStr);
-        const stagingRedeemed = JSON.parse(cachedStagingRedeemedStr);
-        const vouchers = [];
-        let allChunksPresent = true;
-        for (let c = 1; c <= meta.numChunks; c++) {
-          const chunkStr = cache.get("CACHE_VOUCHERS_" + c);
-          if (!chunkStr) { allChunksPresent = false; break; }
-          vouchers.push(...JSON.parse(chunkStr));
+    if (!bypassCache) {
+      const initialKeys = ["CACHE_CORE", "CACHE_VOUCHERS_META", "CACHE_STAGING_REDEEMED", "CACHE_INCOME"];
+      const cachedMap = cache.getAll(initialKeys);
+      const cachedCoreStr = cachedMap["CACHE_CORE"];
+      const cachedMetaStr = cachedMap["CACHE_VOUCHERS_META"];
+      const cachedStagingRedeemedStr = cachedMap["CACHE_STAGING_REDEEMED"];
+      const cachedIncomeStr = cachedMap["CACHE_INCOME"];
+
+      if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && (cachedIncomeStr || wsParam === "vouchers")) {
+        try {
+          const meta = JSON.parse(cachedMetaStr);
+          const core = JSON.parse(cachedCoreStr);
+          const stagingRedeemed = JSON.parse(cachedStagingRedeemedStr);
+          const vouchers = [];
+
+          // Single batch call for all voucher chunks
+          const chunkKeys = [];
+          for (let c = 1; c <= meta.numChunks; c++) {
+            chunkKeys.push("CACHE_VOUCHERS_" + c);
+          }
+          const chunkMap = cache.getAll(chunkKeys);
+          let allChunksPresent = true;
+          for (let c = 1; c <= meta.numChunks; c++) {
+            const chunkStr = chunkMap["CACHE_VOUCHERS_" + c];
+            if (!chunkStr) { allChunksPresent = false; break; }
+            vouchers.push(...JSON.parse(chunkStr));
+          }
+
+          if (allChunksPresent) {
+            const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
+            const versionInfo = getDataVersionInfo(ss);
+
+            const combined = {
+              sheetUrl: core.sheetUrl || ss.getUrl(),
+              unassigned: core.unassigned || [],
+              cooldowns: core.cooldowns || [],
+              cards: core.cards || [],
+              systemStatus: core.systemStatus || {},
+              vouchers: vouchers,
+              staging: stagingRedeemed.staging || [],
+              redeemed: stagingRedeemed.redeemed || [],
+              shared: stagingRedeemed.shared || [],
+              income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] },
+              version: versionInfo.version,
+              lastUpdated: versionInfo.lastUpdated,
+              cached: true
+            };
+
+            return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
+          }
+        } catch (cacheParseErr) {
+          console.warn("Corrupted CacheService data, falling back to full sheet read:", cacheParseErr.message);
         }
-
-        if (allChunksPresent) {
-          const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
-          const versionInfo = getDataVersionInfo(ss);
-
-          const combined = {
-            sheetUrl: core.sheetUrl || ss.getUrl(),
-            unassigned: core.unassigned || [],
-            cooldowns: core.cooldowns || [],
-            cards: core.cards || [],
-            systemStatus: core.systemStatus || {},
-            vouchers: vouchers,
-            staging: stagingRedeemed.staging || [],
-            redeemed: stagingRedeemed.redeemed || [],
-            shared: stagingRedeemed.shared || [],
-            income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] },
-            version: versionInfo.version,
-            lastUpdated: versionInfo.lastUpdated
-          };
-
-          return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
-        }
-      } catch (cacheParseErr) {
-        console.warn("Corrupted CacheService data, falling back to full sheet read:", cacheParseErr.message);
       }
+    } else {
+      // User explicitly requested cache bypass: purge stale cache keys
+      invalidateAppCache();
     }
 
     const sheets = ss.getSheets();
@@ -4043,6 +4065,9 @@ function doGet(e) {
     // Store in CacheService partitioned into Core, Vouchers (chunked), and Income (6-hour TTL)
     try {
       const cache = CacheService.getScriptCache();
+      if (bypassCache) {
+        bumpDataVersion();
+      }
       const versionInfo = getDataVersionInfo(ss);
 
       const partCore = JSON.stringify({

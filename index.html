@@ -4413,6 +4413,7 @@
     function showLockScreen() {
       document.documentElement.classList.remove('vault-authenticated');
       document.documentElement.removeAttribute('data-active-ws');
+      broadcastVaultEvent('VAULT_LOCKED');
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.remove('hidden');
@@ -4749,6 +4750,17 @@
     /* --- UNIVERSAL MUTATION JOURNAL (PROPAGATION SHIELD & EVENTUAL-CONSISTENCY RECONCILER) --- */
     const MUTATION_JOURNAL_TTL_MS = 60000; // 60s TTL safety net for in-flight mutations
 
+    /* --- CROSS-TAB REAL-TIME SYNCHRONIZATION BUS --- */
+    const vaultBroadcastBus = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('rupay_vault_bus') : null;
+
+    function broadcastVaultEvent(type, payload = {}) {
+      try {
+        if (vaultBroadcastBus) {
+          vaultBroadcastBus.postMessage({ type, payload, timestamp: Date.now() });
+        }
+      } catch (_) {}
+    }
+
     const UniversalMutationJournal = {
       KEY: 'rupay_universal_mutation_journal',
 
@@ -4760,9 +4772,21 @@
         } catch (_) { return []; }
       },
 
+      cleanupExpired() {
+        try {
+          const list = JSON.parse(localStorage.getItem(this.KEY) || '[]');
+          const now = Date.now();
+          const valid = Array.isArray(list) ? list.filter(item => item && item.expiresAt > now) : [];
+          if (Array.isArray(list) && valid.length !== list.length) {
+            localStorage.setItem(this.KEY, JSON.stringify(valid));
+          }
+        } catch (_) {}
+      },
+
       save(list) {
         try {
           localStorage.setItem(this.KEY, JSON.stringify(list));
+          broadcastVaultEvent('MUTATION_RECORDED', { count: (list || []).length });
         } catch (_) {}
       },
 
@@ -5025,6 +5049,58 @@
       }
       return UniversalMutationJournal.isTombstoned(cardNum, 'card');
     }
+
+    // Cross-Tab Bus Message Handler
+    if (vaultBroadcastBus) {
+      vaultBroadcastBus.onmessage = async (event) => {
+        try {
+          const { type, payload } = event.data || {};
+          if (type === 'MUTATION_RECORDED') {
+            // Sibling tab mutated: immediately refresh active workspace UI
+            if (state.activeWorkspace === 'vouchers') {
+              renderVault();
+            } else if (state.activeWorkspace === 'cards') {
+              renderCardManagerList(currentCardCategoryFilter || 'Debit');
+            } else if (state.activeWorkspace === 'income') {
+              renderIncomeTracker();
+            } else if (state.activeWorkspace === 'banks') {
+              renderBankManager();
+            }
+            persistL1ViewCache();
+          } else if (type === 'SYNC_COMPLETED') {
+            if (payload && payload.timeStr) {
+              updateAllSyncIndicators('success', payload.timeStr);
+            }
+            // Sibling tab completed a fresh sync: rehydrate encrypted data from storage
+            const loadedVouchers = await loadEncryptedVouchers();
+            if (loadedVouchers) state.vouchers = loadedVouchers;
+            const loadedCards = await loadEncryptedCards();
+            if (loadedCards) state.cards = loadedCards;
+            const loadedIncome = await loadEncryptedIncome();
+            if (loadedIncome) state.income = loadedIncome;
+            renderAll();
+            persistL1ViewCache();
+          } else if (type === 'VAULT_LOCKED') {
+            showLockScreen();
+          }
+        } catch (_) {}
+      };
+    }
+
+    // Cross-Tab Storage Event Fallback
+    window.addEventListener('storage', async (e) => {
+      try {
+        if (!e.key) return;
+        if (e.key === 'rupay_universal_mutation_journal') {
+          renderAll();
+          persistL1ViewCache();
+        } else if (e.key === 'rupay_sync_time' && e.newValue) {
+          updateAllSyncIndicators('success', e.newValue);
+        } else if (e.key === 'rupay_session_token' && !e.newValue) {
+          showLockScreen();
+        }
+      } catch (_) {}
+    });
 
     // Revalidation Register (Persistent store with zero TTL in localStorage)
     function getRevalidatedBids() {
@@ -9407,6 +9483,9 @@
         const params = new URLSearchParams();
         if (token) params.set('token', token);
         params.set('ingest', 'false');
+        if (isManual) {
+          params.set('bypass_cache', 'true');
+        }
         const activeWs = state.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         if (activeWs === 'vouchers') {
           params.set('workspace', 'vouchers');
@@ -9857,6 +9936,8 @@
         renderAll();
         updateHubStats();
         persistL1ViewCache();
+        UniversalMutationJournal.cleanupExpired();
+        broadcastVaultEvent('SYNC_COMPLETED', { timeStr, version: data.version });
 
         if (isManual) {
           showToast('Synced with Google Sheets');
@@ -15450,6 +15531,7 @@
       localStorage.removeItem('rupay_accounts_cache');
       localStorage.removeItem('rupay_vouchers_cache');
       localStorage.removeItem('rupay_vault_dev_seed');
+      UniversalMutationJournal.cleanupExpired();
 
       // 0a. Restore cached theme
       try {
