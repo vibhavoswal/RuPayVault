@@ -4428,7 +4428,8 @@
 
     function hideLockScreen() {
       document.documentElement.classList.add('vault-authenticated');
-      document.documentElement.setAttribute('data-active-ws', state.activeWorkspace || 'vouchers');
+      const ws = state.activeWorkspace || (new URLSearchParams(window.location.search)).get('ws') || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+      document.documentElement.setAttribute('data-active-ws', ws);
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.add('hidden');
@@ -6785,7 +6786,7 @@
       // 3. Persist to encrypted cache and immediately re-render (turns placard lighter green: card-revalidated)
       await saveEncryptedStaging(state.staging);
       renderVault();
-      if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
+      if (document.getElementById('voucher-detail-sheet')?.classList.contains('hidden') === false) {
         closeVoucherDetailSheet();
       }
 
@@ -6873,7 +6874,7 @@
       renderVault();
       updateClearTrashBadges();
 
-      if (document.getElementById('voucher-detail-sheet') && !document.getElementById('voucher-detail-sheet').classList.contains('hidden')) {
+      if (document.getElementById('voucher-detail-sheet')?.classList.contains('hidden') === false) {
         closeVoucherDetailSheet();
       }
 
@@ -7943,7 +7944,7 @@
 
     const state = {
       isDark: true,
-      activeWorkspace: 'vouchers',
+      activeWorkspace: (typeof window !== 'undefined' ? ((new URLSearchParams(window.location.search)).get('ws') || sessionStorage.getItem('rupay_active_workspace') || 'vouchers') : 'vouchers'),
       activeTab: 'vault',
       isSelectMode: false,
       selectedIds: new Set(),
@@ -10096,7 +10097,9 @@
         const isTaggedView = state.ingestFilter === 'tagged';
 
         // Mobile VIP Wallet Cards for Activity Log (High-Touch Micro Cards - Var 2: 3-line layout & status tint)
-        document.getElementById('mb-vouchers-list').innerHTML = allActivities.length ? allActivities.map(act => {
+        const mbActivitiesEl = document.getElementById('mb-vouchers-list');
+        if (mbActivitiesEl) {
+          mbActivitiesEl.innerHTML = allActivities.length ? allActivities.map(act => {
           const isRevalidation = isVoucherRevalidation(act);
           const isRevalidated = isVoucherRevalidated(act);
           const isProcessing = isVoucherProcessing(act);
@@ -10207,6 +10210,7 @@
             </p>
           </div>
         `);
+        }
 
         updateClearTrashBadges();
         updateFloatingDock();
@@ -10240,7 +10244,9 @@
 
 
         // Mobile VIP Wallet Cards for Redeemed Tab
-        document.getElementById('mb-vouchers-list').innerHTML = rList.length ? rList.map((r, i) => {
+        const mbRedeemedEl = document.getElementById('mb-vouchers-list');
+        if (mbRedeemedEl) {
+          mbRedeemedEl.innerHTML = rList.length ? rList.map((r, i) => {
           const vBrandName = getBrandDisplayName(r.brand);
           const hasPin = r.pin && String(r.pin).trim() && String(r.pin).trim() !== 'null' && String(r.pin).trim() !== '-';
           const isChecked = state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code);
@@ -10306,6 +10312,7 @@
             </p>
           </div>
         `;
+        }
 
         updateClearTrashBadges();
         renderDeckSelector();
@@ -10367,7 +10374,9 @@
 
 
       // Mobile VIP Wallet Cards (Minimal Subtle Cobalt Edge Placards)
-      document.getElementById('mb-vouchers-list').innerHTML = vs.length ? vs.map((v, i) => {
+      const mbVouchersListEl = document.getElementById('mb-vouchers-list');
+      if (mbVouchersListEl) {
+        mbVouchersListEl.innerHTML = vs.length ? vs.map((v, i) => {
         const hasPin = v.pin && String(v.pin).trim() && String(v.pin).trim() !== 'null' && String(v.pin).trim() !== '-';
         const isChecked = state.selectedIds.has(v.id) || (v.code && state.selectedIds.has(v.code));
 
@@ -10505,6 +10514,7 @@
           <p class="text-xs font-mono-apple text-neutral-400">Syncing live vouchers from Google Sheets...</p>
         </div>
       ` : `<div class="p-8 text-center text-sm text-neutral-400">No vouchers found in ${bConfig.name}.</div>`);
+      }
 
       updateFloatingDock();
       renderDeckSelector();
@@ -15283,7 +15293,7 @@
     }
 
     function closeShareModal() {
-      document.getElementById('modal-share').classList.add('hidden');
+      document.getElementById('modal-share')?.classList.add('hidden');
       state.pendingShareVoucher = null;
     }
 
@@ -15296,7 +15306,7 @@
     }
 
     function copyShareText() {
-      const val = document.getElementById('share-preview-text').value;
+      const val = document.getElementById('share-preview-text')?.value || '';
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(val).then(() => {
           _flushPendingShare();
@@ -15312,7 +15322,7 @@
     }
 
     function triggerNativeShare() {
-      const text = document.getElementById('share-preview-text').value;
+      const text = document.getElementById('share-preview-text')?.value || '';
       if (navigator.share) {
         navigator.share({ title: 'RuPay Vouchers', text: text }).then(() => {
           _flushPendingShare();
@@ -15323,7 +15333,7 @@
     }
 
     function openInWhatsApp() {
-      const text = document.getElementById('share-preview-text').value;
+      const text = document.getElementById('share-preview-text')?.value || '';
       _flushPendingShare();
       const url = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
       window.location.href = url;
@@ -15340,6 +15350,8 @@
       if (!v) return;
 
       const text = fmtWhatsApp([v]);
+      const previewEl = document.getElementById('share-preview-text');
+      const modalShareEl = document.getElementById('modal-share');
       if (navigator.share) {
         navigator.share({
           title: `${getBrandDisplayName(v.brand || 'Voucher')} Voucher`,
@@ -15351,13 +15363,13 @@
         }).catch((err) => {
           if (err && err.name === 'AbortError') return;
           state.pendingShareVoucher = v;
-          document.getElementById('share-preview-text').value = text;
-          document.getElementById('modal-share').classList.remove('hidden');
+          if (previewEl) previewEl.value = text;
+          if (modalShareEl) modalShareEl.classList.remove('hidden');
         });
       } else {
         state.pendingShareVoucher = v;
-        document.getElementById('share-preview-text').value = text;
-        document.getElementById('modal-share').classList.remove('hidden');
+        if (previewEl) previewEl.value = text;
+        if (modalShareEl) modalShareEl.classList.remove('hidden');
       }
     }
 

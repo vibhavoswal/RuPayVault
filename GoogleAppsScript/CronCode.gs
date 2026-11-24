@@ -428,7 +428,7 @@ function invalidateAppCache(partitions) {
     if (target.includes('CORE')) keys.push('CACHE_CORE');
     if (target.includes('VOUCHERS')) {
       keys.push('CACHE_VOUCHERS_META', 'CACHE_STAGING_REDEEMED');
-      for (let i = 1; i <= 20; i++) {
+      for (let i = 1; i <= 50; i++) {
         keys.push('CACHE_VOUCHERS_' + i);
       }
     }
@@ -5584,7 +5584,6 @@ function doPost(e) {
           if (rowCode === voucherCode || (voucherCode && rowBid === voucherCode)) {
             sheet.deleteRow(i + 1);
             deleted = true;
-            break;
           }
         }
         SpreadsheetApp.flush();
