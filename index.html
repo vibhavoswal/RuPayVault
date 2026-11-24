@@ -2345,12 +2345,51 @@
       color: #0C8C46 !important;
     }
 
-    /* Instant 0ms Pre-Paint: Unhide app and suppress lock screen if authenticated session exists */
+    /* Instant 0ms Pre-Paint & Strict Workspace View Isolation */
     html.vault-authenticated #vault-lock-screen {
       display: none !important;
     }
-    html.vault-authenticated #mobile-app-container {
+
+    /* Suppress all app containers when vault is locked / unauthenticated */
+    html:not(.vault-authenticated) #mobile-app-container,
+    html:not(.vault-authenticated) #view-card-manager,
+    html:not(.vault-authenticated) #view-bank-accounts,
+    html:not(.vault-authenticated) #view-income-tracker {
+      display: none !important;
+    }
+
+    /* Active Workspace Display: Exactly one workspace displayed */
+    html.vault-authenticated:not([data-active-ws="cards"]):not([data-active-ws="banks"]):not([data-active-ws="income"]) #mobile-app-container:not(.hidden) {
       display: flex !important;
+    }
+    html.vault-authenticated[data-active-ws="cards"] #view-card-manager:not(.hidden) {
+      display: flex !important;
+    }
+    html.vault-authenticated[data-active-ws="banks"] #view-bank-accounts:not(.hidden) {
+      display: flex !important;
+    }
+    html.vault-authenticated[data-active-ws="income"] #view-income-tracker:not(.hidden) {
+      display: flex !important;
+    }
+
+    /* Strict Inactive Workspace Suppression across all specificity levels */
+    html.vault-authenticated[data-active-ws="cards"] #mobile-app-container,
+    html.vault-authenticated[data-active-ws="banks"] #mobile-app-container,
+    html.vault-authenticated[data-active-ws="income"] #mobile-app-container,
+    html.vault-authenticated:not([data-active-ws="cards"]) #view-card-manager,
+    html.vault-authenticated:not([data-active-ws="banks"]) #view-bank-accounts,
+    html.vault-authenticated:not([data-active-ws="income"]) #view-income-tracker {
+      display: none !important;
+    }
+
+    /* Universal .hidden suppression with highest CSS specificity */
+    .hidden,
+    html.vault-authenticated .hidden,
+    html.vault-authenticated #mobile-app-container.hidden,
+    html.vault-authenticated #view-card-manager.hidden,
+    html.vault-authenticated #view-bank-accounts.hidden,
+    html.vault-authenticated #view-income-tracker.hidden {
+      display: none !important;
     }
 
   </style>
@@ -2363,6 +2402,8 @@
         const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || urlParams.get('dev_unlock') === 'true';
         if ((token && expiry && Date.now() < expiry) || isDev) {
           document.documentElement.classList.add('vault-authenticated');
+          const savedWs = urlParams.get('ws') || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+          document.documentElement.setAttribute('data-active-ws', savedWs);
         }
       } catch (_) {}
     })();
@@ -4371,6 +4412,7 @@
     /* --- LOCK SCREEN DISPLAY CONTROLLER --- */
     function showLockScreen() {
       document.documentElement.classList.remove('vault-authenticated');
+      document.documentElement.removeAttribute('data-active-ws');
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.remove('hidden');
@@ -4385,6 +4427,7 @@
 
     function hideLockScreen() {
       document.documentElement.classList.add('vault-authenticated');
+      document.documentElement.setAttribute('data-active-ws', state.activeWorkspace || 'vouchers');
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.add('hidden');
@@ -7859,6 +7902,8 @@
       try {
         sessionStorage.setItem('rupay_active_workspace', state.activeWorkspace);
       } catch (e) {}
+      document.documentElement.setAttribute('data-active-ws', state.activeWorkspace);
+
       const cardEl = document.getElementById('view-card-manager');
       const voucherEl = document.getElementById('mobile-app-container');
       const bankEl = document.getElementById('view-bank-accounts');
@@ -7869,11 +7914,11 @@
 
       if (state.activeWorkspace === 'cards') {
         isCardManagerOpen = true;
-        if (cardEl) cardEl.classList.remove('hidden');
-        if (voucherEl) voucherEl.classList.add('hidden');
-        if (bankEl) bankEl.classList.add('hidden');
-        if (incomeEl) incomeEl.classList.add('hidden');
-        if (fabBtn) fabBtn.classList.add('hidden');
+        if (cardEl) { cardEl.classList.remove('hidden'); cardEl.style.display = 'flex'; }
+        if (voucherEl) { voucherEl.classList.add('hidden'); voucherEl.style.display = 'none'; }
+        if (bankEl) { bankEl.classList.add('hidden'); bankEl.style.display = 'none'; }
+        if (incomeEl) { incomeEl.classList.add('hidden'); incomeEl.style.display = 'none'; }
+        if (fabBtn) { fabBtn.classList.add('hidden'); fabBtn.style.display = 'none'; }
         renderCardManagerList(currentCardCategoryFilter || 'Debit');
         updateDrawerCardCount();
 
@@ -7884,11 +7929,11 @@
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'banks') {
         isCardManagerOpen = false;
-        if (cardEl) cardEl.classList.add('hidden');
-        if (voucherEl) voucherEl.classList.add('hidden');
-        if (bankEl) bankEl.classList.remove('hidden');
-        if (incomeEl) incomeEl.classList.add('hidden');
-        if (fabBtn) fabBtn.classList.add('hidden');
+        if (cardEl) { cardEl.classList.add('hidden'); cardEl.style.display = 'none'; }
+        if (voucherEl) { voucherEl.classList.add('hidden'); voucherEl.style.display = 'none'; }
+        if (bankEl) { bankEl.classList.remove('hidden'); bankEl.style.display = 'flex'; }
+        if (incomeEl) { incomeEl.classList.add('hidden'); incomeEl.style.display = 'none'; }
+        if (fabBtn) { fabBtn.classList.add('hidden'); fabBtn.style.display = 'none'; }
 
         renderBankManager();
 
@@ -7896,11 +7941,11 @@
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'income') {
         isCardManagerOpen = false;
-        if (cardEl) cardEl.classList.add('hidden');
-        if (voucherEl) voucherEl.classList.add('hidden');
-        if (bankEl) bankEl.classList.add('hidden');
-        if (incomeEl) incomeEl.classList.remove('hidden');
-        if (fabBtn) fabBtn.classList.add('hidden');
+        if (cardEl) { cardEl.classList.add('hidden'); cardEl.style.display = 'none'; }
+        if (voucherEl) { voucherEl.classList.add('hidden'); voucherEl.style.display = 'none'; }
+        if (bankEl) { bankEl.classList.add('hidden'); bankEl.style.display = 'none'; }
+        if (incomeEl) { incomeEl.classList.remove('hidden'); incomeEl.style.display = 'flex'; }
+        if (fabBtn) { fabBtn.classList.add('hidden'); fabBtn.style.display = 'none'; }
 
         renderIncomeTracker();
 
@@ -7908,11 +7953,11 @@
         if (!isSyncing && savedSyncTime) updateAllSyncIndicators('success', savedSyncTime);
       } else if (state.activeWorkspace === 'vouchers') {
         isCardManagerOpen = false;
-        if (cardEl) cardEl.classList.add('hidden');
-        if (voucherEl) voucherEl.classList.remove('hidden');
-        if (bankEl) bankEl.classList.add('hidden');
-        if (incomeEl) incomeEl.classList.add('hidden');
-        if (fabBtn) fabBtn.classList.remove('hidden');
+        if (cardEl) { cardEl.classList.add('hidden'); cardEl.style.display = 'none'; }
+        if (voucherEl) { voucherEl.classList.remove('hidden'); voucherEl.style.display = 'flex'; }
+        if (bankEl) { bankEl.classList.add('hidden'); bankEl.style.display = 'none'; }
+        if (incomeEl) { incomeEl.classList.add('hidden'); incomeEl.style.display = 'none'; }
+        if (fabBtn) { fabBtn.classList.remove('hidden'); fabBtn.style.display = 'flex'; }
 
         const bConfig = BRAND_CONFIG.find(x => x.key === normalizeBrandKey(state.activeFilterBrand));
         const mbTitle = document.getElementById('mb-capsule-brand-title');
