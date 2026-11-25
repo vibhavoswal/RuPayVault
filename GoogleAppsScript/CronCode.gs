@@ -101,8 +101,34 @@ function parseDateComponents(dateVal) {
       day: parseInt(p[2], 10)
     };
   }
+  if (typeof dateVal === 'number' && !isNaN(dateVal) && dateVal > 0) {
+    const dt = new Date(dateVal < 1e11 ? dateVal * 1000 : dateVal);
+    if (!isNaN(dt.getTime())) {
+      const istStr = Utilities.formatDate(dt, "GMT+05:30", "yyyy-MM-dd");
+      const p = istStr.split("-");
+      return {
+        year: parseInt(p[0], 10),
+        month: parseInt(p[1], 10),
+        day: parseInt(p[2], 10)
+      };
+    }
+  }
   const clean = String(dateVal).replace(/^'/, '').trim();
   if (!clean) return null;
+
+  if (/^\d{10,14}$/.test(clean)) {
+    const n = Number(clean);
+    const dt = new Date(clean.length <= 10 ? n * 1000 : n);
+    if (!isNaN(dt.getTime())) {
+      const istStr = Utilities.formatDate(dt, "GMT+05:30", "yyyy-MM-dd");
+      const p = istStr.split("-");
+      return {
+        year: parseInt(p[0], 10),
+        month: parseInt(p[1], 10),
+        day: parseInt(p[2], 10)
+      };
+    }
+  }
 
   const parts = clean.split(/[\/\-\.]/);
   if (parts.length === 3) {

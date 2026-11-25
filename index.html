@@ -8188,8 +8188,30 @@
           day: dateVal.getDate()
         };
       }
+      if (typeof dateVal === 'number' && !isNaN(dateVal) && dateVal > 0) {
+        const dt = new Date(dateVal < 1e11 ? dateVal * 1000 : dateVal);
+        if (!isNaN(dt.getTime())) {
+          return {
+            year: dt.getFullYear(),
+            month: dt.getMonth() + 1,
+            day: dt.getDate()
+          };
+        }
+      }
       const clean = String(dateVal).replace(/^'/, '').trim();
       if (!clean) return null;
+
+      if (/^\d{10,14}$/.test(clean)) {
+        const n = Number(clean);
+        const dt = new Date(clean.length <= 10 ? n * 1000 : n);
+        if (!isNaN(dt.getTime())) {
+          return {
+            year: dt.getFullYear(),
+            month: dt.getMonth() + 1,
+            day: dt.getDate()
+          };
+        }
+      }
 
       const parts = clean.split(/[\/\-\.]/);
       if (parts.length === 3) {
@@ -11763,7 +11785,7 @@
 
     function parseExpiryFromCanvasOrText(rawText) {
       const text = String(rawText || '').replace(/\r/g, '\n');
-      const matches = text.match(/(?:VALID\s*THRU|EXP|THRU|EXPIRES)?\s*([01]\d)\s*[\/\-]\s*(\d{2,4})\b/i);
+      const matches = text.match(/(?:VALID\s*THRU|EXP|THRU|EXPIRES)?\s*([01]\d)\s*[\/\-\s]\s*(\d{2,4})\b/i);
       if (matches) {
         const mm = matches[1];
         let yy = matches[2];
