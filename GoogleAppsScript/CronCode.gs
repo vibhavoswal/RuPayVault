@@ -1824,6 +1824,7 @@ function doGet(e) {
       }
 
       SpreadsheetApp.flush();
+      bumpDataVersion(['CORE']);
       return ContentService.createTextOutput(JSON.stringify({ success: true, report })).setMimeType(ContentService.MimeType.JSON);
     } catch (rErr) {
       return ContentService.createTextOutput(JSON.stringify({ error: rErr.message })).setMimeType(ContentService.MimeType.JSON);
@@ -3749,6 +3750,11 @@ function doGet(e) {
       if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && cachedIncomeStr) {
         try {
           const meta = JSON.parse(cachedMetaStr);
+          const versionInfo = getDataVersionInfo(ss);
+          const versionMatches = meta && meta.version !== undefined && String(meta.version) === String(versionInfo.version);
+          if (!versionMatches) {
+            throw new Error("Cache version mismatch (" + (meta && meta.version) + " vs " + versionInfo.version + ")");
+          }
           const core = JSON.parse(cachedCoreStr);
           const stagingRedeemed = JSON.parse(cachedStagingRedeemedStr);
           const vouchers = [];
@@ -3758,7 +3764,7 @@ function doGet(e) {
           for (let c = 1; c <= meta.numChunks; c++) {
             chunkKeys.push("CACHE_VOUCHERS_" + c);
           }
-          const chunkMap = cache.getAll(chunkKeys);
+          const chunkMap = chunkKeys.length ? cache.getAll(chunkKeys) : {};
           let allChunksPresent = true;
           for (let c = 1; c <= meta.numChunks; c++) {
             const chunkStr = chunkMap["CACHE_VOUCHERS_" + c];
@@ -3766,9 +3772,8 @@ function doGet(e) {
             vouchers.push(...JSON.parse(chunkStr));
           }
 
-          if (allChunksPresent) {
+          if (allChunksPresent && Array.isArray(vouchers) && (meta.total === undefined || vouchers.length === meta.total)) {
             const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
-            const versionInfo = getDataVersionInfo(ss);
 
             const combined = {
               sheetUrl: core.sheetUrl || ss.getUrl(),
@@ -4140,7 +4145,7 @@ function doGet(e) {
       };
     } catch (_) {}
 
-    // Store in CacheService partitioned into Core, Vouchers (chunked), and Income (6-hour TTL)
+    // Store in CacheService partitioned into Core, Vouchers (size-safe chunks), and Income (6-hour TTL)
     try {
       const cache = CacheService.getScriptCache();
       if (bypassCache) {
@@ -4148,6 +4153,7 @@ function doGet(e) {
       }
       const versionInfo = getDataVersionInfo(ss);
 
+      let coreOk = false;
       const partCore = JSON.stringify({
         sheetUrl: result.sheetUrl,
         unassigned: result.unassigned,
@@ -4155,36 +4161,87 @@ function doGet(e) {
         cards: result.cards,
         systemStatus: result.systemStatus
       });
-      if (partCore.length < 100000) cache.put("CACHE_CORE", partCore, 21600);
-
-      const CHUNK_SIZE = 100;
-      const numChunks = Math.ceil(result.vouchers.length / CHUNK_SIZE) || 1;
-      for (let c = 0; c < numChunks; c++) {
-        const slice = result.vouchers.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE);
-        const chunkJson = JSON.stringify(slice);
-        if (chunkJson.length < 100000) {
-          cache.put("CACHE_VOUCHERS_" + (c + 1), chunkJson, 21600);
-        }
+      if (partCore.length < 95000) {
+        cache.put("CACHE_CORE", partCore, 21600);
+        coreOk = true;
       }
 
+      // Pack vouchers into <90KB chunks dynamically so oversized items never get dropped
+      const voucherChunks = [];
+      let currentChunk = [];
+      for (let i = 0; i < result.vouchers.length; i++) {
+        currentChunk.push(result.vouchers[i]);
+        if (currentChunk.length >= 100 || (currentChunk.length % 10 === 0 && JSON.stringify(currentChunk).length > 80000)) {
+          voucherChunks.push(currentChunk);
+          currentChunk = [];
+        }
+      }
+      if (currentChunk.length > 0 || voucherChunks.length === 0) {
+        voucherChunks.push(currentChunk);
+      }
+
+      let chunksOk = true;
+      let storedChunksCount = 0;
+      for (let c = 0; c < voucherChunks.length; c++) {
+        const slice = voucherChunks[c];
+        const chunkJson = JSON.stringify(slice);
+        if (chunkJson.length < 95000) {
+          cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), chunkJson, 21600);
+          storedChunksCount++;
+        } else if (slice.length > 1) {
+          // Split slice in half on rare ultra-large entries
+          const mid = Math.ceil(slice.length / 2);
+          const halfA = JSON.stringify(slice.slice(0, mid));
+          const halfB = JSON.stringify(slice.slice(mid));
+          if (halfA.length < 95000 && halfB.length < 95000) {
+            cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfA, 21600);
+            storedChunksCount++;
+            cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfB, 21600);
+            storedChunksCount++;
+          } else {
+            chunksOk = false;
+          }
+        } else {
+          chunksOk = false;
+        }
+      }
+      // Clean up any leftover chunk keys beyond current storedChunksCount (up to 50)
+      if (storedChunksCount < 50) {
+        const staleKeys = [];
+        for (let k = storedChunksCount + 1; k <= 50; k++) staleKeys.push("CACHE_VOUCHERS_" + k);
+        if (staleKeys.length) cache.removeAll(staleKeys);
+      }
+
+      let stagingOk = false;
       const stagingRedeemed = JSON.stringify({
         staging: result.staging,
         redeemed: result.redeemed,
         shared: result.shared
       });
-      if (stagingRedeemed.length < 100000) cache.put("CACHE_STAGING_REDEEMED", stagingRedeemed, 21600);
+      if (stagingRedeemed.length < 95000) {
+        cache.put("CACHE_STAGING_REDEEMED", stagingRedeemed, 21600);
+        stagingOk = true;
+      }
 
-      const partMeta = JSON.stringify({
-        numChunks: numChunks,
-        total: result.vouchers.length,
-        version: versionInfo.version
-      });
-      cache.put("CACHE_VOUCHERS_META", partMeta, 21600);
-
+      let incomeOk = false;
       const partIncome = JSON.stringify({
         income: result.income
       });
-      if (partIncome.length < 100000) cache.put("CACHE_INCOME", partIncome, 21600);
+      if (partIncome.length < 95000) {
+        cache.put("CACHE_INCOME", partIncome, 21600);
+        incomeOk = true;
+      }
+
+      if (coreOk && chunksOk && stagingOk && incomeOk) {
+        const partMeta = JSON.stringify({
+          numChunks: storedChunksCount,
+          total: result.vouchers.length,
+          version: versionInfo.version
+        });
+        cache.put("CACHE_VOUCHERS_META", partMeta, 21600);
+      } else {
+        cache.remove("CACHE_VOUCHERS_META");
+      }
 
       result.version = versionInfo.version;
       result.lastUpdated = versionInfo.lastUpdated;
@@ -4860,12 +4917,12 @@ function doPost(e) {
       // Also update Shared_Activity status to REDEEMED for these codes
       const sSheet = ss.getSheetByName("Shared_Activity");
       if (sSheet && moved.length > 0) {
-        const movedCodesSet = new Set(moved.map(m => m.code).filter(Boolean));
-        const movedBidsSet = new Set(moved.map(m => m.bookingId).filter(Boolean));
+        const movedCodesSet = new Set(moved.map(m => String(m.code || '').replace(/^'/, '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+        const movedBidsSet = new Set(moved.map(m => String(m.bookingId || '').replace(/^'/, '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
         const sRows = sSheet.getDataRange().getValues();
         for (let i = 1; i < sRows.length; i++) {
-          const sCode = String(sRows[i][0] || '').trim();
-          if (movedCodesSet.has(sCode) || movedBidsSet.has(sCode)) {
+          const sCode = String(sRows[i][0] || '').replace(/^'/, '').trim().toUpperCase();
+          if (sCode && (movedCodesSet.has(sCode) || movedBidsSet.has(sCode))) {
             sSheet.getRange(i + 1, 6).setValue("REDEEMED");
           }
         }
@@ -5756,19 +5813,31 @@ function doPost(e) {
             }
 
             if (targetCol > 0) {
-              for (let r = 1; r < aVals.length; r++) {
-                const rowCardNum = String(aVals[r][4] || "").replace(/['\s]/g, "");
-                const rowAcc = String(aVals[r][3] || "").replace(/^'/, "");
-                const tagStr = cardTag.replace(/['\s]/g, "");
-                
-                const matchCard = (rowCardNum && tagStr.includes(rowCardNum.slice(-4))) ||
-                                  (rowAcc && rowAcc !== "NA" && tagStr.includes(rowAcc));
+              const tagStrUpper = cardTag.replace(/['\s]/g, "").toUpperCase();
+              const tagLast4Match = tagStrUpper.match(/(\d{4})$/);
+              const tagLast4 = tagLast4Match ? tagLast4Match[1] : "";
+              const expectedBank = tagStrUpper.startsWith("PNB") ? "pnb"
+                : (tagStrUpper.startsWith("CANARA") ? "canara"
+                : (tagStrUpper.startsWith("JANA") ? "jana"
+                : (tagStrUpper.startsWith("UNION") ? "union"
+                : (tagStrUpper.startsWith("BOB") ? "baroda" : ""))));
+              const expectedType = /CC/.test(tagStrUpper) ? "credit" : (/DC/.test(tagStrUpper) ? "debit" : "");
 
-                if (matchCard) {
-                  const currentVal = String(aVals[r][targetCol - 1] || "");
-                  if (currentVal !== "Not Applicable") {
-                    aSheet.getRange(r + 1, targetCol).setValue("Redeemed");
-                    aSheet.getRange(r + 1, 23).setValue(formatISTTimestamp(new Date()));
+              if (tagLast4) {
+                for (let r = 1; r < aVals.length; r++) {
+                  const rowCardNum = String(aVals[r][4] || "").replace(/['\s]/g, "");
+                  const rowBankNorm = String(aVals[r][0] || "").toLowerCase();
+                  const rowTypeNorm = String(aVals[r][1] || "").toLowerCase();
+                  const last4Match = rowCardNum && rowCardNum.slice(-4) === tagLast4;
+                  const bankMatch = !expectedBank || rowBankNorm.includes(expectedBank) || (expectedBank === "baroda" && rowBankNorm.includes("bob"));
+                  const typeMatch = !expectedType || rowTypeNorm.includes(expectedType);
+
+                  if (last4Match && bankMatch && typeMatch) {
+                    const currentVal = String(aVals[r][targetCol - 1] || "");
+                    if (currentVal !== "Not Applicable") {
+                      aSheet.getRange(r + 1, targetCol).setValue("Redeemed");
+                      aSheet.getRange(r + 1, 23).setValue(formatISTTimestamp(new Date()));
+                    }
                   }
                 }
               }
@@ -6762,7 +6831,8 @@ function doPost(e) {
       if (incomeSheet) {
         const iVals = incomeSheet.getDataRange().getValues();
         const targetDateMs = targetDate ? parseDateToTimestamp(targetDate) : 0;
-        const normBrand = String(brand || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normAlphaNum = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normBrand = normAlphaNum(brand);
         for (let r = iVals.length - 1; r >= 1; r--) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
@@ -6770,7 +6840,7 @@ function doPost(e) {
           const rowPrice = Math.abs(Number(iVals[r][2]) || 0);
           const rowDateMs = parseDateToTimestamp(iVals[r][1]);
           const rowDateFormatted = rowDateMs ? Utilities.formatDate(new Date(rowDateMs), "GMT+05:30", "dd/MM/yy") : String(iVals[r][1] || '').trim();
-          const normCol0 = col0.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normCol0 = normAlphaNum(col0);
 
           const matchComment = targetComments && comm === targetComments;
           const matchEmptyComments = !targetComments && !comm;

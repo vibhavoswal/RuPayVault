@@ -461,6 +461,8 @@
     html.light #voucher-detail-sheet button.bg-neutral-900,
     [data-theme="light"] #mark-sold-sheet button.bg-neutral-800,
     html.light #mark-sold-sheet button.bg-neutral-800,
+    [data-theme="light"] #mark-sold-sheet button.bg-neutral-800\/80,
+    html.light #mark-sold-sheet button.bg-neutral-800\/80,
     [data-theme="light"] #modal-tag-card button.bg-neutral-800,
     html.light #modal-tag-card button.bg-neutral-800,
     [data-theme="light"] #modal-add-card button.bg-neutral-800,
@@ -636,10 +638,6 @@
       background-color: #ffffff !important;
       border-color: rgba(12, 140, 70, 0.18) !important;
     }
-    /* Desktop View Light Mode */
-    [data-theme="light"] .desktop-view,
-
-
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -3405,19 +3403,19 @@
       <div class="space-y-1">
         <label class="text-xs font-bold text-[var(--theme-text-muted)]">Quick Presets</label>
         <div class="grid grid-cols-2 gap-2">
-          <button onclick="selectSalePreset('Cult Fit', 1200)" id="in-preset-btn-cult" class="p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/40 text-emerald-300 text-xs font-bold transition-all spring-press text-left">
+          <button onclick="selectSalePreset('Cult Fit', 1200)" id="in-preset-btn-cult" class="p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all spring-press text-left">
             <div>Cult.fit Elite</div>
             <div class="text-[10px] font-normal opacity-80">+₹1,200</div>
           </button>
-          <button onclick="selectSalePreset('Amazon Prime', 1000)" id="in-preset-btn-amazon" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+          <button onclick="selectSalePreset('Amazon Prime', 1000)" id="in-preset-btn-amazon" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold transition-all spring-press text-left">
             <div>Amazon Prime</div>
             <div class="text-[10px] font-normal opacity-80">+₹1,000</div>
           </button>
-          <button onclick="selectSalePreset('Times Prime', 400)" id="in-preset-btn-times" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+          <button onclick="selectSalePreset('Times Prime', 400)" id="in-preset-btn-times" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold transition-all spring-press text-left">
             <div>Times Prime</div>
             <div class="text-[10px] font-normal opacity-80">+₹400</div>
           </button>
-          <button onclick="selectSalePreset('Custom Voucher', 500)" id="in-preset-btn-other" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left">
+          <button onclick="selectSalePreset('Custom Voucher', 500)" id="in-preset-btn-other" class="p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold transition-all spring-press text-left">
             <div>Custom Voucher</div>
             <div class="text-[10px] font-normal opacity-80">Manual Entry</div>
           </button>
@@ -3489,16 +3487,16 @@
 
       <!-- Quick Presets (Horizontal Scrollable Chips) -->
       <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-        <button type="button" onclick="selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb')" id="in-preset-charge-pnb" class="px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+        <button type="button" onclick="selectChargePreset('PNB Imperial DC Issuance Fee', 708, 'pnb')" id="in-preset-charge-pnb" class="px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-500/15 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           PNB Imperial (-₹708)
         </button>
-        <button type="button" onclick="selectChargePreset('Jana DC AMC', 588.82, 'jana-amc')" id="in-preset-charge-jana-amc" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+        <button type="button" onclick="selectChargePreset('Jana DC AMC', 588.82, 'jana-amc')" id="in-preset-charge-jana-amc" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           Jana AMC (-₹588.82)
         </button>
-        <button type="button" onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+        <button type="button" onclick="selectChargePreset('Jana DC Replacement', 293.82, 'jana-rep')" id="in-preset-charge-jana-rep" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           Jana Replace (-₹293.82)
         </button>
-        <button type="button" onclick="selectChargePreset('Canara Acc 9491 DC Hotlisting', 177, 'canara', '', '9491')" id="in-preset-charge-canara" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press">
+        <button type="button" onclick="selectChargePreset('Canara Acc 9491 DC Hotlisting', 177, 'canara', '', '9491')" id="in-preset-charge-canara" class="px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold whitespace-nowrap shrink-0 spring-press">
           Canara (-₹177)
         </button>
       </div>
@@ -3549,9 +3547,9 @@
       </div>
 
       <!-- Formatted Comment Live Preview Pill -->
-      <div class="px-3 py-1.5 rounded-xl bg-black/40 border border-[var(--theme-border)] flex items-center justify-between text-[11px]">
+      <div class="px-3 py-1.5 rounded-xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] flex items-center justify-between text-[11px]">
         <span class="text-[var(--theme-text-sub)] text-[10px] font-bold uppercase tracking-wider">Comment:</span>
-        <span id="in-charge-preview-comment" class="font-mono text-rose-300 font-bold truncate max-w-[280px]">None</span>
+        <span id="in-charge-preview-comment" class="font-mono text-rose-700 dark:text-rose-300 font-bold truncate max-w-[280px]">None</span>
       </div>
 
       <!-- Submit Button -->
@@ -4897,6 +4895,12 @@
         this.remove(key);
       },
 
+      getMiscAdds() {
+        return this.getAll()
+          .filter(e => e.action === 'MISC_VOUCHER_ADD' && e.patch)
+          .map(e => e.patch);
+      },
+
       // --- REVALIDATION REGISTER (Sticky REVALIDATED status on revalidated vouchers) ---
       recordRevalidate(bookingId) {
         if (!bookingId) return;
@@ -6204,8 +6208,8 @@
       const todayBtn = document.getElementById('ms-date-pill-today');
       const yestBtn = document.getElementById('ms-date-pill-yesterday');
       const pickBtn = document.getElementById('ms-date-pill-pick');
-      const activeClass = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50';
-      const inactiveClass = 'bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-white';
+      const activeClass = 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/50';
+      const inactiveClass = 'bg-neutral-800/80 text-neutral-400 border-neutral-700/60 hover:text-[var(--theme-text-main)]';
       
       if (todayBtn) todayBtn.className = `px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all active:scale-95 ${activePreset === 'today' ? activeClass : inactiveClass}`;
       if (yestBtn) yestBtn.className = `px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all active:scale-95 ${activePreset === 'yesterday' ? activeClass : inactiveClass}`;
@@ -8638,7 +8642,7 @@
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Date:</span>
-              <span class="font-medium text-[var(--theme-text-main)]">${item.date || 'N/A'}</span>
+              <span class="font-medium text-[var(--theme-text-main)]">${escapeHtml(item.date || 'N/A')}</span>
             </div>
             ${item.account ? `
               <div class="flex items-center justify-between">
@@ -8649,7 +8653,7 @@
             ${item.comments ? `
               <div class="pt-2 border-t border-[var(--theme-border)] space-y-1">
                 <div class="text-[10px] uppercase font-bold text-[var(--theme-text-sub)]">Comments / Notes</div>
-                <div class="p-2.5 rounded-xl bg-black/20 border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] font-mono break-words leading-relaxed select-text">
+                <div class="p-2.5 rounded-xl bg-neutral-100 dark:bg-black/20 border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] font-mono break-words leading-relaxed select-text">
                   ${escapeHtml(item.comments)}
                 </div>
               </div>
@@ -8705,7 +8709,7 @@
 
     function updateSaleButtonText() {
       const valInput = document.getElementById('in-sale-input-price');
-      const val = parseInt(valInput ? valInput.value : 0, 10) || 0;
+      const val = parseFloat(valInput ? valInput.value : 0) || 0;
       const btnText = document.getElementById('in-btn-confirm-sale-text');
       if (btnText) btnText.textContent = `Confirm & Log Sale (+₹${val.toLocaleString('en-IN')})`;
     }
@@ -8726,8 +8730,8 @@
       const btnTimes = document.getElementById('in-preset-btn-times');
       const btnOther = document.getElementById('in-preset-btn-other');
 
-      const activeCls = 'p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-950/40 text-emerald-300 text-xs font-bold transition-all spring-press text-left';
-      const inactiveCls = 'p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold transition-all spring-press text-left';
+      const activeCls = 'p-2.5 rounded-xl border border-emerald-500/60 bg-emerald-500/15 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold transition-all spring-press text-left';
+      const inactiveCls = 'p-2.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold transition-all spring-press text-left';
 
       if (btnCult) btnCult.className = isCult ? activeCls : inactiveCls;
       if (btnAmzn) btnAmzn.className = isAmzn ? activeCls : inactiveCls;
@@ -8887,8 +8891,8 @@
       }
       updateChargeButtonText();
 
-      const activeCls = 'px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-950/40 text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press';
-      const inactiveCls = 'px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-white text-xs font-bold whitespace-nowrap shrink-0 spring-press';
+      const activeCls = 'px-2.5 py-1.5 rounded-xl border border-rose-500/60 bg-rose-500/15 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs font-bold whitespace-nowrap shrink-0 spring-press';
+      const inactiveCls = 'px-2.5 py-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card-subtle)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] text-xs font-bold whitespace-nowrap shrink-0 spring-press';
 
       const btnPnb = document.getElementById('in-preset-charge-pnb');
       const btnJanaAmc = document.getElementById('in-preset-charge-jana-amc');
@@ -9216,6 +9220,10 @@
 
     /* --- FAST-PATH INGESTED LIVE REFRESH (~400MS) --- */
     async function syncIngestedFast() {
+      if (pendingMutationsCount > 0) {
+        syncPendingAfterMutation = true;
+        return;
+      }
       try {
         const token = getSessionToken();
         const res = await fetch(`${API_ENDPOINT}?action=GET_INGESTED_ONLY&token=${encodeURIComponent(token)}`);
@@ -9771,6 +9779,34 @@
               if (cUpper) seenCodes.add(cUpper);
               if (bUpper) seenBookingIds.add(bUpper);
             }
+          });
+
+          // PRESERVATION MERGE: Any in-flight Misc voucher additions NOT yet returned by remote Google Sheet
+          UniversalMutationJournal.getMiscAdds().forEach(misc => {
+            const cUpper = String(misc.code || '').replace(/^'/, '').trim().toUpperCase();
+            if (!cUpper || isIdentifierQuarantined(cUpper, 'voucher') || isVoucherRedeemed({ code: cUpper })) return;
+            if (seenCodes.has(cUpper)) {
+              UniversalMutationJournal.remove(`misc_${cUpper}`);
+              return;
+            }
+            const brandName = misc.brandName || 'Misc';
+            state.vouchers.unshift({
+              id: 'misc-inflight-' + cUpper,
+              bookingId: brandName,
+              brand: 'Misc',
+              title: brandName + ' Voucher',
+              amount: Number(misc.amount) || 500,
+              code: cUpper,
+              pin: misc.pin || null,
+              account: brandName,
+              card: 'Manual',
+              expiry: '31 Dec 2026',
+              redeemedOn: null,
+              timestampIST: nowIST(),
+              displayInUI: true,
+              status: 'ACTIVE'
+            });
+            seenCodes.add(cUpper);
           });
 
           // AES-GCM Encrypted cache persistence (never plaintext)
@@ -10645,17 +10681,6 @@
 
       updateFloatingDock();
       renderDeckSelector();
-    }
-
-    /* --- TOGGLE SINGLE VOUCHER STATUS (delegates to proper 2-way functions) --- */
-    function toggleSingleStatus(id) {
-      const v = state.vouchers.find(x => x.id === id);
-      if (!v) return;
-      if (v.status === 'USED') {
-        undoRedemption(v.code, v.brand);
-      } else {
-        markVoucherAsRedeemed(v.code, v.brand);
-      }
     }
 
     /* --- RENDER CARD-STYLE HORIZONTAL PASS DECK SELECTOR (VIP WALLET CAROUSEL) --- */
@@ -12153,10 +12178,15 @@
     async function captureLiveCameraFrame() {
       const video = document.getElementById('card-scanner-video');
       if (!video || !liveCameraStream || isOcrProcessing) return;
+      if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+        const status = document.getElementById('scanner-status-text');
+        if (status) status.innerHTML = '<span class="text-amber-400 font-bold">Camera frame still initializing — please tap Snap again.</span>';
+        return;
+      }
 
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 1280;
-      canvas.height = video.videoHeight || 720;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -12235,7 +12265,10 @@
           tessedit_pageseg_mode: '6'
         });
         return worker;
-      })();
+      })().catch(err => {
+        tesseractWorkerPromise = null;
+        throw err;
+      });
       return tesseractWorkerPromise;
     }
 
@@ -15466,6 +15499,8 @@
         const pv = state.pendingShareVoucher;
         logSharedActivity(pv.code, pv.brand, pv.amount, pv.pin, 'WhatsApp', pv.bookingId);
         state.pendingShareVoucher = null;
+        renderDeckSelector();
+        renderVault();
       }
     }
 
@@ -15524,6 +15559,7 @@
           logSharedActivity(v.code, v.brand, v.amount, v.pin, 'WhatsApp', v.bookingId);
           showToast('Shared & logged to Activity Log');
           renderDeckSelector();
+          renderVault();
         }).catch((err) => {
           if (err && err.name === 'AbortError') return;
           state.pendingShareVoucher = v;
@@ -15632,7 +15668,17 @@
         });
 
         // Instantly move redeemed vouchers out of active vouchers list so they don't linger
-        state.vouchers = state.vouchers.filter(v => !movedCodes.includes(v.code));
+        const movedIdSet = new Set(targetVouchers.map(tv => tv.id).filter(Boolean));
+        const movedCodeUpperSet = new Set(movedCodes.map(c => String(c || '').replace(/^'/, '').trim().toUpperCase()).filter(c => c && c !== '-' && c !== 'PENDING'));
+        const movedBidUpperSet = new Set(targetVouchers.map(tv => String(tv.bookingId || '').replace(/^'/, '').trim().toUpperCase()).filter(b => b && b !== '-' && !b.startsWith('#')));
+        state.vouchers = state.vouchers.filter(v => {
+          if (v.id && movedIdSet.has(v.id)) return false;
+          const vc = String(v.code || '').replace(/^'/, '').trim().toUpperCase();
+          const vb = String(v.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+          if (vc && vc !== '-' && vc !== 'PENDING' && movedCodeUpperSet.has(vc)) return false;
+          if (vb && vb !== '-' && !vb.startsWith('#') && movedBidUpperSet.has(vb)) return false;
+          return true;
+        });
 
         saveSharedActivity();
         saveRedeemedList();
@@ -15748,6 +15794,15 @@
       const sheetLink = document.getElementById('sheet-link-btn');
       if (sheetLink) sheetLink.href = activeSheetUrl;
 
+      // 1b. Restore last viewed Brand tab and filter continuity BEFORE unlockVaultDirect paints
+      const savedBrand = localStorage.getItem('rupay_active_brand') || sessionStorage.getItem('rupay_active_brand') || 'ActivityLog';
+      state.activeFilterBrand = savedBrand;
+      const savedIngestFilter = localStorage.getItem('rupay_ingest_filter') || sessionStorage.getItem('rupay_ingest_filter') || 'tagged';
+      state.ingestFilter = savedIngestFilter;
+      const savedActivityFilter = sessionStorage.getItem('rupay_activity_filter') || 'added';
+      activityFilter = savedActivityFilter;
+      updateIngestFilterUI();
+
       // 2. Initialize security: Check 1-Week session & hydrate encrypted cache
       if (isSessionValid() || isDevUnlock) {
         if (isDevUnlock) {
@@ -15758,13 +15813,6 @@
         lockVault();
       }
 
-      // 3. Restore last viewed Brand tab and filter continuity across reloads
-      const savedBrand = localStorage.getItem('rupay_active_brand') || sessionStorage.getItem('rupay_active_brand') || 'ActivityLog';
-      state.activeFilterBrand = savedBrand;
-      const savedIngestFilter = localStorage.getItem('rupay_ingest_filter') || sessionStorage.getItem('rupay_ingest_filter') || 'tagged';
-      state.ingestFilter = savedIngestFilter;
-      const savedActivityFilter = sessionStorage.getItem('rupay_activity_filter') || 'added';
-      activityFilter = savedActivityFilter;
       setActivityFilter(savedActivityFilter);
       if (savedBrand !== 'ActivityLog') {
         filterVaultBrand(savedBrand, { preserveScroll: true });
