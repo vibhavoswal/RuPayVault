@@ -3649,8 +3649,9 @@ function doGet(e) {
       const clientTimestamp = Number(e.parameter.since || 0);
       const clientVersion = Number(e.parameter.version || 0);
       const notModified = !bypass && (
-        (clientVersion > 0 && clientVersion === versionInfo.version) ||
-        (clientTimestamp > 0 && Math.abs(versionInfo.lastUpdated - clientTimestamp) < 1000)
+        clientVersion > 0
+          ? (clientVersion === versionInfo.version)
+          : (clientTimestamp > 0 && Math.abs(versionInfo.lastUpdated - clientTimestamp) < 1000)
       );
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -3952,7 +3953,7 @@ function doGet(e) {
           }
 
           const comp = parseDateComponents(dateStr);
-          const yr = comp ? comp.year : 2026;
+          const yr = comp ? comp.year : new Date().getFullYear();
           if (comp) {
             dateStr = Utilities.formatString("%02d/%02d/%02d", comp.day, comp.month, comp.year % 100);
           }
@@ -4003,7 +4004,7 @@ function doGet(e) {
           }
 
           const comp = parseDateComponents(dateStr);
-          const yr = comp ? comp.year : 2026;
+          const yr = comp ? comp.year : new Date().getFullYear();
           if (comp) {
             dateStr = Utilities.formatString("%02d/%02d/%02d", comp.day, comp.month, comp.year % 100);
           }
@@ -6312,6 +6313,7 @@ function doPost(e) {
       }
 
       let voucherFound = false;
+      let alreadySoldLogged = false;
       let finalBid = rawBid;
       let finalCode = rawCode;
       let finalPin = rawPin;
@@ -6343,9 +6345,13 @@ function doPost(e) {
               finalAccount = String(nRows[i][5] || finalAccount);
               finalCard = String(nRows[i][6] || finalCard);
               finalAppendedTs = String(nRows[i][8] || finalAppendedTs);
+              const prevSaleLogged = nRows[i].length > 12 && (nRows[i][12] === true || String(nRows[i][12]).trim().toUpperCase() === 'TRUE');
               if (!keepInStaging) {
                 nSheet.deleteRow(i + 1);
               } else {
+                if (prevSaleLogged) {
+                  alreadySoldLogged = true;
+                }
                 if (nSheet.getLastColumn() < 13 || String(nSheet.getRange(1, 13).getValue() || '').trim() === '') {
                   nSheet.getRange(1, 13).setValue("Sale Logged").setFontWeight("bold");
                 }
@@ -6421,6 +6427,35 @@ function doPost(e) {
       const safePin = finalPin ? `'${finalPin.replace(/^'/, '')}` : "";
       const safeBid = finalBid ? `'${finalBid.replace(/^'/, '')}` : "";
 
+      // Idempotency Guard: Prevent double-entry in Redeemed & RuPay Income on retry when already sold
+      if (!keepInStaging && !voucherFound && rSheet) {
+        const checkBidNorm = safeBid.replace(/^'/, '').trim().toUpperCase();
+        const checkCdNorm = safeCode.replace(/^'/, '').trim().toUpperCase();
+        const rExisting = rSheet.getDataRange().getValues();
+        for (let r = 1; r < rExisting.length; r++) {
+          const rb = String(rExisting[r][1] || '').replace(/^'/, '').trim().toUpperCase();
+          const rc = String(rExisting[r][2] || '').replace(/^'/, '').trim().toUpperCase();
+          const bidDup = checkBidNorm.startsWith('RUPS-') && rb === checkBidNorm;
+          const cdDup = checkCdNorm && checkCdNorm !== 'SOLD' && checkCdNorm !== 'PENDING' && checkCdNorm !== '-' && rc === checkCdNorm;
+          if (bidDup || cdDup) {
+            alreadySoldLogged = true;
+            break;
+          }
+        }
+      }
+      if (alreadySoldLogged) {
+        return ContentService.createTextOutput(JSON.stringify({
+          success: true,
+          alreadySold: true,
+          action: "MARK_VOUCHER_AS_SOLD",
+          bookingId: finalBid,
+          code: safeCode.replace(/^'/, ''),
+          brand: targetBrand,
+          keepInStaging: keepInStaging,
+          isSaleMarked: keepInStaging
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
       // Append to "Redeemed" tab ONLY if NOT keepInStaging
       if (!keepInStaging && rSheet) {
         rSheet.appendRow([
@@ -6484,7 +6519,7 @@ function doPost(e) {
       const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
 
       let cellDateValue = dateStr;
-      let parsedYear = 2026;
+      let parsedYear = new Date().getFullYear();
       if (comp) {
         parsedYear = comp.year;
         cellDateValue = new Date(Date.UTC(comp.year, comp.month - 1, comp.day, 6, 30, 0));

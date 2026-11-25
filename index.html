@@ -9142,7 +9142,21 @@
     }
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeNavDrawer();
+      if (e.key === 'Escape') {
+        closeNavDrawer();
+        if (document.getElementById('card-scanner-modal')?.classList.contains('hidden') === false) {
+          closeCardScannerModal();
+        }
+        if (document.getElementById('voucher-detail-sheet')?.classList.contains('hidden') === false) {
+          closeVoucherDetailSheet();
+        }
+        if (document.getElementById('modal-share')?.classList.contains('hidden') === false) {
+          closeShareModal();
+        }
+        if (document.getElementById('modal-add-card')?.classList.contains('hidden') === false) {
+          closeAddCardModal();
+        }
+      }
     });
 
     /* --- TAB SWITCHER --- */
@@ -9231,6 +9245,32 @@
                 }
               }
 
+              const prevItem = (state.staging || []).find(x =>
+                (cleanBid && String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase() === cleanBid) ||
+                (cleanOrigBid && String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase() === cleanOrigBid)
+              );
+              let resolvedTimestamp = s.timestampIST || null;
+              if (prevItem && prevItem.timestampIST) {
+                if (!resolvedTimestamp) {
+                  resolvedTimestamp = prevItem.timestampIST;
+                } else {
+                  const prevMs = parseTimestamp(prevItem.timestampIST);
+                  const remoteMs = parseTimestamp(resolvedTimestamp);
+                  if (prevMs > 0 && remoteMs > 0 && prevMs < remoteMs) {
+                    resolvedTimestamp = prevItem.timestampIST;
+                  }
+                }
+              }
+
+              const isMarkedSold = !!(s.isSaleMarked || s.saleMarked);
+              if (isMarkedSold) {
+                if (cleanBid) markIngestedVoucherSold(cleanBid);
+                if (cleanOrigBid) markIngestedVoucherSold(cleanOrigBid);
+              } else {
+                if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
+                if (cleanOrigBid) unmarkIngestedVoucherSold(cleanOrigBid);
+              }
+
               return {
                 id: s.id || ('staging-' + (s.bookingId || idx)),
                 bookingId: bId,
@@ -9248,16 +9288,17 @@
                 account: s.account || '',
                 card: cardVal,
                 status: status,
-                timestampIST: s.timestampIST || nowIST(),
+                timestampIST: resolvedTimestamp,
                 displayInUI: s.displayInUI !== false,
                 payUrl: payUrl,
-                isSaleMarked: s.isSaleMarked === true || s.saleMarked === true,
-                saleMarked: s.isSaleMarked === true || s.saleMarked === true,
-                saleDetails: s.saleDetails || null
+                isSaleMarked: isMarkedSold,
+                saleMarked: isMarkedSold,
+                saleDetails: s.saleDetails || (prevItem && prevItem.saleDetails) || null
               };
             });
 
           await saveEncryptedStaging(state.staging);
+          persistL1ViewCache();
           renderVault();
           renderDeckSelector();
           updateClearTrashBadges();
@@ -12031,6 +12072,11 @@
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        // Guard against race if user closed the scanner modal while waiting for camera permission
+        if (document.getElementById('card-scanner-modal')?.classList.contains('hidden')) {
+          try { stream.getTracks().forEach(track => track.stop()); } catch (_) {}
+          return;
+        }
         liveCameraStream = stream;
 
         if (video) {
@@ -12108,21 +12154,27 @@
 
       if (status) status.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Loading photo...</span>';
 
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = imgUrl;
-      });
+      try {
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('Could not decode selected image'));
+          img.src = imgUrl;
+        });
 
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(imgUrl);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
 
-      await processCardImageFromCanvas(canvas);
+        await processCardImageFromCanvas(canvas);
+      } catch (imgErr) {
+        console.warn('Card photo load error:', imgErr);
+        if (status) status.innerHTML = '<span class="text-rose-400 font-bold">Unable to read image.</span> Please select a JPEG/PNG photo.';
+      } finally {
+        URL.revokeObjectURL(imgUrl);
+      }
     }
 
     async function getTesseractWorker() {
@@ -12650,7 +12702,14 @@
 
       const previousCards = [...(state.cards || [])];
       state.cards = state.cards || [];
-      state.cards.push(newCard);
+      UniversalMutationJournal.unquarantine(num);
+      const existingIdx = state.cards.findIndex(c => String(c.cardNumber || '').replace(/['\s]/g, '').trim() === num);
+      if (existingIdx !== -1) {
+        newCard.benefits = state.cards[existingIdx].benefits || newCard.benefits;
+        state.cards[existingIdx] = newCard;
+      } else {
+        state.cards.push(newCard);
+      }
       UniversalMutationJournal.recordCard(newCard);
       saveEncryptedCards(state.cards);
       closeAddCardModal();
