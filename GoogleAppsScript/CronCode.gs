@@ -173,6 +173,36 @@ function parseDateToTimestamp(dateVal) {
   return new Date(comp.year, comp.month - 1, comp.day).getTime();
 }
 
+/**
+ * Parses backend IST timestamps ("dd-MMM-yyyy hh:mm:ss a IST"), Date objects, or ISO strings into epoch ms.
+ */
+function parseISTTimestampMs(val) {
+  if (!val) return 0;
+  if (val instanceof Date) return isNaN(val.getTime()) ? 0 : val.getTime();
+  if (typeof val === 'number') return isNaN(val) ? 0 : (val < 1e11 ? val * 1000 : val);
+  const clean = String(val).replace(/^'/, '').replace(/'IST'/gi, '').replace(/\bIST\b/gi, '').trim();
+  if (!clean) return 0;
+  const m = clean.match(/^(\d{1,2})[-/ ]([A-Za-z]{3})[-/ ](\d{4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (m) {
+    const months = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+    const month = months[m[2].toLowerCase().slice(0, 3)];
+    if (month !== undefined) {
+      const day = parseInt(m[1], 10);
+      const year = parseInt(m[3], 10);
+      let hour = parseInt(m[4], 10);
+      const min = parseInt(m[5], 10);
+      const sec = m[6] ? parseInt(m[6], 10) : 0;
+      const mer = m[7] ? m[7].toUpperCase() : null;
+      if (mer === 'PM' && hour < 12) hour += 12;
+      if (mer === 'AM' && hour === 12) hour = 0;
+      return Date.UTC(year, month, day, hour - 5, min - 30, sec);
+    }
+  }
+  const direct = Date.parse(clean);
+  if (!isNaN(direct)) return direct;
+  return parseDateToTimestamp(clean);
+}
+
 function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
   soldTo = String(soldTo || '').trim();
   mobile = String(mobile || '').trim();
@@ -1338,22 +1368,22 @@ function recordPendingRedemption(ss, data) {
       // heal Col 9 to the earlier Stage 1 acknowledgment timestamp!
       const currentStatus = String(newRows[i][7] || '').trim().toUpperCase();
       if (currentStatus === "PENDING_REVALIDATION" || currentStatus === "PENDING") {
-        const existingTs = String(newRows[i][8] || '').trim();
-        const stage1Date = (data.receivedDate && typeof data.receivedDate.getTime === 'function')
-          ? data.receivedDate
-          : (data.receivedDate ? new Date(data.receivedDate) : null);
-        if (stage1Date && !isNaN(stage1Date.getTime())) {
+        const existingRaw = newRows[i][8];
+        const existingTs = String(existingRaw || '').trim();
+        const stage1Ms = parseISTTimestampMs(data.receivedDate);
+        if (stage1Ms > 0) {
           let shouldHeal = false;
           if (!existingTs) {
             shouldHeal = true;
           } else {
-            const existingDate = new Date(existingTs);
-            if (!isNaN(existingDate.getTime()) && stage1Date.getTime() < existingDate.getTime()) {
+            const existingMs = parseISTTimestampMs(existingRaw);
+            if (existingMs > 0 && stage1Ms < existingMs) {
               shouldHeal = true;
             }
           }
           if (shouldHeal) {
-            newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(stage1Date));
+            newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(new Date(stage1Ms)));
+            return true;
           }
         }
       }
@@ -2225,6 +2255,7 @@ function doGet(e) {
           addRevalidatedBookingToProperties(rowBid);
         }
       }
+      bumpDataVersion(['VOUCHERS']);
       SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -2311,6 +2342,7 @@ function doGet(e) {
 
       // 5. Update TOTAL row in incomeSheet
       recalculateSheetTotal(incomeSheet);
+      bumpDataVersion(['INCOME']);
       SpreadsheetApp.flush();
 
       return ContentService.createTextOutput(JSON.stringify({
@@ -2843,6 +2875,7 @@ function doGet(e) {
         }
       });
 
+      bumpDataVersion(['VOUCHERS']);
       SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
@@ -2930,6 +2963,7 @@ function doGet(e) {
         inserted.push(v);
       });
 
+      bumpDataVersion(['VOUCHERS', 'CORE']);
       SpreadsheetApp.flush();
       return ContentService.createTextOutput(JSON.stringify({ success: true, inserted: inserted })).setMimeType(ContentService.MimeType.JSON);
     } catch (popErr) {
@@ -3039,6 +3073,7 @@ function doGet(e) {
         colBRange.setValues(newColBValues);
         colBRange.setNumberFormat("dd/MM/yy");
         colBRange.setHorizontalAlignment("center");
+        bumpDataVersion(['INCOME']);
         SpreadsheetApp.flush();
       }
 
@@ -3574,12 +3609,13 @@ function doGet(e) {
       bSheet.getRange("F:F").setNumberFormat('@');
       bSheet.getRange("G:G").setNumberFormat('@');
 
+      bumpDataVersion(['CORE']);
       SpreadsheetApp.flush();
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "SETUP_ACTIVE_CARDS_TAB",
-        activeCardsCount: rows.length,
+        activeCardsCount: Math.max(0, sheet.getLastRow() - 1),
         created: created
       })).setMimeType(ContentService.MimeType.JSON);
     } catch(err) {
@@ -4496,7 +4532,8 @@ function doPost(e) {
               newSheet.getRange(r + 1, 12).setValue('');
             }
             updated = true;
-            addRevalidatedBookingToProperties(targetBid);
+            addRevalidatedBookingToProperties(rowBid || targetBid);
+            if (targetBid && targetBid !== rowBid) addRevalidatedBookingToProperties(targetBid);
             break;
           }
         }
@@ -4530,7 +4567,8 @@ function doPost(e) {
               newSheet.getRange(r + 1, 12).setValue(payUrl);
             }
             updated = true;
-            removeRevalidatedBookingFromProperties(targetBid);
+            removeRevalidatedBookingFromProperties(rowBid || targetBid);
+            if (targetBid && targetBid !== rowBid) removeRevalidatedBookingFromProperties(targetBid);
             break;
           }
         }
@@ -6723,20 +6761,26 @@ function doPost(e) {
       let deletedIncomeRow = -1;
       if (incomeSheet) {
         const iVals = incomeSheet.getDataRange().getValues();
+        const targetDateMs = targetDate ? parseDateToTimestamp(targetDate) : 0;
+        const normBrand = String(brand || '').toLowerCase().replace(/[^a-z0-9]/g, '');
         for (let r = iVals.length - 1; r >= 1; r--) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
           const comm = String(iVals[r][3] || '').trim();
           const rowPrice = Math.abs(Number(iVals[r][2]) || 0);
-          const rowDate = String(iVals[r][1] || '').trim();
+          const rowDateMs = parseDateToTimestamp(iVals[r][1]);
+          const rowDateFormatted = rowDateMs ? Utilities.formatDate(new Date(rowDateMs), "GMT+05:30", "dd/MM/yy") : String(iVals[r][1] || '').trim();
+          const normCol0 = col0.toLowerCase().replace(/[^a-z0-9]/g, '');
 
           const matchComment = targetComments && comm === targetComments;
+          const matchEmptyComments = !targetComments && !comm;
           const matchBidInComm = cleanTargetBid && (comm.toUpperCase().includes(cleanTargetBid) || (targetBid && comm.includes(targetBid)));
           const matchCodeInComm = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && (comm.toUpperCase().includes(cleanTargetCode) || (targetCode && comm.includes(targetCode)));
-          const matchPriceAndDate = targetPrice > 0 && rowPrice === targetPrice && (!targetDate || rowDate === targetDate || rowDate.includes(targetDate) || targetDate.includes(rowDate));
-          const matchBrandAndPrice = brand && col0.includes(brand.toUpperCase()) && (!targetPrice || rowPrice === targetPrice);
+          const matchDate = !targetDate || (targetDateMs > 0 && rowDateMs === targetDateMs) || rowDateFormatted === targetDate;
+          const matchPriceAndDate = targetPrice > 0 && Math.abs(rowPrice - targetPrice) < 0.01 && matchDate;
+          const matchBrandAndPrice = normBrand && (normCol0.includes(normBrand) || normBrand.includes(normCol0)) && (!targetPrice || Math.abs(rowPrice - targetPrice) < 0.01);
 
-          if (matchComment || matchBidInComm || matchCodeInComm || (matchPriceAndDate && (matchBrandAndPrice || !brand)) || (targetComments && comm.includes(targetComments) && matchPriceAndDate)) {
+          if (matchComment || matchBidInComm || matchCodeInComm || (matchPriceAndDate && (matchBrandAndPrice || !normBrand || matchEmptyComments)) || (targetComments && comm.includes(targetComments) && matchPriceAndDate)) {
             deletedIncomeRow = r + 1;
             incomeSheet.deleteRow(r + 1);
             break;

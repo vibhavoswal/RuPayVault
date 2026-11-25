@@ -5890,7 +5890,7 @@
             ${isStaging && act.targetBrand ? `
               <div class="flex justify-between items-center text-xs">
                 <span class="text-neutral-400">Destination Brand:</span>
-                <span class="font-mono-apple text-emerald-400 font-bold">${act.targetBrand}</span>
+                <span class="font-mono-apple text-emerald-400 font-bold">${escapeHtml(act.targetBrand)}</span>
               </div>
             ` : ''}
 
@@ -5906,18 +5906,18 @@
 
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">Account:</span>
-              <span class="font-mono-apple text-blue-400 font-bold">@${act.account || '-'}</span>
+              <span class="font-mono-apple text-blue-400 font-bold">@${escapeHtml(act.account || '-')}</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">Timestamp:</span>
-              <span class="font-mono-apple text-neutral-300 text-[11px]">${timeStr || 'Recent'}</span>
+              <span class="font-mono-apple text-neutral-300 text-[11px]">${escapeHtml(timeStr || 'Recent')}</span>
             </div>
 
             <div class="flex justify-between items-center text-xs">
               <span class="text-neutral-400">${isShared ? 'Platform:' : 'Card:'}</span>
               <span class="font-mono-apple ${isShared ? 'text-[#F47A21]' : (isTagged ? 'text-emerald-400' : 'text-amber-400')} font-bold">
-                ${isShared ? 'WhatsApp Export' : (isTagged ? act.card : '<span class="inline-flex items-center gap-1 text-amber-400"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Untagged (Needs Card Tag)</span>')}
+                ${isShared ? 'WhatsApp Export' : (isTagged ? escapeHtml(act.card) : '<span class="inline-flex items-center gap-1 text-amber-400"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Untagged (Needs Card Tag)</span>')}
               </span>
             </div>
           </div>
@@ -6430,8 +6430,16 @@
       // SG1 & SG2: Quarantine identifier & journal entry ONLY if voucher is leaving vault
       if (!isStagingNotArrived) {
         const tombContext = isStaging ? 'staging' : 'voucher';
-        if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') UniversalMutationJournal.recordTombstone(cleanCode, tombContext);
-        if (cleanBid && cleanBid !== '-' && !cleanBid.startsWith('#')) UniversalMutationJournal.recordTombstone(cleanBid, tombContext);
+        if (cleanCode && cleanCode !== 'PENDING' && cleanCode !== '-') {
+          UniversalMutationJournal.recordTombstone(cleanCode, tombContext);
+          MutationJournal.removeApproval(cleanCode);
+          MutationJournal.removeUndo(cleanCode);
+        }
+        if (cleanBid && cleanBid !== '-' && !cleanBid.startsWith('#')) {
+          UniversalMutationJournal.recordTombstone(cleanBid, tombContext);
+          MutationJournal.removeApproval(cleanBid);
+          MutationJournal.removeUndo(cleanBid);
+        }
       }
 
       // Optimistic Local State Updates (with normalized key matching to prevent quote/case divergence):
@@ -7085,6 +7093,14 @@
 
       const cleanRedeemKey = String(code || '').trim().toUpperCase();
       const cleanBidKey = String(optionalBookingId || '').trim().toUpperCase();
+      if (cleanRedeemKey) {
+        MutationJournal.removeApproval(cleanRedeemKey);
+        MutationJournal.removeUndo(cleanRedeemKey);
+      }
+      if (cleanBidKey) {
+        MutationJournal.removeApproval(cleanBidKey);
+        MutationJournal.removeUndo(cleanBidKey);
+      }
       sharedActivity = sharedActivity.filter(s => {
         const sCd = String(s.code || '').trim().toUpperCase();
         const sBid = String(s.bookingId || '').trim().toUpperCase();
@@ -9727,10 +9743,13 @@
             };
           });
 
-          // PRESERVATION MERGE: Any in-flight approvals NOT yet returned by remote Google Sheet are merged to front!
+          // PRESERVATION MERGE: Any in-flight approvals NOT yet returned by remote Google Sheet (and not quarantined/redeemed) are merged to front!
           inFlightApprovals.forEach(app => {
             const cUpper = String(app.code || '').replace(/^'/, '').trim().toUpperCase();
             const bUpper = String(app.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            if ((cUpper && isIdentifierQuarantined(cUpper, 'voucher')) || (bUpper && isIdentifierQuarantined(bUpper, 'voucher')) || isVoucherRedeemed(app)) {
+              return;
+            }
             const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(app);
@@ -9739,10 +9758,13 @@
             }
           });
 
-          // PRESERVATION MERGE: Any in-flight undos NOT yet returned by remote Google Sheet are merged to front!
+          // PRESERVATION MERGE: Any in-flight undos NOT yet returned by remote Google Sheet (and not quarantined/redeemed) are merged to front!
           inFlightUndos.forEach(und => {
             const cUpper = String(und.code || '').replace(/^'/, '').trim().toUpperCase();
             const bUpper = String(und.bookingId || '').replace(/^'/, '').trim().toUpperCase();
+            if ((cUpper && isIdentifierQuarantined(cUpper, 'voucher')) || (bUpper && isIdentifierQuarantined(bUpper, 'voucher')) || isVoucherRedeemed(und)) {
+              return;
+            }
             const alreadyInRemote = (cUpper && seenCodes.has(cUpper)) || (bUpper && seenBookingIds.has(bUpper));
             if (!alreadyInRemote) {
               state.vouchers.unshift(und);
@@ -10264,9 +10286,9 @@
 
                     <!-- LINE 3: @account Tag + Relative Age -->
                     <div class="flex items-center gap-1.5 text-[10px] font-mono-apple truncate pt-0.5">
-                      <span class="text-blue-400 font-bold">@${act.account || '-'}</span>
+                      <span class="text-blue-400 font-bold">@${escapeHtml(act.account || '-')}</span>
                       <span class="text-neutral-500">•</span>
-                      <span class="text-neutral-400">${formatRelativeTime(act.timestampStr || act.timestampIST)}</span>
+                      <span class="text-neutral-400">${escapeHtml(formatRelativeTime(act.timestampStr || act.timestampIST))}</span>
                     </div>
 
                   </div>
@@ -10274,7 +10296,7 @@
 
                 <!-- Right Cell: Modern Google Material Design SVG (i) Button -->
                 <div class="shrink-0 flex items-center gap-1.5 pointer-events-auto">
-                  <button onclick="event.stopPropagation(); openVoucherDetailSheet('${act.id}')"
+                  <button onclick="event.stopPropagation(); openVoucherDetailSheet('${escapeJsAttr(act.id)}')"
                           class="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-400 hover:text-white flex items-center justify-center transition-all border border-neutral-700/60 shadow-xs"
                           title="Inspect Voucher Code, PIN & Audit">
                     <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -10498,7 +10520,7 @@
           const circumference = 2 * Math.PI * radius;
           const strokeDashoffset = circumference * (1 - progressFraction);
           sharedIndicatorHtml = `
-            <div onclick="event.stopPropagation(); openVoucherDetailSheet('${v.id || v.code}')"
+            <div onclick="event.stopPropagation(); openVoucherDetailSheet('${escapeJsAttr(v.id || v.code)}')"
                  title="Shared recently • Active for ${remainingMins}m more"
                  aria-label="Shared indicator active for ${remainingMins} minutes"
                  class="proto-shared-badge flex items-center gap-1.5 px-1.5 py-0.5 rounded-lg bg-neutral-800/80 light:bg-slate-100 border border-[#007AFF]/40 cursor-pointer hover:border-[#007AFF] transition-all">
@@ -10533,18 +10555,18 @@
             </span>
             <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
               <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-              <span>${v.card || 'RuPay Select'}</span>
+              <span>${escapeHtml(v.card || 'RuPay Select')}</span>
             </div>
           </div>
         ` : (isRecentArrival ? `
           <div class="flex items-center justify-between text-xs pt-1 border-t border-neutral-800/40">
             <span class="text-[10px] font-bold text-[#007AFF] flex items-center gap-1.5 font-mono-apple">
               <span class="w-1.5 h-1.5 rounded-full bg-[#007AFF]"></span>
-              ${formatArrivalDate(v.timestampIST)}
+              ${escapeHtml(formatArrivalDate(v.timestampIST))}
             </span>
             <div class="flex items-center gap-1 font-mono-apple text-[11px] text-neutral-300 font-semibold">
               <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-              <span>${v.card || 'RuPay Select'}</span>
+              <span>${escapeHtml(v.card || 'RuPay Select')}</span>
             </div>
           </div>
         ` : ''));
@@ -10555,11 +10577,11 @@
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
-                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
+                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${escapeHtml(v.id)}">
                     <input type="checkbox" aria-label="Select voucher ${escapeHtml(specificBrandName || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                   </div>
                 ` : ''}
-                <span class="font-bold text-white text-sm tracking-tight">${specificBrandName}</span>
+                <span class="font-bold text-white text-sm tracking-tight">${escapeHtml(specificBrandName)}</span>
                 <span class="font-mono-apple font-semibold text-emerald-400 text-xs">₹${(v.amount || 500).toLocaleString()}</span>
               </div>
               <div class="pointer-events-auto">
@@ -10570,7 +10592,7 @@
             <div class="flex items-center justify-between text-xs pointer-events-none">
               <div class="flex items-center gap-2">
                 ${state.isSelectMode ? `
-                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${v.id}">
+                  <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${escapeHtml(v.id)}">
                     <input type="checkbox" aria-label="Select voucher Pass ${i + 1}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                   </div>
                 ` : ''}
@@ -11221,7 +11243,7 @@
     }
 
     function updateDrawerCardCount() {
-      const allCards = state.cards || [];
+      const allCards = (state.cards || []).filter(c => String(c.status || 'ACTIVE').toUpperCase() === 'ACTIVE');
       const dcCount = allCards.filter(c => String(c.type || '').toLowerCase() === 'debit').length;
       const ccCount = allCards.filter(c => String(c.type || '').toLowerCase() === 'credit').length;
       
@@ -11341,8 +11363,8 @@
           const inactiveCls = 'card-filter-pill-inactive bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border-white/10';
 
           return `
-            <button onclick="setCardBankFilter('${bank}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
-              ${shortName}
+            <button onclick="setCardBankFilter('${escapeJsAttr(bank)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border whitespace-nowrap transition-all active:scale-95 ${isActive ? activeCls : inactiveCls}">
+              ${escapeHtml(shortName)}
             </button>
           `;
         }).join('');
@@ -11441,19 +11463,19 @@
         const badgeColor = getBankBadgeColor(card.bank);
         const hasLinkedAcc = card.linkedAccount && card.linkedAccount !== 'NA';
         const linkedAccDisplay = (hasLinkedAcc && isInfoRevealed)
-          ? `<span class="px-1.5 py-0.5 rounded bg-black/60 text-amber-300 font-mono-apple text-[10px] border border-amber-500/30">A/c ${card.linkedAccount}</span>` 
+          ? `<span class="px-1.5 py-0.5 rounded bg-black/60 text-amber-300 font-mono-apple text-[10px] border border-amber-500/30">A/c ${escapeHtml(card.linkedAccount)}</span>` 
           : '';
 
         return `
-          <div id="card-box-${rawNum}" class="${themeClass} rounded-2xl p-4 relative overflow-hidden shadow-xl transition-all">
+          <div id="card-box-${escapeHtml(rawNum)}" class="${themeClass} rounded-2xl p-4 relative overflow-hidden shadow-xl transition-all">
             <!-- Top Row: Bank Badge, Title, and (i) Info Icon (Vertically aligned with Eye & Share) -->
             <div class="flex items-center justify-between mb-2.5">
               <div class="flex items-center gap-2">
                 <span class="w-7 h-7 rounded-lg border font-black text-[10px] flex items-center justify-center tracking-tight ${badgeColor}">
-                  ${card.bank ? card.bank.slice(0, 3).toUpperCase() : 'RP'}
+                  ${escapeHtml(card.bank ? card.bank.slice(0, 3).toUpperCase() : 'RP')}
                 </span>
                 <div class="text-xs font-bold text-white tracking-tight flex items-center gap-1.5 flex-wrap">
-                  <span>${card.name || 'RuPay Card'}</span>
+                  <span>${escapeHtml(card.name || 'RuPay Card')}</span>
                   ${linkedAccDisplay}
                 </div>
               </div>
@@ -11461,7 +11483,7 @@
               <!-- (i) Info Icon Button (Smaller than eye/share, vertically aligned in right column) -->
               <div class="w-8 flex items-center justify-center">
                 ${hasLinkedAcc ? `
-                  <button onclick="toggleCardInfo('${rawNum}')" title="Toggle Linked Account Info" class="w-6 h-6 rounded-md ${isInfoRevealed ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/5'} flex items-center justify-center transition-all active:scale-95">
+                  <button onclick="toggleCardInfo('${escapeJsAttr(rawNum)}')" title="Toggle Linked Account Info" class="w-6 h-6 rounded-md ${isInfoRevealed ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white border border-white/5'} flex items-center justify-center transition-all active:scale-95">
                     <svg aria-hidden="true" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -11478,13 +11500,13 @@
                 Card Number
               </div>
               <div class="flex items-center justify-between">
-                <button onclick="quickCopyCardField('${rawNum}', 'Card number')" title="Copy 16-digit card number" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all flex items-center gap-1.5">
-                  <div id="num-display-${rawNum}" class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors">
-                    ${maskedNum}
+                <button onclick="quickCopyCardField('${escapeJsAttr(rawNum)}', 'Card number', this)" title="Copy 16-digit card number" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all flex items-center gap-1.5">
+                  <div id="num-display-${escapeHtml(rawNum)}" class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors">
+                    ${escapeHtml(maskedNum)}
                   </div>
                   <svg aria-hidden="true" class="w-3.5 h-3.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 </button>
-                <button onclick="toggleCardPeek('${rawNum}')" title="Reveal / Mask Card Details" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 text-neutral-400 hover:text-white flex items-center justify-center transition-all shrink-0">
+                <button onclick="toggleCardPeek('${escapeJsAttr(rawNum)}')" title="Reveal / Mask Card Details" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 text-neutral-400 hover:text-white flex items-center justify-center transition-all shrink-0">
                   ${isPeeked ? `
                     <svg aria-hidden="true" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
@@ -11498,19 +11520,19 @@
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-6">
                 <!-- Expiry Quick-Copy -->
-                <button onclick="quickCopyCardField('${card.expiry || '10/33'}', 'Expiry')" title="Copy Expiry" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all">
+                <button onclick="quickCopyCardField('${escapeJsAttr(card.expiry || '10/33')}', 'Expiry', this)" title="Copy Expiry" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all">
                   <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">Expiry</div>
                   <div class="font-mono-apple text-xs font-bold text-neutral-200 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
-                    <span>${card.expiry || '10/33'}</span>
+                    <span>${escapeHtml(card.expiry || '10/33')}</span>
                     <svg aria-hidden="true" class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   </div>
                 </button>
 
                 <!-- CVV Quick-Copy -->
-                <button onclick="quickCopyCardField('${card.cvv || '000'}', 'CVV')" title="Copy CVV" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all">
+                <button onclick="quickCopyCardField('${escapeJsAttr(card.cvv || '000')}', 'CVV', this)" title="Copy CVV" class="group text-left py-1 pr-2 rounded-lg hover:bg-white/5 active:scale-[0.98] transition-all">
                   <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-400 mb-0.5">CVV</div>
-                  <div id="cvv-display-${rawNum}" class="font-mono-apple text-xs font-bold text-neutral-200 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
-                    <span>${cvvDisplay}</span>
+                  <div id="cvv-display-${escapeHtml(rawNum)}" class="font-mono-apple text-xs font-bold text-neutral-200 group-hover:text-emerald-400 transition-colors flex items-center gap-1">
+                    <span>${escapeHtml(cvvDisplay)}</span>
                     <svg aria-hidden="true" class="w-2.5 h-2.5 text-neutral-500 group-hover:text-emerald-400 opacity-60 group-hover:opacity-100 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                   </div>
                 </button>
@@ -11695,6 +11717,15 @@
         apiFetch('BLOCK_CARD', { cardNumber: cardNum }, {
           rollback: () => {
             if (isUndone) return;
+            isUndone = true;
+            clearTimeout(phase2Timer);
+            clearTimeout(phase3Timer);
+            clearTimeout(phase4Timer);
+            const activeCardEl = document.getElementById(`card-box-${cardNum}`);
+            if (activeCardEl) {
+              activeCardEl.style.transform = '';
+              activeCardEl.classList.remove('anim-swipe-horizontal-700', 'anim-collapse-700');
+            }
             state.cards = previousCards;
             currentCardAccountFilter = previousAccountFilter;
             UniversalMutationJournal.unquarantine(cardNum);
@@ -12344,6 +12375,11 @@
         if (!parsed.expiry) {
           const exp = parseExpiryFromCanvasOrText(extractedText || result?.data?.text || '');
           if (exp) parsed.expiry = exp;
+        }
+
+        // Abort before triggering fill animation if scanner modal was dismissed mid-OCR
+        if (document.getElementById('card-scanner-modal')?.classList.contains('hidden')) {
+          return;
         }
 
         // Check final result
@@ -13802,11 +13838,11 @@
             <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
               <svg aria-hidden="true" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             </div>
-            <h3 class="text-sm font-extrabold text-white mb-1">No Accounts Found for ${memObj.name}</h3>
+            <h3 class="text-sm font-extrabold text-white mb-1">No Accounts Found for ${escapeHtml(memObj.name)}</h3>
             <p class="text-xs text-neutral-400 mb-4 max-w-xs mx-auto">No bank accounts have been registered under this family profile yet.</p>
-            <button onclick="showToast('Add Account for ${memObj.short} coming soon')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-neutral-800 hover:bg-neutral-700 transition-colors inline-flex items-center gap-1.5 shadow-md">
+            <button onclick="showToast('Add Account for ${escapeJsAttr(memObj.short)} coming soon')" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-neutral-800 hover:bg-neutral-700 transition-colors inline-flex items-center gap-1.5 shadow-md">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              <span>+ Link Bank Account for ${memObj.short}</span>
+              <span>+ Link Bank Account for ${escapeHtml(memObj.short)}</span>
             </button>
           </div>
         `;
@@ -13837,10 +13873,10 @@
           <div class="bank-card ${acc.gradient}">
             <!-- Top Row: Clean Bank Name & (i) Info SVG Button -->
             <div class="flex items-center justify-between mb-2">
-              <h3 class="text-base font-extrabold tracking-tight text-white">${acc.bank}</h3>
+              <h3 class="text-base font-extrabold tracking-tight text-white">${escapeHtml(acc.bank)}</h3>
 
               <div class="w-8 flex items-center justify-center">
-                <button onclick="toggleBankCardInfo('${acc.id}')" title="Account Details &amp; Additional Info" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
+                <button onclick="toggleBankCardInfo('${escapeJsAttr(acc.id)}')" title="Account Details &amp; Additional Info" class="w-8 h-8 rounded-lg ${isInfoRevealed ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40' : 'bg-white/10 hover:bg-white/20 text-white/70 hover:text-white border border-white/10'} flex items-center justify-center transition-all active:scale-95">
                   <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -15238,19 +15274,17 @@
 
     function shareSelectedWithShareSheet() {
       const normKey = normalizeBrandKey(state.activeFilterBrand);
-      let brandVouchers;
       if (normKey === 'ActivityLog') {
-        brandVouchers = (state.staging || []).filter(s =>
-          s.displayInUI !== false && s.code && s.code.trim() !== ''
-        );
-        const sel = brandVouchers.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code) || state.selectedIds.has(v.bookingId));
+        const visibleStaging = (state.staging || []).filter(s => s.displayInUI !== false && isVoucherArrived(s));
+        const sel = visibleStaging.filter(v => state.selectedIds.has(v.id) || state.selectedIds.has(v.code) || state.selectedIds.has(v.bookingId));
         if (state.isSelectMode && !sel.length) {
-          showToast("Please select at least 1 voucher to share");
+          showToast("Please select at least 1 delivered voucher to share");
           return;
         }
-        const targets = sel.length > 0 ? sel : brandVouchers;
+        const filteredByView = visibleStaging.filter(s => state.ingestFilter === 'tagged' ? isCardTagged(s.card) : !isCardTagged(s.card));
+        const targets = sel.length > 0 ? sel : (filteredByView.length > 0 ? filteredByView : visibleStaging);
         if (!targets.length) {
-          showToast("No vouchers to share");
+          showToast("No delivered vouchers to share");
           return;
         }
         targets.forEach(v => {
@@ -15281,14 +15315,19 @@
         return;
       }
 
-      brandVouchers = state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey && v.status !== 'USED');
-      const allBrandVouchers = brandVouchers.length ? brandVouchers : state.vouchers.filter(v => normalizeBrandKey(v.brand) === normKey);
-      const sel = allBrandVouchers.filter(v => state.selectedIds.has(v.id));
+      const brandVouchers = state.vouchers.filter(v =>
+        normalizeBrandKey(v.brand) === normKey &&
+        v.displayInUI !== false &&
+        v.status !== 'USED' &&
+        !isVoucherRedeemed(v) &&
+        isVoucherArrived(v)
+      );
+      const sel = brandVouchers.filter(v => state.selectedIds.has(v.id) || (v.code && state.selectedIds.has(v.code)));
       if (state.isSelectMode && !sel.length) {
-        showToast("Please select at least 1 voucher to share");
+        showToast("Please select at least 1 delivered voucher to share");
         return;
       }
-      const targets = sel.length > 0 ? sel : allBrandVouchers;
+      const targets = sel.length > 0 ? sel : brandVouchers;
 
       if (!targets.length) {
         showToast("No vouchers to share");
@@ -15557,6 +15596,14 @@
           v.status = 'USED';
           const vCodeUpper = String(v.code || '').trim().toUpperCase();
           const vBidUpper = String(v.bookingId || '').trim().toUpperCase();
+          if (vCodeUpper) {
+            MutationJournal.removeApproval(vCodeUpper);
+            MutationJournal.removeUndo(vCodeUpper);
+          }
+          if (vBidUpper) {
+            MutationJournal.removeApproval(vBidUpper);
+            MutationJournal.removeUndo(vBidUpper);
+          }
           sharedActivity = sharedActivity.filter(s => {
             const sCodeUpper = String(s.code || '').trim().toUpperCase();
             const sBidUpper = String(s.bookingId || '').trim().toUpperCase();
@@ -15656,6 +15703,9 @@
       renderCards();
       renderVault();
       renderMatrix();
+      if (state.activeWorkspace === 'cards') renderCardManagerList(currentCardCategoryFilter || 'Debit');
+      else if (state.activeWorkspace === 'banks') renderBankManager();
+      else if (state.activeWorkspace === 'income') renderIncomeTracker();
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
