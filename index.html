@@ -5072,13 +5072,27 @@
             if (payload && payload.timeStr) {
               updateAllSyncIndicators('success', payload.timeStr);
             }
-            // Sibling tab completed a fresh sync: rehydrate encrypted data from storage
-            const loadedVouchers = await loadEncryptedVouchers();
+            // Sibling tab completed a fresh sync: rehydrate all encrypted & local stores from storage
+            const [loadedVouchers, loadedCards, loadedStaging, loadedIncome, loadedAccounts, loadedBankAccounts] = await Promise.all([
+              loadEncryptedVouchers(),
+              loadEncryptedCards(),
+              loadEncryptedStaging(),
+              loadEncryptedIncome(),
+              loadEncryptedAccounts(),
+              loadEncryptedBankAccounts()
+            ]);
             if (loadedVouchers) state.vouchers = loadedVouchers;
-            const loadedCards = await loadEncryptedCards();
             if (loadedCards) state.cards = loadedCards;
-            const loadedIncome = await loadEncryptedIncome();
+            if (loadedStaging) state.staging = loadedStaging;
             if (loadedIncome) state.income = loadedIncome;
+            if (loadedAccounts) state.accounts = loadedAccounts;
+            if (loadedBankAccounts) state.bankAccounts = loadedBankAccounts;
+            try {
+              const rawRed = JSON.parse(localStorage.getItem('rupay_redeemed_list') || 'null');
+              if (Array.isArray(rawRed)) redeemedList = rawRed;
+              const rawShared = JSON.parse(localStorage.getItem('rupay_shared_activity') || 'null');
+              if (Array.isArray(rawShared)) sharedActivity = rawShared;
+            } catch (_) {}
             renderAll();
             persistL1ViewCache();
           } else if (type === 'VAULT_LOCKED') {
@@ -5095,6 +5109,12 @@
         if (e.key === 'rupay_universal_mutation_journal') {
           renderAll();
           persistL1ViewCache();
+        } else if (e.key === 'rupay_redeemed_list' && e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) { redeemedList = parsed; renderAll(); persistL1ViewCache(); }
+        } else if (e.key === 'rupay_shared_activity' && e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) { sharedActivity = parsed; renderAll(); persistL1ViewCache(); }
         } else if (e.key === 'rupay_sync_time' && e.newValue) {
           updateAllSyncIndicators('success', e.newValue);
         } else if (e.key === 'rupay_session_token' && !e.newValue) {
@@ -5570,6 +5590,18 @@
         .replace(/'/g, '&#039;');
     }
 
+    // JS-inside-HTML-attribute escaping helper (prevents quote/backslash breakouts in onclick="fn('...')")
+    function escapeJsAttr(str) {
+      if (str === null || str === undefined) return '';
+      return escapeHtml(
+        String(str)
+          .replace(/\\/g, '\\\\')
+          .replace(/'/g, "\\'")
+          .replace(/\r/g, '\\r')
+          .replace(/\n/g, '\\n')
+      );
+    }
+
     // Relative human-friendly time helper (e.g. "14h ago", "1d ago")
     function formatRelativeTime(ts) {
       if (!ts) return 'Recent';
@@ -5767,7 +5799,7 @@
                 <p class="text-xs text-neutral-300">
                   Shared indicator active on placard for 3 hours.
                 </p>
-                <button onclick="dismissSharedActivity('${dismissKey}'); closeVoucherDetailSheet();" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] font-bold active:scale-95 transition-all shrink-0">
+                <button onclick="dismissSharedActivity('${escapeJsAttr(dismissKey)}'); closeVoucherDetailSheet();" class="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[11px] font-bold active:scale-95 transition-all shrink-0">
                   Dismiss
                 </button>
               </div>
@@ -5787,15 +5819,15 @@
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0 flex-1">
                   <div class="font-mono-apple text-sm font-bold text-white tracking-wider truncate">
-                    ${act.code}
+                    ${escapeHtml(act.code)}
                   </div>
                   ${act.pin ? `
                     <div class="font-mono-apple text-xs text-[#F47A21] font-bold mt-0.5">
-                      PIN: ${act.pin}
+                      PIN: ${escapeHtml(act.pin)}
                     </div>
                   ` : ''}
                 </div>
-                <button onclick="copyCodeAndPin('${act.code}', '${act.pin || ''}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow transition-all shrink-0">
+                <button onclick="copyCodeAndPin('${escapeJsAttr(act.code)}', '${escapeJsAttr(act.pin || '')}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow transition-all shrink-0">
                   ${act.pin ? 'Copy Code + PIN' : 'Copy Code'}
                 </button>
               </div>
@@ -5831,8 +5863,8 @@
               <div class="flex justify-between items-center text-xs">
                 <span class="text-neutral-400">Booking ID:</span>
                 <div class="flex items-center gap-1.5">
-                  <span class="font-mono-apple font-bold text-neutral-200">${act.bookingId}</span>
-                  <button onclick="copyToClipboard('${act.bookingId}')" class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 active:scale-95 transition-all">Copy</button>
+                  <span class="font-mono-apple font-bold text-neutral-200">${escapeHtml(act.bookingId)}</span>
+                  <button onclick="copyToClipboard('${escapeJsAttr(act.bookingId)}')" class="px-1.5 py-0.5 rounded text-[10px] bg-neutral-800 hover:bg-neutral-700 text-neutral-300 active:scale-95 transition-all">Copy</button>
                 </div>
               </div>
             ` : ''}
@@ -5900,17 +5932,17 @@
           const stagedArrived = stagedItem ? isVoucherArrived(stagedItem) : false;
           footerEl.innerHTML = `
             ${isStagedShared ? (stagedArrived ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${stagedItem.id}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${escapeJsAttr(stagedItem.id)}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                 <span>Approve to Brand Tab</span>
               </button>
             ` : '') : `
-              <button onclick="markVoucherAsRedeemed('${act.code}', '${act.brand}', '${act.bookingId || ''}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
+              <button onclick="markVoucherAsRedeemed('${escapeJsAttr(act.code)}', '${escapeJsAttr(act.brand)}', '${escapeJsAttr(act.bookingId || '')}'); closeVoucherDetailSheet();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                 <span>Mark as Redeemed</span>
               </button>
             `}
-            <button onclick="dismissSharedActivity('${dismissKey}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
+            <button onclick="dismissSharedActivity('${escapeJsAttr(dismissKey)}'); closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 flex items-center justify-center active:scale-95 transition-all" title="Dismiss" aria-label="Dismiss">
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center active:scale-95 transition-all" title="Done" aria-label="Done">
@@ -5930,35 +5962,35 @@
                   <span class="truncate">Sale Logged</span>
                 </button>
               ` : `
-                <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="${saleBtnTitle}">
+                <button onclick="openMarkSoldSheet('${escapeJsAttr(act.id)}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="${saleBtnTitle}">
                   <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
                   <span class="truncate">${saleBtnLabel}</span>
                 </button>
               `
             ) : ''}
             ${!isTagged ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${escapeJsAttr(act.id)}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Card</span>
               </button>
             ` : ''}
             ${hasArrived ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${escapeJsAttr(act.id)}'); executeApproveSelectedStaging();" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Approve to Brand Tab">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                 <span class="truncate">Approve to Brand Tab</span>
               </button>
             ` : (isRevalidation ? `
               ${act.payUrl ? `
-                <a href="${act.payUrl}" target="_blank" class="w-10 h-10 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-all active:scale-95" title="Open Revalidation Link" aria-label="Open Revalidation Link">
+                <a href="${escapeHtml(act.payUrl)}" target="_blank" class="w-10 h-10 shrink-0 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black flex items-center justify-center shadow-lg transition-all active:scale-95" title="Open Revalidation Link" aria-label="Open Revalidation Link">
                   <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
                 </a>
               ` : ''}
-              <button onclick="closeVoucherDetailSheet(); markRevalidated('${act.id}', '${act.bookingId}');" class="btn-mark-reval ${isTargetBrandSoldEligible ? 'w-10 h-10 shrink-0' : 'flex-1 min-w-0 px-3'} h-10 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all whitespace-nowrap" title="Mark Revalidated" aria-label="Mark Revalidated">
+              <button onclick="closeVoucherDetailSheet(); markRevalidated('${escapeJsAttr(act.id)}', '${escapeJsAttr(act.bookingId)}');" class="btn-mark-reval ${isTargetBrandSoldEligible ? 'w-10 h-10 shrink-0' : 'flex-1 min-w-0 px-3'} h-10 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all whitespace-nowrap" title="Mark Revalidated" aria-label="Mark Revalidated">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0 text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 ${!isTargetBrandSoldEligible ? '<span>Mark Revalidated</span>' : ''}
               </button>
             ` : '')}
-            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${act.id}', '${act.bookingId}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 transition-all flex items-center justify-center active:scale-95" title="Dismiss voucher" aria-label="Dismiss voucher">
+            <button onclick="closeVoucherDetailSheet(); dismissStagingVoucher('${escapeJsAttr(act.id)}', '${escapeJsAttr(act.bookingId)}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-rose-400 border border-neutral-700/60 transition-all flex items-center justify-center active:scale-95" title="Dismiss voucher" aria-label="Dismiss voucher">
               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
@@ -5969,21 +6001,21 @@
           const isTargetBrandSoldEligible = isCultOrPrime(act.brand);
           footerEl.innerHTML = `
             ${isTargetBrandSoldEligible ? `
-              <button onclick="openMarkSoldSheet('${act.id}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Mark as sold and log to RuPay Income">
+              <button onclick="openMarkSoldSheet('${escapeJsAttr(act.id)}');" class="flex-1 h-10 px-3 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Mark as sold and log to RuPay Income">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
                 <span class="truncate">Mark as Sold</span>
               </button>
             ` : ''}
             ${!isTagged ? `
-              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${act.id}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
+              <button onclick="closeVoucherDetailSheet(); state.selectedIds.clear(); state.selectedIds.add('${escapeJsAttr(act.id)}'); triggerTagPopup();" class="h-10 px-3 shrink-0 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-600 text-white font-bold text-xs shadow transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Tag Payment Card">
                 <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
                 <span>Tag Card</span>
               </button>
             ` : ''}
-            <button onclick="closeVoucherDetailSheet(); shareSingle('${act.id}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[#25D366] hover:text-white transition-all active:scale-95 flex items-center justify-center" title="Share via WhatsApp" aria-label="Share via WhatsApp">
+            <button onclick="closeVoucherDetailSheet(); shareSingle('${escapeJsAttr(act.id)}');" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-[#25D366] hover:text-white transition-all active:scale-95 flex items-center justify-center" title="Share via WhatsApp" aria-label="Share via WhatsApp">
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </button>
-            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${act.code}', '${act.brand}', '${act.bookingId || ''}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
+            <button onclick="closeVoucherDetailSheet(); markVoucherAsRedeemed('${escapeJsAttr(act.code)}', '${escapeJsAttr(act.brand)}', '${escapeJsAttr(act.bookingId || '')}');" class="h-10 px-3.5 shrink-0 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap" title="Redeem voucher">
               <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
               <span>Redeem</span>
             </button>
@@ -9460,11 +9492,12 @@
         }
       }
 
-      // Non-blocking Mutation In-Flight Indication:
-      // UniversalMutationJournal & MutationJournal safely preserve optimistic updates without waterfall blocking
+      // Non-blocking Mutation In-Flight Shield:
+      // Defer background sync until active mutations settle to prevent fetching pre-mutation state
       if (pendingMutationsCount > 0) {
         syncPendingAfterMutation = true;
         updateSyncPulseIndicator(true);
+        if (!isManual) return;
       }
 
       isSyncing = true;
@@ -10138,16 +10171,16 @@
           const stripeClass = hasArrived ? 'border-l-4 border-l-emerald-500' : (isRevalidated ? 'border-l-4 border-l-lime-400' : (isRevalidation ? 'border-l-4 border-l-cyan-500' : 'border-l-4 border-l-rose-500'));
 
           return `
-            <div id="mb-card-${act.id}"
-                 data-code="${act.code}"
-                 onclick="handleCardClick('${act.id}')"
+            <div id="mb-card-${escapeHtml(act.id)}"
+                 data-code="${escapeHtml(act.code)}"
+                 onclick="handleCardClick('${escapeJsAttr(act.id)}')"
                  class="${cardClass} rounded-2xl border transition-all duration-150 cursor-pointer select-none active:scale-[0.99] overflow-hidden ${bgClass} ${borderClass} ${stripeClass}">
               
               <div class="p-2.5 flex items-center justify-between gap-2">
                 <!-- Left Cell: 3 STRICT LINES -->
                 <div class="flex-1 flex items-start gap-2.5 min-w-0">
                   ${state.isSelectMode ? `
-                    <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${act.id}">
+                    <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="${escapeHtml(act.id)}">
                       <input type="checkbox" aria-label="Select voucher ${escapeHtml(act.bookingId || act.code || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                     </div>
                   ` : ''}
@@ -10156,11 +10189,11 @@
                     
                     <!-- LINE 1: Brand name ONLY (no redundant Revalidate or Processing badge) + Card tag if tagged -->
                     <div class="flex items-center gap-1.5 text-xs truncate">
-                      <span class="font-bold text-white truncate text-[13px]">${brandDisplay}</span>
+                      <span class="font-bold text-white truncate text-[13px]">${escapeHtml(brandDisplay)}</span>
                       ${isTaggedView && isCardTagged(act.card) ? `
                         <span class="text-[9.5px] px-1.5 py-0.2 rounded font-mono-apple font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0 flex items-center gap-1">
                           <svg aria-hidden="true" class="w-3 h-3 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                          ${act.card}
+                          ${escapeHtml(act.card)}
                         </span>
                       ` : ''}
                     </div>
@@ -10168,10 +10201,10 @@
                     <!-- LINE 2: RUPS- Reference ID ONLY + Simple "Copy" button next to it -->
                     <div class="flex items-center gap-2 truncate py-0.5">
                       <span class="font-mono-apple text-xs font-bold text-neutral-200 tracking-wide">
-                        ${act.bookingId || 'RUPS-PENDING'}
+                        ${escapeHtml(act.bookingId || 'RUPS-PENDING')}
                       </span>
                       ${act.bookingId ? `
-                        <button onclick="event.stopPropagation(); copyToClipboard('${act.bookingId}')"
+                        <button onclick="event.stopPropagation(); copyToClipboard('${escapeJsAttr(act.bookingId)}')"
                                 class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 shadow-xs active:scale-95 transition-all"
                                 title="Copy reference ID">
                           Copy
@@ -10273,40 +10306,40 @@
           const hasPin = r.pin && String(r.pin).trim() && String(r.pin).trim() !== 'null' && String(r.pin).trim() !== '-';
           const isChecked = state.selectedIds.has('redeemed-' + r.code) || state.selectedIds.has(r.code);
           return `
-            <div id="mb-card-redeemed-${r.code}"
-                 data-code="${r.code}"
-                 onclick="handleCardClick('redeemed-${r.code}')"
+            <div id="mb-card-redeemed-${escapeHtml(r.code)}"
+                 data-code="${escapeHtml(r.code)}"
+                 onclick="handleCardClick('redeemed-${escapeJsAttr(r.code)}')"
                  class="rounded-2xl p-4 bg-gradient-to-br from-neutral-900 to-neutral-950 border ${isChecked ? 'border-[#0C8C46]/90 ring-2 ring-[#0C8C46]/50 bg-emerald-950/20' : 'border-neutral-800 hover:border-neutral-700'} space-y-3 shadow-xl relative overflow-hidden transition-all opacity-85 cursor-pointer select-none active:scale-[0.99]">
               <!-- Top Row: Brand, Value, Status -->
               <div class="flex items-center justify-between text-xs pointer-events-none">
                 <div class="flex items-center gap-2">
                   ${state.isSelectMode ? `
-                    <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="redeemed-${r.code}">
+                    <div class="select-gutter shrink-0 flex items-center justify-center -m-1 p-1 touch-none cursor-pointer" data-card-id="redeemed-${escapeHtml(r.code)}">
                       <input type="checkbox" aria-label="Select voucher ${escapeHtml(r.code || '')}" ${isChecked ? 'checked' : ''} class="w-4 h-4 rounded accent-[#0C8C46] pointer-events-none">
                     </div>
                   ` : ''}
                   <div>
-                    <span class="font-bold text-sm text-white">${vBrandName}</span>
+                    <span class="font-bold text-sm text-white">${escapeHtml(vBrandName)}</span>
                     ${r.amount > 0 ? `<span class="text-xs font-semibold text-emerald-400 ml-1.5">₹${r.amount.toLocaleString()}</span>` : ''}
                   </div>
                 </div>
               </div>
 
               <!-- Embossed Monospace Code Box -->
-              <div onclick="event.stopPropagation(); copyToClipboard('${r.code}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-neutral-700 active:scale-[0.99] transition-all pointer-events-auto">
+              <div onclick="event.stopPropagation(); copyToClipboard('${escapeJsAttr(r.code)}')" class="p-3 rounded-xl bg-black/75 border border-neutral-800 flex items-center justify-between cursor-pointer hover:border-neutral-700 active:scale-[0.99] transition-all pointer-events-auto">
                 <div class="space-y-0.5">
                   <div class="flex items-center gap-2">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                    <span class="font-mono-apple text-base font-bold line-through text-neutral-400 tracking-wider">${r.code}</span>
+                    <span class="font-mono-apple text-base font-bold line-through text-neutral-400 tracking-wider">${escapeHtml(r.code)}</span>
                   </div>
                   ${hasPin ? `
                     <div class="flex items-center gap-2 pt-0.5">
                       <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                      <span class="font-mono-apple text-sm font-bold text-neutral-400">${r.pin}</span>
+                      <span class="font-mono-apple text-sm font-bold text-neutral-400">${escapeHtml(r.pin)}</span>
                     </div>
                   ` : ''}
                 </div>
-                <button onclick="event.stopPropagation(); copyToClipboard('${r.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-neutral-800 text-neutral-300 hover:text-white active:scale-95 shadow transition-all">
+                <button onclick="event.stopPropagation(); copyToClipboard('${escapeJsAttr(r.code)}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-neutral-800 text-neutral-300 hover:text-white active:scale-95 shadow transition-all">
                   Copy
                 </button>
               </div>
@@ -10314,10 +10347,10 @@
               <!-- Bottom Row: Timestamp & Restore Button -->
               <div class="flex items-center justify-between pt-1 border-t border-neutral-800/60 text-xs pointer-events-auto">
                 <div class="flex items-center gap-1.5 text-[11px] text-neutral-400">
-                  <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${r.redeemedTimestampIST || 'Recent'}</span>
-                  ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${r.originalTab}</span>` : ''}
+                  <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="w-3 h-3 text-neutral-400" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> ${escapeHtml(r.redeemedTimestampIST || 'Recent')}</span>
+                  ${r.originalTab ? `<span class="text-[9px] text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded">${escapeHtml(r.originalTab)}</span>` : ''}
                 </div>
-                <button onclick="event.stopPropagation(); undoRedemption('${r.code}', '${r.brand}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-[#F47A21]/80 hover:border-[#F47A21]/40 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
+                <button onclick="event.stopPropagation(); undoRedemption('${escapeJsAttr(r.code)}', '${escapeJsAttr(r.brand)}')" class="px-3 py-1.5 rounded-xl bg-neutral-900 border border-neutral-800 text-[#F47A21] hover:text-[#F47A21]/80 hover:border-[#F47A21]/40 active:scale-95 transition-all text-xs font-semibold flex items-center gap-1">
                   <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> <span>Restore to Vault</span>
                 </button>
               </div>
@@ -10500,9 +10533,9 @@
         `;
 
         return `
-          <div id="mb-card-${v.id}" 
-               data-code="${v.code}" 
-               onclick="handleCardClick('${v.id}')" 
+          <div id="mb-card-${escapeHtml(v.id)}" 
+               data-code="${escapeHtml(v.code)}" 
+               onclick="handleCardClick('${escapeJsAttr(v.id)}')" 
                class="rounded-2xl p-4 ${cardStripeClass} space-y-3 shadow-xl relative overflow-hidden transition-all duration-200 cursor-pointer select-none active:scale-[0.99] ${v.status === 'USED' ? 'opacity-40' : ''}">
             ${cardTitleHtml}
 
@@ -10511,17 +10544,17 @@
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">CODE</span>
-                  <span id="mb-code-${v.id}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ((isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 text-xs font-semibold' : '')}">${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'Pending Delivery (24-48h)' : v.code}</span>
+                  <span id="mb-code-${escapeHtml(v.id)}" class="font-mono-apple text-base font-bold text-white tracking-wider ${v.status === 'USED' ? 'line-through text-neutral-400' : ((isVoucherProcessing(v) || v.status === 'PENDING') ? 'text-amber-400 text-xs font-semibold' : '')}">${(isVoucherProcessing(v) || v.status === 'PENDING') ? 'Pending Delivery (24-48h)' : escapeHtml(v.code)}</span>
                 </div>
                 ${hasPin ? `
                   <div class="flex items-center gap-2 pt-0.5">
                     <span class="text-[9px] font-bold uppercase text-neutral-400 tracking-wider">PIN</span>
-                    <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${v.pin}</span>
+                    <span class="font-mono-apple text-sm font-bold text-[#F47A21]">${escapeHtml(v.pin)}</span>
                   </div>
                 ` : ''}
               </div>
               ${isVoucherProcessing(v) || v.status === 'PENDING' ? '' : `
-                <button onclick="event.stopPropagation(); copyToClipboard('${v.code}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
+                <button onclick="event.stopPropagation(); copyToClipboard('${escapeJsAttr(v.code)}')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0C8C46] hover:bg-[#0A753A] text-white active:scale-95 shadow-md transition-all">
                   Copy
                 </button>
               `}
@@ -10700,6 +10733,8 @@
       function onTouchStart(e) {
         // Guard: disable swipe in select mode or outside vouchers workspace
         if (state.isSelectMode || state.activeWorkspace !== 'vouchers') return;
+        if (!e.touches || e.touches.length !== 1) return;
+        if (e.target.closest('input, select, textarea, .no-scrollbar, .overflow-x-auto')) return;
         const touch = e.touches[0];
         startDrag(touch.clientX, touch.clientY);
       }
@@ -10990,6 +11025,8 @@
 
       function onTouchStart(e) {
         if (state.activeWorkspace !== 'cards') return;
+        if (!e.touches || e.touches.length !== 1) return;
+        if (e.target.closest('button, input, select, textarea, a, .card-subheader-bar, .no-scrollbar, #modal-add-card')) return;
         const touch = e.touches[0];
         startDrag(touch.clientX, touch.clientY);
       }
@@ -11430,14 +11467,14 @@
               </div>
 
               <!-- iOS Share Button -->
-              <button onclick="triggerCardShare('${card.bank || 'Bank'}', '${card.type || 'Debit'}', '${rawNum}', '${card.expiry || '10/33'}', '${card.cvv || '000'}')" title="Share Card Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-neutral-200 border border-white/10 flex items-center justify-center transition-all shrink-0">
+              <button onclick="triggerCardShare('${escapeJsAttr(card.bank || 'Bank')}', '${escapeJsAttr(card.type || 'Debit')}', '${escapeJsAttr(rawNum)}', '${escapeJsAttr(card.expiry || '10/33')}', '${escapeJsAttr(card.cvv || '000')}')" title="Share Card Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/15 active:scale-95 text-neutral-200 border border-white/10 flex items-center justify-center transition-all shrink-0">
                 <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
               </button>
             </div>
 
             <!-- Action Buttons: Block & Block & Replace -->
             <div class="flex items-center gap-2 pt-2.5 border-t border-white/10">
-              <button onclick="swipeBlockCard('${rawNum}', '${card.name || 'Card'}')" class="flex-1 py-2 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+              <button onclick="swipeBlockCard('${escapeJsAttr(rawNum)}', '${escapeJsAttr(card.name || 'Card')}')" class="flex-1 py-2 px-3 rounded-xl bg-neutral-900/80 hover:bg-neutral-800 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
                 <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 <span>Block</span>
               </button>
@@ -13752,7 +13789,7 @@
               </div>
               <div class="flex items-center justify-between">
                 <!-- Tactile Copy Field (No explicit button - entire number is interactive) -->
-                <button onclick="quickCopyCardField('${acc.accNumber}', 'Account number', this)" title="Tap to copy account number" class="tactile-copy-field group text-left py-1 pr-2 flex items-center gap-2">
+                <button onclick="quickCopyCardField('${escapeJsAttr(acc.accNumber)}', 'Account number', this)" title="Tap to copy account number" class="tactile-copy-field group text-left py-1 pr-2 flex items-center gap-2">
                   <div class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors copy-target-text">
                     ${displayNumber}
                   </div>
@@ -13760,7 +13797,7 @@
                 </button>
 
                 <!-- Eye Peek Toggle Button (Exact Card Manager Style) -->
-                <button onclick="toggleBankCardPeek('${acc.id}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
+                <button onclick="toggleBankCardPeek('${escapeJsAttr(acc.id)}')" title="Reveal / Mask Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
                   ${isCurrentlyUnmasked ? `
                     <svg aria-hidden="true" class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                   ` : `
@@ -13774,10 +13811,10 @@
             <div class="flex items-center gap-2 mt-2">
               <div class="flex-1 grid grid-cols-2 gap-2">
                 <!-- IFSC Quick-Copy Tile -->
-                <button onclick="quickCopyCardField('${acc.ifsc}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                <button onclick="quickCopyCardField('${escapeJsAttr(acc.ifsc)}', 'IFSC code', this)" title="Tap to copy IFSC" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                   <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">IFSC Code</div>
                   <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${acc.ifsc}</span>
+                    <span class="truncate copy-target-text">${escapeHtml(acc.ifsc)}</span>
                     ${BA_MICRO_COPY_SVG}
                   </div>
                 </button>
@@ -13785,20 +13822,20 @@
                 <!-- Customer ID Tile: Interactive Add / Edit / Copy -->
                 ${isCustEditing ? `
                   <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
-                    <input id="bank-input-cust-${acc.id}" aria-label="Customer ID" type="text" value="${acc.custId || ''}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
-                    <button onclick="saveBankInlineField('${acc.id}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
+                    <input id="bank-input-cust-${escapeHtml(acc.id)}" aria-label="Customer ID" type="text" value="${escapeHtml(acc.custId || '')}" placeholder="Cust ID" autofocus onkeydown="handleBankInlineKey(event, '${escapeJsAttr(acc.id)}', 'custId')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                    <button onclick="saveBankInlineField('${escapeJsAttr(acc.id)}', 'custId')" title="Save Customer ID" class="px-2 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></button>
                     <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                   </div>
                 ` : acc.custId ? `
-                  <button onclick="quickCopyCardField('${acc.custId}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                  <button onclick="quickCopyCardField('${escapeJsAttr(acc.custId)}', 'Customer ID', this)" title="Tap to copy Customer ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                     <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">Customer ID</div>
                     <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                      <span class="truncate copy-target-text">${acc.custId}</span>
+                      <span class="truncate copy-target-text">${escapeHtml(acc.custId)}</span>
                       ${BA_MICRO_COPY_SVG}
                     </div>
                   </button>
                 ` : `
-                  <button onclick="startBankInlineEdit('${acc.id}', 'custId')" title="Add Customer ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
+                  <button onclick="startBankInlineEdit('${escapeJsAttr(acc.id)}', 'custId')" title="Add Customer ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
                     <div>
                       <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">Customer ID</div>
                       <div class="font-mono-apple text-xs font-medium text-emerald-300 flex items-center gap-1">
@@ -13811,7 +13848,7 @@
               </div>
 
               <!-- iOS Share Button (Directly Below Eye Icon in One Continuous Vertical Line) -->
-              <button onclick="triggerBankAccountShare('${acc.bank}', '${acc.holder}', '${acc.accNumber}', '${acc.ifsc}')" title="Share Bank Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
+              <button onclick="triggerBankAccountShare('${escapeJsAttr(acc.bank)}', '${escapeJsAttr(acc.holder)}', '${escapeJsAttr(acc.accNumber)}', '${escapeJsAttr(acc.ifsc)}')" title="Share Bank Account Details" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 text-white/70 hover:text-white border border-white/10 flex items-center justify-center transition-all shrink-0">
                 <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
               </button>
             </div>
@@ -13820,20 +13857,20 @@
             <div class="mt-2">
               ${isUpiEditing ? `
                 <div class="p-1 rounded-xl bg-black/40 border border-emerald-500/60 flex items-center gap-1.5 w-full">
-                  <input id="bank-input-upi-${acc.id}" aria-label="UPI ID" type="text" value="${acc.upi || ''}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${acc.id}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
-                  <button onclick="saveBankInlineField('${acc.id}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
+                  <input id="bank-input-upi-${escapeHtml(acc.id)}" aria-label="UPI ID" type="text" value="${escapeHtml(acc.upi || '')}" placeholder="e.g. name@upi" autofocus onkeydown="handleBankInlineKey(event, '${escapeJsAttr(acc.id)}', 'upi')" class="w-full bg-black/60 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-400 font-mono-apple">
+                  <button onclick="saveBankInlineField('${escapeJsAttr(acc.id)}', 'upi')" title="Save UPI ID" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 text-xs font-bold hover:bg-emerald-400 shrink-0 transition-all active:scale-95">Save</button>
                   <button onclick="cancelBankInlineEdit()" title="Cancel" class="px-2 py-1 rounded-lg bg-white/10 text-white/70 hover:text-white text-xs shrink-0 transition-all active:scale-95 flex items-center justify-center"><svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
                 </div>
               ` : acc.upi ? `
-                <button onclick="quickCopyCardField('${acc.upi}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                <button onclick="quickCopyCardField('${escapeJsAttr(acc.upi)}', 'UPI ID', this)" title="Tap to copy UPI ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                   <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">UPI ID</div>
                   <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 transition-colors flex items-center justify-between">
-                    <span class="truncate copy-target-text">${acc.upi}</span>
+                    <span class="truncate copy-target-text">${escapeHtml(acc.upi)}</span>
                     ${BA_MICRO_COPY_SVG}
                   </div>
                 </button>
               ` : `
-                <button onclick="startBankInlineEdit('${acc.id}', 'upi')" title="Add UPI ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
+                <button onclick="startBankInlineEdit('${escapeJsAttr(acc.id)}', 'upi')" title="Add UPI ID" class="w-full text-left p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-dashed border-emerald-500/40 hover:border-emerald-400/80 transition-all flex items-center justify-between group active:scale-[0.98]">
                   <div>
                     <div class="text-[9px] uppercase font-bold tracking-wider text-emerald-400/80 mb-0.5">UPI ID</div>
                     <div class="font-mono-apple text-xs font-medium text-emerald-300 flex items-center gap-1">
@@ -13862,75 +13899,75 @@
 
                 <!-- Account Tier & Tag Badges (Moved from Placard Header) -->
                 <div class="flex items-center gap-2 flex-wrap pt-0.5">
-                  <span class="tier-badge ${acc.accent}">${acc.tier}</span>
+                  <span class="tier-badge ${acc.accent}">${escapeHtml(acc.tier)}</span>
                   <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-black/40 text-amber-200 border border-amber-500/30">
-                    ${acc.label}
+                    ${escapeHtml(acc.label)}
                   </span>
                 </div>
 
                 ${acc.branch ? `
                   <div class="flex items-center justify-between p-2 rounded-xl bg-black/25 border border-white/10 text-xs">
                     <span class="text-[9px] uppercase font-bold tracking-wider text-white/50">Branch</span>
-                    <span class="font-medium text-white/90 text-right text-xs truncate max-w-[220px]">${acc.branch}</span>
+                    <span class="font-medium text-white/90 text-right text-xs truncate max-w-[220px]">${escapeHtml(acc.branch)}</span>
                   </div>
                 ` : ''}
 
                 <div class="grid grid-cols-2 gap-2">
                   ${acc.alias ? `
-                    <button onclick="quickCopyCardField('${acc.alias}', 'User ID / Alias', this)" title="Tap to copy User ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.alias)}', 'User ID / Alias', this)" title="Tap to copy User ID" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">User ID / Alias</div>
                       <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${acc.alias}</span>
+                        <span class="truncate copy-target-text">${escapeHtml(acc.alias)}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
                   ` : ''}
 
                   ${acc.crn ? `
-                    <button onclick="quickCopyCardField('${acc.crn}', 'CRN Number', this)" title="Tap to copy CRN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.crn)}', 'CRN Number', this)" title="Tap to copy CRN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-white/50 mb-0.5">CRN Number</div>
                       <div class="font-mono-apple text-xs font-bold text-white/95 group-hover:text-emerald-400 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${acc.crn}</span>
+                        <span class="truncate copy-target-text">${escapeHtml(acc.crn)}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
                   ` : ''}
 
                   ${(acc.signOnPass || acc.password) ? `
-                    <button onclick="quickCopyCardField('${acc.signOnPass || acc.password}', 'Sign On Password', this)" title="Tap to copy Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.signOnPass || acc.password)}', 'Sign On Password', this)" title="Tap to copy Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">Sign On Pass</div>
                       <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.signOnPass || acc.password) : '••••••••'}</span>
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? escapeHtml(acc.signOnPass || acc.password) : '••••••••'}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
                   ` : ''}
 
                   ${acc.txnPass ? `
-                    <button onclick="quickCopyCardField('${acc.txnPass}', 'Transaction Password', this)" title="Tap to copy Txn Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.txnPass)}', 'Transaction Password', this)" title="Tap to copy Txn Password" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-rose-300/80 mb-0.5">Txn Password</div>
                       <div class="font-mono-apple text-xs font-bold text-rose-200 group-hover:text-rose-100 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.txnPass : '••••••••'}</span>
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? escapeHtml(acc.txnPass) : '••••••••'}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
                   ` : ''}
 
                   ${(acc.tpin || acc.txnPin) ? `
-                    <button onclick="quickCopyCardField('${acc.tpin || acc.txnPin}', 'Transaction PIN / TPIN', this)" title="Tap to copy PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.tpin || acc.txnPin)}', 'Transaction PIN / TPIN', this)" title="Tap to copy PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-amber-300/80 mb-0.5">${acc.tpin ? 'TPIN' : 'Txn PIN'}</div>
                       <div class="font-mono-apple text-xs font-bold text-amber-200 group-hover:text-amber-100 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? (acc.tpin || acc.txnPin) : '••••'}</span>
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? escapeHtml(acc.tpin || acc.txnPin) : '••••'}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
                   ` : ''}
 
                   ${acc.loginPin ? `
-                    <button onclick="quickCopyCardField('${acc.loginPin}', 'Login PIN', this)" title="Tap to copy Login PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
+                    <button onclick="quickCopyCardField('${escapeJsAttr(acc.loginPin)}', 'Login PIN', this)" title="Tap to copy Login PIN" class="tactile-copy-field group text-left p-2 rounded-xl bg-black/25 hover:bg-black/40 border border-white/10 w-full transition-all">
                       <div class="text-[9px] uppercase font-bold tracking-wider text-sky-300/80 mb-0.5">Login PIN</div>
                       <div class="font-mono-apple text-xs font-bold text-sky-200 group-hover:text-sky-100 flex items-center justify-between">
-                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? acc.loginPin : '••••'}</span>
+                        <span class="truncate copy-target-text">${isCurrentlyUnmasked ? escapeHtml(acc.loginPin) : '••••'}</span>
                         ${BA_MICRO_COPY_SVG}
                       </div>
                     </button>
@@ -14746,7 +14783,6 @@
           saveEncryptedStaging(state.staging)
         ]);
         renderVault();
-        if (state.activeWorkspace === 'activity') renderActivityLog();
         showToast(`Tagged ${targetCount} voucher${targetCount > 1 ? 's' : ''} as ${cardTag} · Moved to Tagged`);
 
         // Backend synchronization with Safeguard Rollback Handler (SG4)
@@ -14766,7 +14802,6 @@
                 saveEncryptedStaging(state.staging)
               ]);
               renderVault();
-              if (state.activeWorkspace === 'activity') renderActivityLog();
               showToast('Tagging failed on server. Changes restored.');
             }
           });

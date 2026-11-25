@@ -3682,7 +3682,6 @@ function doGet(e) {
 
     // High-Speed Fast Path: Return partitioned CacheService payload (~100-300ms) unless bypass_cache requested
     const bypassCache = !!(e && e.parameter && (e.parameter.bypass_cache === "true" || e.parameter.force === "true" || e.parameter.nocache === "true"));
-    const wsParam = (e && e.parameter && e.parameter.workspace) ? String(e.parameter.workspace).toLowerCase() : "";
     const cache = CacheService.getScriptCache();
 
     if (!bypassCache) {
@@ -3693,7 +3692,7 @@ function doGet(e) {
       const cachedStagingRedeemedStr = cachedMap["CACHE_STAGING_REDEEMED"];
       const cachedIncomeStr = cachedMap["CACHE_INCOME"];
 
-      if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && (cachedIncomeStr || wsParam === "vouchers")) {
+      if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && cachedIncomeStr) {
         try {
           const meta = JSON.parse(cachedMetaStr);
           const core = JSON.parse(cachedCoreStr);
@@ -3780,7 +3779,6 @@ function doGet(e) {
     for (const sheet of sheets) {
       const name = sheet.getName();
       if (SKIPPED_SYNC_SHEETS.has(name)) continue;
-      if (wsParam === "vouchers" && (name === "RuPay Income" || name === "RuPay Charges")) continue;
       if (sheet.getLastRow() <= 1) continue;
 
       const rows = sheet.getDataRange().getValues();
