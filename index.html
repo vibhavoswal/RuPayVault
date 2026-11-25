@@ -6437,6 +6437,7 @@
       // Optimistic Local State Updates (with normalized key matching to prevent quote/case divergence):
       const normBid = cleanBid.replace(/^'/, '').trim().toUpperCase();
       const normCode = cleanCode.replace(/^'/, '').trim().toUpperCase();
+      const isPlaceholderCode = !normCode || normCode === 'PENDING' || normCode === '-' || /processing|revalidat/i.test(normCode);
 
       if (isStaging) {
         if (isStagingNotArrived) {
@@ -6444,7 +6445,7 @@
           const foundStaging = (state.staging || []).find(s => {
             const sBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
             const sCode = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
-            return (normBid && sBid === normBid) || (normCode && sCode === normCode) || s.id === v.id;
+            return (normBid && sBid === normBid) || (!isPlaceholderCode && sCode === normCode) || s.id === v.id;
           });
           if (foundStaging) {
             foundStaging.isSaleMarked = true;
@@ -6460,13 +6461,13 @@
             };
           }
           if (cleanBid) markIngestedVoucherSold(cleanBid);
-          if (cleanCode && cleanCode !== 'PENDING') markIngestedVoucherSold(cleanCode);
+          if (!isPlaceholderCode) markIngestedVoucherSold(cleanCode);
         } else {
           state.staging = (state.staging || []).filter(s => {
             const sBid = String(s.bookingId || '').replace(/^'/, '').trim().toUpperCase();
             const sCode = String(s.code || '').replace(/^'/, '').trim().toUpperCase();
             if (normBid && sBid === normBid) return false;
-            if (normCode && sCode === normCode) return false;
+            if (!isPlaceholderCode && sCode === normCode) return false;
             return true;
           });
         }
@@ -6474,13 +6475,13 @@
         const found = state.vouchers.find(x => {
           const xCode = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
           const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
-          return (normCode && xCode === normCode) || (normBid && xBid === normBid);
+          return (!isPlaceholderCode && xCode === normCode) || (normBid && xBid === normBid);
         });
         if (found) found.status = 'USED';
         state.vouchers = state.vouchers.filter(x => {
           const xCode = String(x.code || '').replace(/^'/, '').trim().toUpperCase();
           const xBid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
-          if (normCode && xCode === normCode) return false;
+          if (!isPlaceholderCode && xCode === normCode) return false;
           if (normBid && xBid === normBid) return false;
           return true;
         });
@@ -8890,7 +8891,11 @@
       const titleInput = document.getElementById('in-charge-input-title');
       const title = (titleInput ? titleInput.value : '').trim() || 'Card Charge';
       const amountInput = document.getElementById('in-charge-input-amount');
-      const amount = parseFloat(amountInput ? amountInput.value : 0) || 0;
+      const amount = parseFloat(amountInput ? amountInput.value : 0);
+      if (isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid charge amount');
+        return;
+      }
       const card4Input = document.getElementById('in-charge-input-card4');
       const card4 = (card4Input ? card4Input.value : '').replace(/\D/g, '').slice(0, 4);
       const acc4Input = document.getElementById('in-charge-input-acc4');
@@ -9029,6 +9034,10 @@
       try {
         localStorage.setItem('rupay_theme', state.isDark ? 'dark' : 'light');
       } catch(e) {}
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) {
+        themeMeta.setAttribute('content', state.isDark ? '#141212' : '#ffffff');
+      }
     }
 
     /* --- FRONTEND DESIGN SYSTEM SWITCHER --- */

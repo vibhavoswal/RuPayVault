@@ -914,6 +914,8 @@ function processRupayEmails() {
 
     if (!threads || !threads.length) return;
 
+    let hasMutated = false;
+
     for (const thread of threads) {
       // Circuit Breaker: 4-minute maximum batch execution window
       if (Date.now() - START_MS > 240000) {
@@ -950,7 +952,7 @@ function processRupayEmails() {
           // ==========================================
           // Updates Code to "Pending revalidation", Status to "PENDING_REVALIDATION", and attaches Payment Link
           // STRICT INVARIANT: Leaves initial acknowledgment/ingested timestamp untouched!
-          recordPendingRevalidation(ss, {
+          const didMutateReval = recordPendingRevalidation(ss, {
             bookingId: parsed.bookingId,
             brand: parsed.brand,
             amount: parsed.amount,
@@ -960,12 +962,13 @@ function processRupayEmails() {
             initialDate: threadInitialDate || parsed.receivedDate,
             payUrl: parsed.payUrl
           });
+          if (didMutateReval) hasMutated = true;
         } else if (!parsed.isDelivered) {
           // ==========================================
           // STAGE 1: Acknowledgement Email
           // ==========================================
           // A. Record directly into Brand Tab as "PENDING"
-          recordPendingRedemption(ss, {
+          const didInsertPending = recordPendingRedemption(ss, {
             bookingId: parsed.bookingId,
             brand: parsed.brand,
             amount: parsed.amount,
@@ -975,15 +978,20 @@ function processRupayEmails() {
             code: parsed.code,
             status: parsed.status
           });
-
-          // B. Start 24h cooldown timer on this account immediately after row is recorded
-          updateCooldownTab(ss, parsed.account);
+          if (didInsertPending) {
+            hasMutated = true;
+            // B. Start 24h cooldown timer ONLY for newly ingested pending redemptions within 24h window
+            const msgMs = parsed.receivedDate instanceof Date ? parsed.receivedDate.getTime() : Date.now();
+            if ((Date.now() - msgMs) < (24 * 3600 * 1000)) {
+              updateCooldownTab(ss, parsed.account);
+            }
+          }
         } else {
           // ==========================================
           // STAGE 2: Voucher Code Delivery Email
           // ==========================================
           // Search Google Sheet for Booking ID (RUPS...) and fulfill in the SAME row!
-          fulfillVoucherCode(ss, {
+          const didFulfill = fulfillVoucherCode(ss, {
             bookingId: parsed.bookingId,
             brand: parsed.brand,
             code: parsed.code,
@@ -993,6 +1001,7 @@ function processRupayEmails() {
             account: parsed.account,
             receivedDate: parsed.receivedDate
           });
+          if (didFulfill) hasMutated = true;
           // Clean up revalidated register property upon delivery
           removeRevalidatedBookingFromProperties(parsed.bookingId);
         }
@@ -1009,10 +1018,13 @@ function processRupayEmails() {
     }
 
     // Auto-reconcile any pending vouchers whose delivery emails arrived
-    reconcilePendingVouchers(ss);
+    const reconciledItems = reconcilePendingVouchers(ss);
+    if (reconciledItems && reconciledItems.length > 0) hasMutated = true;
 
     SpreadsheetApp.flush();
-    bumpDataVersion(['VOUCHERS', 'CORE']);
+    if (hasMutated) {
+      bumpDataVersion(['VOUCHERS', 'CORE']);
+    }
   } catch(err) {
     console.error("Error in processRupayEmails:", err);
   } finally {
@@ -1093,9 +1105,10 @@ function extractAmount(body, brand) {
     if (b.includes("thyrocare")) return 125;
   }
   if (!body) return 500;
-  const m = body.match(/(?:INR|Rs\.?|₹)\s*([0-9,]+)/i) ||
-            body.match(/(?:Value|Amount|Worth)\s*[:#-]?\s*(?:INR|Rs\.?|₹)?\s*([0-9,]+)/i);
-  return m ? parseInt(m[1].replace(/,/g, ""), 10) : 500;
+  const m = body.match(/(?:INR|Rs\.?|₹)\s*([0-9][0-9,]*)/i) ||
+            body.match(/(?:Value|Amount|Worth)\s*[:#-]?\s*(?:INR|Rs\.?|₹)?\s*([0-9][0-9,]*)/i);
+  const parsedAmt = m ? parseInt(m[1].replace(/,/g, ""), 10) : 500;
+  return (isNaN(parsedAmt) || parsedAmt <= 0) ? 500 : parsedAmt;
 }
 
 /**
@@ -1264,7 +1277,7 @@ function recordPendingRevalidation(ss, data) {
       if (!existingTs) {
         newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(data.initialDate || data.receivedDate || new Date()));
       }
-      return;
+      return true;
     }
   }
 
@@ -1286,6 +1299,7 @@ function recordPendingRevalidation(ss, data) {
     data.payUrl || ""                                    // Col 12: Payment Link
   ];
   newSheet.appendRow(rowData);
+  return true;
 }
 
 /**
@@ -1310,7 +1324,7 @@ function recordPendingRedemption(ss, data) {
       const rBid = String(rRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
       if (rBid && targetBid && (rBid === targetBid || (rBid.startsWith("RUPS-") && targetBid.includes(rBid)) || (targetBid.startsWith("RUPS-") && rBid.includes(targetBid)))) {
         // Already redeemed, don't recreate!
-        return;
+        return false;
       }
     }
   }
@@ -1343,7 +1357,7 @@ function recordPendingRedemption(ss, data) {
           }
         }
       }
-      return;
+      return false;
     }
   }
 
@@ -1355,7 +1369,7 @@ function recordPendingRedemption(ss, data) {
   const existingBrandMatch = findRowInBrandTabs(ss, data.bookingId, targetBrand);
   if (existingBrandMatch) {
     // Already approved to brand tab! Do not re-stage in "New".
-    return;
+    return false;
   }
 
   const rowData = [
@@ -1372,6 +1386,7 @@ function recordPendingRedemption(ss, data) {
     targetBrand                                          // Col 11: Target Brand
   ];
   newSheet.appendRow(rowData);
+  return true;
 }
 
 /**
@@ -1398,7 +1413,7 @@ function fulfillVoucherCode(ss, data) {
 
       // Guard: If already ACTIVE and voucher code is populated, it is permanently immutable!
       if (currentStatus === "ACTIVE" && currentCode !== "" && currentCode !== "PENDING" && currentCode !== "Pending revalidation" && !/processing/i.test(currentCode)) {
-        return; // No-op, do not re-stamp
+        return false; // No-op, do not re-stamp
       }
 
       // MATCH FOUND: Transition from PENDING to ACTIVE and update timestamp with delivery email arrival time
@@ -1410,7 +1425,7 @@ function fulfillVoucherCode(ss, data) {
       newSheet.getRange(i + 1, 8).setValue("ACTIVE");
       newSheet.getRange(i + 1, 9).setValue(formatISTTimestamp(data.receivedDate || new Date()));
       newSheet.getRange(i + 1, 10).setValue(true);
-      return;
+      return true;
     }
   }
 
@@ -1426,7 +1441,7 @@ function fulfillVoucherCode(ss, data) {
     for (let i = 1; i < rRows.length; i++) {
       const rBid = String(rRows[i][1] || '').replace(/^'/, '').trim().toUpperCase();
       if (rBid && targetBid && (rBid === targetBid || (rBid.startsWith("RUPS-") && targetBid.includes(rBid)) || (targetBid.startsWith("RUPS-") && rBid.includes(targetBid)))) {
-        return;
+        return false;
       }
     }
   }
@@ -1442,8 +1457,9 @@ function fulfillVoucherCode(ss, data) {
       existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 2).setValue(`'${data.code}`);
       if (data.pin) existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 3).setValue(`'${data.pin}`);
       existingBrandMatch.sheet.getRange(existingBrandMatch.rowIndex, 8).setValue("ACTIVE");
+      return true;
     }
-    return;
+    return false;
   }
 
   const rowData = [
@@ -1460,6 +1476,7 @@ function fulfillVoucherCode(ss, data) {
     targetBrand                                          // Col 11: Target Brand
   ];
   newSheet.appendRow(rowData);
+  return true;
 }
 
 /**
@@ -4396,8 +4413,8 @@ function doPost(e) {
             let existingBrandRowIndex = -1;
             const brandVals = brandSheet.getDataRange().getValues();
             for (let b = 1; b < brandVals.length; b++) {
-              const existingBid = String(brandVals[b][0] || '').trim().toUpperCase();
-              const existingCode = String(brandVals[b][1] || '').trim().toUpperCase();
+              const existingBid = String(brandVals[b][0] || '').replace(/^'/, '').trim().toUpperCase();
+              const existingCode = String(brandVals[b][1] || '').replace(/^'/, '').trim().toUpperCase();
               const hasRups = bIdUpper && bIdUpper.startsWith('RUPS-');
               const bidMatch = hasRups && (existingBid === bIdUpper);
               const codeMatch = (!hasRups || !existingBid.startsWith('RUPS-')) && codeUpper && codeUpper !== 'PENDING' && codeUpper !== '-' && (existingCode === codeUpper);
