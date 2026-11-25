@@ -423,54 +423,90 @@ function getOrCreateHmacSecret() {
   return secret;
 }
 
-function getDataVersionInfo(ss) {
+function getDataVersionInfo(ss, forceDriveCheck) {
   const props = PropertiesService.getScriptProperties();
   let ver = props.getProperty("APP_DATA_VERSION");
   let lastUpdated = props.getProperty("LAST_UPDATED_MS");
-  if (!ver || !lastUpdated) {
-    ver = "1";
-    lastUpdated = String(Date.now());
+  let verCore = props.getProperty("VER_CORE");
+  let verVouchers = props.getProperty("VER_VOUCHERS");
+  let verIncome = props.getProperty("VER_INCOME");
+
+  if (!ver || !lastUpdated || !verCore || !verVouchers || !verIncome) {
+    const baseVer = ver || "1";
+    ver = baseVer;
+    lastUpdated = lastUpdated || String(Date.now());
+    verCore = verCore || baseVer;
+    verVouchers = verVouchers || baseVer;
+    verIncome = verIncome || baseVer;
     props.setProperties({
       "APP_DATA_VERSION": ver,
-      "LAST_UPDATED_MS": lastUpdated
+      "LAST_UPDATED_MS": lastUpdated,
+      "VER_CORE": verCore,
+      "VER_VOUCHERS": verVouchers,
+      "VER_INCOME": verIncome
     });
   }
+
   let verNum = Number(ver) || 1;
   let lastUpdatedNum = Number(lastUpdated) || Date.now();
+  let vCore = Number(verCore) || verNum;
+  let vVouchers = Number(verVouchers) || verNum;
+  let vIncome = Number(verIncome) || verNum;
 
-  // Passive DriveApp check for external manual Google Sheets edits
+  // Passive DriveApp check throttled to once per 30s (unless forceDriveCheck) to avoid ~700ms RPC per request
   try {
     if (ss && ss.getId) {
-      const driveUpdated = DriveApp.getFileById(ss.getId()).getLastUpdated().getTime();
-      if (driveUpdated > (lastUpdatedNum + 3000)) {
-        verNum++;
-        lastUpdatedNum = driveUpdated;
-        props.setProperties({
-          "APP_DATA_VERSION": String(verNum),
-          "LAST_UPDATED_MS": String(lastUpdatedNum)
-        });
-        invalidateAppCache();
+      const cache = CacheService.getScriptCache();
+      const recentDriveCheck = !forceDriveCheck && cache.get("CACHE_DRIVE_CHECK");
+      if (!recentDriveCheck) {
+        cache.put("CACHE_DRIVE_CHECK", "1", 30);
+        const driveUpdated = DriveApp.getFileById(ss.getId()).getLastUpdated().getTime();
+        if (driveUpdated > (lastUpdatedNum + 10000)) {
+          verNum++;
+          vCore++;
+          vVouchers++;
+          vIncome++;
+          lastUpdatedNum = driveUpdated;
+          props.setProperties({
+            "APP_DATA_VERSION": String(verNum),
+            "LAST_UPDATED_MS": String(lastUpdatedNum),
+            "VER_CORE": String(vCore),
+            "VER_VOUCHERS": String(vVouchers),
+            "VER_INCOME": String(vIncome)
+          });
+          invalidateAppCache();
+        }
       }
     }
   } catch (_) {}
 
   return {
     version: verNum,
-    lastUpdated: lastUpdatedNum
+    lastUpdated: lastUpdatedNum,
+    verCore: vCore,
+    verVouchers: vVouchers,
+    verIncome: vIncome
   };
 }
 
 function bumpDataVersion(partitions) {
   try {
     const props = PropertiesService.getScriptProperties();
-    const current = Number(props.getProperty("APP_DATA_VERSION") || "1");
+    const allProps = props.getProperties();
+    const target = Array.isArray(partitions) && partitions.length > 0 ? partitions : ['CORE', 'VOUCHERS', 'INCOME'];
+    const current = Number(allProps.APP_DATA_VERSION || "1");
     const nextVer = String(current + 1);
     const nowMs = String(Date.now());
-    props.setProperties({
+    const updates = {
       "APP_DATA_VERSION": nextVer,
       "LAST_UPDATED_MS": nowMs
-    });
-    invalidateAppCache(partitions);
+    };
+    if (target.includes('CORE')) updates["VER_CORE"] = String((Number(allProps.VER_CORE || current)) + 1);
+    if (target.includes('VOUCHERS')) updates["VER_VOUCHERS"] = String((Number(allProps.VER_VOUCHERS || current)) + 1);
+    if (target.includes('INCOME')) updates["VER_INCOME"] = String((Number(allProps.VER_INCOME || current)) + 1);
+
+    props.setProperties(updates);
+    invalidateAppCache(target);
   } catch (err) {
     console.warn("Version bump warning:", err.message);
   }
@@ -1189,17 +1225,15 @@ function findRowInBrandTabs(ss, bookingId, targetBrand, code) {
 /**
  * Helper to parse "New" sheet into canonical staging voucher objects
  */
-function getStagingFromNewSheet(ss) {
-  const newSheet = ss.getSheetByName("New");
-  if (!newSheet || newSheet.getLastRow() <= 1) return [];
-  const rows = newSheet.getDataRange().getValues();
+function parseStagingRows(rows) {
   const staging = [];
+  if (!Array.isArray(rows) || rows.length <= 1) return staging;
   for (let i = 1; i < rows.length; i++) {
     if (!rows[i][0] && !rows[i][1]) continue;
     const isDisp = rows[i].length > 9 ? (rows[i][9] !== false && String(rows[i][9]).toUpperCase() !== 'FALSE') : true;
     const targetBrand = String(rows[i][10] || 'Unassigned');
     const isSaleMarked = (rows[i].length > 12 && (rows[i][12] === true || String(rows[i][12]).toUpperCase() === 'TRUE' || String(rows[i][12]).toUpperCase() === 'SOLD')) || String(rows[i][7] || '').toUpperCase() === 'SOLD';
-    
+
     let tsIST = null;
     if (rows[i][8]) {
       tsIST = (rows[i][8] instanceof Date) ? formatISTTimestamp(rows[i][8]) : String(rows[i][8]);
@@ -1236,6 +1270,13 @@ function getStagingFromNewSheet(ss) {
     });
   }
   return staging;
+}
+
+function getStagingFromNewSheet(ss) {
+  const newSheet = ss.getSheetByName("New");
+  if (!newSheet) return [];
+  const rows = newSheet.getDataRange().getValues();
+  return parseStagingRows(rows);
 }
 
 /**
@@ -3735,9 +3776,29 @@ function doGet(e) {
       }
     }
 
-    // High-Speed Fast Path: Return partitioned CacheService payload (~100-300ms) unless bypass_cache requested
+    // High-Speed Fast Path: Partitioned CacheService + Single-Round-Trip Conditional Fetch
     const bypassCache = !!(e && e.parameter && (e.parameter.bypass_cache === "true" || e.parameter.force === "true" || e.parameter.nocache === "true"));
     const cache = CacheService.getScriptCache();
+    let versionInfo = getDataVersionInfo(ss, bypassCache);
+
+    const ifNoneMatchVer = Number(e && e.parameter && e.parameter.if_none_match_version ? e.parameter.if_none_match_version : 0);
+    if (!bypassCache && ifNoneMatchVer > 0 && ifNoneMatchVer === versionInfo.version) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: true,
+        notModified: true,
+        version: versionInfo.version,
+        lastUpdated: versionInfo.lastUpdated
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    let coreValid = false;
+    let vouchersValid = false;
+    let srValid = false;
+    let incomeValid = false;
+    let cachedCoreObj = null;
+    let cachedIncomeObj = null;
+    let cachedSRObj = null;
+    let cachedVouchersList = [];
 
     if (!bypassCache) {
       const initialKeys = ["CACHE_CORE", "CACHE_VOUCHERS_META", "CACHE_STAGING_REDEEMED", "CACHE_INCOME"];
@@ -3747,84 +3808,113 @@ function doGet(e) {
       const cachedStagingRedeemedStr = cachedMap["CACHE_STAGING_REDEEMED"];
       const cachedIncomeStr = cachedMap["CACHE_INCOME"];
 
-      if (cachedCoreStr && cachedMetaStr && cachedStagingRedeemedStr && cachedIncomeStr) {
-        try {
-          const meta = JSON.parse(cachedMetaStr);
-          const versionInfo = getDataVersionInfo(ss);
-          const versionMatches = meta && meta.version !== undefined && String(meta.version) === String(versionInfo.version);
-          if (!versionMatches) {
-            throw new Error("Cache version mismatch (" + (meta && meta.version) + " vs " + versionInfo.version + ")");
+      try {
+        if (cachedCoreStr) {
+          const parsedCore = JSON.parse(cachedCoreStr);
+          if (parsedCore && parsedCore.v !== undefined && String(parsedCore.v) === String(versionInfo.verCore)) {
+            cachedCoreObj = parsedCore;
+            coreValid = true;
           }
-          const core = JSON.parse(cachedCoreStr);
-          const stagingRedeemed = JSON.parse(cachedStagingRedeemedStr);
-          const vouchers = [];
-
-          // Single batch call for all voucher chunks
-          const chunkKeys = [];
-          for (let c = 1; c <= meta.numChunks; c++) {
-            chunkKeys.push("CACHE_VOUCHERS_" + c);
-          }
-          const chunkMap = chunkKeys.length ? cache.getAll(chunkKeys) : {};
-          let allChunksPresent = true;
-          for (let c = 1; c <= meta.numChunks; c++) {
-            const chunkStr = chunkMap["CACHE_VOUCHERS_" + c];
-            if (!chunkStr) { allChunksPresent = false; break; }
-            vouchers.push(...JSON.parse(chunkStr));
-          }
-
-          if (allChunksPresent && Array.isArray(vouchers) && (meta.total === undefined || vouchers.length === meta.total)) {
-            const income = cachedIncomeStr ? JSON.parse(cachedIncomeStr) : { income: { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] } };
-
-            const combined = {
-              sheetUrl: core.sheetUrl || ss.getUrl(),
-              unassigned: core.unassigned || [],
-              cooldowns: core.cooldowns || [],
-              cards: core.cards || [],
-              systemStatus: core.systemStatus || {},
-              vouchers: vouchers,
-              staging: stagingRedeemed.staging || [],
-              redeemed: stagingRedeemed.redeemed || [],
-              shared: stagingRedeemed.shared || [],
-              income: income.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] },
-              version: versionInfo.version,
-              lastUpdated: versionInfo.lastUpdated,
-              cached: true
-            };
-
-            return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
-          }
-        } catch (cacheParseErr) {
-          console.warn("Corrupted CacheService data, falling back to full sheet read:", cacheParseErr.message);
         }
+      } catch (_) {}
+
+      try {
+        if (cachedIncomeStr) {
+          const parsedIncome = JSON.parse(cachedIncomeStr);
+          if (parsedIncome && parsedIncome.v !== undefined && String(parsedIncome.v) === String(versionInfo.verIncome)) {
+            cachedIncomeObj = parsedIncome;
+            incomeValid = true;
+          }
+        }
+      } catch (_) {}
+
+      try {
+        if (cachedStagingRedeemedStr) {
+          const parsedSR = JSON.parse(cachedStagingRedeemedStr);
+          if (parsedSR && parsedSR.v !== undefined && String(parsedSR.v) === String(versionInfo.verVouchers)) {
+            cachedSRObj = parsedSR;
+            srValid = true;
+          }
+        }
+      } catch (_) {}
+
+      try {
+        if (cachedMetaStr) {
+          const meta = JSON.parse(cachedMetaStr);
+          if (meta && meta.v !== undefined && String(meta.v) === String(versionInfo.verVouchers)) {
+            const chunkKeys = [];
+            for (let c = 1; c <= meta.numChunks; c++) {
+              chunkKeys.push("CACHE_VOUCHERS_" + c);
+            }
+            const chunkMap = chunkKeys.length ? cache.getAll(chunkKeys) : {};
+            let allChunksPresent = true;
+            const tmpVouchers = [];
+            for (let c = 1; c <= meta.numChunks; c++) {
+              const chunkStr = chunkMap["CACHE_VOUCHERS_" + c];
+              if (!chunkStr) { allChunksPresent = false; break; }
+              tmpVouchers.push(...JSON.parse(chunkStr));
+            }
+            if (allChunksPresent && Array.isArray(tmpVouchers) && (meta.total === undefined || tmpVouchers.length === meta.total)) {
+              cachedVouchersList = tmpVouchers;
+              vouchersValid = true;
+            }
+          }
+        }
+      } catch (cacheParseErr) {
+        console.warn("Corrupted CacheService data, rebuilding partition:", cacheParseErr.message);
+      }
+
+      if (coreValid && vouchersValid && srValid && incomeValid) {
+        const combined = {
+          sheetUrl: cachedCoreObj.sheetUrl || ss.getUrl(),
+          unassigned: cachedVouchersList.filter(v => v.brand === "Unassigned"),
+          cooldowns: cachedCoreObj.cooldowns || [],
+          cards: cachedCoreObj.cards || [],
+          systemStatus: cachedCoreObj.systemStatus || {},
+          vouchers: cachedVouchersList,
+          staging: cachedSRObj.staging || [],
+          redeemed: cachedSRObj.redeemed || [],
+          shared: cachedSRObj.shared || [],
+          income: cachedIncomeObj.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] },
+          version: versionInfo.version,
+          lastUpdated: versionInfo.lastUpdated,
+          cached: true
+        };
+        return ContentService.createTextOutput(JSON.stringify(combined)).setMimeType(ContentService.MimeType.JSON);
       }
     } else {
       // User explicitly requested cache bypass: purge stale cache keys
       invalidateAppCache();
     }
 
+    const needCore = bypassCache || !coreValid;
+    const needVouchers = bypassCache || !(vouchersValid && srValid);
+    const needIncome = bypassCache || !incomeValid;
+
     const sheets = ss.getSheets();
     const sheetNameSet = new Set(sheets.map(s => s.getName()));
-    // Ensure persistent system tabs exist if missing
     if (!sheetNameSet.has("\u23F1 Cooldowns") && !sheetNameSet.has("Cooldowns")) {
       getOrInitCooldownsSheet(ss);
     }
     if (!sheetNameSet.has("Shared_Activity")) {
       getOrInitSharedActivitySheet(ss);
     }
+
     const result = {
-      sheetUrl: ss.getUrl(),
-      unassigned: [],
-      cooldowns: [],
-      vouchers: [],
-      redeemed: [],
-      cards: [],
-      shared: [],
-      staging: [],
-      income: {
+      sheetUrl: (cachedCoreObj && cachedCoreObj.sheetUrl) || ss.getUrl(),
+      unassigned: !needVouchers ? cachedVouchersList.filter(v => v.brand === "Unassigned") : [],
+      cooldowns: !needCore ? (cachedCoreObj.cooldowns || []) : [],
+      vouchers: !needVouchers ? cachedVouchersList : [],
+      redeemed: !needVouchers ? (cachedSRObj.redeemed || []) : [],
+      cards: !needCore ? (cachedCoreObj.cards || []) : [],
+      shared: !needVouchers ? (cachedSRObj.shared || []) : [],
+      staging: !needVouchers ? (cachedSRObj.staging || []) : [],
+      income: !needIncome ? (cachedIncomeObj.income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] }) : {
         allTime: { gross: 0, charges: 0, net: 0, count: 0 },
         byYear: {},
         ledger: []
-      }
+      },
+      systemStatus: !needCore ? (cachedCoreObj.systemStatus || {}) : {}
     };
 
     const SKIPPED_SYNC_SHEETS = new Set([
@@ -3838,7 +3928,16 @@ function doGet(e) {
     for (const sheet of sheets) {
       const name = sheet.getName();
       if (SKIPPED_SYNC_SHEETS.has(name)) continue;
-      if (sheet.getLastRow() <= 1) continue;
+
+      const isCoreSheet = (name === "\u23F1 Cooldowns" || name === "Cooldowns" || name === "Active Cards" || name === "Cards");
+      const isIncomeSheet = (name === "RuPay Income" || name === "RuPay Charges");
+      const isVoucherSheet = !isCoreSheet && !isIncomeSheet && !SYSTEM_SHEET_NAMES.has(name);
+      const isVoucherSysSheet = (name === "\u26A1 Unassigned" || name === "Unassigned" || name === "Shared_Activity" || name === "Redeemed" || name === "New");
+
+      if (isCoreSheet && !needCore) continue;
+      if (isIncomeSheet && !needIncome) continue;
+      if ((isVoucherSheet || isVoucherSysSheet) && !needVouchers) continue;
+      if (!isCoreSheet && !isIncomeSheet && !isVoucherSheet && !isVoucherSysSheet) continue;
 
       const rows = sheet.getDataRange().getValues();
       if (rows.length <= 1) continue;
@@ -3986,8 +4085,8 @@ function doGet(e) {
           });
         }
       } else if (name === "New") {
-        // Staging Feed from "New" Tab
-        result.staging = getStagingFromNewSheet(ss);
+        // Staging Feed from "New" Tab (parsed directly from already-fetched rows)
+        result.staging = parseStagingRows(rows);
       } else if (name === "RuPay Income") {
         for (let i = 1; i < rows.length; i++) {
           const title = String(rows[i][0] || '').trim();
@@ -4125,122 +4224,133 @@ function doGet(e) {
       }
     }
 
-    // Sort unified income & charges ledger by date descending (newest on top; for same date, retain chronological entry order)
-    result.income.ledger.sort(function(a, b) {
-      const diff = parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
-      if (diff !== 0) return diff;
-      return (b.sheetRowIndex || 0) - (a.sheetRowIndex || 0);
-    });
-    result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
-    for (const y in result.income.byYear) {
-      result.income.byYear[y].net = result.income.byYear[y].gross - result.income.byYear[y].charges;
+    // Recompute income summary only when Income partition was rebuilt
+    if (needIncome) {
+      result.income.ledger.sort(function(a, b) {
+        const diff = parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date);
+        if (diff !== 0) return diff;
+        return (b.sheetRowIndex || 0) - (a.sheetRowIndex || 0);
+      });
+      result.income.allTime.net = result.income.allTime.gross - result.income.allTime.charges;
+      for (const y in result.income.byYear) {
+        result.income.byYear[y].net = result.income.byYear[y].gross - result.income.byYear[y].charges;
+      }
     }
 
-    try {
-      const scriptProps = PropertiesService.getScriptProperties().getProperties();
-      result.systemStatus = {
-        lastEmailSyncTime: scriptProps.LAST_EMAIL_SYNC_TIME || null,
-        lastEmailSyncStatus: scriptProps.LAST_EMAIL_SYNC_STATUS || null,
-        lastEmailSyncCount: scriptProps.LAST_EMAIL_SYNC_COUNT || null
-      };
-    } catch (_) {}
+    if (needCore) {
+      try {
+        const scriptProps = PropertiesService.getScriptProperties().getProperties();
+        result.systemStatus = {
+          lastEmailSyncTime: scriptProps.LAST_EMAIL_SYNC_TIME || null,
+          lastEmailSyncStatus: scriptProps.LAST_EMAIL_SYNC_STATUS || null,
+          lastEmailSyncCount: scriptProps.LAST_EMAIL_SYNC_COUNT || null
+        };
+      } catch (_) {}
+    }
 
-    // Store in CacheService partitioned into Core, Vouchers (size-safe chunks), and Income (6-hour TTL)
+    // Store rebuilt partitions in CacheService with independent partition version tags (6-hour TTL)
     try {
-      const cache = CacheService.getScriptCache();
       if (bypassCache) {
         bumpDataVersion();
-      }
-      const versionInfo = getDataVersionInfo(ss);
-
-      let coreOk = false;
-      const partCore = JSON.stringify({
-        sheetUrl: result.sheetUrl,
-        unassigned: result.unassigned,
-        cooldowns: result.cooldowns,
-        cards: result.cards,
-        systemStatus: result.systemStatus
-      });
-      if (partCore.length < 95000) {
-        cache.put("CACHE_CORE", partCore, 21600);
-        coreOk = true;
+        versionInfo = getDataVersionInfo(ss);
       }
 
-      // Pack vouchers into <90KB chunks dynamically so oversized items never get dropped
-      const voucherChunks = [];
-      let currentChunk = [];
-      for (let i = 0; i < result.vouchers.length; i++) {
-        currentChunk.push(result.vouchers[i]);
-        if (currentChunk.length >= 100 || (currentChunk.length % 10 === 0 && JSON.stringify(currentChunk).length > 80000)) {
-          voucherChunks.push(currentChunk);
-          currentChunk = [];
+      if (needCore || bypassCache) {
+        const partCore = JSON.stringify({
+          v: versionInfo.verCore,
+          sheetUrl: result.sheetUrl,
+          cooldowns: result.cooldowns,
+          cards: result.cards,
+          systemStatus: result.systemStatus
+        });
+        if (partCore.length < 95000) {
+          cache.put("CACHE_CORE", partCore, 21600);
+        } else {
+          cache.remove("CACHE_CORE");
         }
       }
-      if (currentChunk.length > 0 || voucherChunks.length === 0) {
-        voucherChunks.push(currentChunk);
-      }
 
-      let chunksOk = true;
-      let storedChunksCount = 0;
-      for (let c = 0; c < voucherChunks.length; c++) {
-        const slice = voucherChunks[c];
-        const chunkJson = JSON.stringify(slice);
-        if (chunkJson.length < 95000) {
-          cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), chunkJson, 21600);
-          storedChunksCount++;
-        } else if (slice.length > 1) {
-          // Split slice in half on rare ultra-large entries
-          const mid = Math.ceil(slice.length / 2);
-          const halfA = JSON.stringify(slice.slice(0, mid));
-          const halfB = JSON.stringify(slice.slice(mid));
-          if (halfA.length < 95000 && halfB.length < 95000) {
-            cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfA, 21600);
+      if (needVouchers || bypassCache) {
+        const voucherChunks = [];
+        let currentChunk = [];
+        for (let i = 0; i < result.vouchers.length; i++) {
+          currentChunk.push(result.vouchers[i]);
+          if (currentChunk.length >= 100 || (currentChunk.length % 10 === 0 && JSON.stringify(currentChunk).length > 80000)) {
+            voucherChunks.push(currentChunk);
+            currentChunk = [];
+          }
+        }
+        if (currentChunk.length > 0 || voucherChunks.length === 0) {
+          voucherChunks.push(currentChunk);
+        }
+
+        let chunksOk = true;
+        let storedChunksCount = 0;
+        for (let c = 0; c < voucherChunks.length; c++) {
+          const slice = voucherChunks[c];
+          const chunkJson = JSON.stringify(slice);
+          if (chunkJson.length < 95000) {
+            cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), chunkJson, 21600);
             storedChunksCount++;
-            cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfB, 21600);
-            storedChunksCount++;
+          } else if (slice.length > 1) {
+            const mid = Math.ceil(slice.length / 2);
+            const halfA = JSON.stringify(slice.slice(0, mid));
+            const halfB = JSON.stringify(slice.slice(mid));
+            if (halfA.length < 95000 && halfB.length < 95000) {
+              cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfA, 21600);
+              storedChunksCount++;
+              cache.put("CACHE_VOUCHERS_" + (storedChunksCount + 1), halfB, 21600);
+              storedChunksCount++;
+            } else {
+              chunksOk = false;
+            }
           } else {
             chunksOk = false;
           }
+        }
+        if (storedChunksCount < 50) {
+          const staleKeys = [];
+          for (let k = storedChunksCount + 1; k <= 50; k++) staleKeys.push("CACHE_VOUCHERS_" + k);
+          if (staleKeys.length) cache.removeAll(staleKeys);
+        }
+
+        let stagingOk = false;
+        const stagingRedeemed = JSON.stringify({
+          v: versionInfo.verVouchers,
+          staging: result.staging,
+          redeemed: result.redeemed,
+          shared: result.shared
+        });
+        if (stagingRedeemed.length < 95000) {
+          cache.put("CACHE_STAGING_REDEEMED", stagingRedeemed, 21600);
+          stagingOk = true;
         } else {
-          chunksOk = false;
+          cache.remove("CACHE_STAGING_REDEEMED");
+        }
+
+        if (chunksOk && stagingOk) {
+          const partMeta = JSON.stringify({
+            v: versionInfo.verVouchers,
+            numChunks: storedChunksCount,
+            total: result.vouchers.length,
+            version: versionInfo.version
+          });
+          cache.put("CACHE_VOUCHERS_META", partMeta, 21600);
+        } else {
+          cache.remove("CACHE_VOUCHERS_META");
         }
       }
-      // Clean up any leftover chunk keys beyond current storedChunksCount (up to 50)
-      if (storedChunksCount < 50) {
-        const staleKeys = [];
-        for (let k = storedChunksCount + 1; k <= 50; k++) staleKeys.push("CACHE_VOUCHERS_" + k);
-        if (staleKeys.length) cache.removeAll(staleKeys);
-      }
 
-      let stagingOk = false;
-      const stagingRedeemed = JSON.stringify({
-        staging: result.staging,
-        redeemed: result.redeemed,
-        shared: result.shared
-      });
-      if (stagingRedeemed.length < 95000) {
-        cache.put("CACHE_STAGING_REDEEMED", stagingRedeemed, 21600);
-        stagingOk = true;
-      }
-
-      let incomeOk = false;
-      const partIncome = JSON.stringify({
-        income: result.income
-      });
-      if (partIncome.length < 95000) {
-        cache.put("CACHE_INCOME", partIncome, 21600);
-        incomeOk = true;
-      }
-
-      if (coreOk && chunksOk && stagingOk && incomeOk) {
-        const partMeta = JSON.stringify({
-          numChunks: storedChunksCount,
-          total: result.vouchers.length,
-          version: versionInfo.version
+      if (needIncome || bypassCache) {
+        const partIncome = JSON.stringify({
+          v: versionInfo.verIncome,
+          income: result.income
         });
-        cache.put("CACHE_VOUCHERS_META", partMeta, 21600);
-      } else {
-        cache.remove("CACHE_VOUCHERS_META");
+        if (partIncome.length < 95000) {
+          cache.put("CACHE_INCOME", partIncome, 21600);
+        } else {
+          cache.remove("CACHE_INCOME");
+        }
       }
 
       result.version = versionInfo.version;
@@ -4453,8 +4563,38 @@ function doPost(e) {
     }
 
     try {
-      // Bump data version and invalidate partition cache immediately on mutative writes
-      bumpDataVersion();
+      const ACTION_PARTITIONS = {
+        SAVE_CARD: ['CORE'],
+        BLOCK_CARD: ['CORE'],
+        BLOCK_AND_REPLACE_CARD: ['CORE'],
+        UNBLOCK_CARD: ['CORE'],
+        UNDO_BLOCK_AND_REPLACE_CARD: ['CORE'],
+        ADD_CARD: ['CORE'],
+        RESET_COOLDOWN: ['CORE'],
+        RECORD_INCOME_ENTRY: ['INCOME'],
+        APPROVE_STAGING: ['VOUCHERS'],
+        MARK_REVALIDATED: ['VOUCHERS'],
+        UNDO_MARK_REVALIDATED: ['VOUCHERS'],
+        MOVE_TO_REDEEMED: ['VOUCHERS'],
+        UNDO_REDEEM: ['VOUCHERS'],
+        ADD_MISC_VOUCHER: ['VOUCHERS'],
+        DELETE_MISC_VOUCHER: ['VOUCHERS'],
+        LOG_SHARED: ['VOUCHERS'],
+        DISMISS_SHARED: ['VOUCHERS'],
+        RESTORE_DISMISSED_SHARED: ['VOUCHERS'],
+        CLEAR_ACTIVITY: ['VOUCHERS'],
+        CLEAR_REDEEMED: ['VOUCHERS'],
+        RESTORE_CLEARED_ACTIVITY: ['VOUCHERS'],
+        RESTORE_CLEARED_REDEEMED: ['VOUCHERS'],
+        DISMISS_STAGING: ['VOUCHERS'],
+        RESTORE_DISMISSED_STAGING: ['VOUCHERS'],
+        PROMOTE_TOMBSTONES: ['VOUCHERS'],
+        TAG_CARD: ['VOUCHERS', 'CORE'],
+        MARK_VOUCHER_AS_SOLD: ['INCOME', 'VOUCHERS'],
+        UNMARK_INGESTED_SALE: ['INCOME', 'VOUCHERS'],
+        UNMARK_VOUCHER_SALE: ['INCOME', 'VOUCHERS']
+      };
+      const lockedOut = (function() {
 
       // 1C. Approve Staged Green Vouchers from "New" Tab to Canonical Brand Tabs (Dual-Identifier Matching & Booking ID Idempotency)
       if (data.action === "APPROVE_STAGING") {
@@ -6880,6 +7020,17 @@ function doPost(e) {
     return ContentService.createTextOutput(JSON.stringify({
       error: `Unknown or unhandled action: "${data.action || 'undefined'}"`
     })).setMimeType(ContentService.MimeType.JSON);
+      })();
+
+      try {
+        const parsed = lockedOut && typeof lockedOut.getContent === 'function' ? JSON.parse(lockedOut.getContent()) : null;
+        if (parsed && !parsed.error && parsed.success !== false && !(data.action === 'PROMOTE_TOMBSTONES' && parsed.promotedCount === 0)) {
+          bumpDataVersion(ACTION_PARTITIONS[data.action] || ['CORE', 'VOUCHERS', 'INCOME']);
+        }
+      } catch (_) {
+        bumpDataVersion();
+      }
+      return lockedOut;
 
     } finally {
       try { lock.releaseLock(); } catch(e) {}

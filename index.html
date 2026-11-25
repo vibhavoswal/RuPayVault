@@ -11,6 +11,10 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <link rel="dns-prefetch" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.google.com" crossorigin>
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/vibhavoswal/RuPayVault/main/.build/icon.png">
   <script>tailwind = { config: { darkMode: 'class' } };</script>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
@@ -4064,7 +4068,25 @@
       return derivedKey;
     }
 
-    // Encrypt payload with AES-GCM
+    function bytesToBase64(bytes) {
+      let bin = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      return btoa(bin);
+    }
+
+    function base64ToBytes(b64) {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) {
+        bytes[i] = bin.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    // Encrypt payload with AES-GCM (compact Base64 v2 format)
     async function encryptWithKey(key, plaintext) {
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const enc = new TextEncoder();
@@ -4074,15 +4096,20 @@
         enc.encode(plaintext)
       );
       return {
-        iv: Array.from(iv),
-        ciphertext: Array.from(new Uint8Array(ciphertext))
+        v: 2,
+        iv: bytesToBase64(iv),
+        ct: bytesToBase64(new Uint8Array(ciphertext))
       };
     }
 
-    // Decrypt payload with AES-GCM
+    // Decrypt payload with AES-GCM (supports compact v2 Base64 and legacy array formats)
     async function decryptWithKey(key, encryptedObj) {
-      const iv = new Uint8Array(encryptedObj.iv);
-      const ciphertext = new Uint8Array(encryptedObj.ciphertext);
+      const iv = (encryptedObj && encryptedObj.v === 2 && typeof encryptedObj.iv === 'string')
+        ? base64ToBytes(encryptedObj.iv)
+        : new Uint8Array(encryptedObj.iv);
+      const ciphertext = (encryptedObj && encryptedObj.v === 2 && typeof encryptedObj.ct === 'string')
+        ? base64ToBytes(encryptedObj.ct)
+        : new Uint8Array(encryptedObj.ciphertext);
       const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: iv },
         key,
@@ -4093,14 +4120,14 @@
     }
 
     // Save vouchers to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedVouchers(vouchers) {
+    async function saveEncryptedVouchers(vouchers, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify(vouchers);
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_vault_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_vouchers_cache'); // Clear legacy plaintext cache
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted cache:", err);
       }
@@ -4122,14 +4149,14 @@
     }
 
     // Save cards to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedCards(cards) {
+    async function saveEncryptedCards(cards, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify(cards || []);
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_cards_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_cards_cache'); // Clear legacy plaintext cache
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted cards cache:", err);
       }
@@ -4151,7 +4178,7 @@
     }
 
     // Save accounts to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedAccounts(accounts) {
+    async function saveEncryptedAccounts(accounts, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify((accounts || []).map(a => ({
@@ -4161,7 +4188,7 @@
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_accounts_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_accounts_cache'); // Clear legacy plaintext cache
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted accounts cache:", err);
       }
@@ -4189,13 +4216,13 @@
     }
 
     // Save staging (Ingested queue) to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedStaging(staging) {
+    async function saveEncryptedStaging(staging, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify(staging || []);
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_staging_encrypted_cache', JSON.stringify(encrypted));
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted staging cache:", err);
       }
@@ -4217,13 +4244,13 @@
     }
 
     // Save income tracker data to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedIncome(income) {
+    async function saveEncryptedIncome(income, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify(income || { allTime: { gross: 0, charges: 0, net: 0, count: 0 }, byYear: {}, ledger: [] });
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_income_encrypted_cache', JSON.stringify(encrypted));
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted income cache:", err);
       }
@@ -4248,14 +4275,14 @@
     }
 
     // Save bank accounts to AES-GCM encrypted cache in localStorage
-    async function saveEncryptedBankAccounts(accounts) {
+    async function saveEncryptedBankAccounts(accounts, options = {}) {
       try {
         if (!securityState.cryptoKey) return;
         const serialized = JSON.stringify(accounts || []);
         const encrypted = await encryptWithKey(securityState.cryptoKey, serialized);
         localStorage.setItem('rupay_bank_accounts_encrypted_cache', JSON.stringify(encrypted));
         localStorage.removeItem('rupay_bank_accounts_data'); // Clear legacy plaintext cache
-        persistL1ViewCache();
+        if (!options.skipL1) persistL1ViewCache();
       } catch (err) {
         console.warn("Failed to save encrypted bank accounts cache:", err);
       }
@@ -4319,7 +4346,7 @@
         const urlWs = (new URLSearchParams(window.location.search)).get('ws');
         const targetWs = urlWs || cache.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         switchWorkspace(targetWs);
-        renderAll();
+        updateDrawerCardCount();
         return true;
       } catch (e) {
         console.warn('L1 cache hydration error:', e);
@@ -5306,7 +5333,7 @@
       }
     }
 
-    // Unlock Vault and Hydrate
+    // Unlock Vault and Hydrate (Priority-First Workspace Decryption)
     async function unlockVaultDirect(providedSecret = null) {
       securityState.isUnlocked = true;
       securityState.enteredPin = '';
@@ -5318,6 +5345,41 @@
       document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
       const subtitle = document.getElementById('lock-subtitle');
       if (subtitle) subtitle.textContent = 'Access restricted to vibhavoswal3@gmail.com';
+
+      const urlWs = (new URLSearchParams(window.location.search)).get('ws');
+      const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+      let backgroundDecryptPromise = Promise.resolve();
+
+      const applyDecryptedStaging = (decryptedStaging) => {
+        if (decryptedStaging && decryptedStaging.length) {
+          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
+          state.staging = decryptedStaging.map(s => {
+            const cleanBid = String(s.bookingId || s.id || '').trim().toUpperCase();
+            if (revalSet.has(cleanBid) || s.status === 'REVALIDATED') {
+              const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code) && !/processing/i.test(s.code);
+              if (!isRealCode) {
+                s.status = 'REVALIDATED';
+                s.code = 'Pending';
+                s.payUrl = '';
+                s.isRevalidation = false;
+              }
+            }
+            return s;
+          });
+        }
+      };
+
+      const unquarantineLoadedState = () => {
+        (state.cards || []).forEach(c => {
+          if (c.cardNumber && c.status === 'ACTIVE') UniversalMutationJournal.unquarantine(c.cardNumber);
+        });
+        (state.vouchers || []).forEach(v => {
+          if (v.status === 'ACTIVE') {
+            if (v.code && v.code !== '-' && v.code.toUpperCase() !== 'PENDING') UniversalMutationJournal.unquarantine(v.code);
+            if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) UniversalMutationJournal.unquarantine(v.bookingId);
+          }
+        });
+      };
 
       try {
         // Initialize cryptoKey in memory from verified session token and salt
@@ -5339,75 +5401,92 @@
           securityState.cryptoKey = null;
         }
 
-        const [decryptedVouchers, decryptedCards, decryptedAccounts, decryptedStaging, decryptedIncome, decryptedBankAccounts] = await Promise.all([
-          loadEncryptedVouchers(),
-          loadEncryptedCards(),
-          loadEncryptedAccounts(),
-          loadEncryptedStaging(),
-          loadEncryptedIncome(),
-          loadEncryptedBankAccounts()
-        ]);
+        // Priority Phase 1: Decrypt active workspace stores first for immediate paint
+        if (savedWorkspace === 'cards') {
+          const decryptedCards = await loadEncryptedCards();
+          if (decryptedCards && decryptedCards.length) state.cards = decryptedCards;
+        } else if (savedWorkspace === 'banks') {
+          const decryptedBankAccounts = await loadEncryptedBankAccounts();
+          if (decryptedBankAccounts && decryptedBankAccounts.length) state.bankAccounts = decryptedBankAccounts;
+        } else if (savedWorkspace === 'income') {
+          const decryptedIncome = await loadEncryptedIncome();
+          if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) state.income = decryptedIncome;
+        } else {
+          const [decryptedVouchers, decryptedStaging, decryptedAccounts] = await Promise.all([
+            loadEncryptedVouchers(),
+            loadEncryptedStaging(),
+            loadEncryptedAccounts()
+          ]);
+          if (decryptedVouchers && decryptedVouchers.length) state.vouchers = decryptedVouchers;
+          if (decryptedAccounts && decryptedAccounts.length) state.accounts = decryptedAccounts;
+          applyDecryptedStaging(decryptedStaging);
+        }
 
-        if (decryptedVouchers && decryptedVouchers.length) {
-          state.vouchers = decryptedVouchers;
-        }
-        if (decryptedCards && decryptedCards.length) {
-          state.cards = decryptedCards;
-        }
-        if (decryptedAccounts && decryptedAccounts.length) {
-          state.accounts = decryptedAccounts;
-        }
-        if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) {
-          state.income = decryptedIncome;
-        }
-        if (decryptedBankAccounts && Array.isArray(decryptedBankAccounts) && decryptedBankAccounts.length) {
-          state.bankAccounts = decryptedBankAccounts;
-        }
-        if (decryptedStaging && decryptedStaging.length) {
-          const revalSet = new Set(getRevalidatedBids().map(b => String(b || '').trim().toUpperCase()).filter(Boolean));
-          state.staging = decryptedStaging.map(s => {
-            const cleanBid = String(s.bookingId || s.id || '').trim().toUpperCase();
-            if (revalSet.has(cleanBid) || s.status === 'REVALIDATED') {
-              const isRealCode = s.code && s.code !== 'PENDING' && s.code !== '-' && !/pending/i.test(s.code) && !/revalidat/i.test(s.code) && !/processing/i.test(s.code);
-              if (!isRealCode) {
-                s.status = 'REVALIDATED';
-                s.code = 'Pending';
-                s.payUrl = '';
-                s.isRevalidation = false;
-              }
-            }
-            return s;
-          });
-        }
+        unquarantineLoadedState();
+        switchWorkspace(savedWorkspace);
+        updateDrawerCardCount();
+
+        // Priority Phase 2: Decrypt remaining workspaces concurrently before sync merges
+        backgroundDecryptPromise = (async () => {
+          if (savedWorkspace === 'cards') {
+            const [decryptedVouchers, decryptedStaging, decryptedAccounts, decryptedIncome, decryptedBankAccounts] = await Promise.all([
+              loadEncryptedVouchers(), loadEncryptedStaging(), loadEncryptedAccounts(), loadEncryptedIncome(), loadEncryptedBankAccounts()
+            ]);
+            if (decryptedVouchers && decryptedVouchers.length) state.vouchers = decryptedVouchers;
+            applyDecryptedStaging(decryptedStaging);
+            if (decryptedAccounts && decryptedAccounts.length) state.accounts = decryptedAccounts;
+            if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) state.income = decryptedIncome;
+            if (decryptedBankAccounts && decryptedBankAccounts.length) state.bankAccounts = decryptedBankAccounts;
+          } else if (savedWorkspace === 'banks') {
+            const [decryptedVouchers, decryptedStaging, decryptedAccounts, decryptedCards, decryptedIncome] = await Promise.all([
+              loadEncryptedVouchers(), loadEncryptedStaging(), loadEncryptedAccounts(), loadEncryptedCards(), loadEncryptedIncome()
+            ]);
+            if (decryptedVouchers && decryptedVouchers.length) state.vouchers = decryptedVouchers;
+            applyDecryptedStaging(decryptedStaging);
+            if (decryptedAccounts && decryptedAccounts.length) state.accounts = decryptedAccounts;
+            if (decryptedCards && decryptedCards.length) state.cards = decryptedCards;
+            if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) state.income = decryptedIncome;
+          } else if (savedWorkspace === 'income') {
+            const [decryptedVouchers, decryptedStaging, decryptedAccounts, decryptedCards, decryptedBankAccounts] = await Promise.all([
+              loadEncryptedVouchers(), loadEncryptedStaging(), loadEncryptedAccounts(), loadEncryptedCards(), loadEncryptedBankAccounts()
+            ]);
+            if (decryptedVouchers && decryptedVouchers.length) state.vouchers = decryptedVouchers;
+            applyDecryptedStaging(decryptedStaging);
+            if (decryptedAccounts && decryptedAccounts.length) state.accounts = decryptedAccounts;
+            if (decryptedCards && decryptedCards.length) state.cards = decryptedCards;
+            if (decryptedBankAccounts && decryptedBankAccounts.length) state.bankAccounts = decryptedBankAccounts;
+          } else {
+            const [decryptedCards, decryptedIncome, decryptedBankAccounts] = await Promise.all([
+              loadEncryptedCards(), loadEncryptedIncome(), loadEncryptedBankAccounts()
+            ]);
+            if (decryptedCards && decryptedCards.length) state.cards = decryptedCards;
+            if (decryptedIncome && Array.isArray(decryptedIncome.ledger)) state.income = decryptedIncome;
+            if (decryptedBankAccounts && decryptedBankAccounts.length) state.bankAccounts = decryptedBankAccounts;
+          }
+          unquarantineLoadedState();
+          persistL1ViewCache();
+          updateDrawerCardCount();
+          if (state.activeWorkspace !== savedWorkspace) {
+            renderAll();
+          }
+        })().catch(e => console.warn('Background cache hydration notice:', e));
       } catch (err) {
         console.warn('Hydration warning during unlock:', err);
+        switchWorkspace(savedWorkspace);
       } finally {
-        (state.cards || []).forEach(c => {
-          if (c.cardNumber && c.status === 'ACTIVE') UniversalMutationJournal.unquarantine(c.cardNumber);
-        });
-        (state.vouchers || []).forEach(v => {
-          if (v.status === 'ACTIVE') {
-            if (v.code && v.code !== '-' && v.code.toUpperCase() !== 'PENDING') UniversalMutationJournal.unquarantine(v.code);
-            if (v.bookingId && v.bookingId !== '-' && !v.bookingId.startsWith('#')) UniversalMutationJournal.unquarantine(v.bookingId);
+        // Sequentialized background decryption + uncommitted flush -> background sync
+        backgroundDecryptPromise.finally(() => {
+          if (getUncommittedRedeems().length > 0) {
+            flushUncommittedRedeems().then(() => {
+              syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
+            }).catch(e => {
+              console.warn('Background uncommitted flush warning:', e);
+              syncWithGoogleSheets(false).catch(err => console.warn('Background sync warning:', err));
+            });
+          } else {
+            syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
           }
         });
-        const urlWs = (new URLSearchParams(window.location.search)).get('ws');
-        const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
-        switchWorkspace(savedWorkspace);
-        renderAll();
-        persistL1ViewCache();
-
-        // Sequentialized mutation flush & background sync to eliminate lock collision
-        if (getUncommittedRedeems().length > 0) {
-          flushUncommittedRedeems().then(() => {
-            syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
-          }).catch(e => {
-            console.warn('Background uncommitted flush warning:', e);
-            syncWithGoogleSheets(false).catch(err => console.warn('Background sync warning:', err));
-          });
-        } else {
-          syncWithGoogleSheets(false).catch(e => console.warn('Background sync warning:', e));
-        }
       }
     }
 
@@ -9584,37 +9663,15 @@
 
         const token = getSessionToken();
         const cachedVersion = Number(localStorage.getItem('rupay_remote_version') || sessionStorage.getItem('rupay_remote_version') || 0);
-        const cachedLastUpdated = Number(localStorage.getItem('rupay_remote_last_updated') || sessionStorage.getItem('rupay_remote_last_updated') || 0);
 
-        // High-Speed 304 Check: Skip downloading if remote data is not modified
-        if (!isManual && cachedVersion > 0 && state.vouchers && state.vouchers.length > 0 && pendingMutationsCount === 0) {
-          try {
-            const checkParams = new URLSearchParams();
-            if (token) checkParams.set('token', token);
-            checkParams.set('action', 'CHECK_MODIFIED');
-            checkParams.set('version', String(cachedVersion));
-            checkParams.set('since', String(cachedLastUpdated));
-            const checkUrl = API_ENDPOINT + (API_ENDPOINT.includes('?') ? '&' : '?') + checkParams.toString();
-            const checkRes = await fetch(checkUrl);
-            const checkData = await checkRes.json();
-            if (checkData && checkData.success && checkData.notModified) {
-              const now = new Date();
-              const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              try {
-                localStorage.setItem('rupay_sync_time', timeStr);
-              } catch (_) {}
-              updateAllSyncIndicators('success', timeStr);
-              return;
-            }
-          } catch (checkErr) {
-            console.warn('CHECK_MODIFIED fast-path skipped:', checkErr);
-          }
-        }
         const params = new URLSearchParams();
         if (token) params.set('token', token);
         params.set('ingest', 'false');
         if (isManual) {
           params.set('bypass_cache', 'true');
+        } else if (cachedVersion > 0 && state.vouchers && state.vouchers.length > 0 && pendingMutationsCount === 0) {
+          // Single-round-trip conditional check: server returns tiny notModified response if unchanged OR warm payload immediately
+          params.set('if_none_match_version', String(cachedVersion));
         }
         const activeWs = state.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
         if (activeWs === 'vouchers') {
@@ -9635,6 +9692,16 @@
         } catch (fetchErr) {
           clearTimeout(timeoutId);
           throw fetchErr;
+        }
+
+        if (data && data.success && data.notModified) {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          try {
+            localStorage.setItem('rupay_sync_time', timeStr);
+          } catch (_) {}
+          updateAllSyncIndicators('success', timeStr);
+          return;
         }
         
         if (data && data.error) {
@@ -9809,10 +9876,9 @@
             seenCodes.add(cUpper);
           });
 
-          // AES-GCM Encrypted cache persistence (never plaintext)
-          await saveEncryptedVouchers(state.vouchers);
-
-
+          // Deferred concurrent AES-GCM Encrypted cache persistence (saves 5x CPU/storage overhead)
+          var _pendingSavePromises = _pendingSavePromises || [];
+          _pendingSavePromises.push(saveEncryptedVouchers(state.vouchers, { skipL1: true }));
         }
 
         if (data.redeemed && Array.isArray(data.redeemed)) {
@@ -9868,7 +9934,7 @@
           saveRedeemedList();
         }
 
-        if (data.cards && Array.isArray(data.cards) && data.cards.length) {
+        if (Array.isArray(data.cards)) {
           const inFlightCards = MutationJournal.getCards();
           const cleanRemoteNums = new Set();
           state.cards = data.cards
@@ -9903,7 +9969,8 @@
             }
           });
 
-          await saveEncryptedCards(state.cards);
+          var _pendingSavePromises = _pendingSavePromises || [];
+          _pendingSavePromises.push(saveEncryptedCards(state.cards, { skipL1: true }));
           updateDrawerCardCount();
           if (isCardManagerOpen) renderCardManagerList(currentCardCategoryFilter);
         }
@@ -9939,7 +10006,7 @@
           saveSharedActivity();
         }
 
-        if (data.cooldowns && data.cooldowns.length) {
+        if (Array.isArray(data.cooldowns)) {
           state.accounts = data.cooldowns.map(c => {
             const parsedMs = parseTimestamp(c.lastRedeemed);
             return {
@@ -9947,7 +10014,8 @@
               lastRedeemed: parsedMs ? new Date(parsedMs) : new Date(c.lastRedeemed || Date.now())
             };
           });
-          await saveEncryptedAccounts(state.accounts);
+          var _pendingSavePromises = _pendingSavePromises || [];
+          _pendingSavePromises.push(saveEncryptedAccounts(state.accounts, { skipL1: true }));
         }
 
         if (data.staging && Array.isArray(data.staging)) {
@@ -10053,15 +10121,21 @@
                 saleDetails: s.saleDetails || (prevItem && prevItem.saleDetails) || null
               };
             });
-          await saveEncryptedStaging(state.staging);
+          var _pendingSavePromises = _pendingSavePromises || [];
+          _pendingSavePromises.push(saveEncryptedStaging(state.staging, { skipL1: true }));
         }
 
         if (data.income && (Array.isArray(data.income.ledger) ? (data.income.ledger.length > 0 || !state.income || !Array.isArray(state.income.ledger) || state.income.ledger.length === 0) : true)) {
           state.income = data.income;
-          await saveEncryptedIncome(state.income);
+          var _pendingSavePromises = _pendingSavePromises || [];
+          _pendingSavePromises.push(saveEncryptedIncome(state.income, { skipL1: true }));
           if (state.activeWorkspace === 'income') {
             renderIncomeTracker();
           }
+        }
+
+        if (typeof _pendingSavePromises !== 'undefined' && _pendingSavePromises.length > 0) {
+          await Promise.all(_pendingSavePromises);
         }
 
         const sheetUrl = (data.sheetUrl && data.sheetUrl.includes('/d/')) ? data.sheetUrl : GOOGLE_SHEET_URL;
@@ -15747,11 +15821,11 @@
 
     function renderAll() {
       renderCards();
-      renderVault();
       renderMatrix();
       if (state.activeWorkspace === 'cards') renderCardManagerList(currentCardCategoryFilter || 'Debit');
       else if (state.activeWorkspace === 'banks') renderBankManager();
       else if (state.activeWorkspace === 'income') renderIncomeTracker();
+      else renderVault();
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -15781,6 +15855,15 @@
         initDesignMode();
       } catch(e) {}
 
+      // 1b. Restore last viewed Brand tab and filter continuity BEFORE L1/crypto paint
+      const savedBrand = localStorage.getItem('rupay_active_brand') || sessionStorage.getItem('rupay_active_brand') || 'ActivityLog';
+      state.activeFilterBrand = savedBrand;
+      const savedIngestFilter = localStorage.getItem('rupay_ingest_filter') || sessionStorage.getItem('rupay_ingest_filter') || 'tagged';
+      state.ingestFilter = savedIngestFilter;
+      const savedActivityFilter = sessionStorage.getItem('rupay_activity_filter') || 'added';
+      activityFilter = savedActivityFilter;
+      updateIngestFilterUI();
+
       // 0c. 0ms INSTANT SYNCHRONOUS L1 PAINT (Zero Blank Screen)
       const isDevUnlock = isDevEnvironment();
       if (isSessionValid() || isDevUnlock) {
@@ -15794,16 +15877,7 @@
       const sheetLink = document.getElementById('sheet-link-btn');
       if (sheetLink) sheetLink.href = activeSheetUrl;
 
-      // 1b. Restore last viewed Brand tab and filter continuity BEFORE unlockVaultDirect paints
-      const savedBrand = localStorage.getItem('rupay_active_brand') || sessionStorage.getItem('rupay_active_brand') || 'ActivityLog';
-      state.activeFilterBrand = savedBrand;
-      const savedIngestFilter = localStorage.getItem('rupay_ingest_filter') || sessionStorage.getItem('rupay_ingest_filter') || 'tagged';
-      state.ingestFilter = savedIngestFilter;
-      const savedActivityFilter = sessionStorage.getItem('rupay_activity_filter') || 'added';
-      activityFilter = savedActivityFilter;
-      updateIngestFilterUI();
-
-      // 2. Initialize security: Check 1-Week session & hydrate encrypted cache
+      // 2. Initialize security: Priority-First active workspace decryption + background hydration
       if (isSessionValid() || isDevUnlock) {
         if (isDevUnlock) {
           hideLockScreen();
@@ -15813,8 +15887,12 @@
         lockVault();
       }
 
-      setActivityFilter(savedActivityFilter);
-      if (savedBrand !== 'ActivityLog') {
+      // Apply brand/activity scroll state without redundant re-renders
+      try {
+        sessionStorage.setItem('rupay_activity_filter', activityFilter);
+      } catch (_) {}
+      updateClearTrashBadges();
+      if (savedBrand !== 'ActivityLog' && state.activeWorkspace === 'vouchers') {
         filterVaultBrand(savedBrand, { preserveScroll: true });
       }
 
@@ -15835,12 +15913,22 @@
       updateMasterTriggerIcon();
       updateFloatingDock();
 
-      setTab('vault');
-
-      // 5. Default to Voucher Manager on first load, or retain active workspace across refreshes
-      const urlWs = urlParams.get('ws');
-      const savedWorkspace = urlWs || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
-      switchWorkspace(savedWorkspace);
+      // Retain single-pass active workspace visibility cleanly without extra full DOM rebuilds
+      ['cards', 'vault'].forEach(t => {
+        const mv = document.getElementById(`mb-view-${t}`);
+        if (mv) mv.classList.toggle('hidden', t !== 'vault');
+        const mbBtn = document.getElementById(`mb-btn-${t}`);
+        if (mbBtn) {
+          mbBtn.style.color = ('vault' === t) ? 'var(--system-blue)' : 'var(--label-tertiary)';
+        }
+      });
+      state.activeTab = 'vault';
+      if (urlParams.get('ws') || sessionStorage.getItem('rupay_active_workspace')) {
+        const targetWs = urlParams.get('ws') || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+        if (state.activeWorkspace !== targetWs) {
+          switchWorkspace(targetWs);
+        }
+      }
 
       if (urlParams.get('popup') === 'add') toggleAddMenu();
       if (urlParams.get('modal') === 'sale') openRecordSaleModal();
