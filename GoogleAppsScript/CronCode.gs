@@ -203,47 +203,35 @@ function parseISTTimestampMs(val) {
   return parseDateToTimestamp(clean);
 }
 
-function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
-  const stripBarePrefix = function(val) {
-    const t = String(val || '').trim();
-    return /^[gG]\s*\/$/.test(t) ? '' : t;
-  };
-  soldTo = stripBarePrefix(soldTo);
+const RUPAY_INCOME_HEADERS = [
+  "Title", "Date", "Price", "Buyer", "RuPay Account Number", "RuPay Account Email", "Card"
+];
+
+function stripBareBuyerPrefix(val) {
+  const t = String(val || '').trim();
+  return /^[gG]\s*\/$/.test(t) ? '' : t;
+}
+
+function formatSaleComments(soldTo, mobile, redeemedAccount, _unused, card) {
+  soldTo = stripBareBuyerPrefix(soldTo);
   mobile = String(mobile || '').trim();
   redeemedAccount = String(redeemedAccount || '').trim();
-  gpayName = stripBarePrefix(gpayName);
   card = String(card || '').trim();
   if (card === 'Unassigned' || card === '-') card = '';
 
   const segments = [];
-
-  // Segment 1: Buyer + Account combination
   if (soldTo && redeemedAccount) {
     const buyer = mobile ? `${soldTo} (${mobile})` : soldTo;
     segments.push(`${buyer}: ${redeemedAccount}`);
   } else if (soldTo) {
     segments.push(mobile ? `${soldTo} (${mobile})` : soldTo);
   } else if (redeemedAccount) {
-    if (mobile) {
-      segments.push(`Mobile: ${mobile}`);
-    }
+    if (mobile) segments.push(`Mobile: ${mobile}`);
     segments.push(`Account: ${redeemedAccount}`);
   } else if (mobile) {
     segments.push(`Mobile: ${mobile}`);
   }
-
-  // Segment 2: GPay (if provided and different from soldTo ignoring optional g/ prefix)
-  const normSold = soldTo.replace(/^[gG]\//, '').trim().toLowerCase();
-  const normGpay = gpayName.replace(/^[gG]\//, '').trim().toLowerCase();
-  if (gpayName && normGpay !== normSold) {
-    segments.push(`GPay: ${gpayName}`);
-  }
-
-  // Segment 3: Card
-  if (card) {
-    segments.push(card);
-  }
-
+  if (card) segments.push(card);
   return segments.join(' | ');
 }
 
@@ -255,19 +243,11 @@ function parseIncomeSale(comments) {
   let soldTo = '';
   let mobile = '';
   let account = '';
-  let gpay = '';
   let card = '';
 
   parts.forEach(function(part) {
     part = part.trim();
     if (!part) return;
-
-    const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
-    if (gpayMatch) {
-      const rawGpay = gpayMatch[1].trim();
-      gpay = /^[gG]\s*\/$/.test(rawGpay) ? '' : rawGpay;
-      return;
-    }
 
     const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
     if (accMatch) {
@@ -307,7 +287,31 @@ function parseIncomeSale(comments) {
     }
   });
 
-  return { soldTo: soldTo, mobile: mobile, account: account, gpay: gpay, card: card };
+  return { soldTo: soldTo, mobile: mobile, account: account, card: card };
+}
+
+function parseRuPayIncomeRow(row) {
+  const buyerRaw = String(row[3] || '').trim();
+  const colMobile = row.length > 4 ? String(row[4] || '').replace(/^'/, '').trim() : '';
+  const colEmail = row.length > 5 ? String(row[5] || '').trim() : '';
+  const colCard = row.length > 6 ? String(row[6] || '').trim() : '';
+  if (colMobile || colEmail || colCard || (!buyerRaw.includes('|') && !buyerRaw.includes(':'))) {
+    return {
+      buyer: buyerRaw,
+      rupayAccountNumber: colMobile,
+      rupayAccountEmail: colEmail,
+      card: colCard,
+      account: colCard || colEmail || colMobile || ''
+    };
+  }
+  const legacy = parseIncomeSale(buyerRaw) || {};
+  return {
+    buyer: buyerRaw,
+    rupayAccountNumber: legacy.mobile || '',
+    rupayAccountEmail: legacy.account || '',
+    card: legacy.card || '',
+    account: legacy.card || legacy.account || legacy.mobile || ''
+  };
 }
 
 function recalculateSheetTotal(sheet) {
@@ -3219,13 +3223,20 @@ function doGet(e) {
       const col3Width = chargesSheet ? chargesSheet.getColumnWidth(3) : 100;
       const col4Width = chargesSheet ? chargesSheet.getColumnWidth(4) : 400;
 
+      const col5Width = chargesSheet ? 130 : 130;
+      const col6Width = chargesSheet ? 180 : 180;
+      const col7Width = chargesSheet ? 150 : 150;
+
       incomeSheet.setColumnWidth(1, col1Width);
       incomeSheet.setColumnWidth(2, col2Width);
       incomeSheet.setColumnWidth(3, col3Width);
       incomeSheet.setColumnWidth(4, col4Width);
+      incomeSheet.setColumnWidth(5, col5Width);
+      incomeSheet.setColumnWidth(6, col6Width);
+      incomeSheet.setColumnWidth(7, col7Width);
 
       // Header Row (Row 1): Arial 10, bold, #F3F4F6 background, black text, bottom aligned, left aligned, frozen row
-      const headerRange = incomeSheet.getRange(1, 1, 1, 4);
+      const headerRange = incomeSheet.getRange(1, 1, 1, 7);
       headerRange.setFontFamily("Arial");
       headerRange.setFontSize(10);
       headerRange.setFontWeight("bold");
@@ -3236,7 +3247,7 @@ function doGet(e) {
       incomeSheet.setFrozenRows(1);
 
       // Find TOTAL row
-      const vals = incomeSheet.getRange(1, 1, lastRow, 4).getValues();
+      const vals = incomeSheet.getRange(1, 1, lastRow, Math.max(lastCol, 7)).getValues();
       let totalRowIdx = -1;
       for (let r = 1; r < vals.length; r++) {
         const col0 = String(vals[r][0] || '').trim().toUpperCase();
@@ -3496,12 +3507,7 @@ function doGet(e) {
           }
           const priceVal = Number(rows[i][2]);
           if (isNaN(priceVal) || priceVal === 0) continue;
-          const comments = String(rows[i][3] || '').trim();
-          let account = String(rows[i][4] || '').trim();
-          if (!account && comments) {
-            const parsed = parseIncomeSale(comments);
-            if (parsed) account = parsed.card || parsed.account || '';
-          }
+          const parsedInc = parseRuPayIncomeRow(rows[i]);
           let yr = 2026;
           const comp = parseDateComponents(rows[i][1]);
           if (comp && comp.year) {
@@ -3512,8 +3518,12 @@ function doGet(e) {
             title: title,
             date: dateStr,
             price: Math.abs(priceVal),
-            comments: comments,
-            account: account,
+            buyer: parsedInc.buyer,
+            rupayAccountNumber: parsedInc.rupayAccountNumber,
+            rupayAccountEmail: parsedInc.rupayAccountEmail,
+            card: parsedInc.card,
+            comments: parsedInc.buyer,
+            account: parsedInc.account,
             year: yr,
             type: 'income'
           };
@@ -4109,13 +4119,7 @@ function doGet(e) {
           const priceVal = Number(rows[i][2]);
           if (isNaN(priceVal) || priceVal === 0) continue;
 
-          const comments = String(rows[i][3] || '').trim();
-          let account = String(rows[i][4] || '').trim();
-          if (!account && comments) {
-            const parsed = parseIncomeSale(comments);
-            if (parsed) account = parsed.card || parsed.account || '';
-          }
-
+          const parsedInc = parseRuPayIncomeRow(rows[i]);
           const comp = parseDateComponents(dateStr);
           const yr = comp ? comp.year : new Date().getFullYear();
           if (comp) {
@@ -4128,8 +4132,12 @@ function doGet(e) {
             title: title,
             date: dateStr,
             price: Math.abs(priceVal),
-            comments: comments,
-            account: account,
+            buyer: parsedInc.buyer,
+            rupayAccountNumber: parsedInc.rupayAccountNumber,
+            rupayAccountEmail: parsedInc.rupayAccountEmail,
+            card: parsedInc.card,
+            comments: parsedInc.buyer,
+            account: parsedInc.account,
             year: yr,
             type: 'income'
           };
@@ -6364,8 +6372,8 @@ function doPost(e) {
           targetSheet = getOrCreateRuPayChargesSheet(ss);
         } else {
           targetSheet = ss.insertSheet("RuPay Income");
-          targetSheet.appendRow(["Brand", "Date", "Sale Value", "Comments"]);
-          targetSheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#F3F4F6");
+          targetSheet.appendRow(RUPAY_INCOME_HEADERS);
+          targetSheet.getRange(1, 1, 1, RUPAY_INCOME_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
           targetSheet.setFrozenRows(1);
         }
       }
@@ -6373,6 +6381,10 @@ function doPost(e) {
       const dateStr = String(data.date || Utilities.formatDate(new Date(), "GMT+05:30", "dd/MM/yy")).trim();
       const comments = String(data.comments || '').trim();
       const account = String(data.account || '').trim();
+      const buyerVal = stripBareBuyerPrefix(data.buyer || comments);
+      const accNumVal = String(data.rupayAccountNumber || data.mobile || '').replace(/^'/, '').trim();
+      const accEmailVal = String(data.rupayAccountEmail || account || '').trim();
+      const cardVal = String(data.card || '').trim();
 
       const comp = parseDateComponents(dateStr);
       const dateMs = comp ? new Date(comp.year, comp.month - 1, comp.day).getTime() : 0;
@@ -6392,16 +6404,15 @@ function doPost(e) {
           account
         ];
       } else {
-        // RuPay Income has exactly 4 columns: [Brand, Date, Sale Value, Comments]
-        let finalComments = comments;
-        if (account && !finalComments.includes(account)) {
-          finalComments = finalComments ? `${finalComments} | ${account}` : account;
-        }
+        // RuPay Income uses the 7-column schema: [Title, Date, Price, Buyer, RuPay Account Number, RuPay Account Email, Card]
         newRowData = [
           title,
           cellDateValue,
           finalPrice,
-          finalComments
+          buyerVal,
+          accNumVal,
+          accEmailVal,
+          cardVal
         ];
       }
 
@@ -6578,8 +6589,8 @@ function doPost(e) {
       let incomeSheet = ss.getSheetByName("RuPay Income");
       if (!incomeSheet) {
         incomeSheet = ss.insertSheet("RuPay Income");
-        incomeSheet.appendRow(["Brand", "Date", "Sale Value", "Comments"]);
-        incomeSheet.getRange(1, 1, 1, 4).setFontWeight("bold").setBackground("#F3F4F6");
+        incomeSheet.appendRow(RUPAY_INCOME_HEADERS);
+        incomeSheet.getRange(1, 1, 1, RUPAY_INCOME_HEADERS.length).setFontWeight("bold").setBackground("#F3F4F6");
         incomeSheet.setFrozenRows(1);
       }
 
@@ -6746,15 +6757,14 @@ function doPost(e) {
         ]);
       }
 
-      // Step 2: Format Comment & Insert into "RuPay Income" Tab
+      // Step 2: Insert structured 7-column row into "RuPay Income" Tab
       if (!incomeSheet) {
         incomeSheet = ss.getSheetByName("RuPay Income");
       }
 
-      const soldTo = String(sale.soldTo || '').trim();
-      const mobile = String(sale.mobile || '').trim();
+      const soldTo = stripBareBuyerPrefix(sale.soldTo || '');
+      const mobile = String(sale.mobile || '').replace(/^'/, '').trim();
       const redeemedAccount = String(sale.redeemedAccount || finalAccount || '').trim();
-      const gpayName = String(sale.gpayName || '').trim();
 
       // Canonical RuPay Income title mapping
       let incomeTitle = "Cult Fit";
@@ -6785,9 +6795,10 @@ function doPost(e) {
         incomeTitle = targetBrand;
       }
 
-      // Build unified comments matching user format: Buyer (mobile): Account | GPay: Name | Card
-      const cardAccount = finalCard && finalCard !== 'Unassigned' ? finalCard : (data.card && data.card !== 'Unassigned' ? String(data.card).trim() : '');
-      const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
+      const rawCardAccount = (finalCard && finalCard !== 'Unassigned' && finalCard !== '-') ? finalCard : ((data.card && data.card !== 'Unassigned' && data.card !== '-') ? String(data.card).trim() : '');
+      const cardAccount = (rawCardAccount && rawCardAccount !== 'Unassigned' && rawCardAccount !== '-') ? rawCardAccount : '';
+      const isPrimeIncome = bLow.includes("prime") || bLow.includes("amazon");
+      const accNumCell = isPrimeIncome ? '' : mobile;
 
       let cellDateValue = dateStr;
       let parsedYear = new Date().getFullYear();
@@ -6796,12 +6807,15 @@ function doPost(e) {
         cellDateValue = new Date(Date.UTC(comp.year, comp.month - 1, comp.day, 6, 30, 0));
       }
 
-      // Exactly 4 columns in RuPay Income: [Brand, Date, Sale Value, Comments]
+      // 7-column schema in RuPay Income: [Title, Date, Price, Buyer, RuPay Account Number, RuPay Account Email, Card]
       const newIncomeRow = [
         incomeTitle,
         cellDateValue,
         sellingPrice,
-        commentStr
+        soldTo,
+        accNumCell,
+        redeemedAccount,
+        cardAccount
       ];
 
       const insertedRow = insertRowSortedByDate(incomeSheet, newIncomeRow, dateMs);
@@ -6815,13 +6829,18 @@ function doPost(e) {
         brand: targetBrand,
         keepInStaging: keepInStaging,
         isSaleMarked: keepInStaging,
+        insertedIncomeRow: insertedRow,
         incomeEntry: {
           id: "inc-" + insertedRow,
           title: incomeTitle,
           date: dateStr,
           price: sellingPrice,
-          comments: commentStr,
-          account: cardAccount,
+          buyer: soldTo,
+          rupayAccountNumber: accNumCell,
+          rupayAccountEmail: redeemedAccount,
+          card: cardAccount,
+          comments: soldTo,
+          account: cardAccount || redeemedAccount || accNumCell || '',
           year: parsedYear,
           type: "income"
         }
@@ -6983,21 +7002,31 @@ function doPost(e) {
         for (let r = iVals.length - 1; r >= 1; r--) {
           const col0 = String(iVals[r][0] || '').trim().toUpperCase();
           if (col0 === 'TOTAL') continue;
-          const comm = String(iVals[r][3] || '').trim();
+          const buyerCell = String(iVals[r][3] || '').trim();
+          const numCell = iVals[r].length > 4 ? String(iVals[r][4] || '').replace(/^'/, '').trim() : '';
+          const emailCell = iVals[r].length > 5 ? String(iVals[r][5] || '').trim() : '';
+          const cardCell = iVals[r].length > 6 ? String(iVals[r][6] || '').trim() : '';
+          const combinedMeta = [buyerCell, numCell, emailCell, cardCell].filter(Boolean).join(' ');
           const rowPrice = Math.abs(Number(iVals[r][2]) || 0);
           const rowDateMs = parseDateToTimestamp(iVals[r][1]);
           const rowDateFormatted = rowDateMs ? Utilities.formatDate(new Date(rowDateMs), "GMT+05:30", "dd/MM/yy") : String(iVals[r][1] || '').trim();
           const normCol0 = normAlphaNum(col0);
 
-          const matchComment = targetComments && comm === targetComments;
-          const matchEmptyComments = !targetComments && !comm;
-          const matchBidInComm = cleanTargetBid && (comm.toUpperCase().includes(cleanTargetBid) || (targetBid && comm.includes(targetBid)));
-          const matchCodeInComm = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && (comm.toUpperCase().includes(cleanTargetCode) || (targetCode && comm.includes(targetCode)));
+          const targetBuyer = String(data.buyer || targetComments || '').trim();
+          const targetEmail = String(data.rupayAccountEmail || data.account || '').trim();
+          const targetNum = String(data.rupayAccountNumber || data.mobile || '').replace(/^'/, '').trim();
+
+          const matchBuyerExact = targetBuyer && buyerCell === targetBuyer;
+          const matchEmailExact = targetEmail && emailCell === targetEmail;
+          const matchNumExact = targetNum && numCell === targetNum;
+          const matchEmptyMeta = !targetBuyer && !buyerCell;
+          const matchBidInComm = cleanTargetBid && (combinedMeta.toUpperCase().includes(cleanTargetBid) || (targetBid && combinedMeta.includes(targetBid)));
+          const matchCodeInComm = cleanTargetCode && cleanTargetCode !== 'PENDING' && cleanTargetCode !== '-' && (combinedMeta.toUpperCase().includes(cleanTargetCode) || (targetCode && combinedMeta.includes(targetCode)));
           const matchDate = !targetDate || (targetDateMs > 0 && rowDateMs === targetDateMs) || rowDateFormatted === targetDate;
           const matchPriceAndDate = targetPrice > 0 && Math.abs(rowPrice - targetPrice) < 0.01 && matchDate;
           const matchBrandAndPrice = normBrand && (normCol0.includes(normBrand) || normBrand.includes(normCol0)) && (!targetPrice || Math.abs(rowPrice - targetPrice) < 0.01);
 
-          if (matchComment || matchBidInComm || matchCodeInComm || (matchPriceAndDate && (matchBrandAndPrice || !normBrand || matchEmptyComments)) || (targetComments && comm.includes(targetComments) && matchPriceAndDate)) {
+          if ((matchBuyerExact && matchPriceAndDate) || matchBidInComm || matchCodeInComm || ((matchEmailExact || matchNumExact || matchEmptyMeta || matchBrandAndPrice) && matchPriceAndDate)) {
             deletedIncomeRow = r + 1;
             incomeSheet.deleteRow(r + 1);
             break;

@@ -2920,53 +2920,36 @@
           </button>
         </div>
 
-        <!-- Redeemed in Account -->
+        <!-- RuPay Account Email (Col 6) -->
         <div>
-          <label for="ms-input-account" class="block text-[11px] font-semibold text-neutral-300 mb-1">Redeemed in Account</label>
+          <label for="ms-input-account" class="block text-[11px] font-semibold text-neutral-300 mb-1">RuPay Account Email</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
             </span>
-            <input type="text" id="ms-input-account" placeholder="e.g. ayaanshekhawat or vibhavoswal9" aria-label="Redeemed in Account" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-account" placeholder="e.g. vibhavoswal2 or oswalvibhav3" aria-label="RuPay Account Email" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs font-mono-apple focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
-        <!-- Mobile Number (Visible for Cult, hidden for Amazon Prime) -->
+        <!-- RuPay Account Number (Col 5 - Visible for Cult, hidden for Amazon Prime) -->
         <div id="ms-field-mobile">
-          <label for="ms-input-mobile" class="block text-[11px] font-semibold text-neutral-300 mb-1">Mobile Number</label>
+          <label for="ms-input-mobile" class="block text-[11px] font-semibold text-neutral-300 mb-1">RuPay Account Number</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
             </span>
-            <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" aria-label="Mobile Number" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="tel" id="ms-input-mobile" placeholder="e.g. 9876543210" aria-label="RuPay Account Number" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white font-mono-apple text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
-        <!-- Sold To -->
+        <!-- Buyer Name (Col 4 - Prefilled with g/, deletable) -->
         <div>
-          <label for="ms-input-sold-to" class="block text-[11px] font-semibold text-neutral-300 mb-1">Sold to</label>
+          <label for="ms-input-sold-to" class="block text-[11px] font-semibold text-neutral-300 mb-1">Buyer Name</label>
           <div class="relative">
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </span>
-            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. g/Lokesh Singh" aria-label="Sold to buyer name" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
-          </div>
-        </div>
-
-        <!-- Gpay received from (with 'Same as sold to' clickable checkbox) -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label for="ms-input-gpay" class="text-[11px] font-semibold text-neutral-300">Gpay received from</label>
-            <label class="inline-flex items-center gap-1.5 cursor-pointer select-none py-0.5 px-1 rounded hover:bg-neutral-800/40 dark:hover:bg-neutral-800/40 transition-colors">
-              <input type="checkbox" id="ms-chk-same-gpay" aria-label="Same as sold to" onchange="toggleSameGpay(this.checked)" checked class="w-3.5 h-3.5 rounded border border-neutral-500 bg-neutral-900 accent-neutral-600 dark:accent-neutral-500 cursor-pointer" style="accent-color: #525252;">
-              <span class="text-[11px] font-medium text-neutral-300">Same as sold to</span>
-            </label>
-          </div>
-          <div class="relative">
-            <span class="absolute left-3 top-2.5 text-neutral-400">
-              <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-            </span>
-            <input type="text" id="ms-input-gpay" placeholder="e.g. g/Gunjan Banka" aria-label="Gpay received from" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-sold-to" placeholder="e.g. g/Lokesh Singh" aria-label="Buyer Name" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
       </div>
@@ -6124,7 +6107,6 @@
 
     /* --- MARK AS SOLD MODAL LOGIC (CULT & AMAZON PRIME) --- */
     let activeMarkSoldVoucher = null;
-    let isSameGpayActive = true;
 
     function isCultOrPrime(brand) {
       if (!brand) return false;
@@ -6193,11 +6175,10 @@
       return /^[gG]\s*\/$/.test(t) ? '' : t;
     }
 
-    function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
+    function formatSaleComments(soldTo, mobile, redeemedAccount, _unused, card) {
       soldTo = normalizeSalePersonInput(soldTo);
       mobile = String(mobile || '').trim();
       redeemedAccount = String(redeemedAccount || '').trim();
-      gpayName = normalizeSalePersonInput(gpayName);
       card = String(card || '').trim();
       if (card === 'Unassigned' || card === '-') card = '';
 
@@ -6218,14 +6199,7 @@
         segments.push(`Mobile: ${mobile}`);
       }
 
-      // Segment 2: GPay (if provided and different from soldTo ignoring optional g/ prefix)
-      const normSold = soldTo.replace(/^[gG]\//, '').trim().toLowerCase();
-      const normGpay = gpayName.replace(/^[gG]\//, '').trim().toLowerCase();
-      if (gpayName && normGpay !== normSold) {
-        segments.push(`GPay: ${gpayName}`);
-      }
-
-      // Segment 3: Card
+      // Segment 2: Card
       if (card) {
         segments.push(card);
       }
@@ -6236,15 +6210,10 @@
     function parseIncomeSaleClient(comments) {
       if (!comments) return null;
       const parts = String(comments).trim().split(/\s*\|\s*/);
-      let soldTo = '', mobile = '', account = '', gpay = '', card = '';
+      let soldTo = '', mobile = '', account = '', card = '';
       parts.forEach(part => {
         part = part.trim();
         if (!part) return;
-        const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
-        if (gpayMatch) {
-          gpay = normalizeSalePersonInput(gpayMatch[1]);
-          return;
-        }
         const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
         if (accMatch) {
           account = accMatch[1].trim();
@@ -6277,7 +6246,7 @@
           soldTo = normalizeSalePersonInput(part);
         }
       });
-      return { soldTo, mobile, account, gpay, card };
+      return { soldTo, mobile, account, card };
     }
 
     function getPrefillAccountForVoucher(act) {
@@ -6398,21 +6367,13 @@
       const accInput = document.getElementById('ms-input-account');
       if (accInput) accInput.value = prefillAccount;
 
-      // "Sold to" prefills editable "g/" by default; mirror to GPay when Same as sold to is active
+      // Buyer prefills editable "g/" by default
       const mobInput = document.getElementById('ms-input-mobile');
       const soldInput = document.getElementById('ms-input-sold-to');
-      const gpayInput = document.getElementById('ms-input-gpay');
       if (soldInput) soldInput.value = 'g/';
-      if (gpayInput) gpayInput.value = 'g/';
       if (mobInput) mobInput.value = '';
 
-      isSameGpayActive = true;
-      const sameGpayChk = document.getElementById('ms-chk-same-gpay');
-      if (sameGpayChk) sameGpayChk.checked = true;
-      updateSameGpayUI();
-      onSoldToInput();
-
-      // Mobile field visibility: strictly hidden for Amazon Prime, visible for Cult
+      // RuPay Account Number visibility: strictly hidden for Amazon Prime, visible for Cult
       const mobField = document.getElementById('ms-field-mobile');
       if (mobField) mobField.classList.toggle('hidden', isPrime);
       if (isPrime && mobInput) mobInput.value = '';
@@ -6432,45 +6393,6 @@
       if (backdrop) backdrop.classList.add('hidden');
       if (sheet) sheet.classList.add('hidden');
       activeMarkSoldVoucher = null;
-    }
-
-    function toggleSameGpay(forceVal) {
-      if (typeof forceVal === 'boolean') {
-        isSameGpayActive = forceVal;
-      } else {
-        isSameGpayActive = !isSameGpayActive;
-      }
-      updateSameGpayUI();
-      const soldInput = document.getElementById('ms-input-sold-to');
-      const gpayInput = document.getElementById('ms-input-gpay');
-      if (isSameGpayActive) {
-        if (soldInput && gpayInput) gpayInput.value = soldInput.value.trim();
-      } else {
-        if (gpayInput) gpayInput.focus();
-      }
-    }
-
-    function updateSameGpayUI() {
-      const chk = document.getElementById('ms-chk-same-gpay');
-      const gpayInput = document.getElementById('ms-input-gpay');
-      if (chk) chk.checked = isSameGpayActive;
-      if (gpayInput) {
-        if (isSameGpayActive) {
-          gpayInput.readOnly = true;
-          gpayInput.classList.add('opacity-75');
-        } else {
-          gpayInput.readOnly = false;
-          gpayInput.classList.remove('opacity-75');
-        }
-      }
-    }
-
-    function onSoldToInput() {
-      if (isSameGpayActive) {
-        const soldInput = document.getElementById('ms-input-sold-to');
-        const gpayInput = document.getElementById('ms-input-gpay');
-        if (soldInput && gpayInput) gpayInput.value = soldInput.value.trim();
-      }
     }
 
     async function executeMarkAsSold() {
@@ -6545,17 +6467,12 @@
       }
       const isPrime = bLow.includes('prime') || bLow.includes('amazon');
 
-      // Amazon Prime does not use or log mobile number
+      // RuPay Account Number is blank for Amazon Prime
       const mobileInput = document.getElementById('ms-input-mobile');
       const mobile = isPrime ? '' : (mobileInput ? mobileInput.value.trim() : '');
       const accInput = document.getElementById('ms-input-account');
       const redeemedAccount = accInput ? accInput.value.trim() : '';
-      const gpayInput = document.getElementById('ms-input-gpay');
-      const gpayName = isSameGpayActive ? soldTo : normalizeSalePersonInput(gpayInput ? gpayInput.value : '');
       const cardAccount = (v.card && v.card !== 'Unassigned' && v.card !== '-') ? v.card : '';
-
-      // Unified single comment separated by | for any combination of fields
-      const commentStr = formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, cardAccount);
 
       // Close sheet immediately
       closeMarkSoldSheet();
@@ -6602,7 +6519,6 @@
               mobile: isPrime ? '' : mobile,
               redeemedAccount,
               price: rawPrice,
-              gpayName,
               date: normalizedSaleDate,
               loggedAt: new Date().toISOString()
             };
@@ -6662,8 +6578,12 @@
         title: incomeTitle,
         date: normalizedSaleDate,
         price: rawPrice,
-        comments: commentStr,
-        account: cardAccount || redeemedAccount || '',
+        buyer: soldTo,
+        rupayAccountNumber: mobile,
+        rupayAccountEmail: redeemedAccount,
+        card: cardAccount,
+        comments: soldTo,
+        account: cardAccount || redeemedAccount || mobile || '',
         year: yr,
         type: 'income'
       };
@@ -6712,15 +6632,14 @@
         account: redeemedAccount || v.account || '',
         card: cardAccount,
         timestampIST: v.timestampIST || '',
-        comments: commentStr,
+        comments: soldTo,
         saleDetails: {
           price: rawPrice,
           soldTo: soldTo,
           mobile: mobile,
           redeemedAccount: redeemedAccount,
-          gpayName: gpayName,
           card: cardAccount,
-          comments: commentStr,
+          comments: soldTo,
           date: normalizedSaleDate
         }
       };
@@ -6792,7 +6711,11 @@
               code: cleanCode,
               brand: brandKey,
               isStaging: isStaging,
-              comments: commentStr,
+              buyer: soldTo,
+              rupayAccountNumber: mobile,
+              rupayAccountEmail: redeemedAccount,
+              card: cardAccount,
+              comments: soldTo,
               price: rawPrice,
               date: normalizedSaleDate
             }, {
@@ -8593,17 +8516,25 @@
         list = list.filter(item => Number(item.price) < 0);
       }
 
-      // 3. Filter by Search Query
+      // 3. Filter by Search Query (across all 7-column RuPay Income fields)
       if (search) {
         list = list.filter(item => {
           const title = (item.title || '').toLowerCase();
           const comments = (item.comments || '').toLowerCase();
+          const buyer = (item.buyer || '').toLowerCase();
+          const accNum = (item.rupayAccountNumber || '').toLowerCase();
+          const accEmail = (item.rupayAccountEmail || '').toLowerCase();
+          const card = (item.card || '').toLowerCase();
           const account = (item.account || '').toLowerCase();
           const date = (item.date || '').toLowerCase();
           const price = String(item.price || '');
           const absPrice = String(Math.abs(Number(item.price) || 0));
           return title.includes(search) ||
             comments.includes(search) ||
+            buyer.includes(search) ||
+            accNum.includes(search) ||
+            accEmail.includes(search) ||
+            card.includes(search) ||
             account.includes(search) ||
             date.includes(search) ||
             price.includes(search) ||
@@ -8759,7 +8690,16 @@
 
         const price = Number(item.price) || 0;
         const isPositive = price > 0;
-        const parsedSale = isPositive && item.comments ? parseIncomeSaleClient(item.comments) : null;
+        const hasStructuredCols = !!(item.buyer || item.rupayAccountNumber || item.rupayAccountEmail || item.card);
+        const parsedLegacy = (!hasStructuredCols && isPositive && item.comments && (item.comments.includes('|') || item.comments.includes(':')))
+          ? parseIncomeSaleClient(item.comments)
+          : null;
+        const buyerVal = item.buyer || (parsedLegacy && parsedLegacy.soldTo) || (isPositive ? item.comments : '') || '';
+        const accNumVal = item.rupayAccountNumber || (parsedLegacy && parsedLegacy.mobile) || '';
+        const accEmailVal = item.rupayAccountEmail || (parsedLegacy && parsedLegacy.account) || '';
+        const cardVal = item.card || (parsedLegacy && parsedLegacy.card) || '';
+        const fallbackAccountVal = (!cardVal && !accEmailVal && !accNumVal && item.account) ? item.account : '';
+        const extraNote = (!isPositive && item.comments) || (item.comments && buyerVal && item.comments !== buyerVal && !parsedLegacy) ? item.comments : '';
         modalTitle.textContent = item.title || 'Transaction Details';
 
         body.innerHTML = `
@@ -8780,48 +8720,44 @@
               <span class="text-[var(--theme-text-sub)]">Date:</span>
               <span class="font-medium text-[var(--theme-text-main)]">${escapeHtml(item.date || 'N/A')}</span>
             </div>
-            ${parsedSale && parsedSale.soldTo ? `
+            ${buyerVal ? `
               <div class="flex items-center justify-between gap-2">
                 <span class="text-[var(--theme-text-sub)]">Buyer:</span>
-                <span class="font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.soldTo)}</span>
+                <span class="font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(buyerVal)}</span>
               </div>
             ` : ''}
-            ${parsedSale && parsedSale.mobile ? `
+            ${accNumVal ? `
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[var(--theme-text-sub)]">Mobile:</span>
-                <span class="font-mono font-semibold text-[var(--theme-text-main)]">${escapeHtml(parsedSale.mobile)}</span>
+                <span class="text-[var(--theme-text-sub)]">RuPay Account Number:</span>
+                <span class="font-mono font-semibold text-[var(--theme-text-main)]">${escapeHtml(accNumVal)}</span>
               </div>
             ` : ''}
-            ${parsedSale && parsedSale.account && parsedSale.account !== item.account ? `
+            ${accEmailVal ? `
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[var(--theme-text-sub)]">Redeemed Account:</span>
-                <span class="font-mono font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.account)}</span>
+                <span class="text-[var(--theme-text-sub)]">RuPay Account Email:</span>
+                <span class="font-mono font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(accEmailVal)}</span>
               </div>
             ` : ''}
-            ${parsedSale && parsedSale.gpay ? `
+            ${cardVal ? `
               <div class="flex items-center justify-between gap-2">
-                <span class="text-[var(--theme-text-sub)]">GPay From:</span>
-                <span class="font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.gpay)}</span>
+                <span class="text-[var(--theme-text-sub)]">Card:</span>
+                <span class="font-mono font-bold text-[var(--theme-text-main)]">${escapeHtml(cardVal)}</span>
               </div>
             ` : ''}
-            ${item.account ? `
+            ${fallbackAccountVal ? `
               <div class="flex items-center justify-between">
-                <span class="text-[var(--theme-text-sub)]">${parsedSale && parsedSale.card ? 'Card:' : 'Account:'}</span>
-                <span class="font-mono font-bold text-[var(--theme-text-main)]">${escapeHtml(item.account)}</span>
+                <span class="text-[var(--theme-text-sub)]">Account:</span>
+                <span class="font-mono font-bold text-[var(--theme-text-main)]">${escapeHtml(fallbackAccountVal)}</span>
               </div>
             ` : ''}
-            ${item.comments ? `
+            ${extraNote ? `
               <div class="pt-2 border-t border-[var(--theme-border)] space-y-1">
-                <div class="text-[10px] uppercase font-bold text-[var(--theme-text-sub)]">Comments / Notes</div>
+                <div class="text-[10px] uppercase font-bold text-[var(--theme-text-sub)]">Notes</div>
                 <div class="p-2.5 rounded-xl bg-neutral-100 dark:bg-black/20 border border-[var(--theme-border)] text-xs text-[var(--theme-text-main)] font-mono break-words leading-relaxed select-text">
-                  ${escapeHtml(item.comments)}
+                  ${escapeHtml(extraNote)}
                 </div>
               </div>
-            ` : `
-              <div class="pt-1 text-[10px] text-[var(--theme-text-sub)] italic">
-                No extra comments or notes recorded.
-              </div>
-            `}
+            ` : ''}
           </div>
         `;
       }
@@ -8931,6 +8867,10 @@
         title: title,
         date: normalizedDate,
         price: price,
+        buyer: comments,
+        rupayAccountNumber: '',
+        rupayAccountEmail: '',
+        card: '',
         comments: comments,
         account: '',
         year: yr,
