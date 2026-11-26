@@ -3354,7 +3354,7 @@
             </div>
             <div>
               <div class="text-xs font-bold text-[var(--theme-text-main)] group-hover:text-emerald-400 transition-colors">Record a sale</div>
-              <div class="text-[11px] text-[var(--theme-text-sub)]">Cult Elite (₹1,200), Amazon Prime, etc.</div>
+              <div class="text-[11px] text-[var(--theme-text-sub)]">Cult Elite (₹1,200), Amazon Prime (₹1,000), etc.</div>
             </div>
           </div>
           <svg aria-hidden="true" class="w-4 h-4 text-[var(--theme-text-sub)] group-hover:text-[var(--theme-text-main)] transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
@@ -6330,8 +6330,9 @@
       const refEl = document.getElementById('ms-ref-id');
       if (refEl) refEl.textContent = act.bookingId || act.code || '';
 
-      // Default price: 1200 for Cult, 500 for Prime (fully editable)
-      const defaultPrice = isPrime ? (act.amount || 500) : 1200;
+      // Default price: 1200 for Cult, 1000 for Amazon Prime (fully editable)
+      const isCult = bLow.includes('cult');
+      const defaultPrice = isPrime ? 1000 : (isCult ? 1200 : (act.amount || 1200));
       const priceInput = document.getElementById('ms-input-price');
       if (priceInput) {
         priceInput.value = defaultPrice;
