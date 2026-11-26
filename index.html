@@ -2949,7 +2949,7 @@
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </span>
-            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. Abhijeet Kulkarni" aria-label="Sold to buyer name" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-sold-to" oninput="onSoldToInput()" placeholder="e.g. g/Lokesh Singh" aria-label="Sold to buyer name" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
 
@@ -2966,7 +2966,7 @@
             <span class="absolute left-3 top-2.5 text-neutral-400">
               <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
             </span>
-            <input type="text" id="ms-input-gpay" placeholder="e.g. Abhijeet Kulkarni" aria-label="Gpay received from" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
+            <input type="text" id="ms-input-gpay" placeholder="e.g. g/Gunjan Banka" aria-label="Gpay received from" class="w-full pl-9 pr-3 py-2 bg-black/50 border border-neutral-700/80 rounded-xl text-white text-xs focus:outline-hidden focus:border-emerald-500 transition-colors">
           </div>
         </div>
       </div>
@@ -6188,11 +6188,16 @@
       return (bid && soldSet.has(bid)) || (code && code !== 'PENDING' && code !== '-' && soldSet.has(code));
     }
 
+    function normalizeSalePersonInput(val) {
+      const t = String(val || '').trim();
+      return /^[gG]\s*\/$/.test(t) ? '' : t;
+    }
+
     function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
-      soldTo = String(soldTo || '').trim();
+      soldTo = normalizeSalePersonInput(soldTo);
       mobile = String(mobile || '').trim();
       redeemedAccount = String(redeemedAccount || '').trim();
-      gpayName = String(gpayName || '').trim();
+      gpayName = normalizeSalePersonInput(gpayName);
       card = String(card || '').trim();
       if (card === 'Unassigned' || card === '-') card = '';
 
@@ -6213,8 +6218,10 @@
         segments.push(`Mobile: ${mobile}`);
       }
 
-      // Segment 2: GPay (if provided and different from soldTo)
-      if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+      // Segment 2: GPay (if provided and different from soldTo ignoring optional g/ prefix)
+      const normSold = soldTo.replace(/^[gG]\//, '').trim().toLowerCase();
+      const normGpay = gpayName.replace(/^[gG]\//, '').trim().toLowerCase();
+      if (gpayName && normGpay !== normSold) {
         segments.push(`GPay: ${gpayName}`);
       }
 
@@ -6224,6 +6231,53 @@
       }
 
       return segments.join(' | ');
+    }
+
+    function parseIncomeSaleClient(comments) {
+      if (!comments) return null;
+      const parts = String(comments).trim().split(/\s*\|\s*/);
+      let soldTo = '', mobile = '', account = '', gpay = '', card = '';
+      parts.forEach(part => {
+        part = part.trim();
+        if (!part) return;
+        const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
+        if (gpayMatch) {
+          gpay = normalizeSalePersonInput(gpayMatch[1]);
+          return;
+        }
+        const accMatch = part.match(/^(?:Account:\s*|@)(.+)$/i);
+        if (accMatch) {
+          account = accMatch[1].trim();
+          return;
+        }
+        const mobMatch = part.match(/^Mobile:\s*(\d{10})$/i);
+        if (mobMatch) {
+          mobile = mobMatch[1].trim();
+          return;
+        }
+        const comboMatch = part.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)$/i);
+        if (comboMatch) {
+          soldTo = normalizeSalePersonInput(comboMatch[1]);
+          if (comboMatch[2]) mobile = comboMatch[2].trim();
+          account = comboMatch[3].trim();
+          return;
+        }
+        const buyerMobMatch = part.match(/^([^(:|]+?)\s*\((\d{10})\)$/i);
+        if (buyerMobMatch) {
+          soldTo = normalizeSalePersonInput(buyerMobMatch[1]);
+          mobile = buyerMobMatch[2].trim();
+          return;
+        }
+        const isCard = /(?:\b(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay)\b|\b\d{4}\b)/i.test(part);
+        if (isCard) {
+          card = part;
+          return;
+        }
+        if (!soldTo) {
+          soldTo = normalizeSalePersonInput(part);
+        }
+      });
+      return { soldTo, mobile, account, gpay, card };
     }
 
     function getPrefillAccountForVoucher(act) {
@@ -6344,18 +6398,19 @@
       const accInput = document.getElementById('ms-input-account');
       if (accInput) accInput.value = prefillAccount;
 
-      // "Sold to", "Gpay received from", and "Mobile" strictly blank by default
+      // "Sold to" prefills editable "g/" by default; mirror to GPay when Same as sold to is active
       const mobInput = document.getElementById('ms-input-mobile');
       const soldInput = document.getElementById('ms-input-sold-to');
       const gpayInput = document.getElementById('ms-input-gpay');
-      if (soldInput) soldInput.value = '';
-      if (gpayInput) gpayInput.value = '';
+      if (soldInput) soldInput.value = 'g/';
+      if (gpayInput) gpayInput.value = 'g/';
       if (mobInput) mobInput.value = '';
 
       isSameGpayActive = true;
       const sameGpayChk = document.getElementById('ms-chk-same-gpay');
       if (sameGpayChk) sameGpayChk.checked = true;
       updateSameGpayUI();
+      onSoldToInput();
 
       // Mobile field visibility: strictly hidden for Amazon Prime, visible for Cult
       const mobField = document.getElementById('ms-field-mobile');
@@ -6456,9 +6511,9 @@
       const normalizedSaleDate = normalizeDateToDDMMYY(saleDate);
       const yr = getIncomeYearFromDate(normalizedSaleDate);
 
-      // Optional fields:
+      // Optional fields: normalize bare "g/" prefix to empty string if user did not enter a name
       const soldToInput = document.getElementById('ms-input-sold-to');
-      const soldTo = (soldToInput ? soldToInput.value : '').trim();
+      const soldTo = normalizeSalePersonInput(soldToInput ? soldToInput.value : '');
 
       // Build canonical title matching backend RuPay Income conventions
       let incomeTitle = 'Cult Fit';
@@ -6496,7 +6551,7 @@
       const accInput = document.getElementById('ms-input-account');
       const redeemedAccount = accInput ? accInput.value.trim() : '';
       const gpayInput = document.getElementById('ms-input-gpay');
-      const gpayName = isSameGpayActive ? soldTo : (gpayInput ? gpayInput.value.trim() : '');
+      const gpayName = isSameGpayActive ? soldTo : normalizeSalePersonInput(gpayInput ? gpayInput.value : '');
       const cardAccount = (v.card && v.card !== 'Unassigned' && v.card !== '-') ? v.card : '';
 
       // Unified single comment separated by | for any combination of fields
@@ -6608,7 +6663,7 @@
         date: normalizedSaleDate,
         price: rawPrice,
         comments: commentStr,
-        account: cardAccount,
+        account: cardAccount || redeemedAccount || '',
         year: yr,
         type: 'income'
       };
@@ -8704,6 +8759,7 @@
 
         const price = Number(item.price) || 0;
         const isPositive = price > 0;
+        const parsedSale = isPositive && item.comments ? parseIncomeSaleClient(item.comments) : null;
         modalTitle.textContent = item.title || 'Transaction Details';
 
         body.innerHTML = `
@@ -8724,9 +8780,33 @@
               <span class="text-[var(--theme-text-sub)]">Date:</span>
               <span class="font-medium text-[var(--theme-text-main)]">${escapeHtml(item.date || 'N/A')}</span>
             </div>
+            ${parsedSale && parsedSale.soldTo ? `
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[var(--theme-text-sub)]">Buyer:</span>
+                <span class="font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.soldTo)}</span>
+              </div>
+            ` : ''}
+            ${parsedSale && parsedSale.mobile ? `
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[var(--theme-text-sub)]">Mobile:</span>
+                <span class="font-mono font-semibold text-[var(--theme-text-main)]">${escapeHtml(parsedSale.mobile)}</span>
+              </div>
+            ` : ''}
+            ${parsedSale && parsedSale.account && parsedSale.account !== item.account ? `
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[var(--theme-text-sub)]">Redeemed Account:</span>
+                <span class="font-mono font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.account)}</span>
+              </div>
+            ` : ''}
+            ${parsedSale && parsedSale.gpay ? `
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[var(--theme-text-sub)]">GPay From:</span>
+                <span class="font-semibold text-[var(--theme-text-main)] text-right truncate">${escapeHtml(parsedSale.gpay)}</span>
+              </div>
+            ` : ''}
             ${item.account ? `
               <div class="flex items-center justify-between">
-                <span class="text-[var(--theme-text-sub)]">Account:</span>
+                <span class="text-[var(--theme-text-sub)]">${parsedSale && parsedSale.card ? 'Card:' : 'Account:'}</span>
                 <span class="font-mono font-bold text-[var(--theme-text-main)]">${escapeHtml(item.account)}</span>
               </div>
             ` : ''}

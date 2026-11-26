@@ -204,10 +204,14 @@ function parseISTTimestampMs(val) {
 }
 
 function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
-  soldTo = String(soldTo || '').trim();
+  const stripBarePrefix = function(val) {
+    const t = String(val || '').trim();
+    return /^[gG]\s*\/$/.test(t) ? '' : t;
+  };
+  soldTo = stripBarePrefix(soldTo);
   mobile = String(mobile || '').trim();
   redeemedAccount = String(redeemedAccount || '').trim();
-  gpayName = String(gpayName || '').trim();
+  gpayName = stripBarePrefix(gpayName);
   card = String(card || '').trim();
   if (card === 'Unassigned' || card === '-') card = '';
 
@@ -228,8 +232,10 @@ function formatSaleComments(soldTo, mobile, redeemedAccount, gpayName, card) {
     segments.push(`Mobile: ${mobile}`);
   }
 
-  // Segment 2: GPay (if provided and different from soldTo)
-  if (gpayName && gpayName.toLowerCase() !== soldTo.toLowerCase()) {
+  // Segment 2: GPay (if provided and different from soldTo ignoring optional g/ prefix)
+  const normSold = soldTo.replace(/^[gG]\//, '').trim().toLowerCase();
+  const normGpay = gpayName.replace(/^[gG]\//, '').trim().toLowerCase();
+  if (gpayName && normGpay !== normSold) {
     segments.push(`GPay: ${gpayName}`);
   }
 
@@ -258,7 +264,8 @@ function parseIncomeSale(comments) {
 
     const gpayMatch = part.match(/^GPay:\s*(.+)$/i);
     if (gpayMatch) {
-      gpay = gpayMatch[1].trim();
+      const rawGpay = gpayMatch[1].trim();
+      gpay = /^[gG]\s*\/$/.test(rawGpay) ? '' : rawGpay;
       return;
     }
 
@@ -276,7 +283,7 @@ function parseIncomeSale(comments) {
 
     const comboMatch = part.match(/^([^(:|]+?)(?:\s*\((\d{10})\))?\s*:\s*([^|\s]+)$/i);
     if (comboMatch) {
-      soldTo = comboMatch[1].trim().replace(/^[gG]\//, '');
+      soldTo = comboMatch[1].trim().replace(/^[gG]\//, '').trim();
       if (comboMatch[2]) mobile = comboMatch[2].trim();
       account = comboMatch[3].trim();
       return;
@@ -284,12 +291,12 @@ function parseIncomeSale(comments) {
 
     const buyerMobMatch = part.match(/^([^(:|]+?)\s*\((\d{10})\)$/i);
     if (buyerMobMatch) {
-      soldTo = buyerMobMatch[1].trim().replace(/^[gG]\//, '');
+      soldTo = buyerMobMatch[1].trim().replace(/^[gG]\//, '').trim();
       mobile = buyerMobMatch[2].trim();
       return;
     }
 
-    const isCard = /(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay|\b\d{4}\b)/i.test(part);
+    const isCard = /(?:\b(?:DC|CC|Debit|Credit|Visa|Mastercard|RuPay)\b|\b\d{4}\b)/i.test(part);
     if (isCard) {
       card = part;
       return;
