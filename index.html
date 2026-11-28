@@ -7577,6 +7577,23 @@
       });
       const codes = Array.from(new Set(rawCodes));
       if (!codes.length) return;
+      const rollbackClear = () => {
+        (targets || []).forEach(t => {
+          t.displayInUI = true;
+          if (t.code) UniversalMutationJournal.unquarantine(t.code);
+          if (t.bookingId) UniversalMutationJournal.unquarantine(t.bookingId);
+          if (t.id) UniversalMutationJournal.unquarantine(t.id);
+        });
+        UniversalMutationJournal.unquarantine(codes);
+        if (context === 'ingested') saveEncryptedStaging(state.staging);
+        else if (context === 'shared') saveSharedActivity();
+        else if (context === 'redeemed') saveRedeemedList();
+        renderDeckSelector();
+        renderVault();
+        updateClearTrashBadges();
+        showToast('Clear sync failed on server');
+      };
+
       try {
         if (context === 'ingested') {
           UniversalMutationJournal.recordTombstone(codes, 'ingested');
@@ -7585,10 +7602,7 @@
             codes: codes
           }, {
             keepalive: !!options.keepalive,
-            rollback: () => {
-              UniversalMutationJournal.unquarantine(codes);
-              showToast('Clear sync failed on server');
-            }
+            rollback: rollbackClear
           });
           await saveEncryptedStaging(state.staging);
         } else if (context === 'shared') {
@@ -7598,10 +7612,7 @@
             codes: codes
           }, {
             keepalive: !!options.keepalive,
-            rollback: () => {
-              UniversalMutationJournal.unquarantine(codes);
-              showToast('Clear sync failed on server');
-            }
+            rollback: rollbackClear
           });
           saveSharedActivity();
         } else if (context === 'redeemed') {
@@ -7610,10 +7621,7 @@
             codes: codes
           }, {
             keepalive: !!options.keepalive,
-            rollback: () => {
-              UniversalMutationJournal.unquarantine(codes);
-              showToast('Clear sync failed on server');
-            }
+            rollback: rollbackClear
           });
           saveRedeemedList();
         }
@@ -8918,8 +8926,11 @@
           account: '',
           type: 'income'
         }, { rollback });
-        if (res && res.insertedRow) {
-          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + res.insertedRow;
+        if (res && res.entry && res.entry.id) {
+          newEntry.id = res.entry.id;
+          saveEncryptedIncome(state.income);
+        } else if (res && res.insertedRow) {
+          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + Math.max(1, res.insertedRow - 1);
           saveEncryptedIncome(state.income);
         }
       } catch (err) {
@@ -9086,8 +9097,11 @@
           account: accountFormatted,
           type: 'charge'
         }, { rollback });
-        if (res && res.insertedRow) {
-          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + res.insertedRow;
+        if (res && res.entry && res.entry.id) {
+          newEntry.id = res.entry.id;
+          saveEncryptedIncome(state.income);
+        } else if (res && res.insertedRow) {
+          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + Math.max(1, res.insertedRow - 1);
           saveEncryptedIncome(state.income);
         }
       } catch (err) {
@@ -11670,7 +11684,7 @@
                 <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 <span>Block</span>
               </button>
-              <button onclick="toggleReplaceDrawer('${rawNum}')" class="flex-[1.5] py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-md text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+              <button onclick="toggleReplaceDrawer('${escapeJsAttr(rawNum)}')" class="flex-[1.5] py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white shadow-md text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
                 <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 <span>Block &amp; Replace</span>
               </button>
@@ -11683,14 +11697,14 @@
                   <svg aria-hidden="true" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
                   <span>Enter Replacement Card</span>
                 </div>
-                <button onclick="toggleReplaceDrawer('${rawNum}')" class="text-neutral-400 hover:text-white p-1" title="Close replacement drawer" aria-label="Close replacement drawer">
+                <button onclick="toggleReplaceDrawer('${escapeJsAttr(rawNum)}')" class="text-neutral-400 hover:text-white p-1" title="Close replacement drawer" aria-label="Close replacement drawer">
                   <svg aria-hidden="true" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               </div>
 
               <!-- Card Scanner Viewfinder Button -->
               <div class="mb-2.5">
-                <button type="button" onclick="triggerCardOcr('rep', '${rawNum}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+                <button type="button" onclick="triggerCardOcr('rep', '${escapeJsAttr(rawNum)}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
                   <svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
                   <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Live Camera / Photo)</span>
                 </button>

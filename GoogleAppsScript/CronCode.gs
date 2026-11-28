@@ -2624,13 +2624,14 @@ function doGet(e) {
         true
       ]);
 
-      const commentStr = `${testSoldTo} (${testMobile}): vibhavoswal9 [${testBid}]`;
       const dateMs = parseDateToTimestamp("16/11/26");
       insertRowSortedByDate(incomeSheet, [
         "Cult Fit",
         new Date(2026, 10, 16),
         testPrice,
-        commentStr,
+        `${testSoldTo} [${testBid}]`,
+        testMobile,
+        "vibhavoswal9",
         "PNB DC 9762"
       ], dateMs);
       recalculateSheetTotal(incomeSheet);
@@ -4591,6 +4592,7 @@ function doPost(e) {
         MARK_REVALIDATED: ['VOUCHERS'],
         UNDO_MARK_REVALIDATED: ['VOUCHERS'],
         MOVE_TO_REDEEMED: ['VOUCHERS'],
+        MARK_REDEEMED: ['VOUCHERS'],
         UNDO_REDEEM: ['VOUCHERS'],
         ADD_MISC_VOUCHER: ['VOUCHERS'],
         DELETE_MISC_VOUCHER: ['VOUCHERS'],
@@ -6418,18 +6420,31 @@ function doPost(e) {
 
       const insertedRow = insertRowSortedByDate(targetSheet, newRowData, dateMs);
       SpreadsheetApp.flush();
+      const entryRowIdx = Math.max(1, insertedRow - 1);
 
       return ContentService.createTextOutput(JSON.stringify({
         success: true,
         action: "RECORD_INCOME_ENTRY",
         targetSheet: targetSheetName,
         insertedRow: insertedRow,
-        entry: {
+        entry: isCharge ? {
+          id: "chg-" + entryRowIdx,
           title: title,
           date: dateStr,
           price: finalPrice,
           comments: comments,
           account: account
+        } : {
+          id: "inc-" + entryRowIdx,
+          title: title,
+          date: dateStr,
+          price: finalPrice,
+          buyer: buyerVal,
+          rupayAccountNumber: accNumVal,
+          rupayAccountEmail: accEmailVal,
+          card: cardVal,
+          comments: buyerVal,
+          account: cardVal || accEmailVal || accNumVal || ''
         }
       })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -6831,7 +6846,7 @@ function doPost(e) {
         isSaleMarked: keepInStaging,
         insertedIncomeRow: insertedRow,
         incomeEntry: {
-          id: "inc-" + insertedRow,
+          id: "inc-" + Math.max(1, insertedRow - 1),
           title: incomeTitle,
           date: dateStr,
           price: sellingPrice,
