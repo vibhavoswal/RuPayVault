@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dark" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -413,9 +413,24 @@
       color: #141212 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-emerald-950\/30,
-    html.light #voucher-detail-sheet .bg-emerald-950\/30 {
+    html.light #voucher-detail-sheet .bg-emerald-950\/30,
+    [data-theme="light"] #voucher-detail-sheet .bg-emerald-950\/20,
+    html.light #voucher-detail-sheet .bg-emerald-950\/20 {
       background-color: #EBF7EE !important;
       border-color: rgba(12, 140, 70, 0.35) !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .bg-amber-950\/20,
+    html.light #voucher-detail-sheet .bg-amber-950\/20 {
+      background-color: #fef3c7 !important;
+      border-color: rgba(217, 119, 6, 0.35) !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .text-amber-300,
+    html.light #voucher-detail-sheet .text-amber-300 {
+      color: #b45309 !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet .text-emerald-300,
+    html.light #voucher-detail-sheet .text-emerald-300 {
+      color: #047857 !important;
     }
     [data-theme="light"] #voucher-detail-sheet .bg-rose-950\/20,
     html.light #voucher-detail-sheet .bg-rose-950\/20 {
@@ -423,8 +438,15 @@
       border-color: rgba(244, 63, 94, 0.3) !important;
     }
     [data-theme="light"] #mark-sold-sheet .text-emerald-300,
-    html.light #mark-sold-sheet .text-emerald-300 {
+    html.light #mark-sold-sheet .text-emerald-300,
+    [data-theme="light"] #modal-add-card #ocr-btn-add-modal,
+    html.light #modal-add-card #ocr-btn-add-modal {
       color: #047857 !important;
+    }
+    [data-theme="light"] #modal-add-card #ocr-btn-add-modal,
+    html.light #modal-add-card #ocr-btn-add-modal {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
     }
     [data-theme="light"] #mark-sold-sheet .bg-emerald-500\/20,
     html.light #mark-sold-sheet .bg-emerald-500\/20 {
@@ -461,12 +483,18 @@
     }
     [data-theme="light"] #voucher-detail-sheet button.bg-neutral-800,
     html.light #voucher-detail-sheet button.bg-neutral-800,
+    [data-theme="light"] #voucher-detail-sheet span.bg-neutral-800,
+    html.light #voucher-detail-sheet span.bg-neutral-800,
     [data-theme="light"] #voucher-detail-sheet button.bg-neutral-900,
     html.light #voucher-detail-sheet button.bg-neutral-900,
     [data-theme="light"] #mark-sold-sheet button.bg-neutral-800,
     html.light #mark-sold-sheet button.bg-neutral-800,
+    [data-theme="light"] #mark-sold-sheet span.bg-neutral-800,
+    html.light #mark-sold-sheet span.bg-neutral-800,
     [data-theme="light"] #mark-sold-sheet button.bg-neutral-800\/80,
     html.light #mark-sold-sheet button.bg-neutral-800\/80,
+    [data-theme="light"] #nav-drawer-panel button.bg-neutral-800,
+    html.light #nav-drawer-panel button.bg-neutral-800,
     [data-theme="light"] #modal-tag-card button.bg-neutral-800,
     html.light #modal-tag-card button.bg-neutral-800,
     [data-theme="light"] #modal-add-card button.bg-neutral-800,
@@ -474,6 +502,18 @@
       background-color: #f0f6f2 !important;
       border-color: rgba(12, 140, 70, 0.20) !important;
       color: #141212 !important;
+    }
+    [data-theme="light"] #nav-drawer-panel button.bg-neutral-800.text-\[\#F47A21\],
+    html.light #nav-drawer-panel button.bg-neutral-800.text-\[\#F47A21\] {
+      background-color: #fff7ed !important;
+      border-color: rgba(244, 122, 33, 0.35) !important;
+      color: #c2410c !important;
+    }
+    [data-theme="light"] #voucher-detail-sheet button.bg-emerald-950\/80,
+    html.light #voucher-detail-sheet button.bg-emerald-950\/80 {
+      background-color: #ecfdf5 !important;
+      border-color: #6ee7b7 !important;
+      color: #047857 !important;
     }
     [data-theme="light"] #modal-tag-card > div,
     html.light #modal-tag-card > div,
@@ -498,8 +538,8 @@
     html.light #modal-tag-card .text-neutral-400,
     [data-theme="light"] #modal-add-card .text-neutral-400,
     html.light #modal-add-card .text-neutral-400,
-    [data-theme="light"] #card-scanner-modal p,
-    html.light #card-scanner-modal p {
+    [data-theme="light"] #card-scanner-modal > div > div:first-child p,
+    html.light #card-scanner-modal > div > div:first-child p {
       color: #5e5959 !important;
     }
     [data-theme="light"] #card-scanner-modal button.bg-neutral-800,
@@ -1234,14 +1274,20 @@
       border-bottom-color: rgba(0, 0, 0, 0.08) !important;
     }
 
-    [data-theme="light"] #view-card-manager header button,
-    html.light #view-card-manager header button {
+    [data-theme="light"] #view-card-manager header button:not([title="Add RuPay Card"]),
+    html.light #view-card-manager header button:not([title="Add RuPay Card"]) {
       background-color: #f1f5f9 !important;
       border-color: #e2e8f0 !important;
       color: #334155 !important;
     }
-    [data-theme="light"] #view-card-manager header button:hover,
-    html.light #view-card-manager header button:hover {
+    [data-theme="light"] #view-card-manager header button[title="Add RuPay Card"],
+    html.light #view-card-manager header button[title="Add RuPay Card"] {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+      color: #047857 !important;
+    }
+    [data-theme="light"] #view-card-manager header button:not([title="Add RuPay Card"]):hover,
+    html.light #view-card-manager header button:not([title="Add RuPay Card"]):hover {
       background-color: #e2e8f0 !important;
       color: #0f172a !important;
     }
@@ -3964,7 +4010,8 @@
       enteredPin: '',
       cryptoKey: null,
       otpCooldownTimer: null,
-      pendingMutation: null // { action, payload, options, resolve, reject }
+      pendingMutation: null, // legacy single ref kept for compatibility
+      pendingMutations: []   // queued { action, payload, options, resolve, reject }
     };
 
     function getSessionToken() {
@@ -4327,7 +4374,7 @@
         if (Array.isArray(cache.shared)) sharedActivity = cache.shared;
 
         const urlWs = (new URLSearchParams(window.location.search)).get('ws');
-        const targetWs = urlWs || cache.activeWorkspace || sessionStorage.getItem('rupay_active_workspace') || 'vouchers';
+        const targetWs = urlWs || sessionStorage.getItem('rupay_active_workspace') || cache.activeWorkspace || 'vouchers';
         switchWorkspace(targetWs);
         updateDrawerCardCount();
         return true;
@@ -4418,10 +4465,12 @@
     }
 
     /* --- LOCK SCREEN DISPLAY CONTROLLER --- */
-    function showLockScreen() {
+    function showLockScreen(options = {}) {
       document.documentElement.classList.remove('vault-authenticated');
       document.documentElement.removeAttribute('data-active-ws');
-      broadcastVaultEvent('VAULT_LOCKED');
+      if (!options.fromBroadcast) {
+        broadcastVaultEvent('VAULT_LOCKED');
+      }
       const lockEl = document.getElementById('vault-lock-screen');
       if (lockEl) {
         lockEl.classList.remove('hidden');
@@ -4474,6 +4523,7 @@
       const digits = text.replace(/\D/g, '').slice(0, 6);
       if (digits) {
         e.preventDefault();
+        e.stopPropagation();
         const input = document.getElementById('vault-otp-input');
         if (input) {
           input.value = digits;
@@ -4484,6 +4534,7 @@
 
     // Global paste listener when lock screen is displayed
     document.addEventListener('paste', (e) => {
+      if (e.defaultPrevented || (e.target && e.target.id === 'vault-otp-input')) return;
       const lockScreen = document.getElementById('vault-lock-screen');
       if (lockScreen && !lockScreen.classList.contains('hidden') && lockScreen.style.display !== 'none') {
         const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
@@ -4652,17 +4703,23 @@
 
               await unlockVaultDirect(String(data.token));
 
-              // Replay queued mutation if mid-operation re-auth
-              if (securityState.pendingMutation) {
-                const pending = securityState.pendingMutation;
-                securityState.pendingMutation = null;
+              // Replay queued mutation(s) if mid-operation re-auth
+              const queued = Array.isArray(securityState.pendingMutations) ? [...securityState.pendingMutations] : [];
+              if (securityState.pendingMutation && !queued.includes(securityState.pendingMutation)) {
+                queued.push(securityState.pendingMutation);
+              }
+              securityState.pendingMutations = [];
+              securityState.pendingMutation = null;
+              if (queued.length > 0) {
                 document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
-                showToast('Re-authenticated · Replaying action...');
-                try {
-                  const replayRes = await apiFetch(pending.action, pending.payload, pending.options);
-                  pending.resolve(replayRes);
-                } catch (err) {
-                  pending.reject(err);
+                showToast(`Re-authenticated · Replaying ${queued.length === 1 ? 'action' : queued.length + ' actions'}...`);
+                for (const pending of queued) {
+                  try {
+                    const replayRes = await apiFetch(pending.action, pending.payload, pending.options);
+                    pending.resolve(replayRes);
+                  } catch (err) {
+                    pending.reject(err);
+                  }
                 }
               } else {
                 showToast('Vault Unlocked · 1-Week Session Active');
@@ -4723,7 +4780,11 @@
 
     /* --- RE-AUTH & MUTATION AUTO-REPLAY / ROLLBACK --- */
     function promptReauth(action, payload, options, resolve, reject) {
-      securityState.pendingMutation = { action, payload, options, resolve, reject };
+      const entry = { action, payload, options, resolve, reject };
+      if (!Array.isArray(securityState.pendingMutations)) securityState.pendingMutations = [];
+      const wasAlreadyPending = securityState.pendingMutations.length > 0 || !!securityState.pendingMutation;
+      securityState.pendingMutations.push(entry);
+      securityState.pendingMutation = entry;
 
       showLockScreen();
 
@@ -4733,18 +4794,24 @@
       const cancelBtn = document.getElementById('btn-cancel-reauth');
       if (cancelBtn) cancelBtn.classList.remove('hidden');
 
-      clearPinDigits();
-      requestOtp(); // Automatically request a code on mid-operation expiry
+      if (!wasAlreadyPending) {
+        clearPinDigits();
+        requestOtp(); // Request OTP once for concurrent expired-session calls
+      }
     }
 
     function cancelPendingReauth() {
-      if (securityState.pendingMutation) {
-        const { options, reject } = securityState.pendingMutation;
-        securityState.pendingMutation = null;
-        if (options && typeof options.rollback === 'function') {
-          try { options.rollback(); } catch(e) { console.error('Rollback error:', e); }
+      const queued = Array.isArray(securityState.pendingMutations) ? [...securityState.pendingMutations] : [];
+      if (securityState.pendingMutation && !queued.includes(securityState.pendingMutation)) {
+        queued.push(securityState.pendingMutation);
+      }
+      securityState.pendingMutations = [];
+      securityState.pendingMutation = null;
+      for (const item of queued) {
+        if (item.options && typeof item.options.rollback === 'function') {
+          try { item.options.rollback(); } catch(e) { console.error('Rollback error:', e); }
         }
-        reject(new Error('Operation cancelled by user'));
+        item.reject(new Error('Operation cancelled by user'));
       }
       document.getElementById('btn-cancel-reauth')?.classList.add('hidden');
       const subtitle = document.getElementById('lock-subtitle');
@@ -4799,16 +4866,23 @@
         } catch (_) {}
       },
 
+      _normKey(key) {
+        return key ? String(key).replace(/['\s]/g, '').trim().toUpperCase() : '';
+      },
+
       record(action, entityType, primaryKey, patch = {}, secondaryKeys = []) {
         if (!primaryKey && (!secondaryKeys || !secondaryKeys.length)) return;
         try {
           const now = Date.now();
-          const cleanPk = primaryKey ? String(primaryKey).trim().toUpperCase() : '';
+          const cleanPk = this._normKey(primaryKey);
           const cleanSec = (Array.isArray(secondaryKeys) ? secondaryKeys : [secondaryKeys])
-            .map(k => String(k || '').trim().toUpperCase()).filter(Boolean);
+            .map(k => this._normKey(k)).filter(Boolean);
+          const targetEntityType = entityType || '';
           const current = this.getAll().filter(e => {
-            const epk = e.primaryKey;
-            const esec = e.secondaryKeys || [];
+            // Only replace prior journal entries of the same (action, entityType) so distinct shields/mutations coexist safely
+            if (e.action !== action || (e.entityType || '') !== targetEntityType) return true;
+            const epk = this._normKey(e.primaryKey);
+            const esec = (e.secondaryKeys || []).map(sk => this._normKey(sk));
             if (cleanPk && (epk === cleanPk || esec.includes(cleanPk))) return false;
             for (const sk of cleanSec) {
               if (epk === sk || esec.includes(sk)) return false;
@@ -4819,7 +4893,7 @@
           current.push({
             id: 'mut-' + now + '-' + Math.random().toString(36).slice(2, 6),
             action,
-            entityType,
+            entityType: targetEntityType,
             primaryKey: cleanPk || cleanSec[0],
             secondaryKeys: cleanSec,
             patch: patch || {},
@@ -4830,13 +4904,16 @@
         } catch (_) {}
       },
 
-      remove(key) {
+      remove(key, actionFilter = null) {
         if (!key) return;
         try {
-          const clean = String(key).replace(/['\s]/g, '').trim().toUpperCase();
+          const clean = this._normKey(key);
+          const actions = actionFilter ? (Array.isArray(actionFilter) ? new Set(actionFilter) : new Set([actionFilter])) : null;
           const filtered = this.getAll().filter(e => {
-            if (e.primaryKey === clean) return false;
-            if (e.secondaryKeys && e.secondaryKeys.includes(clean)) return false;
+            if (actions && !actions.has(e.action)) return true;
+            const epk = this._normKey(e.primaryKey);
+            const esec = (e.secondaryKeys || []).map(sk => this._normKey(sk));
+            if (epk === clean || esec.includes(clean)) return false;
             return true;
           });
           this.save(filtered);
@@ -4848,7 +4925,7 @@
         const ids = Array.isArray(identifiers) ? identifiers : [identifiers];
         ids.forEach(id => {
           if (id) {
-            const clean = String(id).replace(/['\s]/g, '').trim().toUpperCase();
+            const clean = this._normKey(id);
             if (clean) this.record('TOMBSTONE_HIDE', context, clean, { context });
           }
         });
@@ -4856,10 +4933,12 @@
 
       isTombstoned(identifier, context = null) {
         if (!identifier) return false;
-        const clean = String(identifier).replace(/['\s]/g, '').trim().toUpperCase();
+        const clean = this._normKey(identifier);
         return this.getAll().some(e => {
           if (e.action !== 'TOMBSTONE_HIDE') return false;
-          const matchKey = (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean)));
+          const epk = this._normKey(e.primaryKey);
+          const esec = (e.secondaryKeys || []).map(sk => this._normKey(sk));
+          const matchKey = (epk === clean || esec.includes(clean));
           if (!matchKey) return false;
           if (!context) return true;
           const itemContext = e.entityType || e.patch?.context || 'all';
@@ -4884,7 +4963,7 @@
       },
 
       removeApproval(key) {
-        this.remove(key);
+        this.remove(key, 'VOUCHER_APPROVE');
       },
 
       // --- UNDO REDEEM (Redeemed -> Brand Tabs) ---
@@ -4902,7 +4981,7 @@
       },
 
       removeUndo(key) {
-        this.remove(key);
+        this.remove(key, 'VOUCHER_UNDO');
       },
 
       getMiscAdds() {
@@ -4914,18 +4993,18 @@
       // --- REVALIDATION REGISTER (Sticky REVALIDATED status on revalidated vouchers) ---
       recordRevalidate(bookingId) {
         if (!bookingId) return;
-        const clean = String(bookingId).trim().toUpperCase();
-        this.record('STAGING_REVALIDATE', 'staging', clean, { status: 'REVALIDATED' });
+        const clean = this._normKey(bookingId);
+        if (clean) this.record('STAGING_REVALIDATE', 'staging', clean, { status: 'REVALIDATED' });
       },
 
       isRevalidated(bookingId) {
         if (!bookingId) return false;
-        const clean = String(bookingId).trim().toUpperCase();
-        return this.getAll().some(e => e.action === 'STAGING_REVALIDATE' && (e.primaryKey === clean || (e.secondaryKeys && e.secondaryKeys.includes(clean))));
+        const clean = this._normKey(bookingId);
+        return this.getAll().some(e => e.action === 'STAGING_REVALIDATE' && (this._normKey(e.primaryKey) === clean || (e.secondaryKeys || []).some(sk => this._normKey(sk) === clean)));
       },
 
       removeRevalidate(bookingId) {
-        this.remove(bookingId);
+        this.remove(bookingId, 'STAGING_REVALIDATE');
       },
 
       // --- CARD TAGS (Card assignment on staging) ---
@@ -4933,8 +5012,8 @@
         if (!Array.isArray(codes) || !cardTag) return;
         codes.forEach(c => {
           if (c) {
-            const clean = String(c).replace(/^'/, '').trim().toUpperCase();
-            this.record('CARD_TAG', 'staging', clean, { cardTag });
+            const clean = this._normKey(c);
+            if (clean) this.record('CARD_TAG', 'staging', clean, { cardTag });
           }
         });
       },
@@ -4943,12 +5022,12 @@
         const tags = {};
         this.getAll().forEach(e => {
           if (e.action === 'CARD_TAG' && e.patch && e.patch.cardTag) {
-            const pk = String(e.primaryKey || '').replace(/^'/, '').trim().toUpperCase();
-            tags[pk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
+            const pk = this._normKey(e.primaryKey);
+            if (pk) tags[pk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
             if (e.secondaryKeys) {
               e.secondaryKeys.forEach(sk => {
-                const cleanSk = String(sk || '').replace(/^'/, '').trim().toUpperCase();
-                tags[cleanSk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
+                const cleanSk = this._normKey(sk);
+                if (cleanSk) tags[cleanSk] = { cardTag: e.patch.cardTag, expiresAt: e.expiresAt };
               });
             }
           }
@@ -4958,7 +5037,7 @@
 
       removeTag(code) {
         if (!code) return;
-        this.remove(String(code).replace(/^'/, '').trim().toUpperCase());
+        this.remove(this._normKey(code), 'CARD_TAG');
       },
 
       // --- CARDS (Optimistic add / block / replace) ---
@@ -5021,8 +5100,8 @@
 
       removeCard(cardNum) {
         if (!cardNum) return;
-        const cleanNum = String(cardNum).replace(/['\s]/g, '').toUpperCase();
-        this.remove(cleanNum);
+        const cleanNum = this._normKey(cardNum);
+        this.remove(cleanNum, ['CARD_ADD', 'CARD_REPLACE', 'CARD_BLOCK']);
       },
 
       // --- CLEARED REDEEMED CODES ---
@@ -5065,12 +5144,38 @@
       return UniversalMutationJournal.isTombstoned(cardNum, 'card');
     }
 
+    async function rehydrateStoresFromStorage() {
+      try {
+        const [loadedVouchers, loadedCards, loadedStaging, loadedIncome, loadedAccounts, loadedBankAccounts] = await Promise.all([
+          loadEncryptedVouchers(),
+          loadEncryptedCards(),
+          loadEncryptedStaging(),
+          loadEncryptedIncome(),
+          loadEncryptedAccounts(),
+          loadEncryptedBankAccounts()
+        ]);
+        if (loadedVouchers) state.vouchers = loadedVouchers;
+        if (loadedCards) state.cards = loadedCards;
+        if (loadedStaging) state.staging = loadedStaging;
+        if (loadedIncome) state.income = loadedIncome;
+        if (loadedAccounts) state.accounts = loadedAccounts;
+        if (loadedBankAccounts) state.bankAccounts = loadedBankAccounts;
+      } catch (_) {}
+      try {
+        const rawRed = JSON.parse(localStorage.getItem('rupay_redeemed_list') || 'null');
+        if (Array.isArray(rawRed)) redeemedList = rawRed;
+        const rawShared = JSON.parse(localStorage.getItem('rupay_shared_activity') || 'null');
+        if (Array.isArray(rawShared)) sharedActivity = rawShared;
+      } catch (_) {}
+    }
+
     // Cross-Tab Bus Message Handler
     if (vaultBroadcastBus) {
       vaultBroadcastBus.onmessage = async (event) => {
         try {
           const { type, payload } = event.data || {};
           if (type === 'MUTATION_RECORDED') {
+            await rehydrateStoresFromStorage();
             // Sibling tab mutated: immediately refresh active workspace UI
             if (state.activeWorkspace === 'vouchers') {
               renderVault();
@@ -5087,30 +5192,13 @@
               updateAllSyncIndicators('success', payload.timeStr);
             }
             // Sibling tab completed a fresh sync: rehydrate all encrypted & local stores from storage
-            const [loadedVouchers, loadedCards, loadedStaging, loadedIncome, loadedAccounts, loadedBankAccounts] = await Promise.all([
-              loadEncryptedVouchers(),
-              loadEncryptedCards(),
-              loadEncryptedStaging(),
-              loadEncryptedIncome(),
-              loadEncryptedAccounts(),
-              loadEncryptedBankAccounts()
-            ]);
-            if (loadedVouchers) state.vouchers = loadedVouchers;
-            if (loadedCards) state.cards = loadedCards;
-            if (loadedStaging) state.staging = loadedStaging;
-            if (loadedIncome) state.income = loadedIncome;
-            if (loadedAccounts) state.accounts = loadedAccounts;
-            if (loadedBankAccounts) state.bankAccounts = loadedBankAccounts;
-            try {
-              const rawRed = JSON.parse(localStorage.getItem('rupay_redeemed_list') || 'null');
-              if (Array.isArray(rawRed)) redeemedList = rawRed;
-              const rawShared = JSON.parse(localStorage.getItem('rupay_shared_activity') || 'null');
-              if (Array.isArray(rawShared)) sharedActivity = rawShared;
-            } catch (_) {}
+            await rehydrateStoresFromStorage();
             renderAll();
             persistL1ViewCache();
           } else if (type === 'VAULT_LOCKED') {
-            showLockScreen();
+            securityState.isUnlocked = false;
+            securityState.cryptoKey = null;
+            showLockScreen({ fromBroadcast: true });
           }
         } catch (_) {}
       };
@@ -5121,6 +5209,7 @@
       try {
         if (!e.key) return;
         if (e.key === 'rupay_universal_mutation_journal') {
+          await rehydrateStoresFromStorage();
           renderAll();
           persistL1ViewCache();
         } else if (e.key === 'rupay_redeemed_list' && e.newValue) {
@@ -5132,7 +5221,9 @@
         } else if (e.key === 'rupay_sync_time' && e.newValue) {
           updateAllSyncIndicators('success', e.newValue);
         } else if (e.key === 'rupay_session_token' && !e.newValue) {
-          showLockScreen();
+          securityState.isUnlocked = false;
+          securityState.cryptoKey = null;
+          showLockScreen({ fromBroadcast: true });
         }
       } catch (_) {}
     });
@@ -5229,7 +5320,8 @@
         'RESTORE_DISMISSED_SHARED', 'RESTORE_DISMISSED_STAGING', 'RESTORE_CLEARED_ACTIVITY', 'RESTORE_CLEARED_REDEEMED',
         'APPROVE_STAGING', 'DISMISS_SHARED', 'UNBLOCK_CARD', 'UNDO_BLOCK_AND_REPLACE_CARD'
       ]);
-      if (!nonQuarantineActions.has(action) && targetIds.length > 0) {
+      const skipQuarantineForSaleInStaging = action === 'MARK_VOUCHER_AS_SOLD' && !!payload.keepInStaging;
+      if (!nonQuarantineActions.has(action) && !skipQuarantineForSaleInStaging && targetIds.length > 0) {
         quarantineIdentifiers(targetIds);
       } else if (action === 'UNDO_BLOCK_AND_REPLACE_CARD') {
         if (payload.newCardNumber) UniversalMutationJournal.recordTombstone(payload.newCardNumber, 'card');
@@ -5239,8 +5331,15 @@
       }
       updateSyncPulseIndicator(true);
 
-      const maxAttempts = options.retries !== undefined ? options.retries : 2;
+      const maxAttempts = Math.max(1, options.retries !== undefined ? options.retries : 2);
       let lastErr = null;
+      let rolledBack = false;
+      const invokeRollbackOnce = () => {
+        if (!rolledBack && options.rollback && typeof options.rollback === 'function') {
+          rolledBack = true;
+          try { options.rollback(); } catch (rbErr) {}
+        }
+      };
 
       try {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -5270,13 +5369,13 @@
                 await new Promise(r => setTimeout(r, 1200));
                 continue;
               }
-              if (options.rollback && typeof options.rollback === 'function') {
-                try { options.rollback(); } catch (rbErr) {}
-              }
+              invokeRollbackOnce();
               if (!options.silent) {
                 showToast(data.error);
               }
-              throw new Error(data.error);
+              const rejectionErr = new Error(data.error);
+              rejectionErr.noRetry = true;
+              throw rejectionErr;
             }
             return data;
           } catch (err) {
@@ -5286,23 +5385,21 @@
             } else {
               lastErr = err;
             }
-            if (err.message && /session expired|unauthorized/i.test(err.message)) {
+            if ((err.noRetry) || (err.message && /session expired|unauthorized/i.test(err.message))) {
               throw err;
             }
             if (attempt < maxAttempts) {
               await new Promise(r => setTimeout(r, 1200));
               continue;
             }
-            if (options.rollback && typeof options.rollback === 'function') {
-              try { options.rollback(); } catch (rbErr) {}
-            }
+            invokeRollbackOnce();
             if (!options.silent) {
               console.warn(`API call ${action} failed:`, lastErr);
             }
             throw lastErr;
           }
         }
-        throw lastErr;
+        throw lastErr || new Error(`API call ${action} failed`);
       } finally {
         // 2. Decrement Mutation Mutex & Trigger Queued Sync if Clear
         pendingMutationsCount = Math.max(0, pendingMutationsCount - 1);
@@ -5792,8 +5889,10 @@
         act = (state.vouchers || []).find(v => v.id === id || v.code === id || (v.bookingId && v.bookingId === id));
       }
 
+      let isRedeemed = false;
       if (!act) {
         act = (redeemedList || []).find(r => r.id === id || r.code === id || ('redeemed-' + r.code) === id || (r.bookingId && r.bookingId === id));
+        if (act) isRedeemed = true;
       }
 
       if (!act) {
@@ -5818,6 +5917,7 @@
         }
       } else {
         isShared = act.status === 'SHARED';
+        if (!isRedeemed && String(act.status || '').toUpperCase() === 'REDEEMED') isRedeemed = true;
       }
 
       if (!act) return;
@@ -5828,8 +5928,8 @@
       const isRevalidated = isVoucherRevalidated(act);
       const isProcessing = isVoucherProcessing(act);
       const isPending = isVoucherPending(act);
-      const hasArrived = isVoucherArrived(act);
-      const timeStr = act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
+      const hasArrived = isRedeemed ? true : isVoucherArrived(act);
+      const timeStr = act.redeemedTimestampIST || act.timestampStr || act.timestampIST || (isShared ? act.sharedAt : '');
       const sharedRemainingMs = getVoucherSharedRemainingMs(act);
       const isCurrentlyShared = sharedRemainingMs > 0;
       const dismissKey = (act.code && act.code !== 'Pending' && act.code !== '-') ? act.code : (act.bookingId || '');
@@ -5837,6 +5937,7 @@
       const catEl = document.getElementById('vdetail-category');
       if (catEl) {
         if (isShared) catEl.textContent = 'SHARED VOUCHER';
+        else if (isRedeemed) catEl.textContent = `${brandDisplay.toUpperCase()} REDEEMED PASS`;
         else if (isStaging) catEl.textContent = 'INGESTED VOUCHER';
         else catEl.textContent = `${brandDisplay.toUpperCase()} VAULT PASS`;
       }
@@ -5878,9 +5979,9 @@
               <div class="flex items-center justify-between">
                 <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400 inline-flex items-center gap-1">
                   <svg aria-hidden="true" class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                  <span>Code Delivered</span>
+                  <span>${isRedeemed ? 'Archived Pass' : 'Code Delivered'}</span>
                 </span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-mono-apple">Active & Usable</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isRedeemed ? 'bg-neutral-800 text-neutral-300' : 'bg-emerald-500/15 text-emerald-400'} font-mono-apple">${isRedeemed ? 'Redeemed' : 'Active & Usable'}</span>
               </div>
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0 flex-1">
@@ -6063,6 +6164,17 @@
               <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
           `;
+        } else if (isRedeemed) {
+          const restoreBrand = act.originalTab || act.brand || '';
+          footerEl.innerHTML = `
+            <button onclick="closeVoucherDetailSheet(); undoRedemption('${escapeJsAttr(act.code)}', '${escapeJsAttr(restoreBrand)}');" class="flex-1 h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition-all active:scale-95 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-0" title="Restore to Vault">
+              <svg aria-hidden="true" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+              <span class="truncate">Restore to Vault</span>
+            </button>
+            <button onclick="closeVoucherDetailSheet();" class="w-10 h-10 shrink-0 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" title="Done" aria-label="Done">
+              <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          `;
         } else {
           const isTargetBrandSoldEligible = isCultOrPrime(act.brand);
           footerEl.innerHTML = `
@@ -6111,6 +6223,7 @@
     function isCultOrPrime(brand) {
       if (!brand) return false;
       const b = String(brand).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (b.includes('times')) return false;
       return b.includes('cult') || b.includes('prime') || b.includes('amazon');
     }
 
@@ -6440,7 +6553,10 @@
       // Build canonical title matching backend RuPay Income conventions
       let incomeTitle = 'Cult Fit';
       const bLow = brandKey.toLowerCase();
-      if (bLow.includes('prime') || bLow.includes('amazon')) {
+      const isPrime = (!bLow.includes('times')) && (bLow.includes('amazon prime') || bLow.includes('amazonprime') || (bLow.includes('amazon') && !bLow.includes('amazon pay')) || /\bprime\b/.test(bLow));
+      if (bLow.includes('times')) {
+        incomeTitle = 'TimesPrime';
+      } else if (isPrime) {
         incomeTitle = 'Amazon Prime';
       } else if (bLow.includes('cult')) {
         incomeTitle = 'Cult Fit';
@@ -6465,7 +6581,6 @@
       } else {
         incomeTitle = brandDisplay || brandKey;
       }
-      const isPrime = bLow.includes('prime') || bLow.includes('amazon');
 
       // RuPay Account Number is blank for Amazon Prime
       const mobileInput = document.getElementById('ms-input-mobile');
@@ -6652,6 +6767,7 @@
 
       apiFetch('MARK_VOUCHER_AS_SOLD', payload, {
         rollback: async () => {
+          hideUndoToast();
           if (cleanBid) unmarkIngestedVoucherSold(cleanBid);
           if (cleanCode) unmarkIngestedVoucherSold(cleanCode);
           state.staging = prevStaging;
@@ -6673,13 +6789,24 @@
           showToast('Failed to record sale on server. Reverted.');
         }
       }).then(res => {
-        if (res && res.incomeEntry && res.incomeEntry.id) {
+        if (res && (res.insertedIncomeRow || (res.incomeEntry && res.incomeEntry.id))) {
           const item = (state.income?.ledger || []).find(x => x.id === optimisticIncomeId);
-          if (item) item.id = res.incomeEntry.id;
+          if (item) {
+            applyServerInsertedIncomeId(item, {
+              insertedRow: res.insertedIncomeRow,
+              targetSheet: 'RuPay Income',
+              entry: res.incomeEntry
+            });
+          }
         }
       }).catch(err => {
         console.warn('Backend MARK_VOUCHER_AS_SOLD error:', err);
       });
+
+      const postStaging = (state.staging || []).map(s => ({ ...s }));
+      const postVouchers = (state.vouchers || []).map(x => ({ ...x }));
+      const postRedeemed = [...redeemedList];
+      const postIncomeLedger = [...(state.income?.ledger || [])];
 
       // Show 3s Undo Banner with Explicit Compensating Reverse Call
       showCardUndoBanner(
@@ -6719,8 +6846,30 @@
               price: rawPrice,
               date: normalizedSaleDate
             }, {
-              rollback: () => {
-                showToast('Failed to reverse sale on server');
+              rollback: async () => {
+                if (isStagingNotArrived) {
+                  if (cleanBid) markIngestedVoucherSold(cleanBid);
+                  if (!isPlaceholderCode) markIngestedVoucherSold(cleanCode);
+                } else {
+                  const tombCtx = isStaging ? 'staging' : 'voucher';
+                  if (cleanCode && !isPlaceholderCode) UniversalMutationJournal.recordTombstone(cleanCode, tombCtx);
+                  if (cleanBid && cleanBid !== '-' && !cleanBid.startsWith('#')) UniversalMutationJournal.recordTombstone(cleanBid, tombCtx);
+                }
+                state.staging = postStaging;
+                state.vouchers = postVouchers;
+                redeemedList = postRedeemed;
+                if (state.income) state.income.ledger = postIncomeLedger;
+                recomputeIncomeSummaryStats();
+                saveRedeemedList();
+                await Promise.all([
+                  saveEncryptedStaging(state.staging),
+                  saveEncryptedVouchers(state.vouchers),
+                  saveEncryptedIncome(state.income)
+                ]);
+                renderDeckSelector();
+                renderVault();
+                if (state.activeWorkspace === 'income') renderIncomeTracker();
+                showToast('Failed to reverse sale on server. Sale restored.');
               }
             });
           } catch (err) {
@@ -6933,13 +7082,17 @@
           }, {
             silent: true,
             rollback: () => {
-              // Re-apply revalidation if undo fails
+              // Re-apply revalidation if undo fails (lookup live item after previousStaging swap)
               addRevalidatedBid(activeBid);
               if (targetBid) addRevalidatedBid(targetBid);
-              item.status = 'REVALIDATED';
-              item.code = 'Pending';
-              item.payUrl = '';
-              item.isRevalidation = false;
+              const liveItem = (state.staging || []).find(s =>
+                (activeBid && String(s.bookingId || '').trim().toUpperCase() === activeBid.toUpperCase()) ||
+                (s.id === item.id)
+              ) || item;
+              liveItem.status = 'REVALIDATED';
+              liveItem.code = 'Pending';
+              liveItem.payUrl = '';
+              liveItem.isRevalidation = false;
               saveEncryptedStaging(state.staging);
               renderVault();
               showToast('Server sync failed to undo revalidation.');
@@ -7163,6 +7316,11 @@
         MutationJournal.removeApproval(cleanBidKey);
         MutationJournal.removeUndo(cleanBidKey);
       }
+      // Capture snapshot before mutation for resilient 2-way rollback
+      const prevVouchersSnapshot = (state.vouchers || []).map(x => ({ ...x }));
+      const prevRedeemedSnapshot = (redeemedList || []).map(x => ({ ...x }));
+      const prevSharedSnapshot = (sharedActivity || []).map(x => ({ ...x }));
+
       sharedActivity = sharedActivity.filter(s => {
         const sCd = String(s.code || '').trim().toUpperCase();
         const sBid = String(s.bookingId || '').trim().toUpperCase();
@@ -7191,10 +7349,6 @@
         return (cleanTarget && (xCd === cleanTarget || xBid === cleanTarget || xId === code)) ||
                (cleanBid && (xBid === cleanBid || xCd === cleanBid));
       });
-
-      // Capture snapshot before mutation for resilient 2-way rollback
-      const prevVouchersSnapshot = (state.vouchers || []).map(x => ({ ...x }));
-      const prevRedeemedSnapshot = (redeemedList || []).map(x => ({ ...x }));
 
       if (v) {
         v.status = 'USED';
@@ -7238,7 +7392,8 @@
         brandName: summaryLabel,
         isCommitted: false,
         prevVouchers: prevVouchersSnapshot,
-        prevRedeemedList: prevRedeemedSnapshot
+        prevRedeemedList: prevRedeemedSnapshot,
+        prevSharedActivity: prevSharedSnapshot
       };
 
       // Zero Delay: Dispatch backend redemption immediately!
@@ -7270,7 +7425,8 @@
           const rbid = String(x.bookingId || '').replace(/^'/, '').trim().toUpperCase();
           return (rc && rc === cleanC) || (rbid && rbid === cleanC);
         });
-        const targetBrandName = normalizeBrandKey(brand || (r ? (r.originalTab || r.brand) : 'Voucher'));
+        const brandHint = (brand && !/^\d+\s+vouchers?$/i.test(String(brand).trim())) ? brand : '';
+        const targetBrandName = normalizeBrandKey((r ? (r.originalTab || r.brand) : '') || (matches[0] ? matches[0].brand : '') || brandHint || 'Voucher');
 
         const bId = (r ? r.bookingId : null) || (matches[0] ? matches[0].bookingId : null);
         if (bId && !bookingIds.includes(bId)) {
@@ -7349,7 +7505,10 @@
 
       // Horizontal rollback animation for restored cards
       targetCodes.forEach(c => {
-        const cardEl = document.querySelector(`[data-code="${c}"]`);
+        const escaped = (typeof CSS !== 'undefined' && typeof CSS.escape === 'function')
+          ? CSS.escape(String(c))
+          : String(c).replace(/["\\]/g, '\\$&');
+        const cardEl = document.querySelector(`[data-code="${escaped}"]`);
         if (cardEl) cardEl.classList.add('anim-rollback-700');
       });
 
@@ -7375,12 +7534,13 @@
       };
 
       try {
+        const brandHint = (brand && !/^\d+\s+vouchers?$/i.test(String(brand).trim())) ? brand : '';
         await apiFetch('UNDO_REDEEM', {
           code: targetCodes[0],
           codes: targetCodes,
           bookingId: bookingIds[0] || undefined,
           bookingIds: bookingIds.length ? bookingIds : undefined,
-          brand: normalizeBrandKey(brand || '')
+          brand: brandHint ? normalizeBrandKey(brandHint) : ''
         }, { rollback: rollbackUndo });
       } catch(e) {
         console.warn('Backend undo error:', e);
@@ -7709,6 +7869,7 @@
         const cleanBids = (pending.bookingIds || []).map(b => String(b).replace(/^'/, '').trim()).filter(Boolean);
 
         const rollbackRedeem = () => {
+          hideUndoToast();
           removeUncommittedRedeem(cleanCodes);
           cleanCodes.forEach(c => UniversalMutationJournal.unquarantine(c.toUpperCase()));
           cleanBids.forEach(b => UniversalMutationJournal.unquarantine(b.toUpperCase()));
@@ -7720,8 +7881,13 @@
             redeemedList = [...pending.prevRedeemedList];
             saveRedeemedList();
           }
+          if (pending.prevSharedActivity && Array.isArray(pending.prevSharedActivity)) {
+            sharedActivity = [...pending.prevSharedActivity];
+            saveSharedActivity();
+          }
           renderDeckSelector();
           renderVault();
+          showToast('Redemption sync failed on server. Reverted.');
         };
 
         const res = await apiFetch('MOVE_TO_REDEEMED', {
@@ -8420,11 +8586,13 @@
     }
 
     function setIncomeYearFilter(year) {
-      state.incomeYearFilter = year;
-      ['all', '2026', '2025', '2024'].forEach(y => {
+      const validYears = ['all', '2026', '2025', '2024'];
+      const safeYear = validYears.includes(String(year)) ? String(year) : 'all';
+      state.incomeYearFilter = safeYear;
+      validYears.forEach(y => {
         const btn = document.getElementById(`in-year-btn-${y}`);
         if (!btn) return;
-        if (y === year) {
+        if (y === safeYear) {
           btn.className = 'px-3 py-1 rounded-lg bg-[#0C8C46] text-white shadow transition-all spring-press';
         } else {
           btn.className = 'px-3 py-1 rounded-lg text-[var(--theme-text-muted)] hover:text-[var(--theme-text-main)] transition-all spring-press';
@@ -8624,7 +8792,7 @@
           <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-3">
             <div class="flex items-center justify-between text-xs">
               <span class="text-[var(--theme-text-sub)]">Period:</span>
-              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${escapeHtml(summary.year)}</span>
             </div>
             <div class="space-y-1.5 text-xs pt-2 border-t border-[var(--theme-border)]">
               <div class="flex items-center justify-between">
@@ -8652,7 +8820,7 @@
           <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-2.5 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Period:</span>
-              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${escapeHtml(summary.year)}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Total Gross Income:</span>
@@ -8675,7 +8843,7 @@
           <div class="p-3.5 rounded-2xl bg-[var(--theme-card-subtle)] border border-[var(--theme-border)] space-y-2.5 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Period:</span>
-              <span class="font-bold text-[var(--theme-text-main)]">${summary.year}</span>
+              <span class="font-bold text-[var(--theme-text-main)]">${escapeHtml(summary.year)}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-[var(--theme-text-sub)]">Total Deductions:</span>
@@ -8843,6 +9011,32 @@
       if (btnOther) btnOther.className = (!isCult && !isAmzn && !isTimes) ? activeCls : inactiveCls;
     }
 
+    function applyServerInsertedIncomeId(targetEntry, res) {
+      if (!targetEntry || !res) return;
+      const prefix = (res.targetSheet === 'RuPay Charges' || targetEntry.type === 'charge') ? 'chg-' : 'inc-';
+      const resolvedId = (res.entry && res.entry.id)
+        ? String(res.entry.id)
+        : (res.insertedRow ? (prefix + Math.max(1, res.insertedRow - 1)) : '');
+      if (!resolvedId) return;
+
+      const m = resolvedId.match(/^(inc-|chg-)(\d+)$/);
+      if (m && Array.isArray(state.income?.ledger)) {
+        const idPrefix = m[1];
+        const insertedIdx = parseInt(m[2], 10);
+        // Shift existing entries whose sheet row index moved down by +1 to avoid duplicate inc-N/chg-N IDs
+        state.income.ledger.forEach(item => {
+          if (!item || item === targetEntry || typeof item.id !== 'string') return;
+          if (!item.id.startsWith(idPrefix)) return;
+          const num = parseInt(item.id.slice(idPrefix.length), 10);
+          if (!isNaN(num) && num >= insertedIdx) {
+            item.id = idPrefix + (num + 1);
+          }
+        });
+      }
+      targetEntry.id = resolvedId;
+      saveEncryptedIncome(state.income);
+    }
+
     async function confirmRecordSale() {
       const titleInput = document.getElementById('in-sale-input-title');
       const title = (titleInput ? titleInput.value : '').trim();
@@ -8926,13 +9120,7 @@
           account: '',
           type: 'income'
         }, { rollback });
-        if (res && res.entry && res.entry.id) {
-          newEntry.id = res.entry.id;
-          saveEncryptedIncome(state.income);
-        } else if (res && res.insertedRow) {
-          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + Math.max(1, res.insertedRow - 1);
-          saveEncryptedIncome(state.income);
-        }
+        applyServerInsertedIncomeId(newEntry, res);
       } catch (err) {
         console.error('Error recording income sale:', err);
       }
@@ -9097,13 +9285,7 @@
           account: accountFormatted,
           type: 'charge'
         }, { rollback });
-        if (res && res.entry && res.entry.id) {
-          newEntry.id = res.entry.id;
-          saveEncryptedIncome(state.income);
-        } else if (res && res.insertedRow) {
-          newEntry.id = (res.targetSheet === 'RuPay Charges' ? 'chg-' : 'inc-') + Math.max(1, res.insertedRow - 1);
-          saveEncryptedIncome(state.income);
-        }
+        applyServerInsertedIncomeId(newEntry, res);
       } catch (err) {
         console.error('Error recording card charge:', err);
       }
@@ -11232,7 +11414,7 @@
       function onTouchStart(e) {
         if (state.activeWorkspace !== 'cards') return;
         if (!e.touches || e.touches.length !== 1) return;
-        if (e.target.closest('button, input, select, textarea, a, .card-subheader-bar, .no-scrollbar, #modal-add-card')) return;
+        if (e.target.closest('button, input, select, textarea, a, .card-subheader-bar, #card-network-carousel, #card-bank-carousel, #card-account-carousel, #modal-add-card')) return;
         const touch = e.touches[0];
         startDrag(touch.clientX, touch.clientY);
       }
@@ -11691,7 +11873,7 @@
             </div>
 
             <!-- INLINE REPLACEMENT FORM DRAWER -->
-            <div id="replace-drawer-${rawNum}" class="hidden mt-3 pt-3 border-t border-rose-500/30 bg-black/60 -mx-4 -mb-4 p-4 rounded-b-2xl transition-all">
+            <div id="replace-drawer-${escapeHtml(rawNum)}" class="hidden mt-3 pt-3 border-t border-rose-500/30 bg-black/60 -mx-4 -mb-4 p-4 rounded-b-2xl transition-all">
               <div class="flex items-center justify-between mb-2">
                 <div class="text-xs font-bold text-white flex items-center gap-1.5">
                   <svg aria-hidden="true" class="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
@@ -11704,30 +11886,30 @@
 
               <!-- Card Scanner Viewfinder Button -->
               <div class="mb-2.5">
-                <button type="button" onclick="triggerCardOcr('rep', '${escapeJsAttr(rawNum)}')" id="ocr-btn-rep-${rawNum}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
+                <button type="button" onclick="triggerCardOcr('rep', '${escapeJsAttr(rawNum)}')" id="ocr-btn-rep-${escapeHtml(rawNum)}" class="w-full py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm">
                   <svg aria-hidden="true" class="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
-                  <span id="ocr-label-rep-${rawNum}">Scan Replacement Card (Live Camera / Photo)</span>
+                  <span id="ocr-label-rep-${escapeHtml(rawNum)}">Scan Replacement Card (Live Camera / Photo)</span>
                 </button>
               </div>
 
-              <form onsubmit="event.preventDefault(); submitCardReplacement('${rawNum}');" autocomplete="on" novalidate class="space-y-2 text-left">
+              <form onsubmit="event.preventDefault(); submitCardReplacement('${escapeJsAttr(rawNum)}');" autocomplete="on" novalidate class="space-y-2 text-left">
                 <div>
-                  <label for="rep-num-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
-                  <input id="rep-num-${rawNum}" name="cardnumber" autocomplete="cc-number" inputmode="numeric" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  <label for="rep-num-${escapeHtml(rawNum)}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">New 16-Digit Number</label>
+                  <input id="rep-num-${escapeHtml(rawNum)}" name="cardnumber" autocomplete="cc-number" inputmode="numeric" type="text" maxlength="19" oninput="onCardNumberInput(this)" placeholder="6524 9710 ...." class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label for="rep-exp-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
-                    <input id="rep-exp-${rawNum}" name="cc-exp" autocomplete="cc-exp" inputmode="numeric" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                    <label for="rep-exp-${escapeHtml(rawNum)}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Expiry (MM/YY)</label>
+                    <input id="rep-exp-${escapeHtml(rawNum)}" name="cc-exp" autocomplete="cc-exp" inputmode="numeric" type="text" maxlength="5" placeholder="MM/YY" oninput="onExpiryInput(this)" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                   </div>
                   <div>
-                    <label for="rep-cvv-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
-                    <input id="rep-cvv-${rawNum}" name="cvv" autocomplete="cc-csc" inputmode="numeric" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                    <label for="rep-cvv-${escapeHtml(rawNum)}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">CVV</label>
+                    <input id="rep-cvv-${escapeHtml(rawNum)}" name="cvv" autocomplete="cc-csc" inputmode="numeric" type="password" maxlength="3" placeholder="•••" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs font-mono-apple text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                   </div>
                 </div>
                 <div>
-                  <label for="rep-notes-${rawNum}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
-                  <input id="rep-notes-${rawNum}" name="notes" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
+                  <label for="rep-notes-${escapeHtml(rawNum)}" class="block text-[10px] uppercase font-bold text-neutral-400 mb-1">Notes (Optional)</label>
+                  <input id="rep-notes-${escapeHtml(rawNum)}" name="notes" type="text" placeholder="e.g. Q4 quota renewal" class="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-neutral-600 focus:outline-none focus:border-amber-500">
                 </div>
                 <button type="submit" class="w-full mt-1.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-[0.98] transition-all">
                   <svg aria-hidden="true" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -11830,9 +12012,21 @@
       const cardEl = document.getElementById(`card-box-${cardNum}`);
       if (!cardEl) return;
 
-      const previousCards = [...(state.cards || [])];
-      const targetCard = previousCards.find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cardNum);
+      const cleanNum = String(cardNum || '').replace(/['\s]/g, '');
+      const targetCard = (state.cards || []).find(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cleanNum);
+      const targetIdx = targetCard ? (state.cards || []).indexOf(targetCard) : -1;
       const previousAccountFilter = currentCardAccountFilter;
+
+      const restoreBlockedCardToState = () => {
+        if (!targetCard) return;
+        const alreadyPresent = (state.cards || []).some(c => String(c.cardNumber || '').replace(/['\s]/g, '') === cleanNum);
+        if (!alreadyPresent) {
+          const nextCards = [...(state.cards || [])];
+          if (targetIdx >= 0 && targetIdx <= nextCards.length) nextCards.splice(targetIdx, 0, targetCard);
+          else nextCards.push(targetCard);
+          state.cards = nextCards;
+        }
+      };
 
       let isUndone = false;
       let phase2Timer = null;
@@ -11855,14 +12049,16 @@
             clearTimeout(phase2Timer);
             clearTimeout(phase3Timer);
             clearTimeout(phase4Timer);
+            hideUndoToast();
             const activeCardEl = document.getElementById(`card-box-${cardNum}`);
             if (activeCardEl) {
               activeCardEl.style.transform = '';
               activeCardEl.classList.remove('anim-swipe-horizontal-700', 'anim-collapse-700');
             }
-            state.cards = previousCards;
+            restoreBlockedCardToState();
             currentCardAccountFilter = previousAccountFilter;
             UniversalMutationJournal.unquarantine(cardNum);
+            UniversalMutationJournal.removeCard(cardNum);
             saveEncryptedCards(state.cards);
             updateDrawerCardCount();
             renderCardManagerList(currentCardCategoryFilter);
@@ -11888,8 +12084,8 @@
               activeCardEl.classList.remove('anim-swipe-horizontal-700', 'anim-collapse-700');
             }
 
-            // UNDO ACTION: Revert local state, restore filter, unquarantine
-            state.cards = previousCards;
+            // UNDO ACTION: Revert local state (only targetCard so concurrent blocks remain blocked), restore filter, unquarantine
+            restoreBlockedCardToState();
             currentCardAccountFilter = previousAccountFilter;
             UniversalMutationJournal.unquarantine(cardNum);
             UniversalMutationJournal.removeCard(cardNum);
@@ -11920,14 +12116,21 @@
       // Phase 4 (800ms): Remove from memory & update UI optimistically
       phase4Timer = setTimeout(() => {
         if (isUndone) return;
-        state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cardNum);
+        state.cards = (state.cards || []).filter(c => String(c.cardNumber || '').replace(/['\s]/g, '') !== cleanNum);
         if (targetCard) UniversalMutationJournal.recordBlock(cardNum, targetCard);
 
-        // Filter Context Preservation (SG7): If account filter was locked to this card's last 4 and no other cards match, relax to 'All'
-        if (currentCardAccountFilter === cardNum.slice(-4)) {
-          const remainingWithAcc = state.cards.filter(c => {
+        // Filter Context Preservation (SG7): If account filter was locked to this card or its linkedAccount and no other active cards match, relax to 'All'
+        const cardLast4 = cleanNum.slice(-4);
+        const cardAccLast4 = (targetCard && targetCard.linkedAccount && targetCard.linkedAccount !== 'NA')
+          ? String(targetCard.linkedAccount).replace(/\D/g, '').slice(-4) : '';
+        if (currentCardAccountFilter === cardLast4 || (cardAccLast4 && currentCardAccountFilter === cardAccLast4)) {
+          const remainingWithAcc = (state.cards || []).filter(c => {
+            if (String(c.status || 'ACTIVE').toUpperCase() !== 'ACTIVE') return false;
+            if (String(c.type || '').toLowerCase() !== String(currentCardCategoryFilter || 'debit').toLowerCase()) return false;
+            if (currentCardBankFilter !== 'All' && c.bank !== currentCardBankFilter) return false;
             const linkedLast4 = (c.linkedAccount && c.linkedAccount !== 'NA') ? String(c.linkedAccount).replace(/\D/g, '').slice(-4) : '';
-            return linkedLast4 === currentCardAccountFilter;
+            const cLast4 = c.cardNumber ? String(c.cardNumber).replace(/\D/g, '').slice(-4) : '';
+            return linkedLast4 === currentCardAccountFilter || cLast4 === currentCardAccountFilter;
           });
           if (remainingWithAcc.length === 0) {
             currentCardAccountFilter = 'All';
@@ -12770,6 +12973,7 @@
         newCard: newCard
       }, {
         rollback: () => {
+          hideUndoToast();
           state.cards = previousCards;
           currentCardAccountFilter = previousAccountFilter;
           UniversalMutationJournal.unquarantine(oldCardNum);
@@ -14037,7 +14241,7 @@
                 <!-- Tactile Copy Field (No explicit button - entire number is interactive) -->
                 <button onclick="quickCopyCardField('${escapeJsAttr(acc.accNumber)}', 'Account number', this)" title="Tap to copy account number" class="tactile-copy-field group text-left py-1 pr-2 flex items-center gap-2">
                   <div class="font-mono-apple text-base font-bold text-white tracking-widest group-hover:text-emerald-400 transition-colors copy-target-text">
-                    ${displayNumber}
+                    ${escapeHtml(displayNumber)}
                   </div>
                   ${BA_COPY_SVG}
                 </button>
@@ -15682,7 +15886,9 @@
       }
     }
 
+    let batchRedeemInProgress = false;
     async function batchMarkAsRedeemed() {
+      if (batchRedeemInProgress) return;
       const toRedeem = Array.from(state.selectedIds);
       if (!toRedeem.length) {
         showToast("Please select at least 1 voucher to redeem");
@@ -15701,6 +15907,9 @@
         return;
       }
 
+      batchRedeemInProgress = true;
+      const btnRedeemDock = document.getElementById('btn-redeem-dock');
+      if (btnRedeemDock) btnRedeemDock.classList.add('pointer-events-none', 'opacity-60');
       collapseActionMenu();
 
       // Phase 1 (0ms): Strikethrough laser across code and highlight card border
@@ -15736,6 +15945,7 @@
         // Snapshot prior state for resilient 2-way rollback
         const prevVouchersSnapshot = (state.vouchers || []).map(x => ({ ...x }));
         const prevRedeemedSnapshot = (redeemedList || []).map(x => ({ ...x }));
+        const prevSharedSnapshot = (sharedActivity || []).map(x => ({ ...x }));
 
         targetVouchers.forEach(v => {
           v.status = 'USED';
@@ -15814,10 +16024,14 @@
           brandName: summaryLabel,
           isCommitted: false,
           prevVouchers: prevVouchersSnapshot,
-          prevRedeemedList: prevRedeemedSnapshot
+          prevRedeemedList: prevRedeemedSnapshot,
+          prevSharedActivity: prevSharedSnapshot
         };
 
         // Zero Delay: Dispatch batch redemption immediately!
+        batchRedeemInProgress = false;
+        const btnRedeemDockDone = document.getElementById('btn-redeem-dock');
+        if (btnRedeemDockDone) btnRedeemDockDone.classList.remove('pointer-events-none', 'opacity-60');
         commitRedeemToBackend(pendingRedeem);
         showUndoToast(movedCodes.join(', '), summaryLabel, pendingRedeem);
       }, 760);
