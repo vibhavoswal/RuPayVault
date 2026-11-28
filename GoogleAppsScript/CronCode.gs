@@ -385,9 +385,18 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
     sheet.appendRow(newRowData);
     insertRowIndex = sheet.getLastRow();
   }
-  const newRowRange = sheet.getRange(insertRowIndex, 1, 1, newRowData.length);
-  newRowRange.setFontFamily("Arial").setFontSize(10).setVerticalAlignment("bottom");
-  newRowRange.setBorder(false, false, false, false, false, false);
+  const fullWidth = Math.max(newRowData.length, sheet.getLastColumn() || newRowData.length);
+  const newRowRange = sheet.getRange(insertRowIndex, 1, 1, fullWidth);
+  // Explicitly reset font weight/background/color so insertRowBefore(TOTAL / Header / bold row) never inherits bold styling
+  newRowRange
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontWeight("normal")
+    .setFontColor("#000000")
+    .setBackground(null)
+    .setVerticalAlignment("bottom")
+    .setHorizontalAlignment("left")
+    .setBorder(false, false, false, false, false, false);
   sheet.getRange(insertRowIndex, 2).setNumberFormat("dd/MM/yy").setHorizontalAlignment("center");
   sheet.getRange(insertRowIndex, 3).setNumberFormat("0.00").setHorizontalAlignment("right");
 
