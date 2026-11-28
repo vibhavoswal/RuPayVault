@@ -404,6 +404,51 @@ function insertRowSortedByDate(sheet, newRowData, newDateMs) {
   return insertRowIndex;
 }
 
+/**
+ * Appends a data row and clears any bold/header styling inherited from Row 1 or neighbor rows.
+ */
+function appendCleanDataRow(sheet, rowData) {
+  sheet.appendRow(rowData);
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const width = Math.max(rowData.length, sheet.getLastColumn() || rowData.length);
+    sheet.getRange(lastRow, 1, 1, width)
+      .setFontWeight("normal")
+      .setFontColor("#000000")
+      .setBackground(null);
+  }
+  return lastRow;
+}
+
+function getOrInitBlockedCardsSheet(ss, resetExisting) {
+  let bSheet = ss.getSheetByName("Blocked Cards");
+  if (bSheet && resetExisting) {
+    bSheet.clear();
+  } else if (!bSheet) {
+    bSheet = ss.insertSheet("Blocked Cards");
+  }
+  if (bSheet.getLastRow() === 0 || resetExisting) {
+    const bHeaders = [
+      "Bank", "Card_Type", "Card_Name", "Linked_Account", "Card_Number", "Expiry", "CVV", "Status",
+      "Blocked_Timestamp", "Replaced_By_Card", "Notes",
+      "Spa_Lakme", "Health_Thyrocare", "Amazon_Prime", "Cult_Live_90D", "Cult_Elite_1M",
+      "Uber", "Myntra", "Decathlon", "Reliance_Digital", "BigBasket", "Apollo_Pharmacy",
+      "Kalyan_Jewellers", "TaxSpanner"
+    ];
+    bSheet.appendRow(bHeaders);
+    bSheet.getRange(1, 1, 1, bHeaders.length)
+      .setFontWeight("bold")
+      .setBackground("#1E293B")
+      .setFontColor("#F87171");
+    bSheet.setFrozenRows(1);
+    bSheet.getRange("D:D").setNumberFormat('@');
+    bSheet.getRange("E:E").setNumberFormat('@');
+    bSheet.getRange("F:F").setNumberFormat('@');
+    bSheet.getRange("G:G").setNumberFormat('@');
+  }
+  return bSheet;
+}
+
 function getTargetBrandSheet(ss, brand) {
   const canonicalBrand = extractBrand(brand, "");
   const targetName = canonicalBrand !== "Other" ? canonicalBrand : (brand || "Unassigned");
@@ -898,7 +943,7 @@ function consolidateRogueTabs(ss) {
       if (!bid && !code) continue;
 
       if (!existingBids.has(bid) && (!code || !existingCodes.has(code))) {
-        cSheet.appendRow(row);
+        appendCleanDataRow(cSheet, row);
         moved.push({ from: m.rogue, to: m.canonical, bid: bid });
       }
     }
@@ -1389,7 +1434,7 @@ function recordPendingRevalidation(ss, data) {
     targetBrand,                                         // Col 11: Target Brand
     data.payUrl || ""                                    // Col 12: Payment Link
   ];
-  newSheet.appendRow(rowData);
+  appendCleanDataRow(newSheet, rowData);
   return true;
 }
 
@@ -1476,7 +1521,7 @@ function recordPendingRedemption(ss, data) {
     true,                                                // Col 10: Display in UI
     targetBrand                                          // Col 11: Target Brand
   ];
-  newSheet.appendRow(rowData);
+  appendCleanDataRow(newSheet, rowData);
   return true;
 }
 
@@ -1566,7 +1611,7 @@ function fulfillVoucherCode(ss, data) {
     true,                                                // Col 10: Display in UI
     targetBrand                                          // Col 11: Target Brand
   ];
-  newSheet.appendRow(rowData);
+  appendCleanDataRow(newSheet, rowData);
   return true;
 }
 
@@ -1620,7 +1665,7 @@ function getOrInitCooldownsSheet(ss) {
       "vibhavoswal9", "karthikrathod2067", "vibhavoswal2", "nikhildsouza369", "arunaoswal3", "madhuribhalekar369"
     ];
     defaultAccounts.forEach(acc => {
-      sheet.appendRow([acc, formatISTTimestamp(new Date(Date.now() - 25 * 3600 * 1000)), "READY", formatISTTimestamp(new Date())]);
+      appendCleanDataRow(sheet, [acc, formatISTTimestamp(new Date(Date.now() - 25 * 3600 * 1000)), "READY", formatISTTimestamp(new Date())]);
     });
   }
   return sheet;
@@ -1639,7 +1684,7 @@ function updateCooldownTab(ss, account) {
       return;
     }
   }
-  sheet.appendRow([account, formatISTTimestamp(new Date()), "RUNNING", formatISTTimestamp(new Date())]);
+  appendCleanDataRow(sheet, [account, formatISTTimestamp(new Date()), "RUNNING", formatISTTimestamp(new Date())]);
 }
 
 function getOrInitCardsSheet(ss) {
@@ -1662,7 +1707,7 @@ function getOrInitCardsSheet(ss) {
       ["cx2", "Canara Bank", "Canara RSDC", "RuPay", "'652550", "'1120", "Canara DC 1 (Old)", "blocked", 0, 0, "2026-09-28", "Blocked via mobile app", formatISTTimestamp(new Date())],
       ["cx3", "Bank of Baroda", "BoB Bhoomi RSDC", "RuPay", "'652505", "'2091", "Smiti BoB DC", "blocked", 0, 0, "2026-08-15", "Reissued new card number", formatISTTimestamp(new Date())]
     ];
-    defaultCards.forEach(c => sheet.appendRow(c));
+    defaultCards.forEach(c => appendCleanDataRow(sheet, c));
   }
   return sheet;
 }
@@ -2921,7 +2966,7 @@ function doGet(e) {
       seedCodes.forEach(item => {
         const cleanCode = item.code.trim().toUpperCase();
         if (!existingCodes.has(cleanCode)) {
-          sheet.appendRow([
+          appendCleanDataRow(sheet, [
             item.brand,                        // A: Booking ID / Brand
             "'" + item.code,                   // B: Code
             item.pin ? ("'" + item.pin) : "",  // C: PIN
@@ -3648,35 +3693,13 @@ function doGet(e) {
       // If sheet already has data, do not overwrite; otherwise insert dummy schema template
       if (sheet.getLastRow() <= 1) {
         const dummyBenefits = Array(13).fill("Available");
-        sheet.appendRow([
+        appendCleanDataRow(sheet, [
           "Sample Bank", "Credit", "Sample RuPay Select", "NA", "'6521000000000001", "'12/30", "'000", "ACTIVE", "Template card", ...dummyBenefits, nowStr
         ]);
       }
 
       // Update "Blocked Cards" archive tab with matching column ordering
-      let bSheet = ss.getSheetByName("Blocked Cards");
-      if (bSheet) {
-        bSheet.clear();
-      } else {
-        bSheet = ss.insertSheet("Blocked Cards");
-      }
-      const bHeaders = [
-        "Bank", "Card_Type", "Card_Name", "Linked_Account", "Card_Number", "Expiry", "CVV", "Status",
-        "Blocked_Timestamp", "Replaced_By_Card", "Notes",
-        "Spa_Lakme", "Health_Thyrocare", "Amazon_Prime", "Cult_Live_90D", "Cult_Elite_1M",
-        "Uber", "Myntra", "Decathlon", "Reliance_Digital", "BigBasket", "Apollo_Pharmacy",
-        "Kalyan_Jewellers", "TaxSpanner"
-      ];
-      bSheet.appendRow(bHeaders);
-      bSheet.getRange(1, 1, 1, bHeaders.length)
-        .setFontWeight("bold")
-        .setBackground("#1E293B")
-        .setFontColor("#F87171");
-      bSheet.setFrozenRows(1);
-      bSheet.getRange("D:D").setNumberFormat('@');
-      bSheet.getRange("E:E").setNumberFormat('@');
-      bSheet.getRange("F:F").setNumberFormat('@');
-      bSheet.getRange("G:G").setNumberFormat('@');
+      let bSheet = getOrInitBlockedCardsSheet(ss, true);
 
       bumpDataVersion(['CORE']);
       SpreadsheetApp.flush();
@@ -4710,7 +4733,7 @@ function doPost(e) {
                 row[8] || formatISTTimestamp(new Date()), // Appended Timestamp (IST)
                 row[9] !== false && String(row[9]).toLowerCase() !== 'false' // Display in UI
               ];
-              brandSheet.appendRow(brandRow);
+              appendCleanDataRow(brandSheet, brandRow);
             }
 
             rowsToDelete.push(r + 1); // 1-based index in "New" (always delete from New)
@@ -4974,7 +4997,7 @@ function doPost(e) {
                   vals[i][8] ? String(vals[i][8]) : "",    // L: Original Ingested Timestamp
                   true                                     // M: Display in UI
                 ];
-                rSheet.appendRow(redeemedRow);
+                appendCleanDataRow(rSheet, redeemedRow);
                 if (hasRupsVal) existingRedeemedBookings.add(bValUpper);
                 if (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING') existingRedeemedCodes.add(cValUpper);
               }
@@ -5055,7 +5078,7 @@ function doPost(e) {
                     vals[i][8] ? String(vals[i][8]) : "",    // L: Original Ingested Timestamp
                     true                                     // M: Display in UI
                   ];
-                  rSheet.appendRow(redeemedRow);
+                  appendCleanDataRow(rSheet, redeemedRow);
                   if (hasRupsVal) existingRedeemedBookings.add(bValUpper);
                   if (cValUpper && cValUpper !== '-' && cValUpper !== 'PENDING') existingRedeemedCodes.add(cValUpper);
                 }
@@ -5172,7 +5195,7 @@ function doPost(e) {
               nSheet.getRange(existingNewRow, 8).setValue("ACTIVE");
               nSheet.getRange(existingNewRow, 10).setValue(true);
             } else {
-              nSheet.appendRow([
+              appendCleanDataRow(nSheet, [
                 cleanBid ? `'${cleanBid}` : '',         // A: Booking ID
                 cleanCd ? `'${cleanCd}` : '',           // B: Code
                 cleanPin ? `'${cleanPin}` : '',         // C: PIN
@@ -5228,7 +5251,7 @@ function doPost(e) {
               originalTimestamp,                      // I: Appended Timestamp (IST)
               true                                    // J: Display in UI
             ];
-            bSheet.appendRow(restoredRow);
+            appendCleanDataRow(bSheet, restoredRow);
           }
 
           rowsToDeleteFromRedeemed.push(i + 1);
@@ -5351,7 +5374,7 @@ function doPost(e) {
         }
 
         if (!found) {
-          cSheet.appendRow([
+          appendCleanDataRow(cSheet, [
             cardId,
             card.bank || 'RuPay Card',
             card.type || 'RuPay Select',
@@ -5380,10 +5403,7 @@ function doPost(e) {
     // 6. Block Card: Move row from "Active Cards" to "Blocked Cards"
     if (data.action === "BLOCK_CARD") {
       const aSheet = ss.getSheetByName("Active Cards");
-      let bSheet = ss.getSheetByName("Blocked Cards");
-      if (!bSheet) {
-        bSheet = ss.insertSheet("Blocked Cards");
-      }
+      const bSheet = getOrInitBlockedCardsSheet(ss, false);
       const targetCardNum = String(data.cardNumber || data.id || '').replace(/['\s]/g, '').trim();
       let found = false;
 
@@ -5421,7 +5441,7 @@ function doPost(e) {
               rowData[14], rowData[15], rowData[16], rowData[17], rowData[18],
               rowData[19], rowData[20], rowData[21]
             ];
-            bSheet.appendRow(blockedRow);
+            appendCleanDataRow(bSheet, blockedRow);
             aSheet.deleteRow(i + 1);
             found = true;
             break;
@@ -5439,8 +5459,7 @@ function doPost(e) {
     // 6B. Block & Replace Card: Transactional, idempotent swap with dual-sheet consistency
     if (data.action === "BLOCK_AND_REPLACE_CARD") {
       const aSheet = ss.getSheetByName("Active Cards");
-      let bSheet = ss.getSheetByName("Blocked Cards");
-      if (!bSheet) bSheet = ss.insertSheet("Blocked Cards");
+      const bSheet = getOrInitBlockedCardsSheet(ss, false);
 
       const oldCardNum = String(data.oldCardNumber || '').replace(/['\s]/g, '').trim();
       const newCard = data.newCard || {};
@@ -5490,7 +5509,7 @@ function doPost(e) {
               oldRowData[14], oldRowData[15], oldRowData[16], oldRowData[17], oldRowData[18],
               oldRowData[19], oldRowData[20], oldRowData[21]
             ];
-            bSheet.appendRow(blockedRow);
+            appendCleanDataRow(bSheet, blockedRow);
             aSheet.deleteRow(i + 1);
             foundOld = true;
             break;
@@ -5560,7 +5579,7 @@ function doPost(e) {
             ...benefits,
             nowStr
           ];
-          aSheet.appendRow(newRow);
+          appendCleanDataRow(aSheet, newRow);
         }
       }
 
@@ -5625,7 +5644,7 @@ function doPost(e) {
               }
               aSheet.getRange(existingIdx, 1, 1, activeRow.length).setValues([activeRow]);
             } else {
-              aSheet.appendRow(activeRow);
+              appendCleanDataRow(aSheet, activeRow);
             }
             bSheet.deleteRow(b + 1);
             restored = true;
@@ -5707,7 +5726,7 @@ function doPost(e) {
               }
               aSheet.getRange(existingIdx, 1, 1, activeRow.length).setValues([activeRow]);
             } else {
-              aSheet.appendRow(activeRow);
+              appendCleanDataRow(aSheet, activeRow);
             }
             bSheet.deleteRow(b + 1);
             oldRestored = true;
@@ -5781,7 +5800,7 @@ function doPost(e) {
           ];
           aSheet.getRange(existingRowIndex, 1, 1, updatedRowValues.length).setValues([updatedRowValues]);
         } else {
-          aSheet.appendRow([
+          appendCleanDataRow(aSheet, [
             bank,
             type,
             name,
@@ -5847,7 +5866,7 @@ function doPost(e) {
         sheet.getRange(existingRowIndex, 10).setValue(true);
       } else {
         // Append new row
-        sheet.appendRow([
+        appendCleanDataRow(sheet, [
           brandName || bookingId, // A: Booking ID / Reference / Sub-brand
           "'" + voucherCode,      // B: Code
           pin ? ("'" + pin) : "", // C: PIN
@@ -6059,7 +6078,7 @@ function doPost(e) {
           if (item.platform) sSheet.getRange(foundIndex, 7).setValue(item.platform);
           sSheet.getRange(foundIndex, 8).setValue(true);
         } else {
-          sSheet.appendRow([
+          appendCleanDataRow(sSheet, [
             `'${cStr}`,
             item.brand || 'Voucher',
             item.amount || 0,
@@ -6764,7 +6783,7 @@ function doPost(e) {
 
       // Append to "Redeemed" tab ONLY if NOT keepInStaging
       if (!keepInStaging && rSheet) {
-        rSheet.appendRow([
+        appendCleanDataRow(rSheet, [
           targetBrand,           // Col 1: Brand
           safeBid,               // Col 2: Booking ID
           safeCode,              // Col 3: Code
@@ -6955,7 +6974,7 @@ function doPost(e) {
                   if (newSheet.getLastColumn() >= 13) newSheet.getRange(existingNewRow, 13).setValue("");
                   unmarkedNewRow = existingNewRow;
                 } else {
-                  newSheet.appendRow([
+                  appendCleanDataRow(newSheet, [
                     safeBid,               // Col 1: Booking ID
                     safeCd,                // Col 2: Code
                     safePin,               // Col 3: PIN
@@ -6992,7 +7011,7 @@ function doPost(e) {
                     brandSheet.getRange(existingBrandRow, 10).setValue(true);
                     restoredBrandRow = existingBrandRow;
                   } else {
-                    brandSheet.appendRow([
+                    restoredBrandRow = appendCleanDataRow(brandSheet, [
                       safeBid,             // Col 1: Booking ID
                       safeCd,              // Col 2: Code
                       safePin,             // Col 3: PIN
@@ -7191,7 +7210,11 @@ function promoteTombstones(ss, hasLock) {
       if (nRowsToAppend.length > 0) {
         const lastRow = tSheet.getLastRow();
         tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, 3).setNumberFormat("@");
-        tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, nRowsToAppend[0].length).setValues(nRowsToAppend);
+        tSheet.getRange(lastRow + 1, 1, nRowsToAppend.length, nRowsToAppend[0].length)
+          .setValues(nRowsToAppend)
+          .setFontWeight("normal")
+          .setFontColor("#000000")
+          .setBackground(null);
         // Delete rows in descending index order to preserve row positions
         for (let d = nRowsToDelete.length - 1; d >= 0; d--) {
           nSheet.deleteRow(nRowsToDelete[d]);
@@ -7230,7 +7253,11 @@ function promoteTombstones(ss, hasLock) {
       if (rRowsToAppend.length > 0) {
         const lastRow = tSheet.getLastRow();
         tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, 3).setNumberFormat("@");
-        tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, rRowsToAppend[0].length).setValues(rRowsToAppend);
+        tSheet.getRange(lastRow + 1, 1, rRowsToAppend.length, rRowsToAppend[0].length)
+          .setValues(rRowsToAppend)
+          .setFontWeight("normal")
+          .setFontColor("#000000")
+          .setBackground(null);
         // Delete rows in descending index order to preserve row positions
         for (let d = rRowsToDelete.length - 1; d >= 0; d--) {
           rSheet.deleteRow(rRowsToDelete[d]);
@@ -7273,7 +7300,11 @@ function promoteTombstones(ss, hasLock) {
       if (bRowsToAppend.length > 0) {
         const lastRow = tSheet.getLastRow();
         tSheet.getRange(lastRow + 1, 1, bRowsToAppend.length, 3).setNumberFormat("@");
-        tSheet.getRange(lastRow + 1, 1, bRowsToAppend.length, bRowsToAppend[0].length).setValues(bRowsToAppend);
+        tSheet.getRange(lastRow + 1, 1, bRowsToAppend.length, bRowsToAppend[0].length)
+          .setValues(bRowsToAppend)
+          .setFontWeight("normal")
+          .setFontColor("#000000")
+          .setBackground(null);
         for (let d = bRowsToDelete.length - 1; d >= 0; d--) {
           bSheet.deleteRow(bRowsToDelete[d]);
         }
@@ -7373,7 +7404,7 @@ function setupBankAccountsTab(ss) {
 
   // If sheet already has data, do not overwrite; otherwise insert dummy schema template
   if (sheet.getLastRow() <= 1) {
-    sheet.appendRow([
+    appendCleanDataRow(sheet, [
       "acc_template_1", "Sample Holder", "Sample Bank", "sample", "Sample Account",
       "Savings", "General", "'100000000001", "SMPL0001234", "sample@upi",
       "'12345678", "samplealias", "", "", "", "", "Sample Branch", "ACTIVE", "Template Account", nowStr
